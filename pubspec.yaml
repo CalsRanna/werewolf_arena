@@ -1,0 +1,23 @@
+name: werewolf_arena
+description: A Werewolf game with LLM players
+version: 1.0.0
+repository: https://github.com/cals/werewolf_arena
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  http: ^1.1.0
+  json_annotation: ^4.8.1
+  logging: ^1.2.0
+  args: ^2.4.2
+  path: ^1.9.0
+  yaml: ^3.1.2
+  intl: ^0.19.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
+  mocktail: ^0.3.0
+  build_runner: ^2.4.6
+  json_serializable: ^6.7.1

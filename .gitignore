@@ -1,0 +1,64 @@
+# https://dart.dev/guides/libraries/private-files
+# Created by `dart pub`
+.dart_tool/
+
+# Build artifacts
+build/
+*.apk
+*.ipa
+*.app
+*.dill
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Dependencies
+pubspec.lock
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cache
+.cache/
+.dart_tool/package_config.json
+
+# Test coverage
+coverage/
+lcov.info
+
+# API keys and sensitive data
+config/production_config.yaml
+config/local_config.yaml
+keys.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup

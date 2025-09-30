@@ -1,0 +1,73 @@
+# Test Configuration for Reverse Order
+game:
+  player_count: 12
+  min_players: 6
+  max_players: 12
+
+  # Role distribution (4平民4狼4神)
+  roles:
+    werewolf: 4
+    villager: 4
+    seer: 1
+    witch: 1
+    hunter: 1
+    guard: 1
+
+  # Game timing (in seconds)
+  timing:
+    night_duration: 30
+    day_discussion: 60
+    voting_duration: 30
+    action_confirmation: 5
+
+  # Action order settings - REVERSE ORDER TEST
+  action_order:
+    type: "sequential"
+    direction: "reverse"  # 12-1 逆序
+
+# LLM Configuration
+llm:
+  model: "openai/gpt-4o-mini"
+  api_key: "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"
+  temperature: 0.7
+  max_tokens: 100000
+  timeout_seconds: 30
+  max_retries: 3
+
+  # Prompt settings
+  prompts:
+    enable_context: true
+    strategy_hints: true
+    personality_traits: true
+
+# UI Configuration
+ui:
+  console_width: 80
+  enable_colors: true
+  enable_animations: true
+  show_debug_info: false
+  log_level: "info"
+
+  # Display settings
+  display:
+    show_player_status: true
+    show_game_state: true
+    show_action_history: true
+    show_statistics: true
+
+# Logging Configuration
+logging:
+  level: "info"
+  enable_console: true
+  enable_file: true
+  log_file_path: "logs/werewolf_arena.log"
+  max_log_size_mb: 10
+  max_log_files: 5
+
+# Development Settings
+development:
+  enable_debug_mode: false
+  enable_test_mode: false
+  mock_llm_responses: false
+  save_game_states: false
+  auto_save_interval: 0
