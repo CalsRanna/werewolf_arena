@@ -222,8 +222,6 @@ class GameEngine {
     // Judge announces werewolf phase
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('Processing werewolf actions...');
-
     if (werewolves.length == 1) {
       // Single werewolf decides alone
       final werewolf = werewolves.first;
@@ -369,18 +367,17 @@ class GameEngine {
             if (event != null) {
               seer.executeEvent(event, state);
               LoggerUtil.instance.i(
-                  '[${seer.name}][${seer.role.name}] investigated ${target.name}, ${target.name} is ${target.role.name}');
+                  '${seer.name} investigated ${target.name}, ${target.name} is ${target.role.name}');
             } else {
-              LoggerUtil.instance.i(
-                  '[${seer.name}][${seer.role.name}] made no valid investigation choice');
+              LoggerUtil.instance
+                  .i('${seer.name} made no valid investigation choice');
             }
           } else {
-            LoggerUtil.instance.i(
-                '[${seer.name}][${seer.role.name}] made no valid investigation choice');
+            LoggerUtil.instance
+                .i('${seer.name} made no valid investigation choice');
           }
         } catch (e) {
-          LoggerUtil.instance
-              .e('[${seer.name}][${seer.role.name}] action failed: $e');
+          LoggerUtil.instance.e('${seer.name} action failed: $e');
         }
 
         // Delay between seer actions
@@ -639,26 +636,37 @@ class GameEngine {
   }
 
   /// Collect votes - players vote in order (public method)
-  Future<void> collectVotes() async {
+  Future<void> collectVotes({List<Player>? pkCandidates}) async {
     final state = _currentState!;
     final alivePlayers =
         _getActionOrder(state.alivePlayers.where((p) => p.isAlive).toList());
 
+    // 如果是PK投票，排除PK候选人自己
+    final voters = pkCandidates != null
+        ? alivePlayers.where((p) => !pkCandidates.contains(p)).toList()
+        : alivePlayers;
+
     LoggerUtil.instance.i('Collecting votes...');
 
     // Each player votes in turn
-    for (int i = 0; i < alivePlayers.length; i++) {
-      final voter = alivePlayers[i];
+    for (int i = 0; i < voters.length; i++) {
+      final voter = voters[i];
 
       // Double check: ensure player is still alive and can vote
       if (voter is AIPlayer && voter.isAlive) {
-        LoggerUtil.instance.i('${voter.name} is voting...');
         try {
           // Ensure each step completes fully
           await voter.processInformation(state);
-          final target = await voter.chooseVoteTarget(state);
+          final target = await voter.chooseVoteTarget(state, pkCandidates: pkCandidates);
 
           if (target != null && target.isAlive) {
+            // 额外验证：如果是PK投票，确保目标在PK候选人中
+            if (pkCandidates != null && !pkCandidates.contains(target)) {
+              LoggerUtil.instance.w('${voter.name} voted for ${target.name} who is not in PK candidates, vote ignored');
+              LoggerUtil.instance.i('${voter.name} abstained or voted invalid');
+              continue;
+            }
+
             final event = voter.createVoteEvent(target, state);
             if (event != null) {
               voter.executeEvent(event, state);
@@ -683,16 +691,30 @@ class GameEngine {
     }
 
     LoggerUtil.instance
-        .i('Votes collected: ${state.totalVotes}/${state.alivePlayers.length}');
+        .i('Votes collected: ${state.totalVotes}/${voters.length}');
   }
 
   /// Resolve voting results (public method)
   Future<void> resolveVoting() async {
     final state = _currentState!;
+
+    // 显示投票统计
+    final voteResults = state.getVoteResults();
+    if (voteResults.isNotEmpty) {
+      LoggerUtil.instance.i('Voting results:');
+      final sortedResults = voteResults.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      for (final entry in sortedResults) {
+        final player = state.getPlayerById(entry.key);
+        LoggerUtil.instance
+            .i('  ${player?.name ?? entry.key}: ${entry.value} votes');
+      }
+    }
+
     final voteTarget = state.getVoteTarget();
 
     if (voteTarget != null) {
-      // Execute player
+      // 有明确的投票结果，执行出局
       voteTarget.die('executed by vote', state);
       LoggerUtil.instance.i(
         '[Judge]: ${voteTarget.name} was executed by vote',
@@ -704,10 +726,120 @@ class GameEngine {
         await _handleHunterDeath(voteTarget);
       }
     } else {
-      LoggerUtil.instance.i('No player executed (majority vote not reached)');
+      // 检查是否有平票
+      final tiedPlayers = state.getTiedPlayers();
+      if (tiedPlayers.length > 1) {
+        LoggerUtil.instance.i(
+          'Tied vote: ${tiedPlayers.map((p) => p.name).join(', ')} - entering PK phase',
+          addToLLMContext: true,
+        );
+        await _handlePKPhase(tiedPlayers);
+      } else if (voteResults.isEmpty) {
+        LoggerUtil.instance.i('No player executed (no votes cast)');
+      } else {
+        LoggerUtil.instance.i('No player executed (no valid result)');
+      }
     }
 
     state.clearVotes();
+  }
+
+  /// Handle PK (平票) phase - tied players speak, then others vote
+  Future<void> _handlePKPhase(List<Player> tiedPlayers) async {
+    final state = _currentState!;
+
+    LoggerUtil.instance.i('=== PK Phase ===');
+    LoggerUtil.instance.i(
+      'Tied players: ${tiedPlayers.map((p) => p.name).join(', ')}',
+      addToLLMContext: true,
+    );
+
+    // PK玩家依次发言
+    LoggerUtil.instance.i('PK players will now speak in order...');
+
+    for (int i = 0; i < tiedPlayers.length; i++) {
+      final player = tiedPlayers[i];
+      if (player is AIPlayer && player.isAlive) {
+        try {
+          LoggerUtil.instance.d('Generating PK speech for ${player.name}...');
+
+          await player.processInformation(state);
+          final statement = await player.generateStatement(
+            state,
+            'PK发言：你在平票中，请为自己辩护，说服其他玩家不要投你出局。',
+          );
+
+          if (statement.isNotEmpty) {
+            final event = player.createSpeakEvent(statement, state);
+            if (event != null) {
+              player.executeEvent(event, state);
+              LoggerUtil.instance.i(
+                '[${player.name}] (PK): $statement',
+                addToLLMContext: true,
+              );
+            } else {
+              LoggerUtil.instance.w('Failed to create speak event for ${player.name} in PK phase');
+            }
+          } else {
+            LoggerUtil.instance.w('${player.name} generated empty PK statement');
+            LoggerUtil.instance.i('[${player.name}] (PK): [沉默，未发言]', addToLLMContext: true);
+          }
+        } catch (e, stackTrace) {
+          LoggerUtil.instance.e('PK speech failed for ${player.name}: $e');
+          LoggerUtil.instance.e('Stack trace: $stackTrace');
+          LoggerUtil.instance.i('[${player.name}] (PK): [因错误未能发言]', addToLLMContext: true);
+        }
+
+        // 延迟确保每个玩家的发言被完整处理
+        if (i < tiedPlayers.length - 1) {
+          await Future.delayed(const Duration(milliseconds: 1000));
+        }
+      }
+    }
+
+    LoggerUtil.instance.i('PK speeches ended, other players will now vote...');
+    await waitForUserConfirmation('PK发言结束，其他玩家投票，按回车键继续...');
+
+    // 其他玩家投票（不包括PK玩家自己）
+    state.clearVotes();
+
+    // 使用新的collectVotes方法，传入PK候选人列表
+    await collectVotes(pkCandidates: tiedPlayers);
+
+    // 统计PK投票结果
+    final pkResults = state.getVoteResults();
+    if (pkResults.isNotEmpty) {
+      LoggerUtil.instance.i('PK voting results:');
+      final sortedResults = pkResults.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      for (final entry in sortedResults) {
+        final player = state.getPlayerById(entry.key);
+        LoggerUtil.instance
+            .i('  ${player?.name ?? entry.key}: ${entry.value} votes');
+      }
+    } else {
+      LoggerUtil.instance.w('No votes were cast in PK phase');
+    }
+
+    // 得出PK结果
+    final pkTarget = state.getVoteTarget();
+    if (pkTarget != null && tiedPlayers.contains(pkTarget)) {
+      pkTarget.die('executed by PK vote', state);
+      LoggerUtil.instance.i(
+        '[Judge]: ${pkTarget.name} was executed by PK vote',
+        addToLLMContext: true,
+      );
+
+      // Handle hunter skill
+      if (pkTarget.role is HunterRole && pkTarget.isDead) {
+        await _handleHunterDeath(pkTarget);
+      }
+    } else {
+      LoggerUtil.instance.i('PK vote still tied or invalid - no one executed');
+      if (pkResults.isEmpty) {
+        LoggerUtil.instance.w('Warning: No valid votes in PK phase, this may indicate an issue');
+      }
+    }
   }
 
   /// Handle hunter death
@@ -767,17 +899,79 @@ class GameEngine {
     _status = GameStatus.ended;
     state.endGame(state.winner ?? 'unknown');
 
-    // Judge announces game end
-    final playerRoles = <String, String>{};
-    for (final player in state.players) {
-      playerRoles[player.name] = player.role.name;
+    // 显示游戏结束信息
+    LoggerUtil.instance.i('');
+    LoggerUtil.instance.i('='.padRight(60, '='));
+    LoggerUtil.instance.i('游戏结束！', addToLLMContext: true);
+    LoggerUtil.instance.i('='.padRight(60, '='));
+
+    // 胜利阵营
+    final winnerText = state.winner == 'Good' ? '好人阵营' : '狼人阵营';
+    LoggerUtil.instance.i('🏆 胜利者: $winnerText', addToLLMContext: true);
+
+    // 游戏时长
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    LoggerUtil.instance.i('⏱️  游戏时长: ${minutes}分${seconds}秒，共${state.dayNumber}天');
+
+    // 存活情况
+    LoggerUtil.instance.i('');
+    LoggerUtil.instance.i('最终存活: ${state.alivePlayers.length}人', addToLLMContext: true);
+    for (final player in state.alivePlayers) {
+      final roleName = player.role.name;
+      final camp = player.role.isWerewolf ? '狼人' : '好人';
+      LoggerUtil.instance.i('  ✓ ${player.name} - $roleName ($camp)', addToLLMContext: true);
     }
 
-    LoggerUtil.instance.i(
-      'Game ended: ${state.gameId}, winner: ${state.winner ?? 'unknown'}, duration: ${duration.inMilliseconds}ms',
-    );
-    LoggerUtil.instance.i(
-        'Game completed in ${state.dayNumber} days with ${state.players.length} players');
+    // 死亡情况
+    if (state.deadPlayers.isNotEmpty) {
+      LoggerUtil.instance.i('');
+      LoggerUtil.instance.i('已出局: ${state.deadPlayers.length}人', addToLLMContext: true);
+      for (final player in state.deadPlayers) {
+        final roleName = player.role.name;
+        final camp = player.role.isWerewolf ? '狼人' : '好人';
+        LoggerUtil.instance.i('  ✗ ${player.name} - $roleName ($camp)', addToLLMContext: true);
+      }
+    }
+
+    // 角色分布
+    LoggerUtil.instance.i('');
+    LoggerUtil.instance.i('身份揭晓:', addToLLMContext: true);
+
+    // 狼人阵营
+    final werewolves = state.players.where((p) => p.role.isWerewolf).toList();
+    LoggerUtil.instance.i('  🐺 狼人阵营 (${werewolves.length}人):', addToLLMContext: true);
+    for (final wolf in werewolves) {
+      final status = wolf.isAlive ? '存活' : '出局';
+      LoggerUtil.instance.i('     ${wolf.name} - ${wolf.role.name} [$status]', addToLLMContext: true);
+    }
+
+    // 好人阵营
+    final goods = state.players.where((p) => !p.role.isWerewolf).toList();
+    LoggerUtil.instance.i('  👼 好人阵营 (${goods.length}人):', addToLLMContext: true);
+
+    // 神职
+    final gods = goods.where((p) => p.role.isGod).toList();
+    if (gods.isNotEmpty) {
+      LoggerUtil.instance.i('     神职:', addToLLMContext: true);
+      for (final god in gods) {
+        final status = god.isAlive ? '存活' : '出局';
+        LoggerUtil.instance.i('       ${god.name} - ${god.role.name} [$status]', addToLLMContext: true);
+      }
+    }
+
+    // 平民
+    final villagers = goods.where((p) => p.role.isVillager).toList();
+    if (villagers.isNotEmpty) {
+      LoggerUtil.instance.i('     平民:', addToLLMContext: true);
+      for (final villager in villagers) {
+        final status = villager.isAlive ? '存活' : '出局';
+        LoggerUtil.instance.i('       ${villager.name} - ${villager.role.name} [$status]', addToLLMContext: true);
+      }
+    }
+
+    LoggerUtil.instance.i('='.padRight(60, '='));
+    LoggerUtil.instance.i('');
 
     _stateController.add(state);
     _eventController.add(state.eventHistory.last);

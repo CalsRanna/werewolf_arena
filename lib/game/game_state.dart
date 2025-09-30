@@ -2,6 +2,7 @@ import 'dart:io';
 import '../player/player.dart';
 import '../player/role.dart';
 import '../utils/config_loader.dart';
+import '../utils/logger_util.dart';
 import 'game_event.dart';
 
 /// Game phases
@@ -335,14 +336,40 @@ class GameState {
     addEvent(event);
   }
 
+  /// Check if game should end (屠边规则)
   bool checkGameEnd() {
+    // 好人胜利：所有狼人死亡
     if (aliveWerewolves == 0) {
+      winner = 'Good';
       endGame('Good');
+      LoggerUtil.instance.i('好人阵营获胜！所有狼人已出局');
       return true;
     }
 
-    if (aliveWerewolves >= aliveVillagers) {
+    // 狼人胜利条件1：屠神（所有神职死亡）
+    final aliveGods = gods.where((p) => p.isAlive).length;
+    if (aliveGods == 0 && gods.isNotEmpty) {
+      winner = 'Werewolves';
       endGame('Werewolves');
+      LoggerUtil.instance.i('狼人阵营获胜！屠神成功（所有神职已出局）');
+      return true;
+    }
+
+    // 狼人胜利条件2：屠民（所有平民死亡）
+    final aliveVillagers = villagers.where((p) => p.isAlive).length;
+    if (aliveVillagers == 0 && villagers.isNotEmpty) {
+      winner = 'Werewolves';
+      endGame('Werewolves');
+      LoggerUtil.instance.i('狼人阵营获胜！屠民成功（所有平民已出局）');
+      return true;
+    }
+
+    // 狼人胜利条件3：人数优势（狼人数量 >= 好人数量，好人无法投票出狼）
+    final aliveGoodGuys = alivePlayers.where((p) => !p.role.isWerewolf).length;
+    if (aliveWerewolves >= aliveGoodGuys) {
+      winner = 'Werewolves';
+      endGame('Werewolves');
+      LoggerUtil.instance.i('狼人阵营获胜！人数优势（狼人 >= 好人）');
       return true;
     }
 
@@ -426,23 +453,61 @@ class GameState {
     return results;
   }
 
+  /// Get vote target - returns the player with most votes
+  /// If there's a tie, returns null (indicating need for PK)
   Player? getVoteTarget() {
     final results = getVoteResults();
     if (results.isEmpty) return null;
 
     int maxVotes = 0;
-    String? targetId;
+    List<String> tiedPlayers = [];
+
     for (final entry in results.entries) {
       if (entry.value > maxVotes) {
         maxVotes = entry.value;
-        targetId = entry.key;
+        tiedPlayers = [entry.key];
+      } else if (entry.value == maxVotes) {
+        tiedPlayers.add(entry.key);
       }
     }
 
-    if (targetId != null && maxVotes >= requiredVotes) {
-      return getPlayerById(targetId);
+    // 如果有平票且票数相同的人超过1个,返回null表示需要PK
+    if (tiedPlayers.length > 1) {
+      return null;
+    }
+
+    // 得票最多的玩家出局
+    if (tiedPlayers.isNotEmpty && maxVotes > 0) {
+      return getPlayerById(tiedPlayers.first);
     }
     return null;
+  }
+
+  /// Get tied players for PK
+  List<Player> getTiedPlayers() {
+    final results = getVoteResults();
+    if (results.isEmpty) return [];
+
+    int maxVotes = 0;
+    List<String> tiedPlayerIds = [];
+
+    for (final entry in results.entries) {
+      if (entry.value > maxVotes) {
+        maxVotes = entry.value;
+        tiedPlayerIds = [entry.key];
+      } else if (entry.value == maxVotes) {
+        tiedPlayerIds.add(entry.key);
+      }
+    }
+
+    // 只有当有2个或以上玩家平票时才返回
+    if (tiedPlayerIds.length > 1) {
+      return tiedPlayerIds
+          .map((id) => getPlayerById(id))
+          .whereType<Player>()
+          .toList();
+    }
+    return [];
   }
 
   // Metadata helper methods

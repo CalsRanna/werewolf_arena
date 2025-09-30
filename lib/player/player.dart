@@ -429,7 +429,7 @@ abstract class AIPlayer extends Player {
 
   // Abstract methods for choosing targets
   Future<Player?> chooseNightTarget(GameState state);
-  Future<Player?> chooseVoteTarget(GameState state);
+  Future<Player?> chooseVoteTarget(GameState state, {List<Player>? pkCandidates});
 
   // AI reasoning process
   Future<void> processInformation(GameState state) async {

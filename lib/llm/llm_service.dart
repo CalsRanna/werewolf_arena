@@ -174,31 +174,15 @@ class OpenAIService implements LLMService {
     required GameState state,
     required String rolePrompt,
   }) async {
-    final context = _buildContext(player, state);
-
-    final userPrompt = '''
-Current game state:
-$context
-
-Your role: ${player.role.name}
-Phase: ${state.currentPhase.name}
-
-Please choose your action and return in JSON format:
-{
-  "target_id": "target player ID (optional)",
-  "reasoning": "reasoning process",
-  "statement": "public statement"
-}
-
-Make the most appropriate choice based on your role and current situation.
-''';
+    // rolePrompt已经包含了所有需要的信息,直接使用
+    // 不需要额外的context构建
 
     final response = await generateResponse(
       systemPrompt: rolePrompt,
-      userPrompt: userPrompt,
-      context: {'game_state': context},
+      userPrompt: '', // rolePrompt已经包含完整prompt
+      context: {'phase': state.currentPhase.name},
       temperature: 0.7,
-      maxTokens: 500,
+      maxTokens: 1000, // 增加token限制以支持更详细的推理
     );
 
     if (response.isValid) {
@@ -260,18 +244,28 @@ Please make appropriate statements based on your role and personality. Maintain 
       'Content-Type': 'application/json',
     };
 
+    // 如果userPrompt为空,将systemPrompt作为用户消息
+    final messages = userPrompt.isEmpty
+        ? [
+            {
+              'role': 'user',
+              'content': systemPrompt,
+            },
+          ]
+        : [
+            {
+              'role': 'system',
+              'content': systemPrompt,
+            },
+            {
+              'role': 'user',
+              'content': userPrompt,
+            },
+          ];
+
     final body = jsonEncode({
       'model': model,
-      'messages': [
-        {
-          'role': 'system',
-          'content': systemPrompt,
-        },
-        {
-          'role': 'user',
-          'content': userPrompt,
-        },
-      ],
+      'messages': messages,
       'temperature': temperature,
       'max_tokens': maxTokens,
     });
@@ -305,26 +299,51 @@ Please make appropriate statements based on your role and personality. Maintain 
     try {
       final jsonData = jsonDecode(response.content);
 
-      final targetId = jsonData['target_id'];
-      final statement = jsonData['statement'] ?? '';
+      // 支持多种target字段名: target_id, target, 目标
+      final targetId = jsonData['target_id'] ?? jsonData['target'] ?? jsonData['目标'];
+      final statement = jsonData['statement'] ?? jsonData['陈述'] ?? '';
+      final reasoning = jsonData['reasoning'] ?? jsonData['推理'] ?? '';
 
       final targets = <Player>[];
-      if (targetId != null && targetId.isNotEmpty) {
-        final target = state.getPlayerById(targetId);
+      if (targetId != null && targetId.toString().isNotEmpty) {
+        // 首先尝试直接通过ID查找
+        Player? target = state.getPlayerById(targetId.toString());
+
+        // 如果找不到,尝试通过玩家名字查找(支持"3号玩家"这样的格式)
+        if (target == null) {
+          final targetStr = targetId.toString();
+          for (final p in state.players) {
+            if (p.name == targetStr || p.playerId == targetStr) {
+              target = p;
+              break;
+            }
+          }
+        }
+
         if (target != null) {
           targets.add(target);
+        } else {
+          LoggerUtil.instance.w('Target not found: $targetId');
         }
+      }
+
+      // 存储reasoning到parsedData
+      final parsedData = Map<String, dynamic>.from(jsonData);
+      if (!parsedData.containsKey('reasoning') && reasoning.isNotEmpty) {
+        parsedData['reasoning'] = reasoning;
       }
 
       return LLMResponse.success(
         content: response.content,
-        parsedData: jsonData,
+        parsedData: parsedData,
         targets: targets,
         statement: statement,
         tokensUsed: response.tokensUsed,
         responseTimeMs: response.responseTimeMs,
       );
     } catch (e) {
+      LoggerUtil.instance.e('Failed to parse action response: $e');
+      LoggerUtil.instance.e('Response content: ${response.content}');
       return LLMResponse.error(
         content: response.content,
         errors: ['Parse error: $e'],

@@ -150,8 +150,7 @@ class WerewolfArenaGame {
 
   /// 执行投票阶段
   Future<void> _executeVotingPhase(GameState state) async {
-    LoggerUtil.instance.i('🗳️ Voting Phase');
-    LoggerUtil.instance.i('Voting phase started');
+    LoggerUtil.instance.i('[Judge]: Voting phase started');
     await engine.collectVotes();
     await engine.resolveVoting();
 
@@ -163,34 +162,44 @@ class WerewolfArenaGame {
   /// 创建玩家列表
   List<Player> _createPlayers() {
     final players = <Player>[];
-    final playerNames = _generatePlayerNames(config.playerCount);
     final random = RandomHelper();
 
-    // Create players based on role distribution
+    // 1. 创建角色列表
+    final roles = <Role>[];
     for (final roleEntry in config.roleDistribution.entries) {
       final roleId = roleEntry.key;
       final count = roleEntry.value;
 
       for (int i = 0; i < count; i++) {
-        if (players.length >= config.playerCount) break;
-
+        if (roles.length >= config.playerCount) break;
         final role = RoleFactory.createRole(roleId);
-        final name = playerNames[players.length];
-        final player = _createEnhancedAIPlayer(name, role);
-        players.add(player);
+        roles.add(role);
       }
     }
 
-    // Fill remaining slots with villagers if needed
-    while (players.length < config.playerCount) {
-      final name = playerNames[players.length];
-      final role = VillagerRole();
+    // 填充剩余位置为村民
+    while (roles.length < config.playerCount) {
+      roles.add(VillagerRole());
+    }
+
+    // 2. 打乱角色顺序（这样身份分配就是随机的）
+    final shuffledRoles = random.shuffle(roles);
+
+    // 3. 创建固定编号的玩家，分配打乱后的角色
+    for (int i = 0; i < config.playerCount; i++) {
+      final name = '${i + 1}号玩家'; // 玩家编号固定（1号、2号、3号...）
+      final role = shuffledRoles[i];  // 角色是随机打乱的
       final player = _createEnhancedAIPlayer(name, role);
       players.add(player);
     }
 
-    // Shuffle players for random order
-    return random.shuffle(players);
+    // 4. 输出身份分配（供调试）
+    LoggerUtil.instance.d('身份分配如下：');
+    for (final player in players) {
+      LoggerUtil.instance.d('  ${player.name}: ${player.role.name}');
+    }
+
+    return players;
   }
 
   /// 创建增强AI玩家
@@ -205,15 +214,6 @@ class WerewolfArenaGame {
       llmService: llmService,
       promptManager: promptManager,
     );
-  }
-
-  /// 生成玩家名称（改为序号制）
-  List<String> _generatePlayerNames(int count) {
-    final names = <String>[];
-    for (int i = 0; i < count; i++) {
-      names.add('${i + 1}号玩家');
-    }
-    return names;
   }
 
   /// 创建初始游戏状态

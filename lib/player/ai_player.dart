@@ -198,7 +198,6 @@ class EnhancedAIPlayer extends AIPlayer {
   @override
   final RandomHelper random;
 
-  final List<String> _conversationHistory = [];
   DateTime? _lastActionTime;
 
   EnhancedAIPlayer({
@@ -261,10 +260,94 @@ class EnhancedAIPlayer extends AIPlayer {
     }
   }
 
-  /// Choose vote target
+  /// Choose vote target - 专门的投票逻辑
   @override
-  Future<Player?> chooseVoteTarget(GameState state) async {
-    return await chooseNightTarget(state); // Use same logic for now
+  Future<Player?> chooseVoteTarget(GameState state, {List<Player>? pkCandidates}) async {
+    if (!isAlive) return null;
+
+    _lastActionTime = DateTime.now();
+
+    try {
+      // Update knowledge before making decision
+      await updateKnowledge(state);
+
+      // Get voting-specific prompt
+      final votingPrompt = promptManager.getVotingPrompt(
+        player: this,
+        state: state,
+        personality: personality,
+        knowledge: knowledgeBase.getRelevantKnowledge(state),
+        pkCandidates: pkCandidates,
+      );
+
+      // Get LLM decision for voting
+      final response = await llmService.generateAction(
+        player: this,
+        state: state,
+        rolePrompt: votingPrompt,
+      );
+
+      if (response.isValid && response.targets.isNotEmpty) {
+        final target = response.targets.first;
+
+        // 验证投票目标的合法性
+        if (pkCandidates != null && pkCandidates.isNotEmpty) {
+          // PK投票阶段 - 必须投PK候选人
+          if (!pkCandidates.contains(target)) {
+            LoggerUtil.instance.w('$playerId tried to vote for ${target.playerId} who is not in PK candidates, choosing fallback');
+            return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
+          }
+        }
+
+        // 狼人不能投队友
+        if (role.isWerewolf) {
+          final isTeammate = state.players.any((p) =>
+            p.playerId == target.playerId &&
+            p.role.isWerewolf &&
+            p.playerId != playerId
+          );
+          if (isTeammate) {
+            LoggerUtil.instance.w('$playerId (werewolf) tried to vote for teammate ${target.playerId}, choosing fallback');
+            return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
+          }
+        }
+
+        // Store reasoning
+        addKnowledge('last_vote_reasoning', response.parsedData['reasoning']);
+
+        LoggerUtil.instance.d('Player vote: $playerId voted for ${target.playerId}');
+        return target;
+      }
+
+      // If LLM fails, fallback to random target
+      return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
+    } catch (e) {
+      LoggerUtil.instance.e('AI vote selection error for $playerId: $e');
+      return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
+    }
+  }
+
+  /// Fallback vote target selection
+  Player? _chooseFallbackVoteTarget(GameState state, {List<Player>? pkCandidates}) {
+    List<Player> availableTargets;
+
+    if (pkCandidates != null && pkCandidates.isNotEmpty) {
+      // PK投票 - 只能从PK候选人中选择
+      availableTargets = pkCandidates.where((p) => p.playerId != playerId).toList();
+    } else {
+      // 普通投票 - 从所有存活玩家中选择
+      availableTargets = state.alivePlayers
+          .where((p) => p.playerId != playerId)
+          .toList();
+    }
+
+    // 如果是狼人，排除队友
+    if (role.isWerewolf) {
+      availableTargets = availableTargets.where((p) => !p.role.isWerewolf).toList();
+    }
+
+    if (availableTargets.isEmpty) return null;
+    return random.randomChoice(availableTargets);
   }
 
   /// Fallback target selection
@@ -289,7 +372,6 @@ class EnhancedAIPlayer extends AIPlayer {
         state: state,
         context: context,
         personality: personality,
-        conversationHistory: _conversationHistory,
       );
 
       final response = await llmService.generateStatement(
@@ -300,10 +382,6 @@ class EnhancedAIPlayer extends AIPlayer {
       );
 
       if (response.isValid && response.statement.isNotEmpty) {
-        _conversationHistory.add(response.statement);
-        if (_conversationHistory.length > 20) {
-          _conversationHistory.removeAt(0);
-        }
         return response.statement;
       }
 
@@ -473,7 +551,6 @@ class EnhancedAIPlayer extends AIPlayer {
     final data = super.toJson();
     data['personality'] = personality.toJson();
     data['knowledgeBase'] = knowledgeBase._knowledge;
-    data['conversationHistory'] = _conversationHistory;
     data['lastActionTime'] = _lastActionTime?.toIso8601String();
     return data;
   }
