@@ -6,6 +6,7 @@ import '../game/game_action.dart';
 import '../llm/llm_service.dart';
 import '../llm/prompt_manager.dart';
 import '../utils/random_helper.dart';
+import '../utils/logger_util.dart';
 
 /// AI personality traits
 class Personality {
@@ -207,7 +208,6 @@ class EnhancedAIPlayer extends AIPlayer {
     required super.role,
     required this.llmService,
     required this.promptManager,
-    required super.logger,
     Personality? personality,
     KnowledgeBase? knowledgeBase,
     RandomHelper? random,
@@ -249,15 +249,14 @@ class EnhancedAIPlayer extends AIPlayer {
           addKnowledge('last_statement', response.statement);
         }
 
-        logger.playerAction(playerId, action.type.name,
-            target: action.target?.playerId);
+        LoggerUtil.instance.d('Player action: $playerId used ${action.type.name}${action.target != null ? ' on ${action.target!.playerId}' : ''}');
         return action;
       }
 
       // If LLM fails, fallback to random action
       return await _chooseFallbackAction(state);
     } catch (e) {
-      logger.error('AI action selection error for $playerId: $e');
+      LoggerUtil.instance.e('AI action selection error for $playerId: $e');
       return await _chooseFallbackAction(state);
     }
   }
@@ -293,10 +292,10 @@ class EnhancedAIPlayer extends AIPlayer {
       }
 
       // LLM failed, return empty string
-      logger.error('LLM statement generation failed for $playerId: invalid response');
+      LoggerUtil.instance.e('LLM statement generation failed for $playerId: invalid response');
       return '';
     } catch (e) {
-      logger.error('AI statement generation error for $playerId: $e');
+      LoggerUtil.instance.e('AI statement generation error for $playerId: $e');
       return '';
     }
   }

@@ -1,7 +1,7 @@
+import 'dart:io';
 import '../player/player.dart';
 import '../player/judge.dart';
 import '../utils/config_loader.dart';
-import '../utils/game_logger.dart';
 
 /// Game phases
 enum GamePhase {
@@ -105,8 +105,7 @@ class GameState {
         metadata = metadata ?? {},
         startTime = DateTime.now() {
     // Initialize judge, create new one if not provided
-    this.judge = judge ??
-        Judge(gameId: gameId, logger: GameLogger(config.loggingConfig));
+    this.judge = judge ?? Judge(gameId: gameId);
   }
 
   // Getters
@@ -174,7 +173,7 @@ class GameState {
     }
   }
 
-  void changePhase(GamePhase newPhase) {
+  Future<void> changePhase(GamePhase newPhase) async {
     final oldPhase = currentPhase;
     currentPhase = newPhase;
 
@@ -188,6 +187,45 @@ class GameState {
         'dayNumber': dayNumber,
       },
     ));
+
+    // 等待用户按回车键继续到下一阶段
+    await _waitForEnter(_getPhaseChangeMessage(oldPhase, newPhase));
+  }
+
+  /// 获取阶段转换提示消息
+  String _getPhaseChangeMessage(GamePhase oldPhase, GamePhase newPhase) {
+    switch (newPhase) {
+      case GamePhase.night:
+        return '进入夜晚阶段，按回车键继续...';
+      case GamePhase.day:
+        return '夜晚结束，进入白天讨论阶段，按回车键继续...';
+      case GamePhase.voting:
+        return '讨论结束，进入投票阶段，按回车键继续...';
+      case GamePhase.ended:
+        return '游戏结束，按回车键查看结果...';
+    }
+  }
+
+  /// 等待用户按回车键继续
+  Future<void> _waitForEnter(String message) async {
+    while (true) {
+      stdout.write(message);
+
+      try {
+        final input = stdin.readLineSync() ?? '';
+        if (input.trim().isEmpty) {
+          // 用户按了回车键（空输入）
+          break;
+        } else {
+          // 用户输入了其他内容，提醒重新输入
+          stdout.writeln('请按回车键继续，不要输入其他内容。');
+        }
+      } catch (e) {
+        // 输入流错误，直接退出等待
+        stdout.writeln('Input error: $e');
+        break;
+      }
+    }
   }
 
   void startGame() {

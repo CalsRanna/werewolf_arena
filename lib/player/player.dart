@@ -2,7 +2,6 @@ import 'role.dart';
 import '../game/game_state.dart';
 import '../game/game_action.dart';
 import '../utils/random_helper.dart';
-import '../utils/game_logger.dart';
 import '../utils/config_loader.dart';
 
 /// Player types
@@ -325,14 +324,12 @@ class HumanPlayer extends Player {
 
 /// Base AI player class
 abstract class AIPlayer extends Player {
-  final GameLogger logger;
   final RandomHelper random;
 
   AIPlayer({
     required super.playerId,
     required super.name,
     required super.role,
-    required this.logger,
     RandomHelper? random,
   })  : random = random ?? RandomHelper(),
         super(
@@ -404,7 +401,6 @@ abstract class AIPlayer extends Player {
     required bool isAlive,
     required Map<String, dynamic> privateData,
     required List<GameEvent> actionHistory,
-    required GameLogger logger,
   }) {
     // Since AIPlayer is abstract, this will be overridden by concrete implementations
     throw UnimplementedError(
@@ -418,7 +414,6 @@ class PlayerFactory {
     required String name,
     required Role role,
     PlayerType type = PlayerType.ai,
-    GameLogger? logger,
   }) {
     final playerId =
         'player_${DateTime.now().millisecondsSinceEpoch}_${RandomHelper().nextString(8)}';
@@ -436,8 +431,7 @@ class PlayerFactory {
     }
   }
 
-  static List<Player> createPlayersFromConfig(GameConfig config,
-      {GameLogger? logger}) {
+  static List<Player> createPlayersFromConfig(GameConfig config) {
     throw UnimplementedError(
         '请使用 GameEngine 中的 createEnhancedPlayers 方法来创建包含AI服务的玩家');
   }

@@ -1,11 +1,10 @@
-import '../utils/game_logger.dart';
+import '../utils/logger_util.dart';
 
 /// Judge role - responsible for game notifications and speech history recording
 class Judge {
-  Judge({required this.gameId, required this.logger});
+  Judge({required this.gameId});
 
   final String gameId;
-  final GameLogger logger;
 
   /// Speech history record
   final List<SpeechRecord> speechHistory = [];
@@ -30,7 +29,7 @@ class Judge {
     );
 
     speechHistory.add(record);
-    logger.info(
+    LoggerUtil.instance.i(
         '[Judge Record] $playerName($roleName) spoke on day $dayNumber in $phase phase');
   }
 
@@ -45,7 +44,7 @@ Please follow the rules and start the game
 ''';
 
     print(message);
-    logger.info('[Judge Announce] Game started with $playerCount participants');
+    LoggerUtil.instance.i('[Judge Announce] Game started with $playerCount participants');
   }
 
   /// Announce night start
@@ -57,7 +56,7 @@ Night falls, please close your eyes. God roles begin to act
 ''';
 
     print(message);
-    logger.info('[Judge Announce] Night $dayNumber begins');
+    LoggerUtil.instance.i('[Judge Announce] Night $dayNumber begins');
   }
 
   /// Announce day start and night results
@@ -78,7 +77,7 @@ Daybreak! The following events occurred last night:
     message += 'Please begin discussion\n=========================';
 
     print(message);
-    logger.info(
+    LoggerUtil.instance.i(
         '[Judge Announce] Day $dayNumber begins, deaths: ${deaths.join(", ")}');
   }
 
@@ -91,7 +90,7 @@ Please vote for the person to be executed
 ''';
 
     print(message);
-    logger.info('[Judge Announce] Voting phase begins');
+    LoggerUtil.instance.i('[Judge Announce] Voting phase begins');
   }
 
   /// Announce voting results
@@ -114,7 +113,7 @@ Please vote for the person to be executed
     message += '=======================';
 
     print(message);
-    logger.info(
+    LoggerUtil.instance.i(
         '[Judge Announce] Voting result: ${executedPlayer ?? "no execution"}');
   }
 
@@ -134,7 +133,7 @@ Role reveals:
     message += '=======================';
 
     print(message);
-    logger.info('[Judge Announce] Game ended, winning faction: $winner');
+    LoggerUtil.instance.i('[Judge Announce] Game ended, winning faction: $winner');
   }
 
   /// Get speech history (for LLM context)
@@ -175,6 +174,111 @@ Role reveals:
     }).join('\n');
   }
 
+  /// Announce werewolf phase
+  void announceWerewolfPhase() {
+    final message = '''
+🐺 ===== WEREWOLF PHASE =====
+Werewolves, please open your eyes
+Discuss and choose your kill target
+============================
+''';
+
+    print(message);
+    LoggerUtil.instance.i('[Judge Announce] Werewolf phase begins');
+  }
+
+  /// Announce werewolf decision
+  void announceWerewolfDecision(String? victimName) {
+    if (victimName != null) {
+      print('🐺 Werewolves have chosen their target: $victimName');
+      LoggerUtil.instance.i('[Judge Announce] Werewolves chose: $victimName');
+    } else {
+      print('🐺 Werewolves chose no target tonight');
+      LoggerUtil.instance.i('[Judge Announce] Werewolves chose no target');
+    }
+  }
+
+  /// Announce guard phase
+  void announceGuardPhase() {
+    final message = '''
+🛡️ ===== GUARD PHASE =====
+Guard, please open your eyes
+Choose someone to protect tonight
+=========================
+''';
+
+    print(message);
+    LoggerUtil.instance.i('[Judge Announce] Guard phase begins');
+  }
+
+  /// Announce guard decision
+  void announceGuardDecision(String? protectedName) {
+    if (protectedName != null) {
+      print('🛡️ Guard chose to protect: $protectedName');
+      LoggerUtil.instance.i('[Judge Announce] Guard protected: $protectedName');
+    } else {
+      print('🛡️ Guard chose not to protect anyone');
+      LoggerUtil.instance.i('[Judge Announce] Guard chose no protection');
+    }
+  }
+
+  /// Announce seer phase
+  void announceSeerPhase() {
+    final message = '''
+🔮 ===== SEER PHASE =====
+Seer, please open your eyes
+Choose someone to investigate
+=========================
+''';
+
+    print(message);
+    LoggerUtil.instance.i('[Judge Announce] Seer phase begins');
+  }
+
+  /// Announce seer result
+  void announceSeerResult(String targetName, bool isWerewolf) {
+    final identity = isWerewolf ? 'a werewolf' : 'a good person';
+    print('🔮 $targetName is $identity');
+    LoggerUtil.instance.i('[Judge Announce] Seer investigated: $targetName is $identity');
+  }
+
+  /// Announce witch phase
+  void announceWitchPhase(String? victimName) {
+    String message = '''
+💊 ===== WITCH PHASE =====
+Witch, please open your eyes
+''';
+
+    if (victimName != null) {
+      message += 'Tonight $victimName was killed\n';
+      message += 'Do you want to use the heal potion?\n';
+    } else {
+      message += 'No one was killed tonight\n';
+    }
+
+    message += 'Do you want to use the poison potion?\n';
+    message += '=========================';
+
+    print(message);
+    LoggerUtil.instance.i('[Judge Announce] Witch phase begins, victim: ${victimName ?? "none"}');
+  }
+
+  /// Announce witch decision
+  void announceWitchDecision({bool healed = false, String? poisonedName}) {
+    if (healed) {
+      print('💊 Witch used heal potion');
+      LoggerUtil.instance.i('[Judge Announce] Witch used heal potion');
+    }
+    if (poisonedName != null) {
+      print('💊 Witch used poison on: $poisonedName');
+      LoggerUtil.instance.i('[Judge Announce] Witch poisoned: $poisonedName');
+    }
+    if (!healed && poisonedName == null) {
+      print('💊 Witch chose not to use any potions');
+      LoggerUtil.instance.i('[Judge Announce] Witch used no potions');
+    }
+  }
+
   /// Get current game statistics
   Map<String, dynamic> getGameStats() {
     final totalSpeeches = speechHistory.length;
@@ -198,7 +302,7 @@ Role reveals:
   /// Clear history records
   void clearHistory() {
     speechHistory.clear();
-    logger.info('[Judge] Clear speech history records');
+    LoggerUtil.instance.i('[Judge] Clear speech history records');
   }
 }
 

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../game/game_state.dart';
 import '../game/game_action.dart';
 import '../player/player.dart';
-import '../utils/game_logger.dart';
+import '../utils/logger_util.dart';
 
 /// LLM response
 class LLMResponse {
@@ -101,7 +101,6 @@ abstract class LLMService {
 class OpenAIService implements LLMService {
   OpenAIService({
     required this.apiKey,
-    required this.logger,
     this.model = 'gpt-3.5-turbo',
     http.Client? client,
     ResponseCache? cache,
@@ -109,7 +108,6 @@ class OpenAIService implements LLMService {
         cache = cache ?? ResponseCache();
   final String apiKey;
   final String model;
-  final GameLogger logger;
   final http.Client client;
   final ResponseCache cache;
 
@@ -162,7 +160,7 @@ class OpenAIService implements LLMService {
 
       return response;
     } catch (e) {
-      logger.llmError(e.toString());
+      LoggerUtil.instance.w(e.toString());
       return LLMResponse.error(
         content: 'Error: $e',
         errors: [e.toString()],
@@ -288,7 +286,7 @@ Please make appropriate statements based on your role and personality. Maintain 
       final content = data['choices'][0]['message']['content'];
       final tokensUsed = data['usage']['total_tokens'] ?? 0;
 
-      logger.llmCall(model, tokensUsed, 0);
+      LoggerUtil.instance.d('LLM call: model=$model, tokens=$tokensUsed, duration=0ms');
 
       return {
         'content': content,

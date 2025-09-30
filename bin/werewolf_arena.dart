@@ -4,21 +4,18 @@ import 'dart:async';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/game/game_engine.dart';
 import 'package:werewolf_arena/game/game_state.dart';
-import 'package:werewolf_arena/ui/console_ui.dart';
 import 'package:werewolf_arena/llm/llm_service.dart';
 import 'package:werewolf_arena/llm/prompt_manager.dart';
 import 'package:werewolf_arena/player/ai_player.dart';
 import 'package:werewolf_arena/player/player.dart';
 import 'package:werewolf_arena/player/role.dart';
 import 'package:werewolf_arena/utils/config_loader.dart';
-import 'package:werewolf_arena/utils/game_logger.dart';
+import 'package:werewolf_arena/utils/logger_util.dart';
 import 'package:werewolf_arena/utils/random_helper.dart';
 
 /// Werewolf game main program
 class WerewolfArenaGame {
   late final GameConfig config;
-  late final GameLogger logger;
-  late final ConsoleUI ui;
   late final GameEngine gameEngine;
   late final LLMService llmService;
   late final PromptManager promptManager;
@@ -35,15 +32,13 @@ class WerewolfArenaGame {
     // Load configuration
     config = await _loadConfig(parsedArgs['config']);
 
-    // Initialize logging
-    logger = GameLogger(config.loggingConfig);
-
-    // Initialize UI
-    ui = ConsoleUI(
-      config: config,
-      logger: logger,
-      consoleWidth: config.uiConfig.consoleWidth,
+    // Initialize unified logger
+    LoggerUtil.instance.initialize(
+      enableConsole: true,
+      enableFile: config.loggingConfig.enableFile,
       useColors: config.uiConfig.enableColors,
+      logLevel: config.loggingConfig.level,
+      logFilePath: config.loggingConfig.logFilePath,
     );
 
     // Initialize LLM service
@@ -55,16 +50,15 @@ class WerewolfArenaGame {
     // Initialize game engine
     gameEngine = GameEngine(
       config: config,
-      logger: logger,
     );
 
-    logger.info('Werewolf Arena initialized successfully');
+    LoggerUtil.instance.i('Werewolf Arena initialized successfully');
   }
 
   /// Run application
   Future<void> run() async {
     if (_isRunning) {
-      logger.warning('Application is already running');
+      LoggerUtil.instance.w('Application is already running');
       return;
     }
 
@@ -73,8 +67,7 @@ class WerewolfArenaGame {
     try {
       await _runGameLoop();
     } catch (e) {
-      logger.error('应用程序错误：$e');
-      ui.showError('应用程序错误: $e');
+      LoggerUtil.instance.e('应用程序错误: $e');
     } finally {
       _cleanup();
     }
@@ -82,7 +75,24 @@ class WerewolfArenaGame {
 
   /// 游戏主循环
   Future<void> _runGameLoop() async {
-    await ui.showGameStart(await _createInitialState());
+    LoggerUtil.instance.i('🐺 Werewolf Game 🌙');
+    await _createInitialState();
+
+    // 等待用户按回车键开始游戏
+    while (true) {
+      stdout.write('游戏初始化完成，按回车键开始游戏...');
+      try {
+        final input = stdin.readLineSync() ?? '';
+        if (input.trim().isEmpty) {
+          break;
+        } else {
+          stdout.writeln('请按回车键继续，不要输入其他内容。');
+        }
+      } catch (e) {
+        stdout.writeln('Input error: $e');
+        break;
+      }
+    }
 
     // 开始游戏
     await gameEngine.startGame();
@@ -103,14 +113,16 @@ class WerewolfArenaGame {
           await _executeVotingPhase(currentState);
           break;
         case GamePhase.ended:
-          await ui.showGameEnd(currentState);
+          LoggerUtil.instance.i('🎊 Game Over');
+          LoggerUtil.instance.i('Game ended successfully');
           _isRunning = false;
           continue;
       }
 
       // 检查游戏是否结束
       if (gameEngine.isGameEnded) {
-        await ui.showGameEnd(gameEngine.currentState!);
+        LoggerUtil.instance.i('🎊 Game Over');
+        LoggerUtil.instance.i('Game ended successfully');
         _isRunning = false;
       }
     }
@@ -118,29 +130,40 @@ class WerewolfArenaGame {
 
   /// 执行夜晚阶段 - UI与游戏引擎同步
   Future<void> _executeNightPhase(GameState state) async {
-    await ui.showDayPhase(state);
-    await gameEngine.resolveNightActions();
-    gameEngine.currentState!.changePhase(GamePhase.day);
+    LoggerUtil.instance.i('🌙 Night Phase');
+    LoggerUtil.instance.i('Night phase started');
 
-    await ui.waitForUserInput('\n按回车键继续...');
+    // Execute complete night phase with all role actions
+    await gameEngine.processWerewolfActions();
+    await gameEngine.processGuardActions();
+    await gameEngine.processSeerActions();
+    await gameEngine.processWitchActions();
+
+    // Resolve all night actions
+    await gameEngine.resolveNightActions();
+
+    // Move to day phase
+    await gameEngine.currentState!.changePhase(GamePhase.day);
   }
 
   /// 执行白天阶段
   Future<void> _executeDayPhase(GameState state) async {
-    await ui.showDayPhase(state);
+    LoggerUtil.instance.i('☀️ Day Phase');
+    LoggerUtil.instance.i('Day phase started');
     await gameEngine.runDiscussionPhase();
-    gameEngine.currentState!.changePhase(GamePhase.voting);
+    await gameEngine.currentState!.changePhase(GamePhase.voting);
   }
 
   /// 执行投票阶段
   Future<void> _executeVotingPhase(GameState state) async {
-    await ui.showVotingPhase(state);
+    LoggerUtil.instance.i('🗳️ Voting Phase');
+    LoggerUtil.instance.i('Voting phase started');
     await gameEngine.collectVotes();
     await gameEngine.resolveVoting();
 
     // 增加天数，转到夜晚
     gameEngine.currentState!.dayNumber++;
-    gameEngine.currentState!.changePhase(GamePhase.night);
+    await gameEngine.currentState!.changePhase(GamePhase.night);
   }
 
   /// 创建玩家列表
@@ -187,7 +210,6 @@ class WerewolfArenaGame {
       role: role,
       llmService: llmService,
       promptManager: promptManager,
-      logger: logger,
     );
   }
 
@@ -224,8 +246,8 @@ class WerewolfArenaGame {
     try {
       return parser.parse(args);
     } on FormatException catch (e) {
-      print('参数解析错误: $e');
-      print(parser.usage);
+      LoggerUtil.instance.e('参数解析错误: $e');
+      LoggerUtil.instance.i(parser.usage);
       exit(1);
     }
   }
@@ -246,16 +268,16 @@ class WerewolfArenaGame {
         : Platform.environment['OPENAI_API_KEY'] ?? '';
 
     if (apiKey.isEmpty) {
-      logger.error('未找到OpenAI API密钥，请设置环境变量 OPENAI_API_KEY 或在配置文件中提供API密钥');
-      print('❌ 错误：未找到OpenAI API密钥');
-      print('请设置环境变量 OPENAI_API_KEY 或在配置文件中提供API密钥');
+      LoggerUtil.instance
+          .e('未找到OpenAI API密钥，请设置环境变量 OPENAI_API_KEY 或在配置文件中提供API密钥');
+      LoggerUtil.instance.e('❌ 错误：未找到OpenAI API密钥');
+      LoggerUtil.instance.i('请设置环境变量 OPENAI_API_KEY 或在配置文件中提供API密钥');
       exit(1);
     }
 
     return OpenAIService(
       apiKey: apiKey,
       model: llmConfig.model,
-      logger: logger,
     );
   }
 
@@ -268,13 +290,13 @@ class WerewolfArenaGame {
     }
 
     gameEngine.dispose();
-    logger.dispose(); // 确保关闭所有日志文件
-    logger.info('应用程序已清理');
+    LoggerUtil.instance.dispose(); // 确保关闭所有日志文件
+    LoggerUtil.instance.i('应用程序已清理');
   }
 
   /// 显示帮助信息
   void _showHelp() {
-    print('''
+    LoggerUtil.instance.i('''
 🐺 狼人杀游戏 - LLM版本
 
 用法: dart run bin/werewolf_arena.dart [选项]
