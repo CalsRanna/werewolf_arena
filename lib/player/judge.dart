@@ -1,19 +1,16 @@
 import '../utils/game_logger.dart';
 
-/// 法官角色 - 负责游戏通知和记录发言历史
+/// Judge role - responsible for game notifications and speech history recording
 class Judge {
-  Judge({
-    required this.gameId,
-    required this.logger,
-  });
+  Judge({required this.gameId, required this.logger});
 
   final String gameId;
   final GameLogger logger;
 
-  /// 发言历史记录
+  /// Speech history record
   final List<SpeechRecord> speechHistory = [];
 
-  /// 记录玩家发言
+  /// Record player speech
   void recordSpeech({
     required String playerId,
     required String playerName,
@@ -33,98 +30,101 @@ class Judge {
     );
 
     speechHistory.add(record);
-    logger.info('[法官记录] $playerName($roleName) 在第$dayNumber天$phase阶段发言');
+    logger.info(
+        '[Judge Record] $playerName($roleName) spoke on day $dayNumber in $phase phase');
   }
 
-  /// 宣布游戏开始
+  /// Announce game start
   void announceGameStart(int playerCount) {
     final message = '''
-🎯 ===== 游戏开始 =====
-参与玩家: $playerCount人
-法官已就位，开始记录游戏过程
-请各位玩家按照规则进行游戏
+🎯 ===== GAME START =====
+Participants: $playerCount players
+Judge is in position, game recording begins
+Please follow the rules and start the game
 ========================
 ''';
 
     print(message);
-    logger.info('[法官宣布] 游戏开始，$playerCount人参与');
+    logger.info('[Judge Announce] Game started with $playerCount participants');
   }
 
-  /// 宣布夜晚开始
+  /// Announce night start
   void announceNightStart(int dayNumber) {
     final message = '''
-🌙 ===== 第$dayNumber夜 =====
-天黑请闭眼，神职玩家开始行动
+🌙 ===== NIGHT $dayNumber =====
+Night falls, please close your eyes. God roles begin to act
 =========================
 ''';
 
     print(message);
-    logger.info('[法官宣布] 第$dayNumber夜开始');
+    logger.info('[Judge Announce] Night $dayNumber begins');
   }
 
-  /// 宣布白天开始和夜晚结果
+  /// Announce day start and night results
   void announceDayStart(int dayNumber, List<String> deaths) {
     String message = '''
-☀️ ===== 第$dayNumber天 =====
-天亮了，昨晚发生了以下事件：
+☀️ ===== DAY $dayNumber =====
+Daybreak! The following events occurred last night:
 ''';
 
     if (deaths.isEmpty) {
-      message += '🎉 平安夜，无人死亡\n';
+      message += '🎉 Peaceful night, no deaths\n';
     } else {
       for (final death in deaths) {
         message += '💀 $death\n';
       }
     }
 
-    message += '请各位玩家开始讨论\n=========================';
+    message += 'Please begin discussion\n=========================';
 
     print(message);
-    logger.info('[法官宣布] 第$dayNumber天开始，死亡: ${deaths.join(", ")}');
+    logger.info(
+        '[Judge Announce] Day $dayNumber begins, deaths: ${deaths.join(", ")}');
   }
 
-  /// 宣布投票阶段
+  /// Announce voting phase
   void announceVotingPhase() {
     final message = '''
-🗳️ ===== 投票阶段 =====
-请各位玩家投票选出要处决的人
+🗳️ ===== VOTING PHASE =====
+Please vote for the person to be executed
 =======================
 ''';
 
     print(message);
-    logger.info('[法官宣布] 投票阶段开始');
+    logger.info('[Judge Announce] Voting phase begins');
   }
 
-  /// 宣布投票结果
+  /// Announce voting results
   void announceVotingResult(
       String? executedPlayer, Map<String, int> voteResults) {
     String message = '''
-📊 ===== 投票结果 =====
+📊 ===== VOTING RESULTS =====
 ''';
 
     voteResults.forEach((playerId, votes) {
-      message += '$playerId: $votes票\n';
+      message += '$playerId: $votes votes\n';
     });
 
     if (executedPlayer != null) {
-      message += '\n⚰️ $executedPlayer 被投票处决\n';
+      message += '\n⚰️ $executedPlayer was executed by vote\n';
     } else {
-      message += '\n🤝 投票未达成一致，无人被处决\n';
+      message += '\n🤝 Vote inconclusive, no execution\n';
     }
 
     message += '=======================';
 
     print(message);
-    logger.info('[法官宣布] 投票结果：${executedPlayer ?? "无人被处决"}');
+    logger.info(
+        '[Judge Announce] Voting result: ${executedPlayer ?? "no execution"}');
   }
 
-  /// 宣布游戏结束
+  /// Announce game end
   void announceGameEnd(String winner, Map<String, String> playerRoles) {
     String message = '''
-🎊 ===== 游戏结束 =====
-🏆 获胜阵营: $winner
+🎊 ===== GAME END =====
+🏆 Winning faction: $winner
 
-身份揭晓：
+Role reveals:
 ''';
 
     playerRoles.forEach((playerId, role) {
@@ -134,10 +134,10 @@ class Judge {
     message += '=======================';
 
     print(message);
-    logger.info('[法官宣布] 游戏结束，获胜阵营: $winner');
+    logger.info('[Judge Announce] Game ended, winning faction: $winner');
   }
 
-  /// 获取发言历史（用于LLM上下文）
+  /// Get speech history (for LLM context)
   List<SpeechRecord> getSpeechHistory({
     int? fromDay,
     String? phase,
@@ -156,7 +156,7 @@ class Judge {
     return filteredHistory;
   }
 
-  /// 获取发言历史文本格式（用于LLM）
+  /// Get speech history text format (for LLM)
   String getSpeechHistoryText({
     int? fromDay,
     String? phase,
@@ -168,14 +168,14 @@ class Judge {
       limit: limit,
     );
 
-    if (history.isEmpty) return '暂无发言记录';
+    if (history.isEmpty) return 'No speech records yet';
 
     return history.map((record) {
-      return '[第${record.dayNumber}天-${record.phase}] ${record.playerName}: ${record.message}';
+      return '[Day${record.dayNumber}-${record.phase}] ${record.playerName}: ${record.message}';
     }).join('\n');
   }
 
-  /// 获取当前游戏统计
+  /// Get current game statistics
   Map<String, dynamic> getGameStats() {
     final totalSpeeches = speechHistory.length;
     final speechesByPhase = <String, int>{};
@@ -195,14 +195,14 @@ class Judge {
     };
   }
 
-  /// 清空历史记录
+  /// Clear history records
   void clearHistory() {
     speechHistory.clear();
-    logger.info('[法官] 清空发言历史记录');
+    logger.info('[Judge] Clear speech history records');
   }
 }
 
-/// 发言记录数据类
+/// Speech record data class
 class SpeechRecord {
   SpeechRecord({
     required this.playerId,
@@ -224,10 +224,10 @@ class SpeechRecord {
 
   @override
   String toString() {
-    return '[$dayNumber天-$phase] $playerName($roleName): $message';
+    return '[Day$dayNumber-$phase] $playerName($roleName): $message';
   }
 
-  /// 转换为JSON格式
+  /// Convert to JSON format
   Map<String, dynamic> toJson() {
     return {
       'playerId': playerId,
@@ -240,7 +240,7 @@ class SpeechRecord {
     };
   }
 
-  /// 从JSON创建
+  /// Create from JSON
   factory SpeechRecord.fromJson(Map<String, dynamic> json) {
     return SpeechRecord(
       playerId: json['playerId'],

@@ -4,7 +4,8 @@
       "Bash(dart pub get:*)",
       "Bash(dart analyze:*)",
       "Bash(dart run:*)",
-      "Bash(dart:*)"
+      "Bash(dart:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

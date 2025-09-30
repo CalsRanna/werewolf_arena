@@ -14,8 +14,8 @@ import 'package:werewolf_arena/utils/config_loader.dart';
 import 'package:werewolf_arena/utils/game_logger.dart';
 import 'package:werewolf_arena/utils/random_helper.dart';
 
-/// 狼人杀游戏主程序
-class WerewolfArenaApp {
+/// Werewolf game main program
+class WerewolfArenaGame {
   late final GameConfig config;
   late final GameLogger logger;
   late final ConsoleUI ui;
@@ -25,20 +25,20 @@ class WerewolfArenaApp {
 
   bool _isRunning = false;
 
-  WerewolfArenaApp();
+  WerewolfArenaGame();
 
-  /// 初始化应用
+  /// Initialize application
   Future<void> initialize(List<String> args) async {
-    // 解析命令行参数
+    // Parse command line arguments
     final parsedArgs = _parseArguments(args);
 
-    // 加载配置
+    // Load configuration
     config = await _loadConfig(parsedArgs['config']);
 
-    // 初始化日志
+    // Initialize logging
     logger = GameLogger(config.loggingConfig);
 
-    // 初始化UI
+    // Initialize UI
     ui = ConsoleUI(
       config: config,
       logger: logger,
@@ -46,22 +46,22 @@ class WerewolfArenaApp {
       useColors: config.uiConfig.enableColors,
     );
 
-    // 初始化LLM服务
+    // Initialize LLM service
     llmService = _createLLMService(config.llmConfig);
 
-    // 初始化提示词管理器
+    // Initialize prompt manager
     promptManager = PromptManager();
 
-    // 初始化游戏引擎
+    // Initialize game engine
     gameEngine = GameEngine(
       config: config,
       logger: logger,
     );
 
-    logger.info('狼人杀竞技场初始化成功');
+    logger.info('Werewolf Arena initialized successfully');
   }
 
-  /// 运行应用
+  /// Run application
   Future<void> run() async {
     if (_isRunning) {
       logger.warning('Application is already running');
@@ -118,52 +118,8 @@ class WerewolfArenaApp {
 
   /// 执行夜晚阶段 - UI与游戏引擎同步
   Future<void> _executeNightPhase(GameState state) async {
-    // 显示夜晚开始
-    ui.clear();
-    ui.showBanner('🌙 第 ${state.dayNumber} 夜', color: ConsoleColor.blue);
-    ui.showSection('夜晚降临');
-    print('天黑请闭眼...');
-    ui.showSection('夜晚行动');
-
-    // 执行狼人行动
-    final werewolves =
-        state.alivePlayers.where((p) => p.role.isWerewolf).toList();
-    if (werewolves.isNotEmpty) {
-      print('🐺 狼人正在选择击杀目标...');
-      await gameEngine.processWerewolfActions();
-      print('✅ 狼人行动完成');
-    }
-
-    // 执行守卫行动
-    final guards =
-        state.alivePlayers.where((p) => p.role is GuardRole).toList();
-    if (guards.isNotEmpty) {
-      print('🛡️ 守卫正在选择守护目标...');
-      await gameEngine.processGuardActions();
-      print('✅ 守卫行动完成');
-    }
-
-    // 执行预言家行动
-    final seers = state.alivePlayers.where((p) => p.role is SeerRole).toList();
-    if (seers.isNotEmpty) {
-      print('🔮 预言家正在查验身份...');
-      await gameEngine.processSeerActions();
-      print('✅ 预言家行动完成');
-    }
-
-    // 执行女巫行动
-    final witches =
-        state.alivePlayers.where((p) => p.role is WitchRole).toList();
-    if (witches.isNotEmpty) {
-      print('🧪 女巫正在考虑用药...');
-      await gameEngine.processWitchActions();
-      print('✅ 女巫行动完成');
-    }
-
-    // 结算夜晚行动
+    await ui.showDayPhase(state);
     await gameEngine.resolveNightActions();
-
-    // 转到白天
     gameEngine.currentState!.changePhase(GamePhase.day);
 
     await ui.waitForUserInput('\n按回车键继续...');
@@ -359,7 +315,7 @@ class WerewolfArenaApp {
 
 /// 主函数
 void main(List<String> arguments) async {
-  final app = WerewolfArenaApp();
+  final app = WerewolfArenaGame();
 
   try {
     await app.initialize(arguments);

@@ -5,13 +5,13 @@ import '../utils/random_helper.dart';
 import '../utils/game_logger.dart';
 import '../utils/config_loader.dart';
 
-/// 玩家类型
+/// Player types
 enum PlayerType {
-  human, // 人类玩家
-  ai, // AI玩家
+  human, // Human player
+  ai, // AI player
 }
 
-/// 玩家基类
+/// Base player class
 abstract class Player {
   final String playerId;
   final String name;
@@ -178,21 +178,21 @@ abstract class Player {
 
   // Status and info
   String getStatus() {
-    return '$name (${isAlive ? '存活' : '死亡'}) - ${role.name}';
+    return '$name (${isAlive ? 'Alive' : 'Dead'}) - ${role.name}';
   }
 
   String getPublicInfo() {
-    return '$name: ${isAlive ? '存活' : '死亡'}';
+    return '$name: ${isAlive ? 'Alive' : 'Dead'}';
   }
 
   String getPrivateInfo() {
     return '''
 $name ($playerId)
-类型: ${type.name}
-状态: ${isAlive ? '存活' : '死亡'}
-角色: ${role.getRoleInfo()}
-私人数据: ${privateData.keys.length} 项
-动作历史: ${actionHistory.length} 条
+Type: ${type.name}
+Status: ${isAlive ? 'Alive' : 'Dead'}
+Role: ${role.getRoleInfo()}
+Private Data: ${privateData.keys.length} items
+Action History: ${actionHistory.length} entries
 ''';
   }
 
@@ -288,7 +288,7 @@ $name ($playerId)
   }
 }
 
-/// 人类玩家
+/// Human player
 class HumanPlayer extends Player {
   HumanPlayer({
     required super.playerId,
@@ -323,7 +323,7 @@ class HumanPlayer extends Player {
   }
 }
 
-/// AI玩家基类
+/// Base AI player class
 abstract class AIPlayer extends Player {
   final GameLogger logger;
   final RandomHelper random;
@@ -353,8 +353,8 @@ abstract class AIPlayer extends Player {
   Future<String> generateStatement(GameState state, String context) async {
     // Default AI: simple response (to be overridden)
     final statements = [
-      '我认为我们需要仔细分析当前的情况。',
-      '根据我的观察，我觉得有些事情不太对劲。',
+      'I think we need to carefully analyze the current situation.',
+      'Based on my observations, I feel something is not quite right.',
       '我们需要更多的信息来做出判断。',
       '我建议大家保持冷静，理性分析。',
     ];

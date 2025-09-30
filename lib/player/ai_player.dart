@@ -7,13 +7,13 @@ import '../llm/llm_service.dart';
 import '../llm/prompt_manager.dart';
 import '../utils/random_helper.dart';
 
-/// AI性格特征
+/// AI personality traits
 class Personality {
-  final double aggressiveness; // 激进度 0-1
-  final double logicThinking; // 逻辑性 0-1
-  final double cooperativeness; // 合作性 0-1
-  final double honesty; // 诚实度 0-1
-  final double expressiveness; // 表现力 0-1
+  final double aggressiveness; // Aggressiveness 0-1
+  final double logicThinking; // Logical thinking 0-1
+  final double cooperativeness; // Cooperativeness 0-1
+  final double honesty; // Honesty 0-1
+  final double expressiveness; // Expressiveness 0-1
 
   Personality({
     required this.aggressiveness,
@@ -96,21 +96,21 @@ class Personality {
 
   String getPersonalityDescription() {
     return '''
-性格特征：
-- 激进度: ${_getTraitDescription(aggressiveness)}
-- 逻辑性: ${_getTraitDescription(logicThinking)}
-- 合作性: ${_getTraitDescription(cooperativeness)}
-- 诚实度: ${_getTraitDescription(honesty)}
-- 表现力: ${_getTraitDescription(expressiveness)}
+Personality traits:
+- Aggressiveness: ${_getTraitDescription(aggressiveness)}
+- Logical thinking: ${_getTraitDescription(logicThinking)}
+- Cooperativeness: ${_getTraitDescription(cooperativeness)}
+- Honesty: ${_getTraitDescription(honesty)}
+- Expressiveness: ${_getTraitDescription(expressiveness)}
 ''';
   }
 
   String _getTraitDescription(double value) {
-    if (value < 0.2) return '很低';
-    if (value < 0.4) return '较低';
-    if (value < 0.6) return '中等';
-    if (value < 0.8) return '较高';
-    return '很高';
+    if (value < 0.2) return 'very low';
+    if (value < 0.4) return 'low';
+    if (value < 0.6) return 'medium';
+    if (value < 0.8) return 'high';
+    return 'very high';
   }
 
   Map<String, dynamic> toJson() {
@@ -124,7 +124,7 @@ class Personality {
   }
 }
 
-/// 知识库
+/// Knowledge base
 class KnowledgeBase {
   final Map<String, dynamic> _knowledge = {};
   final List<String> _importantEvents = [];
@@ -153,7 +153,7 @@ class KnowledgeBase {
   }
 
   void forgetOldFacts(int maxAge) {
-    // 遗忘旧知识的实现
+    // Implementation for forgetting old knowledge
     final now = DateTime.now();
     _knowledge.removeWhere((key, value) {
       if (value is Map && value['timestamp'] != null) {
@@ -167,13 +167,13 @@ class KnowledgeBase {
   Map<String, dynamic> getRelevantKnowledge(GameState state) {
     final relevant = <String, dynamic>{};
 
-    // 添加基本游戏状态知识
+    // Add basic game state knowledge
     relevant['current_day'] = state.dayNumber;
     relevant['current_phase'] = state.currentPhase.name;
     relevant['alive_count'] = state.alivePlayers.length;
     relevant['dead_count'] = state.deadPlayers.length;
 
-    // 添加角色特定知识
+    // Add role-specific knowledge
     for (final entry in _knowledge.entries) {
       if (entry.key.startsWith('role_')) {
         relevant[entry.key] = entry.value;
@@ -189,7 +189,7 @@ class KnowledgeBase {
   }
 }
 
-/// AI玩家实现
+/// AI player implementation
 class EnhancedAIPlayer extends AIPlayer {
   final LLMService llmService;
   final PromptManager promptManager;
@@ -222,10 +222,10 @@ class EnhancedAIPlayer extends AIPlayer {
     _lastActionTime = DateTime.now();
 
     try {
-      // 做决定前更新知识
+      // Update knowledge before making decision
       await updateKnowledge(state);
 
-      // 获取角色特定提示词
+      // Get role-specific prompt
       final rolePrompt = promptManager.getActionPrompt(
         player: this,
         state: state,
@@ -233,7 +233,7 @@ class EnhancedAIPlayer extends AIPlayer {
         knowledge: knowledgeBase.getRelevantKnowledge(state),
       );
 
-      // 获取LLM决策
+      // Get LLM decision
       final response = await llmService.generateAction(
         player: this,
         state: state,
@@ -243,7 +243,7 @@ class EnhancedAIPlayer extends AIPlayer {
       if (response.isValid && response.actions.isNotEmpty) {
         final action = response.actions.first;
 
-        // 存储推理和陈述
+        // Store reasoning and statement
         addKnowledge('last_action_reasoning', response.parsedData['reasoning']);
         if (response.statement.isNotEmpty) {
           addKnowledge('last_statement', response.statement);
@@ -254,7 +254,7 @@ class EnhancedAIPlayer extends AIPlayer {
         return action;
       }
 
-      // 如果LLM失败，回退到随机行动
+      // If LLM fails, fallback to random action
       return await _chooseFallbackAction(state);
     } catch (e) {
       logger.error('AI action selection error for $playerId: $e');
@@ -265,10 +265,10 @@ class EnhancedAIPlayer extends AIPlayer {
   @override
   Future<String> generateStatement(GameState state, String context) async {
     try {
-      // 更新知识
+      // Update knowledge
       await updateKnowledge(state);
 
-      // 获取对话提示词
+      // Get conversation prompt
       final prompt = promptManager.getStatementPrompt(
         player: this,
         state: state,
@@ -292,23 +292,24 @@ class EnhancedAIPlayer extends AIPlayer {
         return response.statement;
       }
 
-      // 回退陈述
-      return _generateFallbackStatement(context);
+      // LLM failed, return empty string
+      logger.error('LLM statement generation failed for $playerId: invalid response');
+      return '';
     } catch (e) {
       logger.error('AI statement generation error for $playerId: $e');
-      return _generateFallbackStatement(context);
+      return '';
     }
   }
 
   @override
   Future<void> processInformation(GameState state) async {
-    // 用当前状态更新知识库
+    // Update knowledge base with current state
     knowledgeBase.addFact('last_processed', DateTime.now().toIso8601String());
     knowledgeBase.addFact('alive_players', state.alivePlayers.length);
     knowledgeBase.addFact('current_day', state.dayNumber);
     knowledgeBase.addFact('current_phase', state.currentPhase.name);
 
-    // 处理最近的事件
+    // Process recent events
     final recentEvents = state.eventHistory.where((e) {
       return e.timestamp.isAfter(DateTime.now().subtract(Duration(minutes: 5)));
     }).toList();
@@ -316,7 +317,7 @@ class EnhancedAIPlayer extends AIPlayer {
     for (final event in recentEvents) {
       if (event.type == GameEventType.playerDeath && event.target != null) {
         knowledgeBase.addImportantEvent(
-            '${event.target!.name} 死亡: ${event.description}');
+            '${event.target!.name} died: ${event.description}');
         knowledgeBase.addFact('death_${event.target!.playerId}', {
           'time': event.timestamp.toIso8601String(),
           'cause': event.description,
@@ -331,10 +332,10 @@ class EnhancedAIPlayer extends AIPlayer {
       }
     }
 
-    // 根据行为更新怀疑度
+    // Update suspicions based on behavior
     await _updateSuspicions(state);
 
-    // 定期遗忘旧知识
+    // Periodically forget old knowledge
     if (state.dayNumber % 3 == 0) {
       knowledgeBase.forgetOldFacts(2);
     }
@@ -342,10 +343,10 @@ class EnhancedAIPlayer extends AIPlayer {
 
   @override
   Future<void> updateKnowledge(GameState state) async {
-    // 调用处理信息来更新知识
+    // Call process information to update knowledge
     await processInformation(state);
 
-    // 添加角色特定知识
+    // Add role-specific knowledge
     if (role is SeerRole) {
       final investigations = getKnowledge<List<Map>>('investigations') ?? [];
       for (final investigation in investigations) {
@@ -366,9 +367,9 @@ class EnhancedAIPlayer extends AIPlayer {
     for (final player in state.alivePlayers) {
       if (player.playerId == playerId) continue;
 
-      double suspicion = 0.5; // 基础怀疑度
+      double suspicion = 0.5; // Base suspicion level
 
-      // 根据个性调整怀疑度
+      // Adjust suspicion based on personality
       if (personality.logicThinking > 0.7) {
         suspicion = _calculateLogicalSuspicion(player, state);
       } else {
@@ -378,27 +379,27 @@ class EnhancedAIPlayer extends AIPlayer {
       suspicions[player.playerId] = suspicion;
     }
 
-    // 在知识中存储怀疑度
+    // Store suspicion levels in knowledge
     knowledgeBase.addFact('suspicions', suspicions);
   }
 
   double _calculateLogicalSuspicion(Player player, GameState state) {
     double suspicion = 0.5;
 
-    // 考虑投票模式
+    // Consider voting patterns
     final votes = knowledgeBase.getFact<Map>('player_votes_${player.playerId}');
     if (votes != null) {
-      // 分析投票模式
+      // Analyze voting patterns
     }
 
-    // 考虑发表的陈述
+    // Consider statements made
     final statements =
         knowledgeBase.getFact<List>('player_statements_${player.playerId}');
     if (statements != null) {
-      // 分析陈述内容和一致性
+      // Analyze statement content and consistency
     }
 
-    // 考虑行为一致性
+    // Consider behavioral consistency
     final consistency = knowledgeBase
             .getFact<double>('player_consistency_${player.playerId}') ??
         0.5;
@@ -408,14 +409,14 @@ class EnhancedAIPlayer extends AIPlayer {
   }
 
   double _calculateIntuitiveSuspicion(Player player, GameState state) {
-    // 基于直觉的怀疑度计算
+    // Intuition-based suspicion calculation
     final randomFactor = random.nextDoubleRange(-0.2, 0.2);
     double suspicion = 0.5 + randomFactor;
 
-    // 根据玩家角色知识调整
+    // Adjust based on player role knowledge
     if (hasKnowledge('investigation_${player.playerId}')) {
       final result = getKnowledge('investigation_${player.playerId}');
-      if (result['result'] == '狼人') {
+      if (result['result'] == 'werewolf') {
         suspicion = 0.9;
       } else {
         suspicion = 0.1;
@@ -429,7 +430,7 @@ class EnhancedAIPlayer extends AIPlayer {
     final availableActions = getAvailableActions(state);
     if (availableActions.isEmpty) return null;
 
-    // 使用个性影响回退选择
+    // Use personality to influence fallback choice
     if (personality.aggressiveness > 0.7 &&
         availableActions.any((a) => a.type == ActionType.kill)) {
       return availableActions.where((a) => a.type == ActionType.kill).first;
@@ -437,26 +438,15 @@ class EnhancedAIPlayer extends AIPlayer {
 
     if (personality.cooperativeness > 0.7 &&
         availableActions.any((a) => a.type == ActionType.speak)) {
-      return SpeakAction(actor: this, message: '我认为我们需要合作找出真相。');
+      return SpeakAction(actor: this, message: 'I think we need to cooperate to find the truth.');
     }
 
-    // 随机回退
+    // Random fallback
     return random.randomChoice(availableActions);
   }
 
-  String _generateFallbackStatement(String context) {
-    final statements = [
-      '我需要仔细思考一下当前的情况。',
-      '从目前的形势来看，我觉得事情并不简单。',
-      '让我分析一下现有的信息。',
-      '这个情况很复杂，我们需要谨慎行事。',
-      '我有一些想法，但需要更多信息来确认。',
-    ];
 
-    return random.randomChoice(statements);
-  }
-
-  // 记忆和学习
+  // Memory and learning
   void learnFromExperience(GameState state, GameAction action, bool outcome) {
     final learningData = getKnowledge<Map>('learning_data') ?? {};
     final actionKey = '${action.type}_${action.target?.playerId ?? 'none'}';
@@ -471,7 +461,7 @@ class EnhancedAIPlayer extends AIPlayer {
     addKnowledge('learning_data', learningData);
   }
 
-  // 信任管理
+  // Trust management
   void updateTrust(Player player, double delta) {
     final trust = getKnowledge<Map>('trust_scores') ?? {};
     trust[player.playerId] = (trust[player.playerId] ?? 0.5) + delta;
@@ -484,7 +474,7 @@ class EnhancedAIPlayer extends AIPlayer {
     return trust[player.playerId] ?? 0.5;
   }
 
-  // 序列化
+  // Serialization
   @override
   Map<String, dynamic> toJson() {
     final data = super.toJson();

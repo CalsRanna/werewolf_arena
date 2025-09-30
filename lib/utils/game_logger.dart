@@ -20,7 +20,7 @@ class GameLogger {
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
   final DateFormat _fileNameFormat = DateFormat('yyyy-MM-dd_HH-mm-ss');
 
-  // 游戏日志相关
+  // Game log related
   IOSink? _gameLogSink;
   String? _currentGameLogPath;
 
@@ -61,59 +61,59 @@ class GameLogger {
         final formattedRecord = _formatRecord(record);
         sink.writeln(formattedRecord);
 
-        // 不要写入游戏日志文件（避免重复）
+        // Don't write to game log file (avoid duplication)
       });
     } catch (e) {
       print('Failed to setup file logging: $e');
     }
   }
 
-  /// 开始新游戏，创建游戏日志文件
+  /// Start new game, create game log file
   void startNewGame(String gameId) {
     try {
-      // 关闭之前的游戏日志
+      // Close previous game log
       _gameLogSink?.close();
 
-      // 确保logs目录存在
+      // Ensure logs directory exists
       final logDir = Directory(_logDir);
       if (!logDir.existsSync()) {
         logDir.createSync(recursive: true);
       }
 
-      // 创建游戏日志文件名
+      // Create game log file name
       final timestamp = _fileNameFormat.format(DateTime.now());
       final fileName = 'game_${gameId}_$timestamp.log';
       _currentGameLogPath = path.join(_logDir, fileName);
 
-      // 创建游戏日志文件
+      // Create game log file
       final gameLogFile = File(_currentGameLogPath!);
       _gameLogSink = gameLogFile.openWrite();
 
-      // 写入游戏开始标记
+      // Write game start marker
       final startMessage = '''
 ==========================================
-🎮 狼人杀游戏日志
-游戏ID: $gameId
-开始时间: ${_dateFormat.format(DateTime.now())}
+🎮 Werewolf Game Log
+Game ID: $gameId
+Start Time: ${_dateFormat.format(DateTime.now())}
 ==========================================
 ''';
 
       _gameLogSink!.writeln(startMessage);
-      info('游戏日志已创建：$fileName');
+      info('Game log created: $fileName');
     } catch (e) {
-      error('创建游戏日志文件失败: $e');
+      error('Failed to create game log file: $e');
     }
   }
 
-  /// 结束当前游戏
+  /// End current game
   void endCurrentGame() {
     try {
       if (_gameLogSink != null) {
         final endMessage = '''
 ==========================================
-📊 游戏结束
-结束时间: ${_dateFormat.format(DateTime.now())}
-日志文件: $_currentGameLogPath
+📊 Game Ended
+End Time: ${_dateFormat.format(DateTime.now())}
+Log File: $_currentGameLogPath
 ==========================================
 ''';
 
@@ -121,27 +121,27 @@ class GameLogger {
         _gameLogSink!.close();
         _gameLogSink = null;
 
-        info('游戏日志已结束并保存');
+        info('Game log ended and saved');
       }
     } catch (e) {
-      error('结束游戏日志失败: $e');
+      error('Failed to end game log: $e');
     }
   }
 
-  /// 记录阶段切换到游戏日志
+  /// Record phase change to game log
   void logGamePhase(String phase, String description) {
     final phaseMessage = '''
 ------------------------------------------
-📋 阶段: $phase
-⏰ 时间: ${_dateFormat.format(DateTime.now())}
-📝 描述: $description
+📋 Phase: $phase
+⏰ Time: ${_dateFormat.format(DateTime.now())}
+📝 Description: $description
 ------------------------------------------
 ''';
 
     _gameLogSink?.writeln(phaseMessage);
   }
 
-  /// 记录玩家发言到游戏日志
+  /// Record player speech to game log
   void logPlayerSpeech(
       String playerName, String roleName, String message, String phase) {
     final speechMessage = '''
@@ -152,7 +152,7 @@ class GameLogger {
     _gameLogSink?.writeln(speechMessage);
   }
 
-  /// 记录游戏事件到游戏日志
+  /// Record game event to game log
   void logGameEvent(String event, {Map<String, dynamic>? details}) {
     final eventMessage = '''
 🎯 $event${details != null ? ' - ${details.entries.map((e) => '${e.key}: ${e.value}').join(', ')}' : ''}
@@ -208,53 +208,53 @@ class GameLogger {
   }
 
   void gameStart(String gameId, int playerCount) {
-    logGameEvent('游戏开始，玩家数量：$playerCount');
+    logGameEvent('Game started, player count: $playerCount');
   }
 
   void gameEnd(String gameId, String winner, int duration) {
-    logGameEvent('游戏结束，获胜者：$winner，持续时间：$duration毫秒');
+    logGameEvent('Game ended, winner: $winner, duration: $duration milliseconds');
     endCurrentGame();
   }
 
   void playerAction(String playerId, String action, {String? target}) {
-    // 简化：不记录普通的玩家行动到游戏日志
+    // Simplified: do not record normal player actions to game log
   }
 
   void phaseChange(String phase, int dayNumber) {
-    logGamePhase(phase, '第 $dayNumber 天');
+    logGamePhase(phase, 'Day $dayNumber');
   }
 
   void playerDeath(String playerId, String cause) {
-    logGameEvent('$playerId 死亡：$cause');
+    logGameEvent('$playerId died: $cause');
   }
 
   void skillUsed(String playerId, String skill, {String? target}) {
-    logGameEvent('$playerId 使用技能：$skill${target != null ? ' 对 $target' : ''}');
+    logGameEvent('$playerId used skill: $skill${target != null ? ' on $target' : ''}');
   }
 
   void llmCall(String model, int tokens, int duration) {
-    debug('LLM调用完成：$model | 令牌数：$tokens | 耗时：$duration毫秒');
+    debug('LLM call completed: $model | tokens: $tokens | duration: $duration ms');
   }
 
   void llmError(String error, {int retryCount = 0}) {
-    warning('LLM错误（尝试次数 $retryCount）：$error');
+    warning('LLM error (attempt $retryCount): $error');
   }
 
   void configLoaded(String configPath) {
-    info('配置文件已加载：$configPath');
+    info('Configuration file loaded: $configPath');
   }
 
   void stats(String stats) {
-    info('游戏统计：$stats');
+    info('Game statistics: $stats');
   }
 
-  /// 销毁logger，关闭所有文件流
+  /// Dispose logger, close all file streams
   void dispose() {
     try {
       endCurrentGame();
-      info('GameLogger已销毁');
+      info('GameLogger disposed');
     } catch (e) {
-      error('销毁GameLogger失败: $e');
+      error('Failed to dispose GameLogger: $e');
     }
   }
 }

@@ -3,21 +3,21 @@ import '../player/player.dart';
 import '../game/game_state.dart';
 import '../game/game_action.dart';
 
-/// 角色类型
+/// Role types
 enum RoleType {
-  werewolf,  // 狼人
-  villager,  // 村民
-  god,       // 神职
+  werewolf,  // Werewolf
+  villager,  // Villager
+  god,       // God role
 }
 
-/// 角色阵营
+/// Role alignments
 enum RoleAlignment {
-  good,      // 好人阵营
-  evil,      // 狼人阵营
-  neutral,   // 中立阵营
+  good,      // Good side
+  evil,      // Werewolf side
+  neutral,   // Neutral side
 }
 
-/// 技能类
+/// Skill class
 abstract class Skill {
   final String skillId;
   final String name;
@@ -32,7 +32,7 @@ abstract class Skill {
     required this.name,
     required this.description,
     this.cooldown = 0,
-    this.maxUses = -1, // -1 表示无限使用
+    this.maxUses = -1, // -1 means unlimited uses
     this.isActive = true,
     this.requiresTarget = false,
   });
@@ -48,14 +48,14 @@ abstract class Skill {
   }
 
   String getUsageInfo(Player player) {
-    final uses = maxUses == -1 ? '无限' : '${maxUses - player.getSkillUses(skillId)}/$maxUses';
+    final uses = maxUses == -1 ? 'Unlimited' : '${maxUses - player.getSkillUses(skillId)}/$maxUses';
     final cd = player.getSkillCooldown(skillId);
-    final cooldownText = cd > 0 ? ' (冷却: $cd)' : '';
+    final cooldownText = cd > 0 ? ' (Cooldown: $cd)' : '';
     return '$name: $uses$cooldownText';
   }
 }
 
-/// 角色抽象类
+/// Abstract role class
 abstract class Role {
   final String roleId;
   final String name;
@@ -117,8 +117,8 @@ abstract class Role {
   String getRoleInfo() {
     return '''
 $name ($type)
-阵营: $alignment
-描述: $description
+Alignment: $alignment
+Description: $description
 技能: ${skills.map((s) => s.name).join(', ')}
 ''';
   }

@@ -3,36 +3,36 @@ import '../player/judge.dart';
 import '../utils/config_loader.dart';
 import '../utils/game_logger.dart';
 
-/// 游戏阶段
+/// Game phases
 enum GamePhase {
-  night, // 夜晚阶段
-  day, // 白天阶段
-  voting, // 投票阶段
-  ended, // 游戏结束
+  night, // Night phase
+  day, // Day phase
+  voting, // Voting phase
+  ended, // Game ended
 }
 
-/// 游戏状态
+/// Game status
 enum GameStatus {
-  waiting, // 等待开始
-  playing, // 游戏中
-  paused, // 暂停
-  ended, // 已结束
+  waiting, // Waiting to start
+  playing, // In game
+  paused, // Paused
+  ended, // Ended
 }
 
-/// 游戏事件类型
+/// Game event types
 enum GameEventType {
-  gameStart, // 游戏开始
-  gameEnd, // 游戏结束
-  phaseChange, // 阶段变化
-  playerDeath, // 玩家死亡
-  playerAction, // 玩家行动
-  skillUsed, // 技能使用
-  voteCast, // 投票
-  dayBreak, // 天亮
-  nightFall, // 天黑
+  gameStart, // Game start
+  gameEnd, // Game end
+  phaseChange, // Phase change
+  playerDeath, // Player death
+  playerAction, // Player action
+  skillUsed, // Skill used
+  voteCast, // Vote cast
+  dayBreak, // Daybreak
+  nightFall, // Nightfall
 }
 
-/// 游戏事件
+/// Game events
 class GameEvent {
   final String eventId;
   final DateTime timestamp;
@@ -69,7 +69,7 @@ class GameEvent {
   }
 }
 
-/// 游戏状态
+/// Game state
 class GameState {
   final String gameId;
   final DateTime startTime;
@@ -88,7 +88,7 @@ class GameState {
   Player? tonightVictim;
   Player? tonightProtected;
 
-  // 法官和发言历史
+  // Judge and speech history
   late final Judge judge;
 
   GameState({
@@ -104,12 +104,9 @@ class GameState {
   })  : eventHistory = eventHistory ?? [],
         metadata = metadata ?? {},
         startTime = DateTime.now() {
-    // 初始化法官，如果没有提供则创建新的
+    // Initialize judge, create new one if not provided
     this.judge = judge ??
-        Judge(
-          gameId: gameId,
-          logger: GameLogger(config.loggingConfig),
-        );
+        Judge(gameId: gameId, logger: GameLogger(config.loggingConfig));
   }
 
   // Getters
@@ -138,7 +135,7 @@ class GameState {
     lastUpdateTime = DateTime.now();
   }
 
-  /// 记录玩家发言到法官系统
+  /// Record player speech to judge system
   void recordPlayerSpeech(Player player, String message) {
     judge.recordSpeech(
       playerId: player.playerId,
@@ -150,12 +147,12 @@ class GameState {
     );
   }
 
-  /// 获取发言历史用于LLM上下文
+  /// Get speech history for LLM context
   String getSpeechHistoryForContext({int? limit}) {
     return judge.getSpeechHistoryText(limit: limit);
   }
 
-  /// 获取当前阶段的发言历史
+  /// Get speech history for current phase
   String getCurrentPhaseSpeechHistory() {
     return judge.getSpeechHistoryText(
       fromDay: dayNumber,
@@ -163,17 +160,17 @@ class GameState {
     );
   }
 
-  /// 获取阶段显示名称
+  /// Get phase display name
   String _getPhaseDisplayName(GamePhase phase) {
     switch (phase) {
       case GamePhase.night:
-        return '夜晚';
+        return 'Night';
       case GamePhase.day:
-        return '白天';
+        return 'Day';
       case GamePhase.voting:
-        return '投票';
+        return 'Voting';
       case GamePhase.ended:
-        return '结束';
+        return 'Ended';
     }
   }
 
@@ -184,7 +181,7 @@ class GameState {
     addEvent(GameEvent(
       eventId: 'phase_change_${DateTime.now().millisecondsSinceEpoch}',
       type: GameEventType.phaseChange,
-      description: '游戏阶段从 ${oldPhase.name} 切换到 ${newPhase.name}',
+      description: 'Game phase changed from ${oldPhase.name} to ${newPhase.name}',
       data: {
         'oldPhase': oldPhase.name,
         'newPhase': newPhase.name,
@@ -201,7 +198,7 @@ class GameState {
     addEvent(GameEvent(
       eventId: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
       type: GameEventType.gameStart,
-      description: '游戏开始，玩家数量：${players.length}',
+      description: 'Game started with ${players.length} players',
       data: {
         'playerCount': players.length,
         'roleDistribution': _getRoleDistribution(),
@@ -216,7 +213,7 @@ class GameState {
     addEvent(GameEvent(
       eventId: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
       type: GameEventType.gameEnd,
-      description: '游戏结束。获胜者：$winner',
+      description: 'Game ended. Winner: $winner',
       data: {
         'winner': winner,
         'duration': DateTime.now().difference(startTime).inMilliseconds,
@@ -233,7 +230,7 @@ class GameState {
       eventId:
           'player_death_${player.playerId}_${DateTime.now().millisecondsSinceEpoch}',
       type: GameEventType.playerDeath,
-      description: '${player.name} 死亡：$cause',
+      description: '${player.name} died: $cause',
       initiator: player,
       data: {
         'cause': cause,
@@ -250,7 +247,7 @@ class GameState {
           'player_action_${player.playerId}_${DateTime.now().millisecondsSinceEpoch}',
       type: GameEventType.playerAction,
       description:
-          '${player.name} 执行了动作：$action${target != null ? ' 对 ${target.name}' : ''}',
+          '${player.name} performed action: $action${target != null ? ' on ${target.name}' : ''}',
       initiator: player,
       target: target,
       data: {
@@ -268,7 +265,7 @@ class GameState {
           'skill_used_${player.playerId}_${DateTime.now().millisecondsSinceEpoch}',
       type: GameEventType.skillUsed,
       description:
-          '${player.name} 使用了技能：$skill${target != null ? ' 对 ${target.name}' : ''}',
+          '${player.name} used skill: $skill${target != null ? ' on ${target.name}' : ''}',
       initiator: player,
       target: target,
       data: {
@@ -282,12 +279,12 @@ class GameState {
 
   bool checkGameEnd() {
     if (aliveWerewolves == 0) {
-      endGame('好人');
+      endGame('Good');
       return true;
     }
 
     if (aliveWerewolves >= aliveVillagers) {
-      endGame('狼人');
+      endGame('Werewolves');
       return true;
     }
 
@@ -399,13 +396,13 @@ extension GamePhaseExtension on GamePhase {
   String get displayName {
     switch (this) {
       case GamePhase.night:
-        return '夜晚';
+        return 'Night';
       case GamePhase.day:
-        return '白天';
+        return 'Day';
       case GamePhase.voting:
-        return '投票';
+        return 'Voting';
       case GamePhase.ended:
-        return '结束';
+        return 'Ended';
     }
   }
 }
@@ -415,13 +412,13 @@ extension GameStatusExtension on GameStatus {
   String get displayName {
     switch (this) {
       case GameStatus.waiting:
-        return '等待开始';
+        return 'Waiting to start';
       case GameStatus.playing:
-        return '游戏中';
+        return 'Playing';
       case GameStatus.paused:
-        return '暂停';
+        return 'Paused';
       case GameStatus.ended:
-        return '已结束';
+        return 'Ended';
     }
   }
 }

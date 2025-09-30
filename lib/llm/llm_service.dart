@@ -6,7 +6,7 @@ import '../game/game_action.dart';
 import '../player/player.dart';
 import '../utils/game_logger.dart';
 
-/// LLM响应
+/// LLM response
 class LLMResponse {
   LLMResponse({
     required this.content,
@@ -71,7 +71,7 @@ class LLMResponse {
   }
 }
 
-/// LLM服务接口
+/// LLM service interface
 abstract class LLMService {
   Future<LLMResponse> generateResponse({
     required String systemPrompt,
@@ -97,7 +97,7 @@ abstract class LLMService {
   bool get isAvailable;
 }
 
-/// OpenAI API实现
+/// OpenAI API implementation
 class OpenAIService implements LLMService {
   OpenAIService({
     required this.apiKey,
@@ -127,7 +127,7 @@ class OpenAIService implements LLMService {
     final startTime = DateTime.now();
     final cacheKey = _generateCacheKey(systemPrompt, userPrompt, context);
 
-    // 首先尝试缓存
+    // Try cache first
     final cachedResponse = cache.get(cacheKey);
     if (cachedResponse != null) {
       return LLMResponse.success(
@@ -148,14 +148,14 @@ class OpenAIService implements LLMService {
       final responseTimeMs =
           DateTime.now().difference(startTime).inMilliseconds;
 
-      // 将API响应转换为LLMResponse
+      // Convert API response to LLMResponse
       final response = LLMResponse.success(
         content: apiResponse['content'] ?? '',
         tokensUsed: apiResponse['tokensUsed'] ?? 0,
         responseTimeMs: responseTimeMs,
       );
 
-      // 缓存成功的响应
+      // Cache successful response
       if (response.isValid) {
         cache.put(cacheKey, response.content);
       }
@@ -181,21 +181,21 @@ class OpenAIService implements LLMService {
     final availableActions = player.getAvailableActions(state);
 
     final userPrompt = '''
-当前游戏状态：
+Current game state:
 $context
 
-你的角色：${player.role.name}
-可用动作：${_formatActions(availableActions)}
+Your role: ${player.role.name}
+Available actions: ${_formatActions(availableActions)}
 
-请选择你的动作并返回JSON格式：
+Please choose your action and return in JSON format:
 {
-  "action": "动作类型",
-  "target": "目标玩家ID（可选）",
-  "reasoning": "推理过程",
-  "statement": "公开陈述"
+  "action": "action type",
+  "target": "target player ID (optional)",
+  "reasoning": "reasoning process",
+  "statement": "public statement"
 }
 
-根据你的角色和当前情况，做出最合适的选择。
+Make the most appropriate choice based on your role and current situation.
 ''';
 
     final response = await generateResponse(
@@ -223,13 +223,13 @@ $context
     final gameContext = _buildContext(player, state);
 
     final userPrompt = '''
-当前游戏状态：
+Current game state:
 $gameContext
 
-当前情况：
+Current situation:
 $context
 
-请根据你的角色和性格，发表适当的言论。保持角色的一致性。
+Please make appropriate statements based on your role and personality. Maintain character consistency.
 ''';
 
     final response = await generateResponse(
@@ -298,7 +298,7 @@ $context
     } else {
       final error = jsonDecode(response.body);
       final errorMessage = error['error']['message'] ?? 'Unknown error';
-      throw Exception('OpenAI API错误: $errorMessage');
+      throw Exception('OpenAI API error: $errorMessage');
     }
   }
 
@@ -313,7 +313,7 @@ $context
       if (!jsonData.containsKey('action')) {
         return LLMResponse.error(
           content: response.content,
-          errors: ['缺少动作字段'],
+          errors: ['Missing action field'],
           tokensUsed: response.tokensUsed,
           responseTimeMs: response.responseTimeMs,
         );
@@ -341,7 +341,7 @@ $context
     } catch (e) {
       return LLMResponse.error(
         content: response.content,
-        errors: ['解析错误: $e'],
+        errors: ['Parse error: $e'],
         tokensUsed: response.tokensUsed,
         responseTimeMs: response.responseTimeMs,
       );
@@ -365,7 +365,7 @@ $context
       case 'speak':
         return ActionType.speak;
       default:
-        throw Exception('未知动作类型: $actionString');
+        throw Exception('Unknown action type: $actionString');
     }
   }
 
@@ -389,7 +389,7 @@ $context
       case ActionType.speak:
         return SpeakAction(actor: actor, message: data['statement'] ?? '');
       default:
-        throw Exception('动作类型未实现: $type');
+        throw Exception('Action type not implemented: $type');
     }
   }
 
@@ -398,17 +398,17 @@ $context
     final deadPlayers = state.deadPlayers.map((p) => p.name).join(', ');
 
     return '''
-游戏第 ${state.dayNumber} 天
-当前阶段：${state.currentPhase.displayName}
-存活玩家：${alivePlayers.isNotEmpty ? alivePlayers : '无'}
-死亡玩家：${deadPlayers.isNotEmpty ? deadPlayers : '无'}
-你的状态：${player.isAlive ? '存活' : '死亡'}
-你的角色：${player.role.name}
+Game Day ${state.dayNumber}
+Current phase: ${state.currentPhase.displayName}
+Alive players: ${alivePlayers.isNotEmpty ? alivePlayers : 'None'}
+Dead players: ${deadPlayers.isNotEmpty ? deadPlayers : 'None'}
+Your status: ${player.isAlive ? 'Alive' : 'Dead'}
+Your role: ${player.role.name}
 ''';
   }
 
   String _formatActions(List<GameAction> actions) {
-    if (actions.isEmpty) return '无可用动作';
+    if (actions.isEmpty) return 'No available actions';
 
     return actions.map((action) {
       final targetPart =
@@ -428,7 +428,7 @@ $context
   }
 }
 
-/// 响应缓存
+/// Response cache
 class ResponseCache {
   ResponseCache({
     this.maxAge = const Duration(minutes: 30),

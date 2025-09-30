@@ -2,7 +2,7 @@ import 'game_state.dart';
 import '../player/player.dart';
 import '../player/role.dart';
 
-/// 动作技能类
+/// Action skill class
 class ActionSkill {
   final String skillId;
   final String name;
@@ -17,85 +17,85 @@ class ActionSkill {
   });
 }
 
-/// 击杀技能
+/// Kill skill
 class KillSkill extends ActionSkill {
   KillSkill()
       : super(
           skillId: 'kill_skill',
-          name: '击杀',
-          description: '狼人夜晚击杀技能',
+          name: 'Kill',
+          description: 'Werewolf night kill skill',
           type: 'night_action',
         );
 }
 
-/// 保护技能
+/// Protect skill
 class ProtectSkill extends ActionSkill {
   ProtectSkill()
       : super(
           skillId: 'protect_skill',
-          name: '守护',
-          description: '守卫守护技能',
+          name: 'Protect',
+          description: 'Guard protection skill',
           type: 'night_action',
         );
 }
 
-/// 查验技能
+/// Investigate skill
 class InvestigateSkill extends ActionSkill {
   InvestigateSkill()
       : super(
           skillId: 'investigate_skill',
-          name: '查验',
-          description: '预言家查验技能',
+          name: 'Investigate',
+          description: 'Seer investigation skill',
           type: 'night_action',
         );
 }
 
-/// 治疗技能
+/// Heal skill
 class HealSkill extends ActionSkill {
   HealSkill()
       : super(
           skillId: 'heal_skill',
-          name: '救治',
-          description: '女巫救治技能',
+          name: 'Heal',
+          description: 'Witch heal skill',
           type: 'night_action',
         );
 }
 
-/// 毒杀技能
+/// Poison skill
 class PoisonSkill extends ActionSkill {
   PoisonSkill()
       : super(
           skillId: 'poison_skill',
-          name: '毒杀',
-          description: '女巫毒杀技能',
+          name: 'Poison',
+          description: 'Witch poison skill',
           type: 'night_action',
         );
 }
 
-/// 猎人开枪技能
+/// Hunter shoot skill
 class HunterShootSkill extends ActionSkill {
   HunterShootSkill()
       : super(
           skillId: 'hunter_shoot_skill',
-          name: '开枪',
-          description: '猎人开枪技能',
+          name: 'Shoot',
+          description: 'Hunter shoot skill',
           type: 'death_action',
         );
 }
 
-/// 动作类型
+/// Action types
 enum ActionType {
-  kill, // 击杀
-  protect, // 保护
-  investigate, // 查验
-  heal, // 救治
-  poison, // 毒杀
-  vote, // 投票
-  speak, // 发言
-  useSkill, // 使用技能
+  kill, // Kill
+  protect, // Protect
+  investigate, // Investigate
+  heal, // Heal
+  poison, // Poison
+  vote, // Vote
+  speak, // Speak
+  useSkill, // Use skill
 }
 
-/// 游戏动作基类
+/// Base game action class
 abstract class GameAction {
   final String actionId;
   final Player actor;
@@ -118,14 +118,14 @@ abstract class GameAction {
   static String _generateDescription(
       ActionType type, Player actor, Player? target) {
     final actionNames = {
-      ActionType.kill: '击杀',
-      ActionType.protect: '保护',
-      ActionType.investigate: '查验',
-      ActionType.heal: '救治',
-      ActionType.poison: '毒杀',
-      ActionType.vote: '投票',
-      ActionType.speak: '发言',
-      ActionType.useSkill: '使用技能',
+      ActionType.kill: 'Kill',
+      ActionType.protect: 'Protect',
+      ActionType.investigate: 'Investigate',
+      ActionType.heal: 'Heal',
+      ActionType.poison: 'Poison',
+      ActionType.vote: 'Vote',
+      ActionType.speak: 'Speak',
+      ActionType.useSkill: 'Use Skill',
     };
 
     final actionName = actionNames[type] ?? type.name;
@@ -136,7 +136,7 @@ abstract class GameAction {
     }
   }
 
-  /// 验证动作是否可以执行
+  /// Validate if action can be executed
   bool validate(GameState state) {
     // Basic validation
     if (!actor.isAlive) return false;
@@ -153,7 +153,7 @@ abstract class GameAction {
     return true;
   }
 
-  /// 执行动作
+  /// Execute action
   void execute(GameState state) {
     if (!validate(state)) {
       throw Exception('Invalid action: $description');
@@ -162,10 +162,10 @@ abstract class GameAction {
     _performAction(state);
   }
 
-  /// 子类实现具体动作逻辑
+  /// Subclass implements specific action logic
   void _performAction(GameState state);
 
-  /// 检查是否在有效阶段
+  /// Check if in valid phase
   bool _isValidPhase(GamePhase phase) {
     switch (type) {
       case ActionType.kill:
@@ -183,7 +183,7 @@ abstract class GameAction {
     }
   }
 
-  /// 检查目标是否有效
+  /// Check if target is valid
   bool _isValidTarget(Player target, GameState state) {
     if (!target.isAlive) return false;
 
@@ -204,7 +204,7 @@ abstract class GameAction {
     }
   }
 
-  /// 转换为游戏事件
+  /// Convert to game event
   GameEvent toEvent() {
     return GameEvent(
       eventId:
@@ -240,7 +240,7 @@ abstract class GameAction {
   }
 }
 
-/// 击杀动作
+/// Kill action
 class KillAction extends GameAction {
   KillAction({
     required super.actor,
@@ -256,11 +256,11 @@ class KillAction extends GameAction {
     state.setTonightVictim(target);
 
     // Log the kill action
-    state.skillUsed(actor, '击杀', target: target);
+    state.skillUsed(actor, 'Kill', target: target);
   }
 }
 
-/// 保护动作
+/// Protect action
 class ProtectAction extends GameAction {
   ProtectAction({
     required super.actor,
@@ -278,11 +278,11 @@ class ProtectAction extends GameAction {
       (actor.role as GuardRole).setLastGuarded(target);
     }
 
-    state.skillUsed(actor, '守护', target: target);
+    state.skillUsed(actor, 'Protect', target: target);
   }
 }
 
-/// 查验动作
+/// Investigate action
 class InvestigateAction extends GameAction {
   InvestigateAction({
     required super.actor,
@@ -295,7 +295,7 @@ class InvestigateAction extends GameAction {
   @override
   void _performAction(GameState state) {
     final isWerewolf = target!.role.isWerewolf;
-    final result = isWerewolf ? '狼人' : '好人';
+    final result = isWerewolf ? 'Werewolf' : 'Good';
 
     actor.addKnowledge('investigation_${target!.playerId}', {
       'result': result,
@@ -303,7 +303,7 @@ class InvestigateAction extends GameAction {
       'actual_role': target!.role.roleId,
     });
 
-    state.skillUsed(actor, '查验', target: target);
+    state.skillUsed(actor, 'Investigate', target: target);
   }
 }
 
