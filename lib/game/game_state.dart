@@ -1,13 +1,28 @@
 import 'dart:io';
 import '../player/player.dart';
+import '../player/role.dart';
 import '../utils/config_loader.dart';
+import 'game_event.dart';
 
 /// Game phases
 enum GamePhase {
   night, // Night phase
   day, // Day phase
   voting, // Voting phase
-  ended, // Game ended
+  ended; // Game ended
+
+  String get displayName {
+    switch (this) {
+      case GamePhase.night:
+        return 'Night';
+      case GamePhase.day:
+        return 'Day';
+      case GamePhase.voting:
+        return 'Voting';
+      case GamePhase.ended:
+        return 'Ended';
+    }
+  }
 }
 
 /// Game status
@@ -15,7 +30,20 @@ enum GameStatus {
   waiting, // Waiting to start
   playing, // In game
   paused, // Paused
-  ended, // Ended
+  ended; // Ended
+
+  String get displayName {
+    switch (this) {
+      case GameStatus.waiting:
+        return 'Waiting to start';
+      case GameStatus.playing:
+        return 'Playing';
+      case GameStatus.paused:
+        return 'Paused';
+      case GameStatus.ended:
+        return 'Ended';
+    }
+  }
 }
 
 /// Game event types
@@ -31,6 +59,15 @@ enum GameEventType {
   nightFall, // Nightfall
 }
 
+/// Event visibility scope
+enum EventVisibility {
+  public, // All players can see
+  allWerewolves, // Only werewolves can see
+  roleSpecific, // Only specific role can see (e.g., seer's investigation)
+  playerSpecific, // Only specific player(s) can see
+  dead, // Only dead players can see
+}
+
 /// Game events
 class GameEvent {
   final String eventId;
@@ -41,6 +78,15 @@ class GameEvent {
   final Player? initiator;
   final Player? target;
 
+  /// Visibility scope of this event
+  final EventVisibility visibility;
+
+  /// List of player IDs who can see this event (for playerSpecific visibility)
+  final List<String> visibleToPlayerIds;
+
+  /// Role ID that can see this event (for roleSpecific visibility)
+  final String? visibleToRole;
+
   GameEvent({
     required this.eventId,
     required this.type,
@@ -48,7 +94,35 @@ class GameEvent {
     this.data = const {},
     this.initiator,
     this.target,
+    this.visibility = EventVisibility.public,
+    this.visibleToPlayerIds = const [],
+    this.visibleToRole,
   }) : timestamp = DateTime.now();
+
+  /// Check if this event is visible to a specific player
+  bool isVisibleTo(dynamic player) {
+    // Extract player properties (support both Player and test objects)
+    final playerId = player.playerId as String;
+    final role = player.role as Role;
+    final isAlive = player.isAlive as bool;
+
+    switch (visibility) {
+      case EventVisibility.public:
+        return true;
+
+      case EventVisibility.allWerewolves:
+        return role.isWerewolf;
+
+      case EventVisibility.roleSpecific:
+        return visibleToRole != null && role.roleId == visibleToRole;
+
+      case EventVisibility.playerSpecific:
+        return visibleToPlayerIds.contains(playerId);
+
+      case EventVisibility.dead:
+        return !isAlive;
+    }
+  }
 
   @override
   String toString() {
@@ -64,7 +138,27 @@ class GameEvent {
       'data': data,
       'initiator': initiator?.playerId,
       'target': target?.playerId,
+      'visibility': visibility.name,
+      'visibleToPlayerIds': visibleToPlayerIds,
+      'visibleToRole': visibleToRole,
     };
+  }
+
+  factory GameEvent.fromJson(Map<String, dynamic> json) {
+    return GameEvent(
+      eventId: json['eventId'],
+      type: GameEventType.values.firstWhere((t) => t.name == json['type']),
+      description: json['description'],
+      data: Map<String, dynamic>.from(json['data']),
+      visibility: json['visibility'] != null
+          ? EventVisibility.values
+              .firstWhere((v) => v.name == json['visibility'])
+          : EventVisibility.public,
+      visibleToPlayerIds: json['visibleToPlayerIds'] != null
+          ? List<String>.from(json['visibleToPlayerIds'])
+          : [],
+      visibleToRole: json['visibleToRole'],
+    );
   }
 }
 
@@ -126,21 +220,43 @@ class GameState {
     lastUpdateTime = DateTime.now();
   }
 
+  /// Get all events visible to a specific player
+  List<GameEvent> getEventsForPlayer(Player player) {
+    return eventHistory.where((event) => event.isVisibleTo(player)).toList();
+  }
+
+  /// Get recent events visible to a specific player
+  List<GameEvent> getRecentEventsForPlayer(
+    Player player, {
+    Duration timeWindow = const Duration(minutes: 5),
+  }) {
+    final cutoffTime = DateTime.now().subtract(timeWindow);
+    return eventHistory
+        .where((event) =>
+            event.timestamp.isAfter(cutoffTime) && event.isVisibleTo(player))
+        .toList();
+  }
+
+  /// Get events of a specific type visible to a player
+  List<GameEvent> getEventsByType(
+    Player player,
+    GameEventType type,
+  ) {
+    return eventHistory
+        .where((event) => event.type == type && event.isVisibleTo(player))
+        .toList();
+  }
+
   Future<void> changePhase(GamePhase newPhase) async {
     final oldPhase = currentPhase;
     currentPhase = newPhase;
 
-    addEvent(GameEvent(
-      eventId: 'phase_change_${DateTime.now().millisecondsSinceEpoch}',
-      type: GameEventType.phaseChange,
-      description:
-          'Game phase changed from ${oldPhase.name} to ${newPhase.name}',
-      data: {
-        'oldPhase': oldPhase.name,
-        'newPhase': newPhase.name,
-        'dayNumber': dayNumber,
-      },
-    ));
+    final event = PhaseChangeEvent(
+      oldPhase: oldPhase,
+      newPhase: newPhase,
+      dayNumber: dayNumber,
+    );
+    addEvent(event);
 
     // 等待用户按回车键继续到下一阶段
     await _waitForEnter(_getPhaseChangeMessage(oldPhase, newPhase));
@@ -187,86 +303,36 @@ class GameState {
     dayNumber = 1;
     currentPhase = GamePhase.night;
 
-    addEvent(GameEvent(
-      eventId: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
-      type: GameEventType.gameStart,
-      description: 'Game started with ${players.length} players',
-      data: {
-        'playerCount': players.length,
-        'roleDistribution': _getRoleDistribution(),
-      },
-    ));
+    final event = GameStartEvent(
+      playerCount: players.length,
+      roleDistribution: _getRoleDistribution(),
+    );
+    addEvent(event);
   }
 
   void endGame(String winner) {
     status = GameStatus.ended;
     this.winner = winner;
 
-    addEvent(GameEvent(
-      eventId: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
-      type: GameEventType.gameEnd,
-      description: 'Game ended. Winner: $winner',
-      data: {
-        'winner': winner,
-        'duration': DateTime.now().difference(startTime).inMilliseconds,
-        'totalDays': dayNumber,
-        'finalPlayerCount': alivePlayers.length,
-      },
-    ));
+    final event = GameEndEvent(
+      winner: winner,
+      totalDays: dayNumber,
+      finalPlayerCount: alivePlayers.length,
+      startTime: startTime,
+    );
+    addEvent(event);
   }
 
   void playerDeath(Player player, String cause) {
     player.isAlive = false;
 
-    addEvent(GameEvent(
-      eventId:
-          'player_death_${player.playerId}_${DateTime.now().millisecondsSinceEpoch}',
-      type: GameEventType.playerDeath,
-      description: '${player.name} died: $cause',
-      initiator: player,
-      data: {
-        'cause': cause,
-        'wasAlive': true,
-        'dayNumber': dayNumber,
-        'phase': currentPhase.name,
-      },
-    ));
-  }
-
-  void playerAction(Player player, String action, {Player? target}) {
-    addEvent(GameEvent(
-      eventId:
-          'player_action_${player.playerId}_${DateTime.now().millisecondsSinceEpoch}',
-      type: GameEventType.playerAction,
-      description:
-          '${player.name} performed action: $action${target != null ? ' on ${target.name}' : ''}',
-      initiator: player,
-      target: target,
-      data: {
-        'action': action,
-        'targetId': target?.playerId,
-        'dayNumber': dayNumber,
-        'phase': currentPhase.name,
-      },
-    ));
-  }
-
-  void skillUsed(Player player, String skill, {Player? target}) {
-    addEvent(GameEvent(
-      eventId:
-          'skill_used_${player.playerId}_${DateTime.now().millisecondsSinceEpoch}',
-      type: GameEventType.skillUsed,
-      description:
-          '${player.name} used skill: $skill${target != null ? ' on ${target.name}' : ''}',
-      initiator: player,
-      target: target,
-      data: {
-        'skill': skill,
-        'targetId': target?.playerId,
-        'dayNumber': dayNumber,
-        'phase': currentPhase.name,
-      },
-    ));
+    final event = DeadEvent(
+      player: player,
+      cause: cause,
+      dayNumber: dayNumber,
+      phase: currentPhase.name,
+    );
+    addEvent(event);
   }
 
   bool checkGameEnd() {
@@ -306,11 +372,83 @@ class GameState {
 
   void setTonightVictim(Player? victim) {
     tonightVictim = victim;
+    setMetadata('tonight_victim', victim?.playerId);
   }
 
   void setTonightProtected(Player? protected) {
     tonightProtected = protected;
+    setMetadata('tonight_protected', protected?.playerId);
   }
+
+  // Night action management methods
+  Player? get tonightPoisoned {
+    final poisonedId = getMetadata<String>('tonight_poisoned');
+    return poisonedId != null ? getPlayerById(poisonedId) : null;
+  }
+
+  bool get killCancelled => getMetadata('kill_cancelled') ?? false;
+
+  void setTonightPoisoned(Player? poisoned) {
+    setMetadata('tonight_poisoned', poisoned?.playerId);
+  }
+
+  void cancelTonightKill() {
+    setMetadata('kill_cancelled', true);
+  }
+
+  void clearNightActions() {
+    removeMetadata('tonight_victim');
+    removeMetadata('tonight_protected');
+    removeMetadata('tonight_poisoned');
+    removeMetadata('kill_cancelled');
+  }
+
+  // Voting management methods
+  Map<String, String> get votes => getMetadata('votes') ?? {};
+  int get totalVotes => votes.length;
+  int get requiredVotes => (alivePlayers.length / 2).ceil();
+
+  void addVote(Player voter, Player target) {
+    final currentVotes = votes;
+    currentVotes[voter.playerId] = target.playerId;
+    setMetadata('votes', currentVotes);
+  }
+
+  void clearVotes() {
+    removeMetadata('votes');
+  }
+
+  Map<String, int> getVoteResults() {
+    final results = <String, int>{};
+    for (final vote in votes.values) {
+      results[vote] = (results[vote] ?? 0) + 1;
+    }
+    return results;
+  }
+
+  Player? getVoteTarget() {
+    final results = getVoteResults();
+    if (results.isEmpty) return null;
+
+    int maxVotes = 0;
+    String? targetId;
+    for (final entry in results.entries) {
+      if (entry.value > maxVotes) {
+        maxVotes = entry.value;
+        targetId = entry.key;
+      }
+    }
+
+    if (targetId != null && maxVotes >= requiredVotes) {
+      return getPlayerById(targetId);
+    }
+    return null;
+  }
+
+  // Metadata helper methods
+  T? getMetadata<T>(String key) => metadata[key] as T?;
+  void setMetadata<T>(String key, T value) => metadata[key] = value;
+  void removeMetadata(String key) => metadata.remove(key);
 
   GameState copy() {
     return GameState(
@@ -348,7 +486,7 @@ class GameState {
     final players =
         (json['players'] as List).map((p) => Player.fromJson(p)).toList();
     final eventHistory = (json['eventHistory'] as List)
-        .map((e) => GameEventExtension.fromJson(e))
+        .map((e) => GameEvent.fromJson(e))
         .toList();
 
     return GameState(
@@ -366,51 +504,5 @@ class GameState {
           ? DateTime.parse(json['lastUpdateTime'])
           : null
       ..winner = json['winner'];
-  }
-}
-
-// Extension methods for GameEvent
-extension GameEventExtension on GameEvent {
-  static GameEvent fromJson(Map<String, dynamic> json) {
-    final event = GameEvent(
-      eventId: json['eventId'],
-      type: GameEventType.values.firstWhere((t) => t.name == json['type']),
-      description: json['description'],
-      data: Map<String, dynamic>.from(json['data']),
-    );
-    // Set the timestamp manually since it's not a constructor parameter
-    return event;
-  }
-}
-
-// Extension for GamePhase
-extension GamePhaseExtension on GamePhase {
-  String get displayName {
-    switch (this) {
-      case GamePhase.night:
-        return 'Night';
-      case GamePhase.day:
-        return 'Day';
-      case GamePhase.voting:
-        return 'Voting';
-      case GamePhase.ended:
-        return 'Ended';
-    }
-  }
-}
-
-// Extension for GameStatus
-extension GameStatusExtension on GameStatus {
-  String get displayName {
-    switch (this) {
-      case GameStatus.waiting:
-        return 'Waiting to start';
-      case GameStatus.playing:
-        return 'Playing';
-      case GameStatus.paused:
-        return 'Paused';
-      case GameStatus.ended:
-        return 'Ended';
-    }
   }
 }

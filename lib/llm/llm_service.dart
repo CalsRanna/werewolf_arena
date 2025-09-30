@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../game/game_state.dart';
-import '../game/game_action.dart';
 import '../player/player.dart';
 import '../utils/logger_util.dart';
 
@@ -11,7 +10,7 @@ class LLMResponse {
   LLMResponse({
     required this.content,
     required this.parsedData,
-    required this.actions,
+    required this.targets,
     required this.statement,
     required this.isValid,
     required this.errors,
@@ -22,7 +21,7 @@ class LLMResponse {
   factory LLMResponse.success({
     required String content,
     Map<String, dynamic> parsedData = const {},
-    List<GameAction> actions = const [],
+    List<Player> targets = const [],
     String statement = '',
     int tokensUsed = 0,
     int responseTimeMs = 0,
@@ -30,7 +29,7 @@ class LLMResponse {
     return LLMResponse(
       content: content,
       parsedData: parsedData,
-      actions: actions,
+      targets: targets,
       statement: statement,
       isValid: true,
       errors: [],
@@ -48,7 +47,7 @@ class LLMResponse {
     return LLMResponse(
       content: content,
       parsedData: {},
-      actions: [],
+      targets: [],
       statement: '',
       isValid: false,
       errors: errors,
@@ -58,7 +57,7 @@ class LLMResponse {
   }
   final String content;
   final Map<String, dynamic> parsedData;
-  final List<GameAction> actions;
+  final List<Player> targets;
   final String statement;
   final bool isValid;
   final List<String> errors;
@@ -67,7 +66,7 @@ class LLMResponse {
 
   @override
   String toString() {
-    return 'LLMResponse(isValid: $isValid, actions: ${actions.length}, statement: ${statement.isNotEmpty})';
+    return 'LLMResponse(isValid: $isValid, targets: ${targets.length}, statement: ${statement.isNotEmpty})';
   }
 }
 
@@ -176,19 +175,17 @@ class OpenAIService implements LLMService {
     required String rolePrompt,
   }) async {
     final context = _buildContext(player, state);
-    final availableActions = player.getAvailableActions(state);
 
     final userPrompt = '''
 Current game state:
 $context
 
 Your role: ${player.role.name}
-Available actions: ${_formatActions(availableActions)}
+Phase: ${state.currentPhase.name}
 
 Please choose your action and return in JSON format:
 {
-  "action": "action type",
-  "target": "target player ID (optional)",
+  "target_id": "target player ID (optional)",
   "reasoning": "reasoning process",
   "statement": "public statement"
 }
@@ -308,30 +305,21 @@ Please make appropriate statements based on your role and personality. Maintain 
     try {
       final jsonData = jsonDecode(response.content);
 
-      if (!jsonData.containsKey('action')) {
-        return LLMResponse.error(
-          content: response.content,
-          errors: ['Missing action field'],
-          tokensUsed: response.tokensUsed,
-          responseTimeMs: response.responseTimeMs,
-        );
-      }
-
-      final actionType = _parseActionType(jsonData['action']);
-      final targetId = jsonData['target'];
+      final targetId = jsonData['target_id'];
       final statement = jsonData['statement'] ?? '';
 
-      Player? target;
-      if (targetId != null) {
-        target = state.getPlayerById(targetId);
+      final targets = <Player>[];
+      if (targetId != null && targetId.isNotEmpty) {
+        final target = state.getPlayerById(targetId);
+        if (target != null) {
+          targets.add(target);
+        }
       }
-
-      final action = _buildAction(actionType, player, target, jsonData);
 
       return LLMResponse.success(
         content: response.content,
         parsedData: jsonData,
-        actions: [action],
+        targets: targets,
         statement: statement,
         tokensUsed: response.tokensUsed,
         responseTimeMs: response.responseTimeMs,
@@ -343,51 +331,6 @@ Please make appropriate statements based on your role and personality. Maintain 
         tokensUsed: response.tokensUsed,
         responseTimeMs: response.responseTimeMs,
       );
-    }
-  }
-
-  ActionType _parseActionType(String actionString) {
-    switch (actionString.toLowerCase()) {
-      case 'kill':
-        return ActionType.kill;
-      case 'protect':
-        return ActionType.protect;
-      case 'investigate':
-        return ActionType.investigate;
-      case 'heal':
-        return ActionType.heal;
-      case 'poison':
-        return ActionType.poison;
-      case 'vote':
-        return ActionType.vote;
-      case 'speak':
-        return ActionType.speak;
-      default:
-        throw Exception('Unknown action type: $actionString');
-    }
-  }
-
-  GameAction _buildAction(
-    ActionType type,
-    Player actor,
-    Player? target,
-    Map<String, dynamic> data,
-  ) {
-    switch (type) {
-      case ActionType.kill:
-        return KillAction(actor: actor, target: target!);
-      case ActionType.investigate:
-        return InvestigateAction(actor: actor, target: target!);
-      case ActionType.heal:
-        return HealAction(actor: actor, target: target!);
-      case ActionType.poison:
-        return PoisonAction(actor: actor, target: target!);
-      case ActionType.vote:
-        return VoteAction(actor: actor, target: target!);
-      case ActionType.speak:
-        return SpeakAction(actor: actor, message: data['statement'] ?? '');
-      default:
-        throw Exception('Action type not implemented: $type');
     }
   }
 
@@ -403,16 +346,6 @@ Dead players: ${deadPlayers.isNotEmpty ? deadPlayers : 'None'}
 Your status: ${player.isAlive ? 'Alive' : 'Dead'}
 Your role: ${player.role.name}
 ''';
-  }
-
-  String _formatActions(List<GameAction> actions) {
-    if (actions.isEmpty) return 'No available actions';
-
-    return actions.map((action) {
-      final targetPart =
-          action.target != null ? ' -> ${action.target!.name}' : '';
-      return '${action.type.name}$targetPart';
-    }).join(', ');
   }
 
   String _generateCacheKey(

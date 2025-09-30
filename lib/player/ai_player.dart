@@ -2,7 +2,6 @@ import 'dart:async';
 import 'player.dart';
 import 'role.dart';
 import '../game/game_state.dart';
-import '../game/game_action.dart';
 import '../llm/llm_service.dart';
 import '../llm/prompt_manager.dart';
 import '../utils/random_helper.dart';
@@ -215,8 +214,9 @@ class EnhancedAIPlayer extends AIPlayer {
         knowledgeBase = knowledgeBase ?? KnowledgeBase(),
         random = random ?? RandomHelper();
 
+  /// Choose target for night action based on role
   @override
-  Future<GameAction?> chooseAction(GameState state) async {
+  Future<Player?> chooseNightTarget(GameState state) async {
     if (!isAlive) return null;
 
     _lastActionTime = DateTime.now();
@@ -240,8 +240,8 @@ class EnhancedAIPlayer extends AIPlayer {
         rolePrompt: rolePrompt,
       );
 
-      if (response.isValid && response.actions.isNotEmpty) {
-        final action = response.actions.first;
+      if (response.isValid && response.targets.isNotEmpty) {
+        final target = response.targets.first;
 
         // Store reasoning and statement
         addKnowledge('last_action_reasoning', response.parsedData['reasoning']);
@@ -249,16 +249,32 @@ class EnhancedAIPlayer extends AIPlayer {
           addKnowledge('last_statement', response.statement);
         }
 
-        LoggerUtil.instance.d('Player action: $playerId used ${action.type.name}${action.target != null ? ' on ${action.target!.playerId}' : ''}');
-        return action;
+        LoggerUtil.instance.d('Player action: $playerId chose target ${target.playerId}');
+        return target;
       }
 
-      // If LLM fails, fallback to random action
-      return await _chooseFallbackAction(state);
+      // If LLM fails, fallback to random target
+      return _chooseFallbackTarget(state);
     } catch (e) {
-      LoggerUtil.instance.e('AI action selection error for $playerId: $e');
-      return await _chooseFallbackAction(state);
+      LoggerUtil.instance.e('AI target selection error for $playerId: $e');
+      return _chooseFallbackTarget(state);
     }
+  }
+
+  /// Choose vote target
+  @override
+  Future<Player?> chooseVoteTarget(GameState state) async {
+    return await chooseNightTarget(state); // Use same logic for now
+  }
+
+  /// Fallback target selection
+  Player? _chooseFallbackTarget(GameState state) {
+    final availableTargets = state.alivePlayers
+        .where((p) => p.playerId != playerId)
+        .toList();
+
+    if (availableTargets.isEmpty) return null;
+    return random.randomChoice(availableTargets);
   }
 
   @override
@@ -308,10 +324,8 @@ class EnhancedAIPlayer extends AIPlayer {
     knowledgeBase.addFact('current_day', state.dayNumber);
     knowledgeBase.addFact('current_phase', state.currentPhase.name);
 
-    // Process recent events
-    final recentEvents = state.eventHistory.where((e) {
-      return e.timestamp.isAfter(DateTime.now().subtract(Duration(minutes: 5)));
-    }).toList();
+    // Process recent events that are visible to this player
+    final recentEvents = state.getRecentEventsForPlayer(this);
 
     for (final event in recentEvents) {
       if (event.type == GameEventType.playerDeath && event.target != null) {
@@ -425,30 +439,10 @@ class EnhancedAIPlayer extends AIPlayer {
     return suspicion.clamp(0.0, 1.0);
   }
 
-  Future<GameAction?> _chooseFallbackAction(GameState state) async {
-    final availableActions = getAvailableActions(state);
-    if (availableActions.isEmpty) return null;
-
-    // Use personality to influence fallback choice
-    if (personality.aggressiveness > 0.7 &&
-        availableActions.any((a) => a.type == ActionType.kill)) {
-      return availableActions.where((a) => a.type == ActionType.kill).first;
-    }
-
-    if (personality.cooperativeness > 0.7 &&
-        availableActions.any((a) => a.type == ActionType.speak)) {
-      return SpeakAction(actor: this, message: 'I think we need to cooperate to find the truth.');
-    }
-
-    // Random fallback
-    return random.randomChoice(availableActions);
-  }
-
-
   // Memory and learning
-  void learnFromExperience(GameState state, GameAction action, bool outcome) {
+  void learnFromExperience(GameState state, Player? target, bool outcome) {
     final learningData = getKnowledge<Map>('learning_data') ?? {};
-    final actionKey = '${action.type}_${action.target?.playerId ?? 'none'}';
+    final actionKey = 'target_${target?.playerId ?? 'none'}';
 
     learningData[actionKey] = {
       'attempts': (learningData[actionKey]?['attempts'] ?? 0) + 1,

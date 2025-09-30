@@ -1,5 +1,4 @@
 import '../game/game_state.dart';
-import '../game/game_action.dart';
 import '../player/player.dart';
 import '../player/ai_player.dart';
 
@@ -250,10 +249,10 @@ $personalityPrompt
 
 $contextPrompt
 
-当前可用动作：
-${_formatAvailableActions(player.getAvailableActions(state))}
+当前游戏阶段：${state.currentPhase.name}
+存活玩家：${state.alivePlayers.map((p) => p.name).join(', ')}
 
-请根据你的角色、性格和当前情况，选择最合适的动作。
+请根据你的角色、性格和当前情况，选择最合适的目标玩家。
 返回JSON格式响应，包含你的选择、推理和公开陈述：
 
 ${_buildActionResponseFormat()}
@@ -379,15 +378,6 @@ ${recentConversation.map((s) => '- $s').join('\n')}
   "statement": "你要发表的公开陈述"
 }
 ''';
-  }
-
-  String _formatAvailableActions(List<GameAction> actions) {
-    if (actions.isEmpty) return '无可用动作';
-
-    return actions.map((action) {
-      final target = action.target != null ? ' -> ${action.target!.name}' : '';
-      return '- ${action.type.name}$target';
-    }).join('\n');
   }
 
   String _formatKnowledge(Map<String, dynamic> knowledge) {

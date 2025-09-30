@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'game_state.dart';
-import 'game_action.dart';
 import '../player/player.dart';
 import '../player/role.dart';
 import '../utils/logger_util.dart';
@@ -231,14 +230,16 @@ class GameEngine {
       if (werewolf is AIPlayer && werewolf.isAlive) {
         try {
           await werewolf.processInformation(state);
-          final action = await werewolf.chooseAction(state);
-          if (action is KillAction &&
-              action.target != null &&
-              action.target!.isAlive &&
-              werewolf.canPerformAction(action, state)) {
-            state.setTonightVictim(action.target!);
-            LoggerUtil.instance
-                .i('Werewolf chose victim: ${action.target!.name}');
+          final target = await werewolf.chooseNightTarget(state);
+          if (target != null && target.isAlive) {
+            final event = werewolf.createKillEvent(target, state);
+            if (event != null) {
+              werewolf.executeEvent(event, state);
+              LoggerUtil.instance.i('Werewolf chose victim: ${target.name}');
+            } else {
+              LoggerUtil.instance
+                  .i('Werewolf did not choose a valid kill target');
+            }
           } else {
             LoggerUtil.instance
                 .i('Werewolf did not choose a valid kill target');
@@ -255,14 +256,11 @@ class GameEngine {
         if (werewolf is AIPlayer && werewolf.isAlive) {
           try {
             await werewolf.processInformation(state);
-            final action = await werewolf.chooseAction(state);
-            if (action is KillAction &&
-                action.target != null &&
-                action.target!.isAlive &&
-                werewolf.canPerformAction(action, state)) {
-              victims[action.target!] = (victims[action.target!] ?? 0) + 1;
+            final target = await werewolf.chooseNightTarget(state);
+            if (target != null && target.isAlive) {
+              victims[target] = (victims[target] ?? 0) + 1;
               LoggerUtil.instance
-                  .i('${werewolf.name} chose to kill ${action.target!.name}');
+                  .i('${werewolf.name} chose to kill ${target.name}');
             } else {
               LoggerUtil.instance.i('${werewolf.name} made no valid choice');
             }
@@ -282,11 +280,13 @@ class GameEngine {
       if (victims.isNotEmpty) {
         final victim =
             victims.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-        state.setTonightVictim(victim);
-        LoggerUtil.instance
-            .i('Werewolves finally chose victim: ${victim.name}');
-
-        // Judge announces decision
+        final firstWerewolf = werewolves.first;
+        final event = firstWerewolf.createKillEvent(victim, state);
+        if (event != null) {
+          firstWerewolf.executeEvent(event, state);
+          LoggerUtil.instance
+              .i('Werewolves finally chose victim: ${victim.name}');
+        }
       } else {
         LoggerUtil.instance.i('Werewolves chose no target');
       }
@@ -314,13 +314,16 @@ class GameEngine {
         LoggerUtil.instance.i('${guard.name} is choosing protect target...');
         try {
           await guard.processInformation(state);
-          final action = await guard.chooseAction(state);
-          if (action is ProtectAction &&
-              action.target?.isAlive == true &&
-              guard.canPerformAction(action, state)) {
-            guard.performAction(action, state);
-            LoggerUtil.instance
-                .i('${guard.name} protected ${action.target?.name}');
+          final target = await guard.chooseNightTarget(state);
+          if (target != null && target.isAlive) {
+            final event = guard.createProtectEvent(target, state);
+            if (event != null) {
+              guard.executeEvent(event, state);
+              LoggerUtil.instance.i('${guard.name} protected ${target.name}');
+            } else {
+              LoggerUtil.instance
+                  .i('${guard.name} made no valid protection choice');
+            }
           } else {
             LoggerUtil.instance
                 .i('${guard.name} made no valid protection choice');
@@ -348,29 +351,36 @@ class GameEngine {
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('Processing seer actions...');
+    LoggerUtil.instance.i('[Judge] Seer please open your eyes');
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    LoggerUtil.instance.i('[Judge] Who do you want to investigate?');
+    await Future.delayed(const Duration(milliseconds: 500));
 
     // Each seer acts in turn
     for (int i = 0; i < seers.length; i++) {
       final seer = seers[i];
       if (seer is AIPlayer && seer.isAlive) {
-        LoggerUtil.instance
-            .i('${seer.name} is choosing investigation target...');
         try {
           await seer.processInformation(state);
-          final action = await seer.chooseAction(state);
-          if (action is InvestigateAction &&
-              action.target?.isAlive == true &&
-              seer.canPerformAction(action, state)) {
-            seer.performAction(action, state);
-            LoggerUtil.instance
-                .i('${seer.name} investigated ${action.target?.name}');
+          final target = await seer.chooseNightTarget(state);
+          if (target != null && target.isAlive) {
+            final event = seer.createInvestigateEvent(target, state);
+            if (event != null) {
+              seer.executeEvent(event, state);
+              LoggerUtil.instance.i(
+                  '[${seer.name}][${seer.role.name}] investigated ${target.name}, ${target.name} is ${target.role.name}');
+            } else {
+              LoggerUtil.instance.i(
+                  '[${seer.name}][${seer.role.name}] made no valid investigation choice');
+            }
           } else {
-            LoggerUtil.instance
-                .i('${seer.name} made no valid investigation choice');
+            LoggerUtil.instance.i(
+                '[${seer.name}][${seer.role.name}] made no valid investigation choice');
           }
         } catch (e) {
-          LoggerUtil.instance.e('Seer ${seer.name} action failed: $e');
+          LoggerUtil.instance
+              .e('[${seer.name}][${seer.role.name}] action failed: $e');
         }
 
         // Delay between seer actions
@@ -409,25 +419,31 @@ class GameEngine {
 
         try {
           await witch.processInformation(state);
-          final action = await witch.chooseAction(state);
+          final target = await witch.chooseNightTarget(state);
 
-          if (action != null && witch.canPerformAction(action, state)) {
-            // Check if poison target is alive
-            if (action is PoisonAction && action.target?.isAlive != true) {
-              LoggerUtil.instance.i(
-                  '${witch.name} poison target invalid (target already dead)');
-            } else {
-              witch.performAction(action, state);
-              if (action is HealAction) {
+          if (target != null) {
+            // Witch can either heal or poison
+            if (target == state.tonightVictim && witchRole.hasAntidote) {
+              // Try to heal the victim
+              final event = witch.createHealEvent(target, state);
+              if (event != null) {
+                witch.executeEvent(event, state);
                 LoggerUtil.instance.i('${witch.name} used heal potion');
-              } else if (action is PoisonAction) {
-                LoggerUtil.instance.i(
-                    '${witch.name} used poison to kill ${action.target?.name}');
               }
+            } else if (target.isAlive && witchRole.hasPoison) {
+              // Try to poison someone
+              final event = witch.createPoisonEvent(target, state);
+              if (event != null) {
+                witch.executeEvent(event, state);
+                LoggerUtil.instance
+                    .i('${witch.name} used poison to kill ${target.name}');
+              }
+            } else {
+              LoggerUtil.instance.i(
+                  '${witch.name} chose not to use potions or action invalid');
             }
           } else {
-            LoggerUtil.instance
-                .i('${witch.name} chose not to use potions or action invalid');
+            LoggerUtil.instance.i('${witch.name} chose not to use potions');
           }
         } catch (e) {
           LoggerUtil.instance.e('Witch ${witch.name} action failed: $e');
@@ -459,7 +475,7 @@ class GameEngine {
     if (victim != null && !state.killCancelled && victim != protected) {
       victim.die('killed by werewolf', state);
       LoggerUtil.instance.i(
-        'Player death: ${victim.playerId}',
+        '[Judge]: ${victim.name} died yesterday night',
         addToLLMContext: true,
       );
     }
@@ -468,7 +484,7 @@ class GameEngine {
     if (poisoned != null && poisoned != protected) {
       poisoned.die('poisoned to death', state);
       LoggerUtil.instance.i(
-        'Player death: ${poisoned.playerId}',
+        '[Judge]: ${poisoned.name} died yesterday night',
         addToLLMContext: true,
       );
     }
@@ -568,14 +584,12 @@ class GameEngine {
           final statement = await player.generateStatement(state, context);
 
           if (statement.isNotEmpty) {
-            final speakAction = SpeakAction(actor: player, message: statement);
-            if (player.canPerformAction(speakAction, state)) {
-              player.performAction(speakAction, state);
-
+            final event = player.createSpeakEvent(statement, state);
+            if (event != null) {
+              player.executeEvent(event, state);
               // Record speech to round log
               LoggerUtil.instance
                   .i('[${player.name}]: $statement', addToLLMContext: true);
-
               // Add speech to discussion history
               discussionHistory.add('[${player.name}]: $statement');
             } else {
@@ -642,15 +656,17 @@ class GameEngine {
         try {
           // Ensure each step completes fully
           await voter.processInformation(state);
-          final action = await voter.chooseAction(state);
+          final target = await voter.chooseVoteTarget(state);
 
-          if (action is VoteAction &&
-              action.target != null &&
-              action.target!.isAlive &&
-              voter.canPerformAction(action, state)) {
-            voter.performAction(action, state);
-            LoggerUtil.instance
-                .i('${voter.name} voted for ${action.target!.name}');
+          if (target != null && target.isAlive) {
+            final event = voter.createVoteEvent(target, state);
+            if (event != null) {
+              voter.executeEvent(event, state);
+              LoggerUtil.instance.i('${voter.name} voted for ${target.name}');
+            } else {
+              LoggerUtil.instance
+                  .i('${voter.name} abstained or action invalid');
+            }
           } else {
             LoggerUtil.instance.i('${voter.name} abstained or action invalid');
           }
@@ -679,7 +695,7 @@ class GameEngine {
       // Execute player
       voteTarget.die('executed by vote', state);
       LoggerUtil.instance.i(
-        'Player death: ${voteTarget.playerId} - vote_execution',
+        '[Judge]: ${voteTarget.name} was executed by vote',
         addToLLMContext: true,
       );
 
@@ -707,9 +723,10 @@ class GameEngine {
           final suspiciousPlayers = hunter.getMostSuspiciousPlayers(state);
           if (suspiciousPlayers.isNotEmpty) {
             final target = suspiciousPlayers.first;
-            final shootAction =
-                HunterShootAction(actor: hunter, target: target);
-            hunter.performAction(shootAction, state);
+            final event = hunter.createHunterShootEvent(target, state);
+            if (event != null) {
+              hunter.executeEvent(event, state);
+            }
           }
         }
       }

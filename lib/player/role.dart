@@ -1,7 +1,6 @@
 import '../utils/random_helper.dart';
 import '../player/player.dart';
 import '../game/game_state.dart';
-import '../game/game_action.dart';
 
 /// Role types
 enum RoleType {
@@ -83,9 +82,8 @@ abstract class Role {
   bool get isEvil => alignment == RoleAlignment.evil;
 
   // Virtual methods
-  List<GameAction> getAvailableActions(Player player, GameState state) {
-    return [];
-  }
+  // Note: getAvailableActions has been removed.
+  // Use Player.createXEvent() methods instead to create events.
 
   bool canUseSkill(Skill skill, Player player, GameState state) {
     return skill.canUse(player, state);
@@ -146,27 +144,6 @@ class VillagerRole extends Role {
     description: '普通村民，没有特殊技能，通过推理和投票找出狼人',
     isUnique: false,
   );
-
-  @override
-  List<GameAction> getAvailableActions(Player player, GameState state) {
-    final actions = <GameAction>[];
-
-    if (state.isDay || state.isVoting) {
-      // 白天可以发言和投票
-      actions.add(SpeakAction(actor: player, message: ''));
-    }
-
-    if (state.isVoting) {
-      // 投票阶段可以投票
-      final alivePlayers = state.alivePlayers.where((p) => p != player).toList();
-      actions.addAll(alivePlayers.map((target) => VoteAction(
-        actor: player,
-        target: target,
-      )));
-    }
-
-    return actions;
-  }
 }
 
 /// 狼人角色
@@ -182,21 +159,6 @@ class WerewolfRole extends Role {
     ],
     isUnique: false,
   );
-
-  @override
-  List<GameAction> getAvailableActions(Player player, GameState state) {
-    if (!state.isNight) return [];
-
-    final actions = <GameAction>[];
-    final alivePlayers = state.alivePlayers.where((p) => !p.role.isWerewolf).toList();
-
-    actions.addAll(alivePlayers.map((target) => KillAction(
-      actor: player,
-      target: target,
-    )));
-
-    return actions;
-  }
 
   @override
   String getNightActionDescription() {
@@ -219,21 +181,6 @@ class SeerRole extends Role {
   );
 
   @override
-  List<GameAction> getAvailableActions(Player player, GameState state) {
-    if (!state.isNight) return [];
-
-    final actions = <GameAction>[];
-    final otherPlayers = state.alivePlayers.where((p) => p != player).toList();
-
-    actions.addAll(otherPlayers.map((target) => InvestigateAction(
-      actor: player,
-      target: target,
-    )));
-
-    return actions;
-  }
-
-  @override
   String getNightActionDescription() {
     return '选择一名玩家查验身份';
   }
@@ -253,33 +200,6 @@ class WitchRole extends Role {
     ],
     isUnique: true,
   );
-
-  @override
-  List<GameAction> getAvailableActions(Player player, GameState state) {
-    if (!state.isNight) return [];
-
-    final actions = <GameAction>[];
-    final tonightVictim = getTonightVictim(state);
-
-    // 解药
-    if (hasAntidote && tonightVictim != null) {
-      actions.add(HealAction(
-        actor: player,
-        target: tonightVictim,
-      ));
-    }
-
-    // 毒药
-    if (hasPoison) {
-      final otherPlayers = state.alivePlayers.where((p) => p != player).toList();
-      actions.addAll(otherPlayers.map((target) => PoisonAction(
-        actor: player,
-        target: target,
-      )));
-    }
-
-    return actions;
-  }
 
   @override
   String getNightActionDescription() {
@@ -351,26 +271,6 @@ class GuardRole extends Role {
     ],
     isUnique: true,
   );
-
-  @override
-  List<GameAction> getAvailableActions(Player player, GameState state) {
-    if (!state.isNight) return [];
-
-    final actions = <GameAction>[];
-    final otherPlayers = state.alivePlayers.where((p) => p != player).toList();
-    final lastGuarded = getPrivateData('last_guarded');
-
-    for (final target in otherPlayers) {
-      if (target != lastGuarded) {
-        actions.add(ProtectAction(
-          actor: player,
-          target: target,
-        ));
-      }
-    }
-
-    return actions;
-  }
 
   @override
   String getNightActionDescription() {

@@ -1,6 +1,6 @@
 import 'role.dart';
 import '../game/game_state.dart';
-import '../game/game_action.dart';
+import '../game/game_event.dart';
 import '../utils/random_helper.dart';
 import '../utils/config_loader.dart';
 
@@ -102,44 +102,129 @@ abstract class Player {
     return actionHistory.sublist(actionHistory.length - limit);
   }
 
-  // Game actions
-  List<GameAction> getAvailableActions(GameState state) {
-    return role.getAvailableActions(this, state);
-  }
+  // Event creation methods - each returns an event instance
 
-  bool canPerformAction(GameAction action, GameState state) {
-    return isAlive && _canPerformAction(action, state);
-  }
-
-  bool _canPerformAction(GameAction action, GameState state) {
-    // Basic validation - can be enhanced later
-    switch (action.type) {
-      case ActionType.kill:
-        return role.isWerewolf && state.isNight;
-      case ActionType.protect:
-        return role.roleId == 'guard' && state.isNight;
-      case ActionType.investigate:
-        return role.roleId == 'seer' && state.isNight;
-      case ActionType.heal:
-      case ActionType.poison:
-        return role.roleId == 'witch' && state.isNight;
-      case ActionType.vote:
-        return state.isVoting && isAlive;
-      case ActionType.speak:
-        return state.isDay && isAlive;
-      case ActionType.useSkill:
-        return isAlive; // Skill-specific validation
+  /// Create a kill event (for werewolves)
+  WerewolfKillEvent? createKillEvent(Player target, GameState state) {
+    if (!isAlive || !role.isWerewolf || !state.isNight || !target.isAlive) {
+      return null;
     }
+    return WerewolfKillEvent(
+      actor: this,
+      target: target,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
   }
 
-  void performAction(GameAction action, GameState state) {
-    if (!canPerformAction(action, state)) {
-      throw Exception('Cannot perform action: ${action.type}');
+  /// Create a protect event (for guards)
+  GuardProtectEvent? createProtectEvent(Player target, GameState state) {
+    if (!isAlive || role.roleId != 'guard' || !state.isNight || !target.isAlive) {
+      return null;
     }
+    return GuardProtectEvent(
+      actor: this,
+      target: target,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
 
-    action.execute(state);
-    addAction(action.toEvent());
-    state.playerAction(this, action.type.name, target: action.target);
+  /// Create an investigate event (for seers)
+  SeerInvestigateEvent? createInvestigateEvent(Player target, GameState state) {
+    if (!isAlive || role.roleId != 'seer' || !state.isNight || !target.isAlive) {
+      return null;
+    }
+    final result = target.role.isWerewolf ? 'Werewolf' : 'Good';
+    return SeerInvestigateEvent(
+      actor: this,
+      target: target,
+      investigationResult: result,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
+
+  /// Create a heal event (for witches)
+  WitchHealEvent? createHealEvent(Player target, GameState state) {
+    if (!isAlive || role.roleId != 'witch' || !state.isNight) {
+      return null;
+    }
+    if (role is WitchRole && !(role as WitchRole).hasAntidote) {
+      return null;
+    }
+    return WitchHealEvent(
+      actor: this,
+      target: target,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
+
+  /// Create a poison event (for witches)
+  WitchPoisonEvent? createPoisonEvent(Player target, GameState state) {
+    if (!isAlive || role.roleId != 'witch' || !state.isNight || !target.isAlive) {
+      return null;
+    }
+    if (role is WitchRole && !(role as WitchRole).hasPoison) {
+      return null;
+    }
+    return WitchPoisonEvent(
+      actor: this,
+      target: target,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
+
+  /// Create a vote event
+  VoteEvent? createVoteEvent(Player target, GameState state) {
+    if (!isAlive || !state.isVoting || !target.isAlive || target == this) {
+      return null;
+    }
+    return VoteEvent(
+      actor: this,
+      target: target,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
+
+  /// Create a speak event
+  SpeakEvent? createSpeakEvent(String message, GameState state) {
+    if (!isAlive || !state.isDay) {
+      return null;
+    }
+    return SpeakEvent(
+      actor: this,
+      message: message,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
+
+  /// Create a hunter shoot event
+  HunterShootEvent? createHunterShootEvent(Player target, GameState state) {
+    if (role.roleId != 'hunter' || !target.isAlive) {
+      return null;
+    }
+    // Check if already shot
+    if (role.getPrivateData('has_shot') == true) {
+      return null;
+    }
+    return HunterShootEvent(
+      actor: this,
+      target: target,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
+
+  /// Execute an event and add it to game state
+  void executeEvent(BaseGameEvent event, GameState state) {
+    state.addEvent(event);
+    event.execute(state);
+    addAction(event);
   }
 
   // Communication
@@ -240,7 +325,7 @@ Action History: ${actionHistory.length} entries
           isAlive: json['isAlive'],
           privateData: Map<String, dynamic>.from(json['privateData']),
           actionHistory: (json['actionHistory'] as List)
-              .map((e) => GameEventExtension.fromJson(e))
+              .map((e) => GameEvent.fromJson(e))
               .toList(),
         );
       case PlayerType.ai:
@@ -297,12 +382,6 @@ class HumanPlayer extends Player {
           type: PlayerType.human,
         );
 
-  @override
-  void performAction(GameAction action, GameState state) {
-    // Human players need confirmation before performing actions
-    super.performAction(action, state);
-  }
-
   factory HumanPlayer._fromJson({
     required String playerId,
     required String name,
@@ -337,16 +416,6 @@ abstract class AIPlayer extends Player {
         );
 
   // AI-specific methods
-  Future<GameAction?> chooseAction(GameState state) async {
-    final availableActions = getAvailableActions(state);
-    if (availableActions.isEmpty) {
-      return null;
-    }
-
-    // Default AI: random selection (to be overridden by specific AI implementations)
-    return random.randomChoice(availableActions);
-  }
-
   Future<String> generateStatement(GameState state, String context) async {
     // Default AI: simple response (to be overridden)
     final statements = [
@@ -357,6 +426,10 @@ abstract class AIPlayer extends Player {
     ];
     return random.randomChoice(statements);
   }
+
+  // Abstract methods for choosing targets
+  Future<Player?> chooseNightTarget(GameState state);
+  Future<Player?> chooseVoteTarget(GameState state);
 
   // AI reasoning process
   Future<void> processInformation(GameState state) async {
