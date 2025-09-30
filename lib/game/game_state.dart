@@ -1,6 +1,5 @@
 import 'dart:io';
 import '../player/player.dart';
-import '../player/judge.dart';
 import '../utils/config_loader.dart';
 
 /// Game phases
@@ -88,9 +87,6 @@ class GameState {
   Player? tonightVictim;
   Player? tonightProtected;
 
-  // Judge and speech history
-  late final Judge judge;
-
   GameState({
     required this.gameId,
     required this.config,
@@ -100,13 +96,9 @@ class GameState {
     this.dayNumber = 0,
     List<GameEvent>? eventHistory,
     Map<String, dynamic>? metadata,
-    Judge? judge,
   })  : eventHistory = eventHistory ?? [],
         metadata = metadata ?? {},
-        startTime = DateTime.now() {
-    // Initialize judge, create new one if not provided
-    this.judge = judge ?? Judge(gameId: gameId);
-  }
+        startTime = DateTime.now();
 
   // Getters
   bool get isGameOver => status == GameStatus.ended;
@@ -134,45 +126,6 @@ class GameState {
     lastUpdateTime = DateTime.now();
   }
 
-  /// Record player speech to judge system
-  void recordPlayerSpeech(Player player, String message) {
-    judge.recordSpeech(
-      playerId: player.playerId,
-      playerName: player.name,
-      roleName: player.role.name,
-      message: message,
-      phase: _getPhaseDisplayName(currentPhase),
-      dayNumber: dayNumber,
-    );
-  }
-
-  /// Get speech history for LLM context
-  String getSpeechHistoryForContext({int? limit}) {
-    return judge.getSpeechHistoryText(limit: limit);
-  }
-
-  /// Get speech history for current phase
-  String getCurrentPhaseSpeechHistory() {
-    return judge.getSpeechHistoryText(
-      fromDay: dayNumber,
-      phase: _getPhaseDisplayName(currentPhase),
-    );
-  }
-
-  /// Get phase display name
-  String _getPhaseDisplayName(GamePhase phase) {
-    switch (phase) {
-      case GamePhase.night:
-        return 'Night';
-      case GamePhase.day:
-        return 'Day';
-      case GamePhase.voting:
-        return 'Voting';
-      case GamePhase.ended:
-        return 'Ended';
-    }
-  }
-
   Future<void> changePhase(GamePhase newPhase) async {
     final oldPhase = currentPhase;
     currentPhase = newPhase;
@@ -180,7 +133,8 @@ class GameState {
     addEvent(GameEvent(
       eventId: 'phase_change_${DateTime.now().millisecondsSinceEpoch}',
       type: GameEventType.phaseChange,
-      description: 'Game phase changed from ${oldPhase.name} to ${newPhase.name}',
+      description:
+          'Game phase changed from ${oldPhase.name} to ${newPhase.name}',
       data: {
         'oldPhase': oldPhase.name,
         'newPhase': newPhase.name,

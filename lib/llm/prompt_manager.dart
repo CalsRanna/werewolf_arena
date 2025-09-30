@@ -316,9 +316,6 @@ $strategyPrompt
     final gamePhase = _getGamePhaseDescription(state);
     final urgency = _getUrgencyLevel(state);
 
-    // 获取发言历史作为上下文
-    final speechHistory = state.getSpeechHistoryForContext(limit: 20);
-
     return '''
 当前游戏状态分析：
 - 游戏进程：第 ${state.dayNumber} 天，$gamePhase
@@ -338,7 +335,7 @@ $strategyPrompt
 - 你的每个发言都可能影响其他玩家的判断
 
 发言历史记录（供参考分析）：
-${speechHistory.isNotEmpty ? speechHistory : '暂无发言记录'}
+{history}
 
 ${knowledge.isNotEmpty ? '你的专属知识：\n${_formatKnowledge(knowledge)}' : ''}
 ''';

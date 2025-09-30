@@ -16,7 +16,7 @@ import 'package:werewolf_arena/utils/random_helper.dart';
 /// Werewolf game main program
 class WerewolfArenaGame {
   late final GameConfig config;
-  late final GameEngine gameEngine;
+  late final GameEngine engine;
   late final LLMService llmService;
   late final PromptManager promptManager;
 
@@ -48,9 +48,7 @@ class WerewolfArenaGame {
     promptManager = PromptManager();
 
     // Initialize game engine
-    gameEngine = GameEngine(
-      config: config,
-    );
+    engine = GameEngine(config: config);
 
     LoggerUtil.instance.i('Werewolf Arena initialized successfully');
   }
@@ -75,7 +73,6 @@ class WerewolfArenaGame {
 
   /// 游戏主循环
   Future<void> _runGameLoop() async {
-    LoggerUtil.instance.i('🐺 Werewolf Game 🌙');
     await _createInitialState();
 
     // 等待用户按回车键开始游戏
@@ -94,14 +91,11 @@ class WerewolfArenaGame {
       }
     }
 
-    // 开始游戏
-    await gameEngine.startGame();
+    await engine.startGame();
 
-    // 主循环 - 直接控制游戏执行，让UI和游戏引擎紧密配合
-    while (_isRunning && !gameEngine.isGameEnded) {
-      final currentState = gameEngine.currentState!;
+    while (_isRunning && !engine.isGameEnded) {
+      final currentState = engine.currentState!;
 
-      // 根据当前阶段处理游戏逻辑
       switch (currentState.currentPhase) {
         case GamePhase.night:
           await _executeNightPhase(currentState);
@@ -120,7 +114,7 @@ class WerewolfArenaGame {
       }
 
       // 检查游戏是否结束
-      if (gameEngine.isGameEnded) {
+      if (engine.isGameEnded) {
         LoggerUtil.instance.i('🎊 Game Over');
         LoggerUtil.instance.i('Game ended successfully');
         _isRunning = false;
@@ -131,39 +125,39 @@ class WerewolfArenaGame {
   /// 执行夜晚阶段 - UI与游戏引擎同步
   Future<void> _executeNightPhase(GameState state) async {
     LoggerUtil.instance.i('🌙 Night Phase');
-    LoggerUtil.instance.i('Night phase started');
+    LoggerUtil.instance.i('[Judge]: Night phase started');
 
     // Execute complete night phase with all role actions
-    await gameEngine.processWerewolfActions();
-    await gameEngine.processGuardActions();
-    await gameEngine.processSeerActions();
-    await gameEngine.processWitchActions();
+    await engine.processWerewolfActions();
+    await engine.processGuardActions();
+    await engine.processSeerActions();
+    await engine.processWitchActions();
 
     // Resolve all night actions
-    await gameEngine.resolveNightActions();
+    await engine.resolveNightActions();
 
     // Move to day phase
-    await gameEngine.currentState!.changePhase(GamePhase.day);
+    await engine.currentState!.changePhase(GamePhase.day);
   }
 
   /// 执行白天阶段
   Future<void> _executeDayPhase(GameState state) async {
     LoggerUtil.instance.i('☀️ Day Phase');
     LoggerUtil.instance.i('Day phase started');
-    await gameEngine.runDiscussionPhase();
-    await gameEngine.currentState!.changePhase(GamePhase.voting);
+    await engine.runDiscussionPhase();
+    await engine.currentState!.changePhase(GamePhase.voting);
   }
 
   /// 执行投票阶段
   Future<void> _executeVotingPhase(GameState state) async {
     LoggerUtil.instance.i('🗳️ Voting Phase');
     LoggerUtil.instance.i('Voting phase started');
-    await gameEngine.collectVotes();
-    await gameEngine.resolveVoting();
+    await engine.collectVotes();
+    await engine.resolveVoting();
 
     // 增加天数，转到夜晚
-    gameEngine.currentState!.dayNumber++;
-    await gameEngine.currentState!.changePhase(GamePhase.night);
+    engine.currentState!.dayNumber++;
+    await engine.currentState!.changePhase(GamePhase.night);
   }
 
   /// 创建玩家列表
@@ -224,13 +218,13 @@ class WerewolfArenaGame {
 
   /// 创建初始游戏状态
   Future<GameState> _createInitialState() async {
-    await gameEngine.initializeGame();
+    await engine.initializeGame();
 
     // Create and set players
     final players = _createPlayers();
-    gameEngine.setPlayers(players);
+    engine.setPlayers(players);
 
-    return gameEngine.currentState!;
+    return engine.currentState!;
   }
 
   /// 解析命令行参数
@@ -289,71 +283,21 @@ class WerewolfArenaGame {
       (llmService as OpenAIService).dispose();
     }
 
-    gameEngine.dispose();
+    engine.dispose();
     LoggerUtil.instance.dispose(); // 确保关闭所有日志文件
     LoggerUtil.instance.i('应用程序已清理');
   }
-
-  /// 显示帮助信息
-  void _showHelp() {
-    LoggerUtil.instance.i('''
-🐺 狼人杀游戏 - LLM版本
-
-用法: dart run bin/werewolf_arena.dart [选项]
-
-选项:
-  -c, --config <path>    配置文件路径
-  -p, --players <num>    玩家数量 (6-12, 默认12人局)
-  -d, --debug           启用调试模式
-  -t, --test            启用测试模式
-  --colors              启用颜色输出 (默认: true)
-  -h, --help            显示帮助信息
-
-环境变量:
-  OPENAI_API_KEY         OpenAI API密钥 (必需)
-
-示例:
-  dart run bin/werewolf_arena.dart
-  dart run bin/werewolf_arena.dart --players 8
-  dart run bin/werewolf_arena.dart --config config/custom_config.yaml
-  OPENAI_API_KEY=your_key dart run bin/werewolf_arena.dart
-
-游戏配置 (12人局):
-  • 4名平民 + 4名狼人 + 4名神职 (预言家、女巫、猎人、守卫)
-  • 行动顺序: 1-12顺序 (可在配置文件中改为12-1逆序)
-  • 所有AI玩家都由真实的LLM服务驱动，具备完整策略思维
-  • 严格的身份隐藏策略，符合高水平狼人杀规则
-
-游戏说明:
-  • 你将以上帝视角观察AI玩家进行狼人杀游戏
-  • 每个回合结束后需要按回车键继续
-  • 游戏会自动进行直到某一阵营获胜
-  • 在调试模式下可以看到更详细的信息
-
-按 Ctrl+C 可以随时退出游戏。
-''');
-  }
 }
 
-/// 主函数
-void main(List<String> arguments) async {
-  final app = WerewolfArenaGame();
-
+Future<void> main(List<String> arguments) async {
+  final game = WerewolfArenaGame();
   try {
-    await app.initialize(arguments);
-
-    // 检查是否需要显示帮助
-    if (arguments.contains('--help') || arguments.contains('-h')) {
-      app._showHelp();
-      return;
-    }
-
-    await app.run();
+    await game.initialize(arguments);
+    await game.run();
   } catch (e) {
-    print('❌ 程序启动失败: $e');
+    LoggerUtil.instance.e('Game initialization failed: $e');
     exit(1);
   } finally {
-    // 确保程序正常退出
     exit(0);
   }
 }
