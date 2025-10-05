@@ -297,7 +297,9 @@ Please make appropriate statements based on your role and personality. Maintain 
     GameState state,
   ) async {
     try {
-      final jsonData = jsonDecode(response.content);
+      // Clean up the response content to extract pure JSON
+      final cleanedContent = _extractJsonFromResponse(response.content);
+      final jsonData = jsonDecode(cleanedContent);
 
       // 支持多种target字段名: target_id, target, 目标
       final targetId = jsonData['target_id'] ?? jsonData['target'] ?? jsonData['目标'];
@@ -344,13 +346,86 @@ Please make appropriate statements based on your role and personality. Maintain 
     } catch (e) {
       LoggerUtil.instance.e('Failed to parse action response: $e');
       LoggerUtil.instance.e('Response content: ${response.content}');
-      return LLMResponse.error(
-        content: response.content,
-        errors: ['Parse error: $e'],
-        tokensUsed: response.tokensUsed,
-        responseTimeMs: response.responseTimeMs,
-      );
+
+      // Try to extract any useful information even if JSON parsing fails
+      return _handleParseError(response, e);
     }
+  }
+
+  /// Extract JSON from response content, handling markdown formatting and other issues
+  String _extractJsonFromResponse(String content) {
+    // Remove markdown code blocks
+    String cleaned = content;
+
+    // Remove ```json and ``` markers
+    cleaned = cleaned.replaceAll(RegExp(r'```json\s*'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'```\s*$'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'^```\s*'), '');
+
+    // Remove any leading/trailing whitespace
+    cleaned = cleaned.trim();
+
+    // Try to find JSON object within the text
+    final jsonStart = cleaned.indexOf('{');
+    final jsonEnd = cleaned.lastIndexOf('}');
+
+    if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
+      cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+    }
+
+    LoggerUtil.instance.d('Cleaned JSON: $cleaned');
+    return cleaned;
+  }
+
+  /// Handle parsing errors with fallback strategies
+  LLMResponse _handleParseError(LLMResponse response, dynamic error) {
+    LoggerUtil.instance.w('Attempting to extract information from malformed response');
+
+    final content = response.content.toLowerCase();
+    final parsedData = <String, dynamic>{};
+    final targets = <Player>[];
+    String statement = '';
+
+    // Try to extract basic information using regex patterns
+    try {
+      // Look for action type
+      final actionMatch = RegExp(r'"action"\s*:\s*"([^"]+)"').firstMatch(content);
+      if (actionMatch != null) {
+        parsedData['action'] = actionMatch.group(1);
+      }
+
+      // Look for target
+      final targetMatch = RegExp(r'"target"\s*:\s*"([^"]+)"').firstMatch(content);
+      if (targetMatch != null) {
+        parsedData['target'] = targetMatch.group(1);
+      }
+
+      // Look for reasoning
+      final reasoningMatch = RegExp(r'"reasoning"\s*:\s*"([^"]+)"').firstMatch(content);
+      if (reasoningMatch != null) {
+        parsedData['reasoning'] = reasoningMatch.group(1);
+      }
+
+      // Look for statement
+      final statementMatch = RegExp(r'"statement"\s*:\s*"([^"]+)"').firstMatch(content);
+      if (statementMatch != null) {
+        statement = statementMatch.group(1) ?? '';
+        parsedData['statement'] = statement;
+      }
+
+      LoggerUtil.instance.i('Extracted partial data from malformed JSON: $parsedData');
+    } catch (e) {
+      LoggerUtil.instance.e('Failed to extract any data from malformed response: $e');
+    }
+
+    return LLMResponse.success(
+      content: response.content,
+      parsedData: parsedData,
+      targets: targets,
+      statement: statement,
+      tokensUsed: response.tokensUsed,
+      responseTimeMs: response.responseTimeMs,
+    );
   }
 
   String _buildContext(Player player, GameState state) {

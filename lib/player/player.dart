@@ -49,24 +49,8 @@ abstract class Player {
     return privateData['skill_uses_$skillId'] ?? 0;
   }
 
-  int getSkillCooldown(String skillId) {
-    return privateData['skill_cooldown_$skillId'] ?? 0;
-  }
-
   void useSkill(String skillId) {
     privateData['skill_uses_$skillId'] = getSkillUses(skillId) + 1;
-  }
-
-  void setSkillCooldown(String skillId, int cooldown) {
-    privateData['skill_cooldown_$skillId'] = cooldown;
-  }
-
-  void reduceSkillCooldowns() {
-    privateData.forEach((key, value) {
-      if (key.startsWith('skill_cooldown_') && value is int && value > 0) {
-        privateData[key] = value - 1;
-      }
-    });
   }
 
   // Private data management
@@ -150,7 +134,7 @@ abstract class Player {
     if (!isAlive || role.roleId != 'witch' || !state.isNight) {
       return null;
     }
-    if (role is WitchRole && !(role as WitchRole).hasAntidote) {
+    if (role is WitchRole && !(role as WitchRole).hasAntidote(state)) {
       return null;
     }
     return WitchHealEvent(
@@ -166,7 +150,7 @@ abstract class Player {
     if (!isAlive || role.roleId != 'witch' || !state.isNight || !target.isAlive) {
       return null;
     }
-    if (role is WitchRole && !(role as WitchRole).hasPoison) {
+    if (role is WitchRole && !(role as WitchRole).hasPoison(state)) {
       return null;
     }
     return WitchPoisonEvent(
@@ -203,6 +187,19 @@ abstract class Player {
     );
   }
 
+  /// Create a werewolf discussion event (only for werewolves during night phase)
+  WerewolfDiscussionEvent? createWerewolfDiscussionEvent(String message, GameState state) {
+    if (!isAlive || !role.isWerewolf || state.isDay) {
+      return null;
+    }
+    return WerewolfDiscussionEvent(
+      actor: this,
+      message: message,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase.name,
+    );
+  }
+
   /// Create a hunter shoot event
   HunterShootEvent? createHunterShootEvent(Player target, GameState state) {
     if (role.roleId != 'hunter' || !target.isAlive) {
@@ -227,21 +224,7 @@ abstract class Player {
     addAction(event);
   }
 
-  // Communication
-  void receiveMessage(String message, {Player? from}) {
-    // Store message in private data for AI processing
-    final messages = getPrivateData<List<String>>('messages') ?? [];
-    messages.add('${from?.name ?? 'System'}: $message');
-    setPrivateData('messages', messages);
-  }
-
-  List<String> getMessages() {
-    return getPrivateData<List<String>>('messages') ?? [];
-  }
-
-  void clearMessages() {
-    removePrivateData('messages');
-  }
+  // Communication through events only - no private message system needed
 
   // Knowledge and memory
   void addKnowledge(String key, dynamic value) {

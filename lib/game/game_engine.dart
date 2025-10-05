@@ -247,13 +247,21 @@ class GameEngine {
         }
       }
     } else {
+      // Multiple werewolves - start with discussion phase
+      await _processWerewolfDiscussion(werewolves);
+
+      // Now proceed with kill decision after discussion
       final victims = <Player, int>{};
+
+      LoggerUtil.instance
+          .i('[Judge]: Now each werewolf will choose their target');
 
       for (int i = 0; i < werewolves.length; i++) {
         final werewolf = werewolves[i];
         if (werewolf is AIPlayer && werewolf.isAlive) {
           try {
             await werewolf.processInformation(state);
+
             final target = await werewolf.chooseNightTarget(state);
             if (target != null && target.isAlive) {
               victims[target] = (victims[target] ?? 0) + 1;
@@ -293,6 +301,81 @@ class GameEngine {
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
+  /// Process werewolf discussion phase - werewolves discuss tactics before killing
+  Future<void> _processWerewolfDiscussion(List<Player> werewolves) async {
+    final state = _currentState!;
+
+    LoggerUtil.instance
+        .i('[Judge]: Werewolves, please open your eyes and discuss');
+
+    // Collect discussion history for this round
+    final discussionHistory = <String>[];
+
+    // Each werewolf speaks in turn to discuss strategy
+    for (int i = 0; i < werewolves.length; i++) {
+      final werewolf = werewolves[i];
+
+      if (werewolf is AIPlayer && werewolf.isAlive) {
+        try {
+          await werewolf.processInformation(state);
+
+          // Build context for werewolf discussion
+          String context;
+          if (state.dayNumber == 1) {
+            // First night - focus on overall strategy
+            context = '狼人讨论阶段：这是第一个夜晚，请与其他狼人队友讨论整局战术，包括：\n'
+                '1. 首刀策略（选择什么类型的目标）\n'
+                '2. 如何在白天伪装成好人\n'
+                '3. 如何应对可能的预言家跳身份\n'
+                '4. 队友配合策略';
+          } else {
+            // Later nights - based on day discussions
+            context = '狼人讨论阶段：请与其他狼人队友讨论今晚的策略，包括选择击杀目标、分析场上局势等。';
+          }
+
+          if (discussionHistory.isNotEmpty) {
+            context += '\n\n之前队友的发言：\n${discussionHistory.join('\n')}';
+          }
+          context += '\n\n现在轮到你发言，请分享你的想法和建议：';
+
+          final statement = await werewolf.generateStatement(state, context);
+
+          if (statement.isNotEmpty) {
+            // 创建狼人讨论事件并执行
+            final event =
+                werewolf.createWerewolfDiscussionEvent(statement, state);
+            if (event != null) {
+              werewolf.executeEvent(event, state);
+              LoggerUtil.instance.i(
+                  '[${werewolf.name}] (${werewolf.role.name}): $statement',
+                  addToLLMContext: true);
+              discussionHistory.add('[${werewolf.name}]: $statement');
+            } else {
+              LoggerUtil.instance.w(
+                  '${werewolf.name} cannot create werewolf discussion event');
+              LoggerUtil.instance.i('[${werewolf.name}] (狼人讨论): [无法创建讨论事件]');
+            }
+          } else {
+            LoggerUtil.instance
+                .w('${werewolf.name} generated empty statement in discussion');
+            LoggerUtil.instance.i('[${werewolf.name}] (狼人讨论): [生成内容为空]');
+          }
+        } catch (e) {
+          LoggerUtil.instance
+              .e('Werewolf ${werewolf.name} discussion failed: $e');
+          LoggerUtil.instance.i('[${werewolf.name}] (狼人讨论): [因技术问题无法发言]');
+        }
+
+        // Delay between werewolf discussions
+        if (i < werewolves.length - 1) {
+          await Future.delayed(const Duration(milliseconds: 1200));
+        }
+      }
+    }
+
+    await Future.delayed(const Duration(milliseconds: 800));
+  }
+
   /// Process guard actions - each guard acts in turn (public method)
   Future<void> processGuardActions() async {
     final state = _currentState!;
@@ -303,13 +386,13 @@ class GameEngine {
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('Processing guard actions...');
+    LoggerUtil.instance.i('[Judge]: Guard please open your eyes');
+    LoggerUtil.instance.i('[Judge]: Who do you want to protect?');
 
     // Each guard acts in turn
     for (int i = 0; i < guards.length; i++) {
       final guard = guards[i];
       if (guard is AIPlayer && guard.isAlive) {
-        LoggerUtil.instance.i('${guard.name} is choosing protect target...');
         try {
           await guard.processInformation(state);
           final target = await guard.chooseNightTarget(state);
@@ -400,7 +483,7 @@ class GameEngine {
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('Processing witch actions...');
+    LoggerUtil.instance.i('[Judge] Witch please open your eyes');
 
     // Each witch acts in turn
     for (int i = 0; i < witches.length; i++) {
@@ -408,11 +491,22 @@ class GameEngine {
       if (witch is AIPlayer && witch.role is WitchRole && witch.isAlive) {
         final witchRole = witch.role as WitchRole;
 
-        // Set tonight victim for witch decision
-        witchRole.setTonightVictim(state.tonightVictim);
+        // Tonight victim is available through state.tonightVictim
+        // No need to set it in witch role anymore
 
-        LoggerUtil.instance
-            .i('${witch.name} is considering whether to use potions...');
+        // First, ask about healing (antidote)
+        if (witchRole.hasAntidote(state) && state.tonightVictim != null) {
+          LoggerUtil.instance.i('[Judge] ${state.tonightVictim!.name} was killed tonight. Do you want to use your antidote?');
+        } else if (witchRole.hasAntidote(state)) {
+          LoggerUtil.instance.i('[Judge] No one was killed tonight. Do you want to use your antidote anyway?');
+        }
+
+        // Then ask about poison
+        if (witchRole.hasPoison(state)) {
+          LoggerUtil.instance.i('[Judge] Do you want to use your poison?');
+        }
+
+        LoggerUtil.instance.i('${witch.name} is considering whether to use potions...');
 
         try {
           await witch.processInformation(state);
@@ -420,32 +514,29 @@ class GameEngine {
 
           if (target != null) {
             // Witch can either heal or poison
-            if (target == state.tonightVictim && witchRole.hasAntidote) {
+            if (target == state.tonightVictim && witchRole.hasAntidote(state)) {
               // Try to heal the victim
               final event = witch.createHealEvent(target, state);
               if (event != null) {
                 witch.executeEvent(event, state);
-                LoggerUtil.instance.i('${witch.name} used heal potion');
+                LoggerUtil.instance.i('[Judge] Witch chose to use antidote (target hidden)');
               }
-            } else if (target.isAlive && witchRole.hasPoison) {
+            } else if (target.isAlive && witchRole.hasPoison(state)) {
               // Try to poison someone
               final event = witch.createPoisonEvent(target, state);
               if (event != null) {
                 witch.executeEvent(event, state);
-                LoggerUtil.instance
-                    .i('${witch.name} used poison to kill ${target.name}');
+                LoggerUtil.instance.i('[Judge] Witch chose to use poison (target hidden)');
               }
             } else {
-              LoggerUtil.instance.i(
-                  '${witch.name} chose not to use potions or action invalid');
+              LoggerUtil.instance.i('[Judge] Witch chose not to use potions or action invalid');
             }
           } else {
-            LoggerUtil.instance.i('${witch.name} chose not to use potions');
+            LoggerUtil.instance.i('[Judge] Witch chose not to use potions');
           }
         } catch (e) {
           LoggerUtil.instance.e('Witch ${witch.name} action failed: $e');
-          LoggerUtil.instance
-              .i('${witch.name} chose not to use potions due to error');
+          LoggerUtil.instance.i('[Judge] Witch chose not to use potions due to error');
         }
 
         // Delay between witch actions
@@ -461,8 +552,6 @@ class GameEngine {
   /// Resolve night action results (public method)
   Future<void> resolveNightActions() async {
     final state = _currentState!;
-
-    LoggerUtil.instance.i('Resolving night actions...');
 
     final Player? victim = state.tonightVictim;
     final protected = state.tonightProtected;
@@ -488,11 +577,6 @@ class GameEngine {
 
     // Clear night action data
     state.clearNightActions();
-
-    // Reduce skill cooldowns
-    for (final player in state.alivePlayers) {
-      player.reduceSkillCooldowns();
-    }
   }
 
   /// Process day phase
@@ -657,12 +741,14 @@ class GameEngine {
         try {
           // Ensure each step completes fully
           await voter.processInformation(state);
-          final target = await voter.chooseVoteTarget(state, pkCandidates: pkCandidates);
+          final target =
+              await voter.chooseVoteTarget(state, pkCandidates: pkCandidates);
 
           if (target != null && target.isAlive) {
             // 额外验证：如果是PK投票，确保目标在PK候选人中
             if (pkCandidates != null && !pkCandidates.contains(target)) {
-              LoggerUtil.instance.w('${voter.name} voted for ${target.name} who is not in PK candidates, vote ignored');
+              LoggerUtil.instance.w(
+                  '${voter.name} voted for ${target.name} who is not in PK candidates, vote ignored');
               LoggerUtil.instance.i('${voter.name} abstained or voted invalid');
               continue;
             }
@@ -778,16 +864,20 @@ class GameEngine {
                 addToLLMContext: true,
               );
             } else {
-              LoggerUtil.instance.w('Failed to create speak event for ${player.name} in PK phase');
+              LoggerUtil.instance.w(
+                  'Failed to create speak event for ${player.name} in PK phase');
             }
           } else {
-            LoggerUtil.instance.w('${player.name} generated empty PK statement');
-            LoggerUtil.instance.i('[${player.name}] (PK): [沉默，未发言]', addToLLMContext: true);
+            LoggerUtil.instance
+                .w('${player.name} generated empty PK statement');
+            LoggerUtil.instance
+                .i('[${player.name}] (PK): [沉默，未发言]', addToLLMContext: true);
           }
         } catch (e, stackTrace) {
           LoggerUtil.instance.e('PK speech failed for ${player.name}: $e');
           LoggerUtil.instance.e('Stack trace: $stackTrace');
-          LoggerUtil.instance.i('[${player.name}] (PK): [因错误未能发言]', addToLLMContext: true);
+          LoggerUtil.instance
+              .i('[${player.name}] (PK): [因错误未能发言]', addToLLMContext: true);
         }
 
         // 延迟确保每个玩家的发言被完整处理
@@ -837,7 +927,8 @@ class GameEngine {
     } else {
       LoggerUtil.instance.i('PK vote still tied or invalid - no one executed');
       if (pkResults.isEmpty) {
-        LoggerUtil.instance.w('Warning: No valid votes in PK phase, this may indicate an issue');
+        LoggerUtil.instance.w(
+            'Warning: No valid votes in PK phase, this may indicate an issue');
       }
     }
   }
@@ -912,25 +1003,29 @@ class GameEngine {
     // 游戏时长
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
-    LoggerUtil.instance.i('⏱️  游戏时长: ${minutes}分${seconds}秒，共${state.dayNumber}天');
+    LoggerUtil.instance.i('⏱️  游戏时长: $minutes分$seconds秒，共${state.dayNumber}天');
 
     // 存活情况
     LoggerUtil.instance.i('');
-    LoggerUtil.instance.i('最终存活: ${state.alivePlayers.length}人', addToLLMContext: true);
+    LoggerUtil.instance
+        .i('最终存活: ${state.alivePlayers.length}人', addToLLMContext: true);
     for (final player in state.alivePlayers) {
       final roleName = player.role.name;
       final camp = player.role.isWerewolf ? '狼人' : '好人';
-      LoggerUtil.instance.i('  ✓ ${player.name} - $roleName ($camp)', addToLLMContext: true);
+      LoggerUtil.instance
+          .i('  ✓ ${player.name} - $roleName ($camp)', addToLLMContext: true);
     }
 
     // 死亡情况
     if (state.deadPlayers.isNotEmpty) {
       LoggerUtil.instance.i('');
-      LoggerUtil.instance.i('已出局: ${state.deadPlayers.length}人', addToLLMContext: true);
+      LoggerUtil.instance
+          .i('已出局: ${state.deadPlayers.length}人', addToLLMContext: true);
       for (final player in state.deadPlayers) {
         final roleName = player.role.name;
         final camp = player.role.isWerewolf ? '狼人' : '好人';
-        LoggerUtil.instance.i('  ✗ ${player.name} - $roleName ($camp)', addToLLMContext: true);
+        LoggerUtil.instance
+            .i('  ✗ ${player.name} - $roleName ($camp)', addToLLMContext: true);
       }
     }
 
@@ -940,15 +1035,18 @@ class GameEngine {
 
     // 狼人阵营
     final werewolves = state.players.where((p) => p.role.isWerewolf).toList();
-    LoggerUtil.instance.i('  🐺 狼人阵营 (${werewolves.length}人):', addToLLMContext: true);
+    LoggerUtil.instance
+        .i('  🐺 狼人阵营 (${werewolves.length}人):', addToLLMContext: true);
     for (final wolf in werewolves) {
       final status = wolf.isAlive ? '存活' : '出局';
-      LoggerUtil.instance.i('     ${wolf.name} - ${wolf.role.name} [$status]', addToLLMContext: true);
+      LoggerUtil.instance.i('     ${wolf.name} - ${wolf.role.name} [$status]',
+          addToLLMContext: true);
     }
 
     // 好人阵营
     final goods = state.players.where((p) => !p.role.isWerewolf).toList();
-    LoggerUtil.instance.i('  👼 好人阵营 (${goods.length}人):', addToLLMContext: true);
+    LoggerUtil.instance
+        .i('  👼 好人阵营 (${goods.length}人):', addToLLMContext: true);
 
     // 神职
     final gods = goods.where((p) => p.role.isGod).toList();
@@ -956,7 +1054,8 @@ class GameEngine {
       LoggerUtil.instance.i('     神职:', addToLLMContext: true);
       for (final god in gods) {
         final status = god.isAlive ? '存活' : '出局';
-        LoggerUtil.instance.i('       ${god.name} - ${god.role.name} [$status]', addToLLMContext: true);
+        LoggerUtil.instance.i('       ${god.name} - ${god.role.name} [$status]',
+            addToLLMContext: true);
       }
     }
 
@@ -966,7 +1065,9 @@ class GameEngine {
       LoggerUtil.instance.i('     平民:', addToLLMContext: true);
       for (final villager in villagers) {
         final status = villager.isAlive ? '存活' : '出局';
-        LoggerUtil.instance.i('       ${villager.name} - ${villager.role.name} [$status]', addToLLMContext: true);
+        LoggerUtil.instance.i(
+            '       ${villager.name} - ${villager.role.name} [$status]',
+            addToLLMContext: true);
       }
     }
 

@@ -274,6 +274,33 @@ class PromptManager {
     final contextPrompt = _buildContextPrompt(player, state, knowledge);
     final personalityPrompt = _buildPersonalityPrompt(personality);
 
+    // 如果是狼人且在夜晚阶段，添加本轮狼人讨论历史
+    String werewolfDiscussionContext = '';
+    if (player.role.isWerewolf && state.currentPhase == GamePhase.night) {
+      final discussionEvents = state.eventHistory
+          .where((e) =>
+              e.type == GameEventType.playerAction &&
+              e.data['type'] == 'werewolf_discussion' &&
+              (e.data['dayNumber'] as int?) == state.dayNumber)
+          .toList();
+
+      if (discussionEvents.isNotEmpty) {
+        final discussions = discussionEvents.map((e) {
+          final speaker = e.initiator?.name ?? '未知';
+          final message = e.data['message'] as String? ?? '';
+          return '[$speaker]: $message';
+        }).join('\n\n');
+
+        werewolfDiscussionContext = '''
+
+【今晚狼人讨论记录】
+$discussions
+
+根据以上讨论内容，现在请你选择具体的击杀目标。要参考队友们的建议和策略安排。
+''';
+      }
+    }
+
     return '''
 $basePrompt
 
@@ -284,12 +311,20 @@ $personalityPrompt
 $contextPrompt
 
 当前游戏阶段：${state.currentPhase.name}
-存活玩家：${state.alivePlayers.map((p) => p.name).join(', ')}
+存活玩家：${state.alivePlayers.map((p) => p.name).join(', ')}$werewolfDiscussionContext
 
-请根据你的角色、性格和当前情况，选择最合适的目标玩家。
-返回JSON格式响应，包含你的选择、推理和公开陈述：
+请返回纯JSON格式（不要使用markdown格式或代码块）：
+{
+  "action": "动作类型 (kill/investigate/heal/poison/vote/speak/protect)",
+  "target": "目标玩家ID (如果需要)",
+  "reasoning": "你的推理过程",
+  "statement": "你要发表的公开陈述"
+}
 
-${_buildActionResponseFormat()}
+重要提醒：
+- 必须返回有效的JSON格式，不要使用```json或其他标记
+- 确保所有字符串字段都用双引号包围
+- 不要在JSON外添加任何额外文字或解释
 
 ''';
   }
@@ -414,12 +449,17 @@ $rolePrompt
    - 你可以跟风或对抗（根据局势）
    - 关键是：你的选择要对你的阵营有利
 
-请返回JSON格式：
+请返回纯JSON格式（不要使用markdown格式或代码块）：
 {
   "action": "vote",
   "target": "目标玩家的名字（例如：3号玩家）",
   "reasoning": "详细说明你为什么投这个人，基于逻辑推理"
 }
+
+重要提醒：
+- 必须返回有效的JSON格式，不要使用```json或其他标记
+- 确保所有字符串字段都用双引号包围
+- 不要在JSON外添加任何额外文字或解释
 ''';
   }
 
@@ -494,7 +534,7 @@ $strategyPrompt
         final night = event.data['dayNumber'] ?? '?';
         // 重要：明确查验结果的含义
         final resultDesc = result == 'Werewolf' ? '狼人(查杀)' : '好人(金水)';
-        investigations.add('- 第${night}夜查验${targetName}: $resultDesc');
+        investigations.add('- 第$night夜查验$targetName: $resultDesc');
       }
 
       if (investigations.isNotEmpty) {
@@ -637,11 +677,15 @@ $formattedEvents
 
       case GameEventType.playerAction:
         final actionType = event.data['type'] ?? '';
+        final speakerName = event.initiator?.name ?? '未知玩家';
+        final message = event.data['message'] ?? '';
+
         if (actionType == 'speak') {
-          final speakerName = event.initiator?.name ?? '未知玩家';
-          final message = event.data['message'] ?? '';
-          // 发言内容可能很长，这里保留完整内容
+          // 白天发言内容
           return '[$timestamp] 💬 [$speakerName]: $message';
+        } else if (actionType == 'werewolf_discussion') {
+          // 狼人讨论内容
+          return '[$timestamp] 🐺 [$speakerName] (狼人讨论): $message';
         }
         return '[$timestamp] 🎯 ${event.description}';
 
@@ -651,40 +695,6 @@ $formattedEvents
       case GameEventType.nightFall:
         return '[$timestamp] 🌙 天黑了';
     }
-  }
-
-  String _buildActionResponseFormat() {
-    return '''
-{
-  "action": "动作类型 (kill/investigate/heal/poison/vote/speak/protect)",
-  "target": "目标玩家ID (如果需要)",
-  "reasoning": "你的推理过程",
-  "statement": "你要发表的公开陈述"
-}
-''';
-  }
-
-  String _formatKnowledge(Map<String, dynamic> knowledge) {
-    final formatted = <String>[];
-
-    knowledge.forEach((key, value) {
-      if (value is Map) {
-        formatted.add('- $key: ${_formatKnowledgeValue(value)}');
-      } else if (value is List) {
-        formatted.add('- $key: ${value.length} 项');
-      } else {
-        formatted.add('- $key: $value');
-      }
-    });
-
-    return formatted.join('\n');
-  }
-
-  String _formatKnowledgeValue(dynamic value) {
-    if (value is Map) {
-      return value.entries.map((e) => '${e.key}: ${e.value}').join(', ');
-    }
-    return value.toString();
   }
 
   String _getTraitLevel(double value) {

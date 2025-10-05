@@ -1,6 +1,5 @@
 import 'game_state.dart';
 import '../player/player.dart';
-import '../player/role.dart';
 
 /// Helper function to safely convert dynamic to Player or null
 Player? _toPlayer(dynamic obj) {
@@ -119,10 +118,8 @@ class GuardProtectEvent extends BaseGameEvent {
   @override
   void execute(GameState state) {
     state.setTonightProtected(target);
-
-    if (initiator?.role is GuardRole) {
-      (initiator!.role as GuardRole).setLastGuarded(target);
-    }
+    // Last guarded information is now tracked through event history
+    // No need to store in private data
   }
 }
 
@@ -155,12 +152,9 @@ class SeerInvestigateEvent extends BaseGameEvent {
 
   @override
   void execute(GameState state) {
-    // Add knowledge to seer's private data
-    initiator?.addKnowledge('investigation_${_getPlayerId(target!)}', {
-      'result': investigationResult,
-      'night': state.dayNumber,
-      'actual_role': (target as dynamic).role.roleId,
-    });
+    // Investigation result is already stored in the event data
+    // The seer will access this information through the event system
+    // No need for private data storage
   }
 }
 
@@ -190,10 +184,8 @@ class WitchHealEvent extends BaseGameEvent {
   @override
   void execute(GameState state) {
     state.cancelTonightKill();
-
-    if (initiator?.role is WitchRole) {
-      (initiator!.role as WitchRole).useAntidote();
-    }
+    // Antidote usage is now tracked through event history
+    // No need to update private data
   }
 }
 
@@ -223,10 +215,8 @@ class WitchPoisonEvent extends BaseGameEvent {
   @override
   void execute(GameState state) {
     state.setTonightPoisoned(target);
-
-    if (initiator?.role is WitchRole) {
-      (initiator!.role as WitchRole).usePoison();
-    }
+    // Poison usage is now tracked through event history
+    // No need to update private data
   }
 }
 
@@ -283,12 +273,41 @@ class SpeakEvent extends BaseGameEvent {
 
   @override
   void execute(GameState state) {
-    // Broadcast message to all alive players
-    for (final player in state.players) {
-      if (player.isAlive) {
-        player.receiveMessage(message, from: initiator!);
-      }
-    }
+    // Message content is already stored in event data
+    // Players will access this through the event system
+    // No need for separate message broadcasting
+  }
+}
+
+/// 狼人讨论事件 - 仅狼人可见
+class WerewolfDiscussionEvent extends BaseGameEvent {
+  final String message;
+
+  WerewolfDiscussionEvent({
+    required dynamic actor,
+    required this.message,
+    int? dayNumber,
+    String? phase,
+  }) : super(
+          eventId: 'werewolf_discussion_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          type: GameEventType.playerAction,
+          description: '${_getPlayerName(actor)} 狼人讨论: $message',
+          initiator: _toPlayer(actor),
+          visibility: EventVisibility.roleSpecific,
+          visibleToRole: 'werewolf',
+          data: {
+            'type': 'werewolf_discussion',
+            'message': message,
+            'dayNumber': dayNumber,
+            'phase': phase,
+          },
+        );
+
+  @override
+  void execute(GameState state) {
+    // Message content is already stored in event data
+    // Werewolves will access this through the event system with roleSpecific visibility
+    // No need for separate message broadcasting
   }
 }
 
@@ -320,10 +339,8 @@ class HunterShootEvent extends BaseGameEvent {
     if (target != null) {
       target!.die('被猎人开枪带走', state);
     }
-
-    if (initiator?.role is HunterRole) {
-      (initiator!.role as HunterRole).shoot();
-    }
+    // Hunter shoot status is now tracked through event history
+    // No need to update private data
   }
 }
 

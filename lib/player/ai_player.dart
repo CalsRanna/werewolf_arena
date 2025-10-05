@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'player.dart';
-import 'role.dart';
 import '../game/game_state.dart';
 import '../llm/llm_service.dart';
 import '../llm/prompt_manager.dart';
@@ -124,79 +123,11 @@ Personality traits:
   }
 }
 
-/// Knowledge base
-class KnowledgeBase {
-  final Map<String, dynamic> _knowledge = {};
-  final List<String> _importantEvents = [];
-
-  void addFact(String key, dynamic value) {
-    _knowledge[key] = value;
-  }
-
-  T? getFact<T>(String key) {
-    return _knowledge[key] as T?;
-  }
-
-  bool hasFact(String key) {
-    return _knowledge.containsKey(key);
-  }
-
-  void addImportantEvent(String event) {
-    _importantEvents.add(event);
-    if (_importantEvents.length > 10) {
-      _importantEvents.removeAt(0);
-    }
-  }
-
-  List<String> getImportantEvents() {
-    return List<String>.from(_importantEvents);
-  }
-
-  void forgetOldFacts(int maxAge) {
-    // Implementation for forgetting old knowledge
-    final now = DateTime.now();
-    _knowledge.removeWhere((key, value) {
-      if (value is Map && value['timestamp'] != null) {
-        final timestamp = DateTime.parse(value['timestamp']);
-        return now.difference(timestamp).inDays > maxAge;
-      }
-      return false;
-    });
-  }
-
-  Map<String, dynamic> getRelevantKnowledge(GameState state) {
-    final relevant = <String, dynamic>{};
-
-    // Add basic game state knowledge
-    relevant['current_day'] = state.dayNumber;
-    relevant['current_phase'] = state.currentPhase.name;
-    relevant['alive_count'] = state.alivePlayers.length;
-    relevant['dead_count'] = state.deadPlayers.length;
-
-    // Add role-specific knowledge
-    for (final entry in _knowledge.entries) {
-      if (entry.key.startsWith('role_')) {
-        relevant[entry.key] = entry.value;
-      }
-    }
-
-    return relevant;
-  }
-
-  void clear() {
-    _knowledge.clear();
-    _importantEvents.clear();
-  }
-}
-
 /// AI player implementation
 class EnhancedAIPlayer extends AIPlayer {
   final LLMService llmService;
   final PromptManager promptManager;
   final Personality personality;
-  final KnowledgeBase knowledgeBase;
-  @override
-  final RandomHelper random;
 
   DateTime? _lastActionTime;
 
@@ -207,11 +138,9 @@ class EnhancedAIPlayer extends AIPlayer {
     required this.llmService,
     required this.promptManager,
     Personality? personality,
-    KnowledgeBase? knowledgeBase,
     RandomHelper? random,
   })  : personality = personality ?? Personality.forRole(role.roleId),
-        knowledgeBase = knowledgeBase ?? KnowledgeBase(),
-        random = random ?? RandomHelper();
+        super(random: random ?? RandomHelper());
 
   /// Choose target for night action based on role
   @override
@@ -229,7 +158,7 @@ class EnhancedAIPlayer extends AIPlayer {
         player: this,
         state: state,
         personality: personality,
-        knowledge: knowledgeBase.getRelevantKnowledge(state),
+        knowledge: {}, // Knowledge base removed per user request
       );
 
       // Get LLM decision
@@ -242,12 +171,8 @@ class EnhancedAIPlayer extends AIPlayer {
       if (response.isValid && response.targets.isNotEmpty) {
         final target = response.targets.first;
 
-        // Store reasoning and statement
-        addKnowledge('last_action_reasoning', response.parsedData['reasoning']);
-        if (response.statement.isNotEmpty) {
-          addKnowledge('last_statement', response.statement);
-        }
-
+        // Store reasoning and statement in game events, not private data
+        // The AI's reasoning will be captured in the action event itself
         LoggerUtil.instance.d('Player action: $playerId chose target ${target.playerId}');
         return target;
       }
@@ -276,7 +201,7 @@ class EnhancedAIPlayer extends AIPlayer {
         player: this,
         state: state,
         personality: personality,
-        knowledge: knowledgeBase.getRelevantKnowledge(state),
+        knowledge: {}, // Knowledge base removed per user request
         pkCandidates: pkCandidates,
       );
 
@@ -312,9 +237,7 @@ class EnhancedAIPlayer extends AIPlayer {
           }
         }
 
-        // Store reasoning
-        addKnowledge('last_vote_reasoning', response.parsedData['reasoning']);
-
+        // Store reasoning in action events, not private data
         LoggerUtil.instance.d('Player vote: $playerId voted for ${target.playerId}');
         return target;
       }
@@ -396,153 +319,14 @@ class EnhancedAIPlayer extends AIPlayer {
 
   @override
   Future<void> processInformation(GameState state) async {
-    // Update knowledge base with current state
-    knowledgeBase.addFact('last_processed', DateTime.now().toIso8601String());
-    knowledgeBase.addFact('alive_players', state.alivePlayers.length);
-    knowledgeBase.addFact('current_day', state.dayNumber);
-    knowledgeBase.addFact('current_phase', state.currentPhase.name);
-
-    // Process recent events that are visible to this player
-    final recentEvents = state.getRecentEventsForPlayer(this);
-
-    for (final event in recentEvents) {
-      if (event.type == GameEventType.playerDeath && event.target != null) {
-        knowledgeBase.addImportantEvent(
-            '${event.target!.name} died: ${event.description}');
-        knowledgeBase.addFact('death_${event.target!.playerId}', {
-          'time': event.timestamp.toIso8601String(),
-          'cause': event.description,
-          'day': state.dayNumber,
-        });
-      } else if (event.type == GameEventType.playerAction &&
-          event.initiator != null) {
-        knowledgeBase.addFact('action_${event.initiator!.playerId}', {
-          'action': event.data['action'],
-          'time': event.timestamp.toIso8601String(),
-        });
-      }
-    }
-
-    // Update suspicions based on behavior
-    await _updateSuspicions(state);
-
-    // Periodically forget old knowledge
-    if (state.dayNumber % 3 == 0) {
-      knowledgeBase.forgetOldFacts(2);
-    }
+    // Basic state update only - no knowledge base usage
+    // Game events are handled through the prompt system directly
   }
 
   @override
   Future<void> updateKnowledge(GameState state) async {
-    // Call process information to update knowledge
-    await processInformation(state);
-
-    // Add role-specific knowledge
-    if (role is SeerRole) {
-      final investigations = getKnowledge<List<Map>>('investigations') ?? [];
-      for (final investigation in investigations) {
-        knowledgeBase.addFact(
-            'investigation_${investigation['target']}', investigation);
-      }
-    } else if (role is WitchRole) {
-      knowledgeBase.addFact(
-          'has_antidote', getPrivateData('has_antidote') ?? false);
-      knowledgeBase.addFact(
-          'has_poison', getPrivateData('has_poison') ?? false);
-    }
-  }
-
-  Future<void> _updateSuspicions(GameState state) async {
-    final suspicions = <String, double>{};
-
-    for (final player in state.alivePlayers) {
-      if (player.playerId == playerId) continue;
-
-      double suspicion = 0.5; // Base suspicion level
-
-      // Adjust suspicion based on personality
-      if (personality.logicThinking > 0.7) {
-        suspicion = _calculateLogicalSuspicion(player, state);
-      } else {
-        suspicion = _calculateIntuitiveSuspicion(player, state);
-      }
-
-      suspicions[player.playerId] = suspicion;
-    }
-
-    // Store suspicion levels in knowledge
-    knowledgeBase.addFact('suspicions', suspicions);
-  }
-
-  double _calculateLogicalSuspicion(Player player, GameState state) {
-    double suspicion = 0.5;
-
-    // Consider voting patterns
-    final votes = knowledgeBase.getFact<Map>('player_votes_${player.playerId}');
-    if (votes != null) {
-      // Analyze voting patterns
-    }
-
-    // Consider statements made
-    final statements =
-        knowledgeBase.getFact<List>('player_statements_${player.playerId}');
-    if (statements != null) {
-      // Analyze statement content and consistency
-    }
-
-    // Consider behavioral consistency
-    final consistency = knowledgeBase
-            .getFact<double>('player_consistency_${player.playerId}') ??
-        0.5;
-    suspicion += (0.5 - consistency) * 0.3;
-
-    return suspicion.clamp(0.0, 1.0);
-  }
-
-  double _calculateIntuitiveSuspicion(Player player, GameState state) {
-    // Intuition-based suspicion calculation
-    final randomFactor = random.nextDoubleRange(-0.2, 0.2);
-    double suspicion = 0.5 + randomFactor;
-
-    // Adjust based on player role knowledge
-    if (hasKnowledge('investigation_${player.playerId}')) {
-      final result = getKnowledge('investigation_${player.playerId}');
-      if (result['result'] == 'werewolf') {
-        suspicion = 0.9;
-      } else {
-        suspicion = 0.1;
-      }
-    }
-
-    return suspicion.clamp(0.0, 1.0);
-  }
-
-  // Memory and learning
-  void learnFromExperience(GameState state, Player? target, bool outcome) {
-    final learningData = getKnowledge<Map>('learning_data') ?? {};
-    final actionKey = 'target_${target?.playerId ?? 'none'}';
-
-    learningData[actionKey] = {
-      'attempts': (learningData[actionKey]?['attempts'] ?? 0) + 1,
-      'successes':
-          (learningData[actionKey]?['successes'] ?? 0) + (outcome ? 1 : 0),
-      'last_used': DateTime.now().toIso8601String(),
-    };
-
-    addKnowledge('learning_data', learningData);
-  }
-
-  // Trust management
-  void updateTrust(Player player, double delta) {
-    final trust = getKnowledge<Map>('trust_scores') ?? {};
-    trust[player.playerId] = (trust[player.playerId] ?? 0.5) + delta;
-    trust[player.playerId] = trust[player.playerId]!.clamp(0.0, 1.0);
-    addKnowledge('trust_scores', trust);
-  }
-
-  double getTrustScore(Player player) {
-    final trust = getKnowledge<Map>('trust_scores') ?? {};
-    return trust[player.playerId] ?? 0.5;
+    // Knowledge base functionality removed per user request
+    // All game information is now handled through events and prompts
   }
 
   // Serialization
@@ -550,7 +334,6 @@ class EnhancedAIPlayer extends AIPlayer {
   Map<String, dynamic> toJson() {
     final data = super.toJson();
     data['personality'] = personality.toJson();
-    data['knowledgeBase'] = knowledgeBase._knowledge;
     data['lastActionTime'] = _lastActionTime?.toIso8601String();
     return data;
   }

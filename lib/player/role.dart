@@ -21,7 +21,6 @@ abstract class Skill {
   final String skillId;
   final String name;
   final String description;
-  final int cooldown;
   final int maxUses;
   final bool isActive;
   final bool requiresTarget;
@@ -30,7 +29,6 @@ abstract class Skill {
     required this.skillId,
     required this.name,
     required this.description,
-    this.cooldown = 0,
     this.maxUses = -1, // -1 means unlimited uses
     this.isActive = true,
     this.requiresTarget = false,
@@ -38,8 +36,7 @@ abstract class Skill {
 
   bool canUse(Player player, GameState state) {
     return player.isAlive &&
-           (maxUses == -1 || player.getSkillUses(skillId) < maxUses) &&
-           (cooldown == 0 || player.getSkillCooldown(skillId) == 0);
+           (maxUses == -1 || player.getSkillUses(skillId) < maxUses);
   }
 
   void use(Player player, {Player? target, GameState? state}) {
@@ -48,9 +45,7 @@ abstract class Skill {
 
   String getUsageInfo(Player player) {
     final uses = maxUses == -1 ? 'Unlimited' : '${maxUses - player.getSkillUses(skillId)}/$maxUses';
-    final cd = player.getSkillCooldown(skillId);
-    final cooldownText = cd > 0 ? ' (Cooldown: $cd)' : '';
-    return '$name: $uses$cooldownText';
+    return '$name: $uses';
   }
 }
 
@@ -93,7 +88,7 @@ abstract class Role {
     skill.use(player, target: target, state: state);
   }
 
-  String getNightActionDescription() {
+  String getNightActionDescription(GameState state) {
     return '';
   }
 
@@ -102,7 +97,7 @@ abstract class Role {
   }
 
   // Private data management for role-specific state
-  Map<String, dynamic> _privateData = {};
+  final Map<String, dynamic> _privateData = <String, dynamic>{};
 
   T? getPrivateData<T>(String key) {
     return _privateData[key] as T?;
@@ -161,7 +156,7 @@ class WerewolfRole extends Role {
   );
 
   @override
-  String getNightActionDescription() {
+  String getNightActionDescription(GameState state) {
     return '选择一名玩家击杀';
   }
 }
@@ -181,7 +176,7 @@ class SeerRole extends Role {
   );
 
   @override
-  String getNightActionDescription() {
+  String getNightActionDescription(GameState state) {
     return '选择一名玩家查验身份';
   }
 }
@@ -202,30 +197,33 @@ class WitchRole extends Role {
   );
 
   @override
-  String getNightActionDescription() {
+  String getNightActionDescription(GameState state) {
     final parts = <String>[];
-    if (hasAntidote) parts.add('使用解药');
-    if (hasPoison) parts.add('使用毒药');
+    if (hasAntidote(state)) parts.add('使用解药');
+    if (hasPoison(state)) parts.add('使用毒药');
     return parts.isNotEmpty ? parts.join(' 或 ') : '无可用技能';
   }
 
-  bool get hasAntidote => getPrivateData('has_antidote') == true;
-  bool get hasPoison => getPrivateData('has_poison') == true;
+  bool hasAntidote(GameState state) {
+    // Check if antidote has been used by looking at heal events
+    final healEvents = state.eventHistory.where((e) =>
+        e.type == GameEventType.skillUsed &&
+        e.data['skill'] == '使用解药' &&
+        e.initiator?.role == this).toList();
+    return healEvents.isEmpty; // Has antidote if never used
+  }
+
+  bool hasPoison(GameState state) {
+    // Check if poison has been used by looking at poison events
+    final poisonEvents = state.eventHistory.where((e) =>
+        e.type == GameEventType.skillUsed &&
+        e.data['skill'] == '使用毒药' &&
+        e.initiator?.role == this).toList();
+    return poisonEvents.isEmpty; // Has poison if never used
+  }
 
   Player? getTonightVictim(GameState state) {
-    return getPrivateData('tonight_victim');
-  }
-
-  void useAntidote() {
-    setPrivateData('has_antidote', false);
-  }
-
-  void usePoison() {
-    setPrivateData('has_poison', false);
-  }
-
-  void setTonightVictim(Player? victim) {
-    setPrivateData('tonight_victim', victim);
+    return state.tonightVictim;
   }
 }
 
@@ -244,17 +242,18 @@ class HunterRole extends Role {
   );
 
   @override
-  String getNightActionDescription() {
+  String getNightActionDescription(GameState state) {
     return '无主动技能，死亡时可开枪';
   }
 
   bool canShoot(GameState state) {
     final player = state.players.firstWhere((p) => p.role == this);
-    return !player.isAlive && getPrivateData('has_shot') != true;
-  }
-
-  void shoot() {
-    setPrivateData('has_shot', true);
+    // Check if hunter has already shot by looking at shoot events
+    final shootEvents = state.eventHistory.where((e) =>
+        e.type == GameEventType.skillUsed &&
+        e.data['skill'] == '开枪' &&
+        e.initiator?.role == this).toList();
+    return !player.isAlive && shootEvents.isEmpty; // Can shoot if dead and never shot
   }
 }
 
@@ -273,14 +272,24 @@ class GuardRole extends Role {
   );
 
   @override
-  String getNightActionDescription() {
+  String getNightActionDescription(GameState state) {
     return '选择一名玩家守护（不能连续两晚守护同一人）';
   }
 
-  Player? get lastGuarded => getPrivateData('last_guarded');
+  Player? getLastGuarded(GameState state) {
+    // Find the most recent protect event by this guard
+    final protectEvents = state.eventHistory
+        .where((e) =>
+            e.type == GameEventType.skillUsed &&
+            e.data['skill'] == 'Protect' &&
+            e.initiator?.role == this)
+        .toList();
 
-  void setLastGuarded(Player? player) {
-    setPrivateData('last_guarded', player);
+    if (protectEvents.isEmpty) return null;
+
+    // Sort by timestamp and get the most recent one
+    protectEvents.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return protectEvents.first.target;
   }
 }
 
@@ -290,7 +299,6 @@ class KillSkill extends Skill {
     skillId: 'kill',
     name: '击杀',
     description: '击杀一名玩家',
-    cooldown: 0,
     maxUses: -1,
     requiresTarget: true,
   );
@@ -301,7 +309,6 @@ class InvestigateSkill extends Skill {
     skillId: 'investigate',
     name: '查验',
     description: '查验一名玩家身份',
-    cooldown: 0,
     maxUses: -1,
     requiresTarget: true,
   );
@@ -312,7 +319,6 @@ class HealSkill extends Skill {
     skillId: 'heal',
     name: '解药',
     description: '救活今晚被击杀的玩家',
-    cooldown: 0,
     maxUses: 1,
     requiresTarget: true,
   );
@@ -323,7 +329,6 @@ class PoisonSkill extends Skill {
     skillId: 'poison',
     name: '毒药',
     description: '毒杀一名玩家',
-    cooldown: 0,
     maxUses: 1,
     requiresTarget: true,
   );
@@ -334,7 +339,6 @@ class HunterShootSkill extends Skill {
     skillId: 'hunter_shoot',
     name: '开枪',
     description: '死亡时开枪带走一名玩家',
-    cooldown: 0,
     maxUses: 1,
     requiresTarget: true,
   );
@@ -345,7 +349,6 @@ class ProtectSkill extends Skill {
     skillId: 'protect',
     name: '守护',
     description: '守护一名玩家免受狼人击杀',
-    cooldown: 0,
     maxUses: -1,
     requiresTarget: true,
   );

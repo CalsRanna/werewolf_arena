@@ -31,7 +31,7 @@ game:
 # LLM Configuration
 llm:
   model: "openai/gpt-4o-mini"
-  api_key: "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"  # Set via environment variable
+  api_key: "YOUR API KEY HERE"  # Set via environment variable
   temperature: 0.7
   max_tokens: 100000
   timeout_seconds: 30
