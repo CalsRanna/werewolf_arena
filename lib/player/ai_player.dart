@@ -137,6 +137,7 @@ class EnhancedAIPlayer extends AIPlayer {
     required super.role,
     required this.llmService,
     required this.promptManager,
+    super.modelConfig,
     Personality? personality,
     RandomHelper? random,
   })  : personality = personality ?? Personality.forRole(role.roleId),
@@ -173,7 +174,8 @@ class EnhancedAIPlayer extends AIPlayer {
 
         // Store reasoning and statement in game events, not private data
         // The AI's reasoning will be captured in the action event itself
-        LoggerUtil.instance.d('Player action: $playerId chose target ${target.playerId}');
+        LoggerUtil.instance
+            .d('Player action: $playerId chose target ${target.playerId}');
         return target;
       }
 
@@ -187,7 +189,8 @@ class EnhancedAIPlayer extends AIPlayer {
 
   /// Choose vote target - 专门的投票逻辑
   @override
-  Future<Player?> chooseVoteTarget(GameState state, {List<Player>? pkCandidates}) async {
+  Future<Player?> chooseVoteTarget(GameState state,
+      {List<Player>? pkCandidates}) async {
     if (!isAlive) return null;
 
     _lastActionTime = DateTime.now();
@@ -219,7 +222,8 @@ class EnhancedAIPlayer extends AIPlayer {
         if (pkCandidates != null && pkCandidates.isNotEmpty) {
           // PK投票阶段 - 必须投PK候选人
           if (!pkCandidates.contains(target)) {
-            LoggerUtil.instance.w('$playerId tried to vote for ${target.playerId} who is not in PK candidates, choosing fallback');
+            LoggerUtil.instance.w(
+                '$playerId tried to vote for ${target.playerId} who is not in PK candidates, choosing fallback');
             return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
           }
         }
@@ -227,18 +231,19 @@ class EnhancedAIPlayer extends AIPlayer {
         // 狼人不能投队友
         if (role.isWerewolf) {
           final isTeammate = state.players.any((p) =>
-            p.playerId == target.playerId &&
-            p.role.isWerewolf &&
-            p.playerId != playerId
-          );
+              p.playerId == target.playerId &&
+              p.role.isWerewolf &&
+              p.playerId != playerId);
           if (isTeammate) {
-            LoggerUtil.instance.w('$playerId (werewolf) tried to vote for teammate ${target.playerId}, choosing fallback');
+            LoggerUtil.instance.w(
+                '$playerId (werewolf) tried to vote for teammate ${target.playerId}, choosing fallback');
             return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
           }
         }
 
         // Store reasoning in action events, not private data
-        LoggerUtil.instance.d('Player vote: $playerId voted for ${target.playerId}');
+        LoggerUtil.instance
+            .d('${formattedName}投票给${target.formattedName}');
         return target;
       }
 
@@ -251,22 +256,24 @@ class EnhancedAIPlayer extends AIPlayer {
   }
 
   /// Fallback vote target selection
-  Player? _chooseFallbackVoteTarget(GameState state, {List<Player>? pkCandidates}) {
+  Player? _chooseFallbackVoteTarget(GameState state,
+      {List<Player>? pkCandidates}) {
     List<Player> availableTargets;
 
     if (pkCandidates != null && pkCandidates.isNotEmpty) {
       // PK投票 - 只能从PK候选人中选择
-      availableTargets = pkCandidates.where((p) => p.playerId != playerId).toList();
+      availableTargets =
+          pkCandidates.where((p) => p.playerId != playerId).toList();
     } else {
       // 普通投票 - 从所有存活玩家中选择
-      availableTargets = state.alivePlayers
-          .where((p) => p.playerId != playerId)
-          .toList();
+      availableTargets =
+          state.alivePlayers.where((p) => p.playerId != playerId).toList();
     }
 
     // 如果是狼人，排除队友
     if (role.isWerewolf) {
-      availableTargets = availableTargets.where((p) => !p.role.isWerewolf).toList();
+      availableTargets =
+          availableTargets.where((p) => !p.role.isWerewolf).toList();
     }
 
     if (availableTargets.isEmpty) return null;
@@ -275,9 +282,8 @@ class EnhancedAIPlayer extends AIPlayer {
 
   /// Fallback target selection
   Player? _chooseFallbackTarget(GameState state) {
-    final availableTargets = state.alivePlayers
-        .where((p) => p.playerId != playerId)
-        .toList();
+    final availableTargets =
+        state.alivePlayers.where((p) => p.playerId != playerId).toList();
 
     if (availableTargets.isEmpty) return null;
     return random.randomChoice(availableTargets);
@@ -309,7 +315,8 @@ class EnhancedAIPlayer extends AIPlayer {
       }
 
       // LLM failed, return empty string
-      LoggerUtil.instance.e('LLM statement generation failed for $playerId: invalid response');
+      LoggerUtil.instance
+          .e('LLM statement generation failed for $playerId: invalid response');
       return '';
     } catch (e) {
       LoggerUtil.instance.e('AI statement generation error for $playerId: $e');

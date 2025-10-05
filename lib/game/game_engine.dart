@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'game_state.dart';
+import 'game_event.dart';
 import '../player/player.dart';
 import '../player/role.dart';
 import '../utils/logger_util.dart';
 import '../utils/config_loader.dart';
 import '../utils/random_helper.dart';
+import '../utils/player_logger.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {
@@ -44,6 +46,18 @@ class GameEngine {
         config: config,
         players: [], // Will be set by setPlayers method
       );
+
+      // Reinitialize LoggerUtil with gameId for game-specific logging
+      LoggerUtil.instance.initialize(
+        enableConsole: true,
+        enableFile: true,
+        useColors: true,
+        logLevel: 'info',
+        gameId: _currentState!.gameId,
+      );
+
+      // Initialize player logger for debugging (after LoggerUtil gameId is set)
+      PlayerLogger.instance.initialize();
 
       LoggerUtil.instance.d('default_config.yaml');
       LoggerUtil.instance
@@ -168,7 +182,6 @@ class GameEngine {
 
     LoggerUtil.instance.i(
       'Phase changed to night, Day ${state.dayNumber}',
-      addToLLMContext: true,
     );
 
     // Clear night actions
@@ -188,27 +201,125 @@ class GameEngine {
     _stateController.add(state);
   }
 
-  /// Get player action order
+  /// Get player action order based on last death/execution as starting point
   List<Player> _getActionOrder(List<Player> players) {
-    if (config.actionOrder.isSequential) {
-      // Sort by numbers in player names (e.g., "Player 1", "Player 2")
-      final sortedPlayers = List<Player>.from(players);
-      sortedPlayers.sort((a, b) {
-        // Extract numbers from player names
-        final aNum =
-            int.tryParse(a.name.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-        final bNum =
-            int.tryParse(b.name.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-        return aNum.compareTo(bNum);
-      });
+    if (players.isEmpty) return [];
 
-      return config.actionOrder.isReverse
-          ? sortedPlayers.reversed.toList()
-          : sortedPlayers;
-    } else {
-      // Random order (maintain original logic)
-      return players;
+    // Get all players sorted by their numbers for baseline ordering
+    final allPlayersSorted = List<Player>.from(_currentState!.players);
+    allPlayersSorted.sort((a, b) {
+      final aNum = int.tryParse(a.name.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      final bNum = int.tryParse(b.name.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+      return aNum.compareTo(bNum);
+    });
+
+    // Find the last player who died or was executed
+    Player? lastDeadPlayer = _findLastDeadPlayer();
+
+    if (lastDeadPlayer == null) {
+      // No death reference point, use random selection
+      final aliveIndices = <int>[];
+      for (int i = 0; i < allPlayersSorted.length; i++) {
+        if (allPlayersSorted[i].isAlive) {
+          aliveIndices.add(i);
+        }
+      }
+
+      if (aliveIndices.isEmpty) return [];
+
+      // Randomly select starting point
+      final randomIndex = aliveIndices[random.nextInt(aliveIndices.length)];
+      final startingPlayer = allPlayersSorted[randomIndex];
+
+      LoggerUtil.instance.i(
+        '[法官]: 法官随机选择 ${startingPlayer.name} 作为发言起始点',
+      );
+
+      return _reorderFromStartingPoint(allPlayersSorted, players, randomIndex);
     }
+
+    // Find the index of the last dead player in the sorted list
+    final deadPlayerIndex = allPlayersSorted
+        .indexWhere((p) => p.playerId == lastDeadPlayer.playerId);
+    if (deadPlayerIndex == -1) {
+      // Fallback to normal ordering if something goes wrong
+      return _reorderFromStartingPoint(allPlayersSorted, players, 0);
+    }
+
+    // Determine starting point (next player after the dead one)
+    int startingIndex = (deadPlayerIndex + 1) % allPlayersSorted.length;
+
+    // Find the next alive player from that position
+    for (int i = 0; i < allPlayersSorted.length; i++) {
+      final currentIndex = (startingIndex + i) % allPlayersSorted.length;
+      final currentPlayer = allPlayersSorted[currentIndex];
+      if (currentPlayer.isAlive) {
+        return _reorderFromStartingPoint(
+            allPlayersSorted, players, currentIndex);
+      }
+    }
+
+    // Should not reach here, but fallback just in case
+    return _reorderFromStartingPoint(allPlayersSorted, players, 0);
+  }
+
+  /// Find the last player who died or was executed
+  Player? _findLastDeadPlayer() {
+    final state = _currentState!;
+
+    // Look for the most recent death event (includes executions)
+    final deathEvents = state.eventHistory
+        .where((e) => e.type == GameEventType.playerDeath)
+        .toList();
+
+    if (deathEvents.isNotEmpty) {
+      // Sort by timestamp and get the most recent
+      deathEvents.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final lastEvent = deathEvents.first;
+      return lastEvent.target ?? lastEvent.initiator;
+    }
+
+    return null; // No deaths yet
+  }
+
+  /// Reorder players starting from a specific index
+  List<Player> _reorderFromStartingPoint(List<Player> allPlayersSorted,
+      List<Player> alivePlayers, int startingIndex) {
+    final orderedPlayers = <Player>[];
+    final alivePlayerIds = alivePlayers.map((p) => p.playerId).toSet();
+
+    // Build order string for logging
+    final orderNames = <String>[];
+
+    if (config.actionOrder.isReverse) {
+      // Reverse order
+      for (int i = 0; i < allPlayersSorted.length; i++) {
+        final currentIndex = (startingIndex - i + allPlayersSorted.length) %
+            allPlayersSorted.length;
+        final player = allPlayersSorted[currentIndex];
+        if (alivePlayerIds.contains(player.playerId)) {
+          orderedPlayers.add(player);
+          orderNames.add(player.name);
+        }
+      }
+    } else {
+      // Forward order
+      for (int i = 0; i < allPlayersSorted.length; i++) {
+        final currentIndex = (startingIndex + i) % allPlayersSorted.length;
+        final player = allPlayersSorted[currentIndex];
+        if (alivePlayerIds.contains(player.playerId)) {
+          orderedPlayers.add(player);
+          orderNames.add(player.name);
+        }
+      }
+    }
+
+    // Log the speaking order
+    final direction = config.actionOrder.isReverse ? "逆序" : "顺序";
+    LoggerUtil.instance
+        .i('[法官]: 从${orderNames.first}开始， $direction发言');
+
+    return orderedPlayers;
   }
 
   /// Process werewolf actions - if multiple werewolves, they need to negotiate (public method)
@@ -227,6 +338,9 @@ class GameEngine {
       final werewolf = werewolves.first;
       if (werewolf is AIPlayer && werewolf.isAlive) {
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(werewolf, state);
+
           await werewolf.processInformation(state);
           final target = await werewolf.chooseNightTarget(state);
           if (target != null && target.isAlive) {
@@ -253,20 +367,35 @@ class GameEngine {
       // Now proceed with kill decision after discussion
       final victims = <Player, int>{};
 
-      LoggerUtil.instance
-          .i('[Judge]: Now each werewolf will choose their target');
-
       for (int i = 0; i < werewolves.length; i++) {
         final werewolf = werewolves[i];
         if (werewolf is AIPlayer && werewolf.isAlive) {
           try {
+            // Update player event log before action
+            PlayerLogger.instance.updatePlayerEvents(werewolf, state);
+
             await werewolf.processInformation(state);
+
+            // 调试：检查狼人是否能看到讨论历史
+            final discussionEvents = state.eventHistory
+                .where((e) =>
+                    e.type == GameEventType.playerAction &&
+                    e.data['type'] == 'werewolf_discussion' &&
+                    (e.data['dayNumber'] as int?) == state.dayNumber)
+                .toList();
+
+            LoggerUtil.instance
+                .d('${werewolf.name} 可见的讨论事件数量: ${discussionEvents.length}');
+            if (discussionEvents.isNotEmpty) {
+              LoggerUtil.instance
+                  .d('讨论内容预览: ${discussionEvents.first.data['message']}');
+            }
 
             final target = await werewolf.chooseNightTarget(state);
             if (target != null && target.isAlive) {
               victims[target] = (victims[target] ?? 0) + 1;
-              LoggerUtil.instance
-                  .i('${werewolf.name} chose to kill ${target.name}');
+              LoggerUtil.instance.i(
+                  '${werewolf.formattedName}选择击杀${target.formattedName}');
             } else {
               LoggerUtil.instance.i('${werewolf.name} made no valid choice');
             }
@@ -291,7 +420,7 @@ class GameEngine {
         if (event != null) {
           firstWerewolf.executeEvent(event, state);
           LoggerUtil.instance
-              .i('Werewolves finally chose victim: ${victim.name}');
+              .i('狼人最终选择击杀${victim.formattedName}');
         }
       } else {
         LoggerUtil.instance.i('Werewolves chose no target');
@@ -305,8 +434,7 @@ class GameEngine {
   Future<void> _processWerewolfDiscussion(List<Player> werewolves) async {
     final state = _currentState!;
 
-    LoggerUtil.instance
-        .i('[Judge]: Werewolves, please open your eyes and discuss');
+    LoggerUtil.instance.i('[法官]: 狼人请睁眼');
 
     // Collect discussion history for this round
     final discussionHistory = <String>[];
@@ -317,6 +445,9 @@ class GameEngine {
 
       if (werewolf is AIPlayer && werewolf.isAlive) {
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(werewolf, state);
+
           await werewolf.processInformation(state);
 
           // Build context for werewolf discussion
@@ -347,8 +478,8 @@ class GameEngine {
             if (event != null) {
               werewolf.executeEvent(event, state);
               LoggerUtil.instance.i(
-                  '[${werewolf.name}] (${werewolf.role.name}): $statement',
-                  addToLLMContext: true);
+                '${werewolf.formattedName}: $statement',
+              );
               discussionHistory.add('[${werewolf.name}]: $statement');
             } else {
               LoggerUtil.instance.w(
@@ -386,21 +517,25 @@ class GameEngine {
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('[Judge]: Guard please open your eyes');
-    LoggerUtil.instance.i('[Judge]: Who do you want to protect?');
+    LoggerUtil.instance.i('[法官]: 守卫请睁眼');
+    LoggerUtil.instance.i('[法官]: 你想要守护谁？');
 
     // Each guard acts in turn
     for (int i = 0; i < guards.length; i++) {
       final guard = guards[i];
       if (guard is AIPlayer && guard.isAlive) {
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(guard, state);
+
           await guard.processInformation(state);
           final target = await guard.chooseNightTarget(state);
           if (target != null && target.isAlive) {
             final event = guard.createProtectEvent(target, state);
             if (event != null) {
               guard.executeEvent(event, state);
-              LoggerUtil.instance.i('${guard.name} protected ${target.name}');
+              LoggerUtil.instance.i(
+                  '${guard.formattedName}守护了${target.formattedName}');
             } else {
               LoggerUtil.instance
                   .i('${guard.name} made no valid protection choice');
@@ -432,10 +567,10 @@ class GameEngine {
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('[Judge] Seer please open your eyes');
+    LoggerUtil.instance.i('[法官]: 预言家请睁眼');
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('[Judge] Who do you want to investigate?');
+    LoggerUtil.instance.i('[法官]: 你想要查验谁？');
     await Future.delayed(const Duration(milliseconds: 500));
 
     // Each seer acts in turn
@@ -443,6 +578,9 @@ class GameEngine {
       final seer = seers[i];
       if (seer is AIPlayer && seer.isAlive) {
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(seer, state);
+
           await seer.processInformation(state);
           final target = await seer.chooseNightTarget(state);
           if (target != null && target.isAlive) {
@@ -450,7 +588,7 @@ class GameEngine {
             if (event != null) {
               seer.executeEvent(event, state);
               LoggerUtil.instance.i(
-                  '${seer.name} investigated ${target.name}, ${target.name} is ${target.role.name}');
+                  '${seer.formattedName}查验了${target.formattedName}, ${target.formattedName}是${target.role.name}');
             } else {
               LoggerUtil.instance
                   .i('${seer.name} made no valid investigation choice');
@@ -483,7 +621,7 @@ class GameEngine {
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    LoggerUtil.instance.i('[Judge] Witch please open your eyes');
+    LoggerUtil.instance.i('[法官]: 女巫请睁眼');
 
     // Each witch acts in turn
     for (int i = 0; i < witches.length; i++) {
@@ -496,19 +634,22 @@ class GameEngine {
 
         // First, ask about healing (antidote)
         if (witchRole.hasAntidote(state) && state.tonightVictim != null) {
-          LoggerUtil.instance.i('[Judge] ${state.tonightVictim!.name} was killed tonight. Do you want to use your antidote?');
+          LoggerUtil.instance
+              .i('[法官]: ${state.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？');
         } else if (witchRole.hasAntidote(state)) {
-          LoggerUtil.instance.i('[Judge] No one was killed tonight. Do you want to use your antidote anyway?');
+          LoggerUtil.instance.i(
+              '[法官]: No one was killed tonight. Do you want to use your antidote anyway?');
         }
 
         // Then ask about poison
         if (witchRole.hasPoison(state)) {
-          LoggerUtil.instance.i('[Judge] Do you want to use your poison?');
+          LoggerUtil.instance.i('[法官]: 你有一瓶毒药，你要用吗？');
         }
 
-        LoggerUtil.instance.i('${witch.name} is considering whether to use potions...');
-
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(witch, state);
+
           await witch.processInformation(state);
           final target = await witch.chooseNightTarget(state);
 
@@ -519,24 +660,28 @@ class GameEngine {
               final event = witch.createHealEvent(target, state);
               if (event != null) {
                 witch.executeEvent(event, state);
-                LoggerUtil.instance.i('[Judge] Witch chose to use antidote (target hidden)');
+                LoggerUtil.instance
+                    .i('[法官]: Witch chose to use antidote to ${target.name}');
               }
             } else if (target.isAlive && witchRole.hasPoison(state)) {
               // Try to poison someone
               final event = witch.createPoisonEvent(target, state);
               if (event != null) {
                 witch.executeEvent(event, state);
-                LoggerUtil.instance.i('[Judge] Witch chose to use poison (target hidden)');
+                LoggerUtil.instance.i(
+                    '[法官]: ${witch.formattedName}使用毒药攻击了${target.formattedName}');
               }
             } else {
-              LoggerUtil.instance.i('[Judge] Witch chose not to use potions or action invalid');
+              LoggerUtil.instance
+                  .i('[法官]: Witch chose not to use potions or action invalid');
             }
           } else {
-            LoggerUtil.instance.i('[Judge] Witch chose not to use potions');
+            LoggerUtil.instance.i('[法官]: Witch chose not to use potions');
           }
         } catch (e) {
           LoggerUtil.instance.e('Witch ${witch.name} action failed: $e');
-          LoggerUtil.instance.i('[Judge] Witch chose not to use potions due to error');
+          LoggerUtil.instance
+              .i('[法官]: Witch chose not to use potions due to error');
         }
 
         // Delay between witch actions
@@ -559,19 +704,17 @@ class GameEngine {
 
     // Process kill (cancelled if protected or healed)
     if (victim != null && !state.killCancelled && victim != protected) {
-      victim.die('killed by werewolf', state);
+      victim.die(DeathCause.werewolfKill, state);
       LoggerUtil.instance.i(
-        '[Judge]: ${victim.name} died yesterday night',
-        addToLLMContext: true,
+        '[法官]: ${victim.formattedName} 昨晚死亡',
       );
     }
 
     // Process poison
     if (poisoned != null && poisoned != protected) {
-      poisoned.die('poisoned to death', state);
+      poisoned.die(DeathCause.poison, state);
       LoggerUtil.instance.i(
-        '[Judge]: ${poisoned.name} died yesterday night',
-        addToLLMContext: true,
+        '[法官]: ${poisoned.formattedName} 昨晚死亡',
       );
     }
 
@@ -584,7 +727,6 @@ class GameEngine {
     final state = _currentState!;
     LoggerUtil.instance.i(
       'Phase changed to day, Day ${state.dayNumber}',
-      addToLLMContext: true,
     );
 
     // Announce night results
@@ -601,31 +743,33 @@ class GameEngine {
   /// Announce night results
   Future<void> _announceNightResults() async {
     final state = _currentState!;
-    final deathsTonight = state.eventHistory
-        .where((e) => e.type == GameEventType.playerDeath)
+
+    // Filter for DeadEvent instances from tonight
+    final deathEvents = state.eventHistory
+        .whereType<DeadEvent>()
+        .where((e) => e.dayNumber == state.dayNumber)
         .toList();
 
-    // Collect death information
-    final deathMessages = <String>[];
-    if (deathsTonight.isEmpty) {
-      deathMessages.add('Peaceful night, no deaths');
-    } else {
-      for (final death in deathsTonight) {
-        final victim = death.target;
-        if (victim != null) {
-          deathMessages.add('${victim.name} died: ${death.description}');
-        } else {
-          deathMessages.add(death.description);
-        }
-      }
-    }
+    final isPeacefulNight = deathEvents.isEmpty;
 
-    if (deathsTonight.isEmpty) {
-      LoggerUtil.instance.i('Peaceful night, no deaths');
+    // Create night result event with structured data
+    final nightResultEvent = NightResultEvent(
+      deathEvents: deathEvents,
+      isPeacefulNight: isPeacefulNight,
+      dayNumber: state.dayNumber,
+    );
+    state.addEvent(nightResultEvent);
+
+    // Also log to console
+    if (isPeacefulNight) {
+      LoggerUtil.instance.i(
+        '昨晚是平安夜，没有人死亡',
+      );
     } else {
-      for (final death in deathsTonight) {
-        LoggerUtil.instance
-            .i('${death.target?.name} died: ${death.description}');
+      for (final death in deathEvents) {
+        LoggerUtil.instance.i(
+          '${death.victim.name} 死亡: ${death.generateDescription()}',
+        );
       }
     }
   }
@@ -635,8 +779,6 @@ class GameEngine {
     final state = _currentState!;
     final alivePlayers =
         _getActionOrder(state.alivePlayers.where((p) => p.isAlive).toList());
-
-    LoggerUtil.instance.i('Starting discussion phase...');
 
     // Collect speech history for this discussion round
     final discussionHistory = <String>[];
@@ -648,6 +790,9 @@ class GameEngine {
       // Double check: ensure player is still alive
       if (player is AIPlayer && player.isAlive) {
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(player, state);
+
           // Ensure each step completes fully before proceeding
           await player.processInformation(state);
 
@@ -669,8 +814,9 @@ class GameEngine {
             if (event != null) {
               player.executeEvent(event, state);
               // Record speech to round log
-              LoggerUtil.instance
-                  .i('[${player.name}]: $statement', addToLLMContext: true);
+              LoggerUtil.instance.i(
+                '${player.formattedName}: $statement',
+              );
               // Add speech to discussion history
               discussionHistory.add('[${player.name}]: $statement');
             } else {
@@ -689,11 +835,6 @@ class GameEngine {
         await Future.delayed(const Duration(milliseconds: 1000));
       }
     }
-
-    LoggerUtil.instance.i('Discussion phase ended');
-    // Wait for user confirmation to continue
-    await waitForUserConfirmation(
-        'Discussion ended, press Enter to proceed to voting phase...');
   }
 
   /// Process voting phase
@@ -701,7 +842,6 @@ class GameEngine {
     final state = _currentState!;
     LoggerUtil.instance.i(
       'Phase changed to voting, Day ${state.dayNumber}',
-      addToLLMContext: true,
     );
 
     // Clear previous votes
@@ -730,8 +870,6 @@ class GameEngine {
         ? alivePlayers.where((p) => !pkCandidates.contains(p)).toList()
         : alivePlayers;
 
-    LoggerUtil.instance.i('Collecting votes...');
-
     // Each player votes in turn
     for (int i = 0; i < voters.length; i++) {
       final voter = voters[i];
@@ -739,6 +877,9 @@ class GameEngine {
       // Double check: ensure player is still alive and can vote
       if (voter is AIPlayer && voter.isAlive) {
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(voter, state);
+
           // Ensure each step completes fully
           await voter.processInformation(state);
           final target =
@@ -748,7 +889,7 @@ class GameEngine {
             // 额外验证：如果是PK投票，确保目标在PK候选人中
             if (pkCandidates != null && !pkCandidates.contains(target)) {
               LoggerUtil.instance.w(
-                  '${voter.name} voted for ${target.name} who is not in PK candidates, vote ignored');
+                  '${voter.formattedName}投票给${target.formattedName} who is not in PK candidates, vote ignored');
               LoggerUtil.instance.i('${voter.name} abstained or voted invalid');
               continue;
             }
@@ -756,13 +897,15 @@ class GameEngine {
             final event = voter.createVoteEvent(target, state);
             if (event != null) {
               voter.executeEvent(event, state);
-              LoggerUtil.instance.i('${voter.name} voted for ${target.name}');
+              LoggerUtil.instance.i(
+                  '${voter.formattedName}投票给${target.formattedName}');
             } else {
-              LoggerUtil.instance
-                  .i('${voter.name} abstained or action invalid');
+              LoggerUtil.instance.i(
+                  '${voter.formattedName} abstained or action invalid');
             }
           } else {
-            LoggerUtil.instance.i('${voter.name} abstained or action invalid');
+            LoggerUtil.instance.i(
+                '${voter.formattedName} abstained or action invalid');
           }
 
           // Mark completion before moving to next player
@@ -775,9 +918,6 @@ class GameEngine {
         await Future.delayed(const Duration(milliseconds: 800));
       }
     }
-
-    LoggerUtil.instance
-        .i('Votes collected: ${state.totalVotes}/${voters.length}');
   }
 
   /// Resolve voting results (public method)
@@ -787,25 +927,23 @@ class GameEngine {
     // 显示投票统计
     final voteResults = state.getVoteResults();
     if (voteResults.isNotEmpty) {
-      LoggerUtil.instance.i('Voting results:');
       final sortedResults = voteResults.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
       for (final entry in sortedResults) {
         final player = state.getPlayerById(entry.key);
-        LoggerUtil.instance
-            .i('  ${player?.name ?? entry.key}: ${entry.value} votes');
+        LoggerUtil.instance.i(
+            '[法官]: ${player?.formattedName ?? '[${player?.name ?? entry.key}](${player?.role.name})'}: ${entry.value}票');
       }
     }
 
     final voteTarget = state.getVoteTarget();
 
     if (voteTarget != null) {
-      // 有明确的投票结果，执行出局
-      voteTarget.die('executed by vote', state);
-      LoggerUtil.instance.i(
-        '[Judge]: ${voteTarget.name} was executed by vote',
-        addToLLMContext: true,
-      );
+      // 有明确的投票结果，先处理遗言，再执行出局
+      await _handleLastWords(voteTarget, 'vote');
+
+      voteTarget.die(DeathCause.vote, state);
+      LoggerUtil.instance.i('[法官]: ${voteTarget.name}被投票出局');
 
       // Handle hunter skill
       if (voteTarget.role is HunterRole && voteTarget.isDead) {
@@ -817,7 +955,6 @@ class GameEngine {
       if (tiedPlayers.length > 1) {
         LoggerUtil.instance.i(
           'Tied vote: ${tiedPlayers.map((p) => p.name).join(', ')} - entering PK phase',
-          addToLLMContext: true,
         );
         await _handlePKPhase(tiedPlayers);
       } else if (voteResults.isEmpty) {
@@ -837,7 +974,6 @@ class GameEngine {
     LoggerUtil.instance.i('=== PK Phase ===');
     LoggerUtil.instance.i(
       'Tied players: ${tiedPlayers.map((p) => p.name).join(', ')}',
-      addToLLMContext: true,
     );
 
     // PK玩家依次发言
@@ -847,6 +983,9 @@ class GameEngine {
       final player = tiedPlayers[i];
       if (player is AIPlayer && player.isAlive) {
         try {
+          // Update player event log before action
+          PlayerLogger.instance.updatePlayerEvents(player, state);
+
           LoggerUtil.instance.d('Generating PK speech for ${player.name}...');
 
           await player.processInformation(state);
@@ -860,8 +999,7 @@ class GameEngine {
             if (event != null) {
               player.executeEvent(event, state);
               LoggerUtil.instance.i(
-                '[${player.name}] (PK): $statement',
-                addToLLMContext: true,
+                '${player.formattedName} (PK): $statement',
               );
             } else {
               LoggerUtil.instance.w(
@@ -870,14 +1008,16 @@ class GameEngine {
           } else {
             LoggerUtil.instance
                 .w('${player.name} generated empty PK statement');
-            LoggerUtil.instance
-                .i('[${player.name}] (PK): [沉默，未发言]', addToLLMContext: true);
+            LoggerUtil.instance.i(
+              '${player.formattedName} (PK): [沉默，未发言]',
+            );
           }
         } catch (e, stackTrace) {
           LoggerUtil.instance.e('PK speech failed for ${player.name}: $e');
           LoggerUtil.instance.e('Stack trace: $stackTrace');
-          LoggerUtil.instance
-              .i('[${player.name}] (PK): [因错误未能发言]', addToLLMContext: true);
+          LoggerUtil.instance.i(
+            '${player.formattedName} (PK): [因错误未能发言]',
+          );
         }
 
         // 延迟确保每个玩家的发言被完整处理
@@ -888,7 +1028,6 @@ class GameEngine {
     }
 
     LoggerUtil.instance.i('PK speeches ended, other players will now vote...');
-    await waitForUserConfirmation('PK发言结束，其他玩家投票，按回车键继续...');
 
     // 其他玩家投票（不包括PK玩家自己）
     state.clearVotes();
@@ -914,10 +1053,12 @@ class GameEngine {
     // 得出PK结果
     final pkTarget = state.getVoteTarget();
     if (pkTarget != null && tiedPlayers.contains(pkTarget)) {
-      pkTarget.die('executed by PK vote', state);
+      // PK阶段被淘汰的玩家先留遗言
+      await _handleLastWords(pkTarget, 'pk');
+
+      pkTarget.die(DeathCause.vote, state);
       LoggerUtil.instance.i(
-        '[Judge]: ${pkTarget.name} was executed by PK vote',
-        addToLLMContext: true,
+        '[法官]: ${pkTarget.name} was executed by PK vote',
       );
 
       // Handle hunter skill
@@ -956,11 +1097,62 @@ class GameEngine {
     }
   }
 
-  /// Wait for user confirmation
-  Future<void> waitForUserConfirmation(String message) async {
-    // In console app, we'll use stdin for user input
-    print(message);
-    // TODO: Implement proper console input handling
+  /// Handle last words for a player about to be executed
+  Future<void> _handleLastWords(Player player, String executionType) async {
+    if (!player.isAlive)
+      return; // Player should still be alive when leaving last words
+
+    final state = _currentState!;
+    LoggerUtil.instance.i('${player.formattedName}出局，有遗言');
+
+    String lastWords = '';
+
+    if (player is AIPlayer) {
+      try {
+        // Update player knowledge before generating last words
+        PlayerLogger.instance.updatePlayerEvents(player, state);
+        await player.processInformation(state);
+
+        // Generate appropriate context based on execution type
+        String context;
+        switch (executionType) {
+          case 'vote':
+            context = '遗言：你即将被全民投票出局，请留下你的最后一段话。你可以透露身份信息、分析场上形势、或给其他玩家重要提示。';
+            break;
+          case 'pk':
+            context = '遗言：你在PK阶段被投票出局，请留下你的最后一段话。你可以透露身份信息、分析场上形势、或给其他玩家重要提示。';
+            break;
+          default:
+            context = '遗言：你即将离开游戏，请留下你的最后一段话。';
+        }
+
+        LoggerUtil.instance.d('Generating last words for ${player.name}...');
+        lastWords = await player.generateStatement(state, context);
+
+        if (lastWords.isEmpty) {
+          lastWords = '我没有什么要说的了。'; // Default fallback
+        }
+      } catch (e) {
+        LoggerUtil.instance
+            .e('Error generating last words for ${player.name}: $e');
+        lastWords = '我没有什么要说的了。'; // Fallback on error
+      }
+    } else {
+      // For human players, we would need UI input here
+      // For now, just use a placeholder
+      lastWords = '再见了，各位。'; // Default for human players
+    }
+
+    // Create and execute last words event
+    final event = player.createLastWordsEvent(lastWords, state);
+    if (event != null) {
+      player.executeEvent(event, state);
+      LoggerUtil.instance
+          .i('${player.formattedName}: $lastWords');
+    } else {
+      LoggerUtil.instance
+          .w('Failed to create last words event for ${player.name}');
+    }
   }
 
   /// Handle game error - don't stop game, log error and continue
@@ -972,11 +1164,9 @@ class GameEngine {
     LoggerUtil.instance.i('Game continues running, error logged');
 
     // Notify listeners of the error but don't change game status
-    _eventController.add(GameEvent(
-      eventId: 'error_${DateTime.now().millisecondsSinceEpoch}',
-      type: GameEventType.playerAction,
-      description: 'Game error occurred: $error',
-      data: {'error': error.toString()},
+    _eventController.add(SystemErrorEvent(
+      errorMessage: 'Game error occurred',
+      error: error,
     ));
   }
 
@@ -993,12 +1183,16 @@ class GameEngine {
     // 显示游戏结束信息
     LoggerUtil.instance.i('');
     LoggerUtil.instance.i('='.padRight(60, '='));
-    LoggerUtil.instance.i('游戏结束！', addToLLMContext: true);
+    LoggerUtil.instance.i(
+      '游戏结束！',
+    );
     LoggerUtil.instance.i('='.padRight(60, '='));
 
     // 胜利阵营
     final winnerText = state.winner == 'Good' ? '好人阵营' : '狼人阵营';
-    LoggerUtil.instance.i('🏆 胜利者: $winnerText', addToLLMContext: true);
+    LoggerUtil.instance.i(
+      '🏆 胜利者: $winnerText',
+    );
 
     // 游戏时长
     final minutes = duration.inMinutes;
@@ -1007,67 +1201,81 @@ class GameEngine {
 
     // 存活情况
     LoggerUtil.instance.i('');
-    LoggerUtil.instance
-        .i('最终存活: ${state.alivePlayers.length}人', addToLLMContext: true);
+    LoggerUtil.instance.i(
+      '最终存活: ${state.alivePlayers.length}人',
+    );
     for (final player in state.alivePlayers) {
       final roleName = player.role.name;
       final camp = player.role.isWerewolf ? '狼人' : '好人';
-      LoggerUtil.instance
-          .i('  ✓ ${player.name} - $roleName ($camp)', addToLLMContext: true);
+      LoggerUtil.instance.i(
+        '  ✓ ${player.name} - $roleName ($camp)',
+      );
     }
 
     // 死亡情况
     if (state.deadPlayers.isNotEmpty) {
       LoggerUtil.instance.i('');
-      LoggerUtil.instance
-          .i('已出局: ${state.deadPlayers.length}人', addToLLMContext: true);
+      LoggerUtil.instance.i(
+        '已出局: ${state.deadPlayers.length}人',
+      );
       for (final player in state.deadPlayers) {
         final roleName = player.role.name;
         final camp = player.role.isWerewolf ? '狼人' : '好人';
-        LoggerUtil.instance
-            .i('  ✗ ${player.name} - $roleName ($camp)', addToLLMContext: true);
+        LoggerUtil.instance.i(
+          '  ✗ ${player.name} - $roleName ($camp)',
+        );
       }
     }
 
     // 角色分布
     LoggerUtil.instance.i('');
-    LoggerUtil.instance.i('身份揭晓:', addToLLMContext: true);
+    LoggerUtil.instance.i(
+      '身份揭晓:',
+    );
 
     // 狼人阵营
     final werewolves = state.players.where((p) => p.role.isWerewolf).toList();
-    LoggerUtil.instance
-        .i('  🐺 狼人阵营 (${werewolves.length}人):', addToLLMContext: true);
+    LoggerUtil.instance.i(
+      '  🐺 狼人阵营 (${werewolves.length}人):',
+    );
     for (final wolf in werewolves) {
       final status = wolf.isAlive ? '存活' : '出局';
-      LoggerUtil.instance.i('     ${wolf.name} - ${wolf.role.name} [$status]',
-          addToLLMContext: true);
+      LoggerUtil.instance.i(
+        '     ${wolf.name} - ${wolf.role.name} [$status]',
+      );
     }
 
     // 好人阵营
     final goods = state.players.where((p) => !p.role.isWerewolf).toList();
-    LoggerUtil.instance
-        .i('  👼 好人阵营 (${goods.length}人):', addToLLMContext: true);
+    LoggerUtil.instance.i(
+      '  👼 好人阵营 (${goods.length}人):',
+    );
 
     // 神职
     final gods = goods.where((p) => p.role.isGod).toList();
     if (gods.isNotEmpty) {
-      LoggerUtil.instance.i('     神职:', addToLLMContext: true);
+      LoggerUtil.instance.i(
+        '     神职:',
+      );
       for (final god in gods) {
         final status = god.isAlive ? '存活' : '出局';
-        LoggerUtil.instance.i('       ${god.name} - ${god.role.name} [$status]',
-            addToLLMContext: true);
+        LoggerUtil.instance.i(
+          '       ${god.name} - ${god.role.name} [$status]',
+        );
       }
     }
 
     // 平民
     final villagers = goods.where((p) => p.role.isVillager).toList();
     if (villagers.isNotEmpty) {
-      LoggerUtil.instance.i('     平民:', addToLLMContext: true);
+      LoggerUtil.instance.i(
+        '     平民:',
+      );
       for (final villager in villagers) {
         final status = villager.isAlive ? '存活' : '出局';
         LoggerUtil.instance.i(
-            '       ${villager.name} - ${villager.role.name} [$status]',
-            addToLLMContext: true);
+          '       ${villager.name} - ${villager.role.name} [$status]',
+        );
       }
     }
 
@@ -1134,6 +1342,7 @@ class GameEngine {
   void dispose() {
     _eventController.close();
     _stateController.close();
+    PlayerLogger.instance.dispose();
     LoggerUtil.instance.i('Game engine disposed');
   }
 }

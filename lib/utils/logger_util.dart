@@ -37,7 +37,7 @@ enum ConsoleColor {
 }
 
 /// 简化的统一日志工具类
-/// 只提供 d、i、w、e 四个方法，支持添加到LLM上下文
+/// 只提供 d、i、w、e 四个方法
 class LoggerUtil {
   static LoggerUtil? _instance;
 
@@ -49,14 +49,12 @@ class LoggerUtil {
 
   // 文件日志
   final String _logDir = 'logs';
+  String? _gameSessionDir;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
   final DateFormat _fileNameFormat = DateFormat('yyyy-MM-dd_HH-mm-ss');
   IOSink? _fileLogSink;
 
-  // LLM上下文数组
-  final List<String> _llmContext = [];
-  static const int _maxContextSize = 100; // 最大上下文条数
-
+  
   LoggerUtil._internal();
 
   /// 获取单例实例
@@ -72,6 +70,7 @@ class LoggerUtil {
     bool useColors = true,
     String logLevel = 'info',
     String? logFilePath,
+    String? gameId,
   }) {
     _enableConsole = enableConsole;
     _enableFile = enableFile;
@@ -80,7 +79,7 @@ class LoggerUtil {
 
     _setupLogger();
     if (_enableFile) {
-      _setupFileLogging(logFilePath);
+      _setupFileLogging(logFilePath, gameId);
     }
   }
 
@@ -89,16 +88,24 @@ class LoggerUtil {
     Logger.root.clearListeners();
   }
 
-  void _setupFileLogging(String? logFilePath) {
+  void _setupFileLogging(String? logFilePath, String? gameId) {
     try {
-      final logDir = Directory(_logDir);
+      // Create game-specific directory if gameId is provided
+      Directory logDir;
+      if (gameId != null) {
+        _gameSessionDir = path.join(_logDir, gameId);
+        logDir = Directory(_gameSessionDir!);
+      } else {
+        logDir = Directory(_logDir);
+      }
+
       if (!logDir.existsSync()) {
         logDir.createSync(recursive: true);
       }
 
       final fileName = logFilePath ??
           'werewolf_arena_${_fileNameFormat.format(DateTime.now())}.log';
-      final fullPath = path.join(_logDir, path.basename(fileName));
+      final fullPath = path.join(logDir.path, path.basename(fileName));
       final logFile = File(fullPath);
       _fileLogSink = logFile.openWrite(mode: FileMode.append);
     } catch (e) {
@@ -109,36 +116,30 @@ class LoggerUtil {
   }
 
   /// Debug级别日志
-  void d(String message, {bool addToLLMContext = false}) {
-    _log('DEBUG', message, ConsoleColor.brightBlack, addToLLMContext);
+  void d(String message) {
+    _log('DEBUG', message, ConsoleColor.brightBlack);
   }
 
   /// Info级别日志
-  void i(String message, {bool addToLLMContext = false}) {
-    _log('INFO', message, ConsoleColor.white, addToLLMContext);
+  void i(String message) {
+    _log('INFO', message, ConsoleColor.white);
   }
 
   /// Warning级别日志
-  void w(String message, {bool addToLLMContext = false}) {
-    _log('WARNING', message, ConsoleColor.yellow, addToLLMContext);
+  void w(String message) {
+    _log('WARNING', message, ConsoleColor.yellow);
   }
 
   /// Error级别日志
-  void e(String message, {bool addToLLMContext = false}) {
-    _log('ERROR', message, ConsoleColor.red, addToLLMContext);
+  void e(String message) {
+    _log('ERROR', message, ConsoleColor.red);
   }
 
-  /// 获取LLM上下文数组（只读）
-  List<String> get llmContext => List.unmodifiable(_llmContext);
-
-  /// 清空LLM上下文
-  void clearLLMContext() {
-    _llmContext.clear();
-  }
+  /// 获取当前游戏会话日志目录
+  String? get gameSessionDir => _gameSessionDir;
 
   /// 内部日志方法
-  void _log(
-      String level, String message, ConsoleColor color, bool addToLLMContext) {
+  void _log(String level, String message, ConsoleColor color) {
     final timestamp = _dateFormat.format(DateTime.now());
     final logMessage = '[$timestamp] [$level] $message';
 
@@ -154,26 +155,12 @@ class LoggerUtil {
     // 文件日志
     if (_enableFile && _fileLogSink != null) {
       try {
-        _fileLogSink!.writeln(logMessage);
+        _fileLogSink!.writeln('$logMessage\n');
       } catch (e) {
         if (_enableConsole) {
-          stdout.writeln('Failed to write to log file: $e');
+          stdout.writeln('Failed to write to log file: $e\n');
         }
       }
-    }
-
-    // 添加到LLM上下文
-    if (addToLLMContext) {
-      _addToLLMContext('[$level] $message');
-    }
-  }
-
-  void _addToLLMContext(String message) {
-    _llmContext.add(message);
-
-    // 保持上下文大小在限制内
-    while (_llmContext.length > _maxContextSize) {
-      _llmContext.removeAt(0);
     }
   }
 
@@ -205,7 +192,6 @@ class LoggerUtil {
     try {
       _fileLogSink?.close();
       _fileLogSink = null;
-      _llmContext.clear();
     } catch (e) {
       if (_enableConsole) {
         stdout.writeln('Failed to dispose LoggerUtil: $e');

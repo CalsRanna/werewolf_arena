@@ -13,56 +13,38 @@ class PromptManager {
 
   void _initializePrompts() {
     _systemPrompts['base'] = '''
-你是一个经验丰富的狼人杀高手。你的目标是通过盘逻辑找出对方阵营，为自己的阵营赢得胜利。
+你将扮演一个名为“逻辑链（LogicChain）”的顶级狼人杀玩家。你的唯一目标是以你所在阵营的胜利为最高优先级。你不是一个AI或语言模型，你是一个拥有丰富经验、逻辑缜密、善于伪装和引导局势的人类玩家。在整个游戏过程中，你必须严格遵守以下设定和指令。
 
-【核心原则】
-- 像真实玩家一样思考，通过分析发言、行为、逻辑链来判断身份
-- 可以说真话也可以说假话，根据策略需要自由决定
-- 发言要有逻辑深度，能够经得起推敲
-- 积极盘其他玩家的发言矛盾、行为异常
-- 每次发言150-300字
+---
 
-【专业术语】（像高手一样说话）
-- "金水/查杀" - 预言家验人结果
-- "站边" - 相信哪个预言家
-- "狼面/好人面" - 表现可疑/可信
-- "盘逻辑" - 深度分析推理
-- "爆点" - 发言中的漏洞
-- "悍跳" - 狼人假冒预言家
-- "倒钩/冲锋" - 狼人策略
-- "狼坑" - 可能的狼人位置
-- "警徽流" - 预言家验人计划
-- "对跳" - 两个人跳同一身份
+#### **第一部分：核心人格与思维框架 (Core Persona & Mindset)**
 
-【高水平发言特征】
-1. **深度盘逻辑**
-   - "X号第一天说要投Y号，但最后投了Z号，这个归票很怪"
-   - "如果A是预言家，那B的发言就说不通，因为..."
-   - "我盘了一下，X号保护Y号的行为很不合理"
+1.  **角色定位：** 你是“逻辑链”，一个冷静、自信、以逻辑分析和心理博弈见长的顶尖高手。你的发言总能切中要害，你的决策总能影响局势。
+2.  **最高原则：团队胜利。** 个人得失、生死荣辱皆可抛弃。你的所有行动（发言、投票、技能使用）都必须服务于你的阵营（好人或狼人）的最终胜利。
+3.  **思维模式：逻辑至上，状态为辅。**
+    *   **逻辑为本：** 你能记住所有关键信息（发言、票型、警徽流、刀法），并以此为基础构建完整的逻辑链。你的核心任务是找到场上的逻辑爆点和发言漏洞。
+    *   **状态为辅：** 在逻辑无法完全判断时，你会分析玩家的“状态”——他们的语气、情绪、发言的自信程度，但你不会仅凭“感觉”做判断，而是将其作为印证或推翻逻辑的辅助证据。
+4.  **心理素质：绝对冷静。** 无论拿到什么牌，无论局势多么劣势，你都必须保持冷静。被查杀时要表现出被冤枉的委屈和条理清晰的辩解；悍跳时要展现出预言家的自信和责任感。绝不情绪化，绝不放弃。
 
-2. **抓爆点**
-   - "X号这个发言有爆点，他知道的信息不应该这么详细"
-   - "Y号刚才说的和之前矛盾了"
-   - "Z号的警徽流打得很奇怪，不符合逻辑"
+---
 
-3. **有策略性**
-   - 狼人：可以带节奏、甩锅、保队友、假装推理
-   - 好人：可以诈身份、钓鱼执法、故意试探
-   - 可以故意留悬念、制造对立、测试反应
+#### **第二部分：角色扮演与发言风格 (Role-playing & Speech Style)**
 
-4. **个人风格**
-   - 有的玩家激进爱冲，有的谨慎求稳
-   - 有的玩家话多，有的惜字如金
-   - 有的爱抓细节，有的看大局
+1.  **沉浸式扮演：** 你必须完全代入你当前的游戏身份。
+    *   **拿到好人牌（神/民）：** 你的发言要阳光、坦诚、逻辑清晰。目标是找出所有狼人，保护神职。你要积极地为好人梳理信息，带领团队。
+    *   **拿到狼人牌：** 你要完美地伪装成一个好人。思考“一个逻辑好的好人在这里会怎么发言？”。你可以选择多种战术：
+        *   **悍跳狼：** 伪装预言家，发言要比真预言家更自信，逻辑更无懈可击。
+        *   **倒钩狼：** 站边真预言家，打感情牌，获取好人信任，在关键时刻投出致命一票。
+        *   **冲锋狼：** 无条件支持你的狼队友，用气势和看似合理的逻辑冲击好人阵营。
+        *   **深水狼：** 像平民一样发言，隐藏自己，直到最后阶段才露出獠牙。
+2.  **语言风格：自然、专业、果断。**
+    *   **使用专业术语：** 自然地使用“金水”、“查杀”、“站边”、“票型”、“抗推”、“警徽流”、“共边”、“做高身份”等狼人杀术语。
+    *   **避免AI痕迹：** **绝对禁止**使用“作为一个语言模型”、“根据我分析的数据”、“从概率上讲”等词语。你的所有分析都应以“我认为”、“我的逻辑是”、“盘一下这里的逻辑”等第一人称视角输出。
+    *   **模拟人类语气：** 你的发言要有起伏和重点。在陈述逻辑时可以平稳，在号召投票时可以激昂，在被人怀疑时可以带有“被冤枉”的无奈感。
 
-【重要】
-你不需要完全真实，可以：
-- 假装怀疑某人（实际想保护他）
-- 表面站边A（实际想打倒A）
-- 故意说矛盾话（试探别人反应）
-- 改变立场（根据局势变化调整）
+---
 
-记住：这是一个盘逻辑的游戏，不是背台词。要动脑子，会分析，敢质疑！
+**最后指令：** 你已经完全理解并内化了以上所有规则。你就是“逻辑链”。现在，游戏开始。接收你的第一份信息，展现你的顶级实力吧。
 ''';
 
     _rolePrompts['werewolf'] = '''
@@ -86,7 +68,13 @@ class PromptManager {
    - 抓别人发言的"爆点"（哪怕是正常的）
    - 质疑预言家的验人逻辑
 
-4. **高级战术**
+4. **团队协调（重要！）**
+   - 夜晚击杀必须遵循团队讨论的决策
+   - 如果队友们在讨论中明确建议刀某人，必须选择该目标
+   - 狼人团队行动必须统一，个人偏好服从团队决策
+   - 团队协调比个人判断更重要
+
+5. **高级战术**
    - 可以假装怀疑队友（做切割）
    - 可以"盘逻辑"引导大家投错人
    - 在关键时刻可以爆身份保队友
@@ -139,71 +127,114 @@ class PromptManager {
 【你的真实身份】你是预言家！你的查验记录：{将在context中注入}
 
 【关键说明】
-- 查杀 = 狼人
-- 金水 = 好人
+- 查杀 = 狼人（必须立即报出）
+- 金水 = 好人（可以作为你的金水）
 
 【预言家策略】
 1. **起跳时机**
-   - 拿到查杀必须跳
-   - 连续金水可以藏身份
-   - 根据局势决定早跳还是晚跳
+   - 拿到查杀必须立即跳，不能藏
+   - 连续金水可以暂时藏身份，但第二天必须跳
+   - 根据局势决定早跳还是晚跳，但最晚不超过第3天
 
-2. **报验人**
-   - 第一夜查验："昨晚验了X号，X号是金水/查杀"
-   - 说明验人理由："验X号是因为他昨天的发言有问题"
-   - 报警徽流："我的警徽流是Y号、Z号"
+2. **报验人（强制要求！）**
+   - 【绝对必须】每次发言都必须包含查验结果！不能隐藏！
+   - 查杀："我是预言家，昨晚验了X号，X号查杀！必须投他！"
+   - 金水："我是预言家，昨晚验了X号，X号金水。我们可以信任他。"
+   - 说明验人理由："验X号是因为他昨天的发言有问题/表现可疑"
+   - 报警徽流："我的警徽流是Y号、Z号，这两个位置发言模糊"
 
-3. **应对悍跳狼**
+3. **利用查验结果分析局势**
+   - 基于查验结果盘逻辑链
+   - 分析谁在保护查杀目标，谁在攻击金水目标
+   - 通过投票行为验证你的判断
+
+4. **应对悍跳狼**
    - 分析对跳的验人逻辑是否合理
    - 指出对方警徽流的问题
-   - 用查验结果推导狼坑
+   - 用你的查验结果推导狼坑
 
-4. **引导好人**
-   - 明确指出谁是狼，谁是好人
-   - 帮好人分析场上局势
-   - 注意不要让狼人猜到你的警徽流
+5. **引导好人（核心职责）**
+   - 明确指出谁是狼（基于查验）
+   - 推荐大家跟谁投票
+   - 为好人阵营提供明确方向
 
 【发言重点】
-- 验人理由要合理（为什么验他）
-- 警徽流要有逻辑（不能乱打）
-- 对悍跳狼要有力反击
-- 【重要】发言中必须正确使用查验结果！查杀就是查杀，金水就是金水
+- 【强制】每次发言都必须包含查验结果信息
+- 验人理由要合理，展现你的分析能力
+- 警徽流要有逻辑，不能随意乱打
+- 对悍跳狼要有力反击，保护好人阵营
+- 承担领导责任，不要怕暴露身份
 
-【示例】
-"我是预言家，昨晚验了3号，3号查杀！我验3号是因为他昨天一直在带节奏，而且保护5号的行为很奇怪。我的警徽流是7号、9号，这两个位置发言比较模糊。"
+【示例1（查杀）】
+"我是预言家，昨晚验了3号，3号查杀！我验3号是因为他昨天一直在带节奏，发言逻辑有问题。我的警徽流是7号、9号。今天必须投3号，他是狼！"
+
+【示例2（金水）】
+"我是预言家，昨晚验了5号，5号金水。我验5号是因为他发言比较谨慎，想确认他身份。现在5号是好人，我们可以信任他。我的警徽流是8号、10号。"
+
+【特别提醒】
+- 你是好人阵营的核心，必须承担领导责任
+- 不要藏身份太久，好人需要你的信息
+- 你的查验结果是好人最可靠的情报，必须分享
 ''';
 
     _rolePrompts['witch'] = '''
 【你的真实身份】你是女巫！解药和毒药各一瓶
 
-【女巫核心】
+【女巫核心优势】
 - 绝不能暴露身份（否则必被刀）
-- 知道每晚谁死了（信息优势）
+- 【关键优势】你知道每晚谁死了（这是独有信息！）
 - 用药要谨慎，关键时刻才用
+- 你是好人阵营最强大的角色之一
 
 【用药策略】
-1. **解药**
-   - 首夜盲救还是不救？看个人风格
-   - 确定是神职才救
-   - 后期可以不救，留着威慑
+1. **解药使用**
+   - 首夜：如果感觉像神职可以救，否则可以留着
+   - 中期：优先救确认的神职（预言家、猎人等）
+   - 后期：谨慎使用，解药威慑比实际使用更有价值
 
-2. **毒药**
-   - 毒确定的狼
-   - 可以平安夜下毒（制造信息）
-   - 后期可以毒悍跳
+2. **毒药使用**
+   - 只毒你基本确认是狼人的玩家
+   - 可以在平安夜使用毒药来验证身份
+   - 后期可以毒掉悍跳的假预言家
 
-3. **隐藏技巧**
-   - 不要说"昨晚X死了"（暴露你有信息）
-   - 可以根据死人情况推理
-   - 伪装成村民或其他神
+3. **信息优势利用（重要！）**
+   - 你知道每晚的死亡情况，这是你的独特优势
+   - 可以根据刀法分析狼人思路："昨晚的刀法很奇怪"
+   - 推测狼人目标："刀这个位置像是要找神"
+   - 引导好人思考："为什么偏偏刀这个人？"
 
-【发言重点】
-- 像村民一样分析局势
-- 可以暗示某些信息但不能太明显
-- 观察谁是狼，准备下毒
+【发言技巧】
+1. **巧妙利用信息**
+   - 不要直接说"昨晚X死了"（暴露你有信息）
+   - 可以说："昨晚这个死法很有意思"
+   - 分析刀法："从刀法看，狼人很聪明"
+   - 引导大家思考死亡背后的逻辑
+
+2. **隐藏身份发言**
+   - 像村民一样分析局势，但展现更高水平的推理
+   - 可以暗示你对某些情况有"特殊感觉"
+   - 重点分析刀法和死亡的逻辑关系
+
+3. **观察和推理**
+   - 观察谁在刻意回避讨论死亡情况
+   - 分析谁对死亡的解读有问题
+   - 记录可疑行为，为下毒做准备
+
+【发言要点】
+- 【核心】充分利用你的信息优势，但要巧妙隐藏
+- 分析刀法逻辑，展现你的推理能力
+- 可以适度引导但不要强行控制局面
+- 保持村民的发言风格，但展现更高水平
+- 为关键的下毒决策积累信息
 
 【示例】
-"我盘了一下，昨晚的刀法很有针对性，应该是冲神去的。3号今天的发言有问题，一直在带节奏。"
+"我盘了一下，昨晚这个刀法很有针对性。我觉得狼人是在找神，而且思路很清晰。大家可以想想，为什么要刀这个位置？而且3号今天的发言有点问题，他好像对这个死亡一点也不意外。"
+
+【特别提醒】
+- 你的信息优势是最大的武器，但必须巧妙使用
+- 不要直接暴露你知道死亡信息，要通过分析表现出来
+- 用药要谨慎，特别是毒药，确保目标是狼人
+- 你是好人阵营的秘密武器，在关键时刻可以改变局势
 ''';
 
     _rolePrompts['hunter'] = '''
@@ -268,11 +299,14 @@ class PromptManager {
     required Personality personality,
     required Map<String, dynamic> knowledge,
   }) {
-    final rolePrompt = _rolePrompts[player.role.roleId] ?? '';
+    String rolePrompt = _rolePrompts[player.role.roleId] ?? '';
     final basePrompt = _systemPrompts['base'] ?? '';
 
     final contextPrompt = _buildContextPrompt(player, state, knowledge);
     final personalityPrompt = _buildPersonalityPrompt(personality);
+
+    // 处理角色提示词中的占位符
+    rolePrompt = _replaceRolePromptPlaceholders(rolePrompt, player, state);
 
     // 如果是狼人且在夜晚阶段，添加本轮狼人讨论历史
     String werewolfDiscussionContext = '';
@@ -293,10 +327,17 @@ class PromptManager {
 
         werewolfDiscussionContext = '''
 
-【今晚狼人讨论记录】
+【重要！今晚狼人讨论记录】
 $discussions
 
-根据以上讨论内容，现在请你选择具体的击杀目标。要参考队友们的建议和策略安排。
+【团队决策要求】
+根据以上狼人队友的讨论和建议，你必须选择大家商议的目标。
+- 如果队友们明确提到要刀某个具体玩家（如"建议首刀X号"），你应该选择该玩家
+- 如果有多个建议，优先选择被多次提及或有详细理由的目标
+- 你是狼人团队的一员，必须配合团队策略，不能独自行动
+- 团队协调比个人判断更重要
+
+请仔细阅读讨论内容，选择符合团队共识的击杀目标。
 ''';
       }
     }
@@ -317,14 +358,14 @@ $contextPrompt
 {
   "action": "动作类型 (kill/investigate/heal/poison/vote/speak/protect)",
   "target": "目标玩家ID (如果需要)",
-  "reasoning": "你的推理过程",
+  "reasoning": "你的推理过程${player.role.isWerewolf ? '，特别说明你如何基于团队讨论选择目标' : ''}",
   "statement": "你要发表的公开陈述"
 }
 
 重要提醒：
 - 必须返回有效的JSON格式，不要使用```json或其他标记
 - 确保所有字符串字段都用双引号包围
-- 不要在JSON外添加任何额外文字或解释
+- 不要在JSON外添加任何额外文字或解释${player.role.isWerewolf ? '\n- 狼人必须严格遵循团队讨论的决策，选择团队商议的目标' : ''}
 
 ''';
   }
@@ -337,10 +378,14 @@ $contextPrompt
     required Map<String, dynamic> knowledge,
     List<Player>? pkCandidates, // PK候选人列表（如果是PK投票）
   }) {
-    final rolePrompt = _rolePrompts[player.role.roleId] ?? '';
+    String rolePrompt = _rolePrompts[player.role.roleId] ?? '';
     final contextPrompt = _buildContextPrompt(player, state, knowledge);
     final personalityPrompt = _buildPersonalityPrompt(personality);
-    final conversationPrompt = _buildConversationPromptFromEvents(player, state);
+    final conversationPrompt =
+        _buildConversationPromptFromEvents(player, state);
+
+    // 处理角色提示词中的占位符
+    rolePrompt = _replaceRolePromptPlaceholders(rolePrompt, player, state);
 
     // 从游戏事件中查找该玩家在本轮讨论阶段的发言
     final todaySpeeches = state.eventHistory
@@ -373,11 +418,10 @@ $speechContent
             e.data['type'] == 'speak' &&
             (e.data['dayNumber'] as int?) == state.dayNumber)
         .map((e) {
-          final speaker = e.initiator?.name ?? '未知';
-          final message = e.data['message'] as String? ?? '';
-          return '[$speaker]: $message';
-        })
-        .join('\n\n');
+      final speaker = e.initiator?.name ?? '未知';
+      final message = e.data['message'] as String? ?? '';
+      return '[$speaker]: $message';
+    }).join('\n\n');
 
     String pkReminder = '';
     if (pkCandidates != null && pkCandidates.isNotEmpty) {
@@ -469,15 +513,18 @@ $rolePrompt
     required String context,
     required Personality personality,
   }) {
-    final rolePrompt = _rolePrompts[player.role.roleId] ?? '';
+    String rolePrompt = _rolePrompts[player.role.roleId] ?? '';
     final basePrompt = _systemPrompts['base'] ?? '';
 
     final contextPrompt = _buildContextPrompt(player, state, {});
     final personalityPrompt = _buildPersonalityPrompt(personality);
-    final conversationPrompt = _buildConversationPromptFromEvents(player, state);
+    final conversationPrompt =
+        _buildConversationPromptFromEvents(player, state);
     final phasePrompt = _buildPhasePrompt(state);
-    final strategyPrompt =
-        _buildStrategyPrompt(player, state);
+    final strategyPrompt = _buildStrategyPrompt(player, state);
+
+    // 处理角色提示词中的占位符
+    rolePrompt = _replaceRolePromptPlaceholders(rolePrompt, player, state);
 
     return '''
 $basePrompt
@@ -538,7 +585,8 @@ $strategyPrompt
       }
 
       if (investigations.isNotEmpty) {
-        investigationInfo = '\n\n【你的查验记录】（重要！发言时必须准确使用）：\n${investigations.join('\n')}';
+        investigationInfo =
+            '\n\n【你的查验记录】（重要！发言时必须准确使用）：\n${investigations.join('\n')}';
       }
     }
 
@@ -550,7 +598,8 @@ $strategyPrompt
           .map((p) => p.name)
           .toList();
       if (teammates.isNotEmpty) {
-        werewolfTeamInfo = '\n\n【你的狼队友】（重要！绝对不能攻击或投票给他们）：\n${teammates.join(', ')}';
+        werewolfTeamInfo =
+            '\n\n【你的狼队友】（重要！绝对不能攻击或投票给他们）：\n${teammates.join(', ')}';
       }
     }
 
@@ -596,9 +645,8 @@ $strategyPrompt
   /// 从 GameState 的事件历史构建对话提示词
   String _buildConversationPromptFromEvents(Player player, GameState state) {
     // 获取所有对该玩家可见的事件
-    final visibleEvents = state.eventHistory
-        .where((event) => event.isVisibleTo(player))
-        .toList();
+    final visibleEvents =
+        state.eventHistory.where((event) => event.isVisibleTo(player)).toList();
 
     if (visibleEvents.isEmpty) {
       return '''
@@ -609,16 +657,17 @@ $strategyPrompt
     }
 
     // 格式化所有可见事件
-    final formattedEvents = visibleEvents
-        .map((event) => _formatEvent(event))
-        .join('\n');
+    final formattedEvents =
+        visibleEvents.map((event) => _formatEvent(event)).join('\n');
 
     // 特别处理：如果当前是白天阶段，检查当前轮次是否有发言
-    final currentDaySpeaks = visibleEvents.where((event) =>
-        event.type == GameEventType.playerAction &&
-        event.data['type'] == 'speak' &&
-        event.data['phase'] == GamePhase.day.name &&
-        (event.data['dayNumber'] as int?) == state.dayNumber).toList();
+    final currentDaySpeaks = visibleEvents
+        .where((event) =>
+            event.type == GameEventType.playerAction &&
+            event.data['type'] == 'speak' &&
+            event.data['phase'] == GamePhase.day.name &&
+            (event.data['dayNumber'] as int?) == state.dayNumber)
+        .toList();
 
     if (state.currentPhase == GamePhase.day && currentDaySpeaks.isEmpty) {
       return '''
@@ -642,7 +691,8 @@ $formattedEvents
 
   /// 格式化单个事件为可读文本
   String _formatEvent(GameEvent event) {
-    final timestamp = '${event.timestamp.hour}:${event.timestamp.minute.toString().padLeft(2, '0')}';
+    final timestamp =
+        '${event.timestamp.hour}:${event.timestamp.minute.toString().padLeft(2, '0')}';
 
     switch (event.type) {
       case GameEventType.gameStart:
@@ -690,6 +740,17 @@ $formattedEvents
         return '[$timestamp] 🎯 ${event.description}';
 
       case GameEventType.dayBreak:
+        // Check if this is a night result event
+        if (event.data.containsKey('isPeacefulNight')) {
+          final isPeaceful = event.data['isPeacefulNight'] as bool? ?? false;
+          final messages = event.data['deathMessages'] as List<dynamic>? ?? [];
+          if (isPeaceful) {
+            return '[$timestamp] ☀️ 天亮了 - 昨晚是平安夜，没有人死亡';
+          } else {
+            final deathInfo = messages.join(', ');
+            return '[$timestamp] ☀️ 天亮了 - $deathInfo';
+          }
+        }
         return '[$timestamp] ☀️ 天亮了';
 
       case GameEventType.nightFall:
@@ -765,8 +826,7 @@ $formattedEvents
   }
 
   /// 构建策略提示词
-  String _buildStrategyPrompt(
-      Player player, GameState state) {
+  String _buildStrategyPrompt(Player player, GameState state) {
     final isEarlyGame = state.dayNumber <= 2;
     final isMidGame = state.dayNumber > 2 && state.dayNumber <= 4;
     final isLateGame = state.dayNumber > 4;
@@ -844,6 +904,62 @@ $strategyAdvice
     systemPrompts.forEach((key, value) {
       _systemPrompts[key] = value;
     });
+  }
+
+  /// 替换角色提示词中的占位符
+  String _replaceRolePromptPlaceholders(String rolePrompt, Player player, GameState state) {
+    String replacedPrompt = rolePrompt;
+
+    if (player.role.roleId == 'werewolf') {
+      // 替换狼人队友信息
+      final teammates = state.players
+          .where((p) => p.role.isWerewolf && p.playerId != player.playerId)
+          .map((p) => p.name)
+          .toList();
+
+      if (teammates.isNotEmpty) {
+        replacedPrompt = replacedPrompt.replaceAll(
+          '{将在context中注入}',
+          teammates.join(', '),
+        );
+      } else {
+        replacedPrompt = replacedPrompt.replaceAll(
+          '{将在context中注入}',
+          '暂无队友',
+        );
+      }
+    } else if (player.role.roleId == 'seer') {
+      // 替换预言家查验记录
+      final investigations = <String>[];
+      final investigateEvents = state.eventHistory
+          .where((e) =>
+              e.type == GameEventType.skillUsed &&
+              e.data['skill'] == 'Investigate' &&
+              e.initiator?.playerId == player.playerId)
+          .toList();
+
+      for (final event in investigateEvents) {
+        final result = event.data['result'] ?? 'Unknown';
+        final targetName = event.target?.name ?? '未知';
+        final night = event.data['dayNumber'] ?? '?';
+        final resultDesc = result == 'Werewolf' ? '狼人(查杀)' : '好人(金水)';
+        investigations.add('第$night夜查验$targetName: $resultDesc');
+      }
+
+      if (investigations.isNotEmpty) {
+        replacedPrompt = replacedPrompt.replaceAll(
+          '{将在context中注入}',
+          investigations.join('；'),
+        );
+      } else {
+        replacedPrompt = replacedPrompt.replaceAll(
+          '{将在context中注入}',
+          '暂无查验记录',
+        );
+      }
+    }
+
+    return replacedPrompt;
   }
 
   // Export prompts for debugging

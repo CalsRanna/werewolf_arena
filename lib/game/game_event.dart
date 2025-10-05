@@ -1,89 +1,172 @@
 import 'game_state.dart';
 import '../player/player.dart';
+import '../player/role.dart';
 
-/// Helper function to safely convert dynamic to Player or null
-Player? _toPlayer(dynamic obj) {
-  if (obj is Player) return obj;
-  return null;
+/// 死亡原因枚举
+enum DeathCause {
+  werewolfKill,
+  vote,
+  poison,
+  hunterShot,
+  other,
 }
 
-/// Helper to extract player ID from dynamic object
-String _getPlayerId(dynamic player) {
-  return player.playerId as String;
+/// 技能类型枚举
+enum SkillType {
+  werewolfKill,
+  guardProtect,
+  seerInvestigate,
+  witchHeal,
+  witchPoison,
+  hunterShoot,
 }
 
-/// Helper to extract player name from dynamic object
-String _getPlayerName(dynamic player) {
-  return player.name as String;
+/// 投票类型枚举
+enum VoteType {
+  normal,
+  pk,
 }
 
-/// Base class for all game events that extend GameEvent
-abstract class BaseGameEvent extends GameEvent {
-  BaseGameEvent({
-    required super.eventId,
-    required super.type,
-    required super.description,
-    super.data,
-    super.initiator,
-    super.target,
-    super.visibility,
-    super.visibleToPlayerIds,
-    super.visibleToRole,
-  });
-
-  /// Execute the event logic
-  void execute(GameState state);
+/// 发言类型枚举
+enum SpeechType {
+  normal,
+  lastWords,
+  werewolfDiscussion,
 }
 
-/// 死亡事件 - 所有人可见
-class DeadEvent extends BaseGameEvent {
+/// 游戏状态事件类型
+enum GameStateEventType {
+  start,
+  end,
+}
+
+/// 玩家死亡事件 - 完全结构化
+class DeadEvent extends GameEvent {
+  final Player victim;
+  final DeathCause cause;
+  final Player? killer; // 可选：造成死亡的玩家
+  final int? dayNumber;
+  final GamePhase? phase;
+
   DeadEvent({
-    required dynamic player,
-    required String cause,
-    int? dayNumber,
-    String? phase,
+    required this.victim,
+    required this.cause,
+    this.killer,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'dead_${_getPlayerId(player)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'death_${victim.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.playerDeath,
-          description: '${_getPlayerName(player)} 死亡: $cause',
-          initiator: _toPlayer(player),
+          initiator: victim,
+          target: killer,
           visibility: EventVisibility.public,
-          data: {
-            'cause': cause,
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
         );
 
   @override
-  void execute(GameState state) {
-    if (initiator != null) {
-      initiator!.isAlive = false;
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'victimId': victim.playerId,
+      'victimName': victim.name,
+      'victimRole': victim.role.roleId,
+      'cause': cause.toString(),
+      'killerId': killer?.playerId,
+      'killerName': killer?.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    final causeText = _getCauseText(cause, locale);
+    return '${victim.name} $causeText';
+  }
+
+  @override
+  String getDescriptionForPlayer(dynamic player, {String? locale}) {
+    // 根据玩家身份决定显示多少细节
+    final canSeeDeathCause = _canSeeDeathCause(player);
+
+    if (canSeeDeathCause) {
+      return generateDescription(locale: locale);
+    } else {
+      // 隐藏死因，只显示基本信息
+      return '${victim.name} 死亡';
     }
+  }
+
+  bool _canSeeDeathCause(dynamic player) {
+    final playerId = player.playerId as String;
+    final role = player.role as Role;
+    final isAlive = player.isAlive as bool;
+
+    return role.isWerewolf ||
+           role.roleId == 'witch' ||
+           playerId == victim.playerId ||
+           !isAlive; // 死人知道一切
+  }
+
+  String _getCauseText(DeathCause cause, String? locale) {
+    switch (cause) {
+      case DeathCause.werewolfKill:
+        return '被狼人杀死';
+      case DeathCause.vote:
+        return '被投票处决';
+      case DeathCause.poison:
+        return '被毒死';
+      case DeathCause.hunterShot:
+        return '被猎人击毙';
+      case DeathCause.other:
+        return '死亡';
+    }
+  }
+
+  @override
+  void execute(GameState state) {
+    victim.isAlive = false;
   }
 }
 
 /// 狼人击杀事件 - 仅狼人可见
-class WerewolfKillEvent extends BaseGameEvent {
+class WerewolfKillEvent extends GameEvent {
+  final Player actor;
+  final Player target;
+  final int? dayNumber;
+  final GamePhase? phase;
+
   WerewolfKillEvent({
-    required dynamic actor,
-    required dynamic target,
-    int? dayNumber,
-    String? phase,
+    required this.actor,
+    required this.target,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'kill_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'kill_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
-          description: '${_getPlayerName(actor)} 选择击杀 ${_getPlayerName(target)}',
-          initiator: _toPlayer(actor),
-          target: _toPlayer(target),
+          initiator: actor,
+          target: target,
           visibility: EventVisibility.allWerewolves,
-          data: {
-            'skill': 'Kill',
-            'targetId': _getPlayerId(target),
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
         );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'actorId': actor.playerId,
+      'actorName': actor.name,
+      'actorRole': actor.role.roleId,
+      'skillType': SkillType.werewolfKill.toString(),
+      'targetId': target.playerId,
+      'targetName': target.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '${actor.name} 选择击杀 ${target.name}';
+  }
 
   @override
   void execute(GameState state) {
@@ -93,299 +176,511 @@ class WerewolfKillEvent extends BaseGameEvent {
 }
 
 /// 守卫保护事件 - 仅守卫可见
-class GuardProtectEvent extends BaseGameEvent {
+class GuardProtectEvent extends GameEvent {
+  final Player actor;
+  final Player target;
+  final int? dayNumber;
+  final GamePhase? phase;
+
   GuardProtectEvent({
-    required dynamic actor,
-    required dynamic target,
-    int? dayNumber,
-    String? phase,
+    required this.actor,
+    required this.target,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'protect_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'protect_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
-          description: '${_getPlayerName(actor)} 守护了 ${_getPlayerName(target)}',
-          initiator: _toPlayer(actor),
-          target: _toPlayer(target),
+          initiator: actor,
+          target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [_getPlayerId(actor)],
-          data: {
-            'skill': 'Protect',
-            'targetId': _getPlayerId(target),
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
+          visibleToPlayerIds: [actor.playerId],
         );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'actorId': actor.playerId,
+      'actorName': actor.name,
+      'actorRole': actor.role.roleId,
+      'skillType': SkillType.guardProtect.toString(),
+      'targetId': target.playerId,
+      'targetName': target.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '${actor.name} 守护了 ${target.name}';
+  }
 
   @override
   void execute(GameState state) {
     state.setTonightProtected(target);
-    // Last guarded information is now tracked through event history
-    // No need to store in private data
   }
 }
 
 /// 预言家查验事件 - 仅预言家可见
-class SeerInvestigateEvent extends BaseGameEvent {
+class SeerInvestigateEvent extends GameEvent {
+  final Player actor;
+  final Player target;
   final String investigationResult;
+  final int? dayNumber;
+  final GamePhase? phase;
 
   SeerInvestigateEvent({
-    required dynamic actor,
-    required dynamic target,
+    required this.actor,
+    required this.target,
     required this.investigationResult,
-    int? dayNumber,
-    String? phase,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'investigate_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'investigate_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
-          description: '${_getPlayerName(actor)} 查验了 ${_getPlayerName(target)}，结果是: $investigationResult',
-          initiator: _toPlayer(actor),
-          target: _toPlayer(target),
+          initiator: actor,
+          target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [_getPlayerId(actor)],
-          data: {
-            'skill': 'Investigate',
-            'targetId': _getPlayerId(target),
-            'result': investigationResult,
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
+          visibleToPlayerIds: [actor.playerId],
         );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'actorId': actor.playerId,
+      'actorName': actor.name,
+      'actorRole': actor.role.roleId,
+      'skillType': SkillType.seerInvestigate.toString(),
+      'targetId': target.playerId,
+      'targetName': target.name,
+      'result': investigationResult,
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '${actor.name} 查验了 ${target.name}，结果是: $investigationResult';
+  }
 
   @override
   void execute(GameState state) {
     // Investigation result is already stored in the event data
     // The seer will access this information through the event system
-    // No need for private data storage
   }
 }
 
 /// 女巫救人事件 - 仅女巫可见
-class WitchHealEvent extends BaseGameEvent {
+class WitchHealEvent extends GameEvent {
+  final Player actor;
+  final Player target;
+  final int? dayNumber;
+  final GamePhase? phase;
+
   WitchHealEvent({
-    required dynamic actor,
-    required dynamic target,
-    int? dayNumber,
-    String? phase,
+    required this.actor,
+    required this.target,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'heal_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'heal_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
-          description: '${_getPlayerName(actor)} 使用解药救了 ${_getPlayerName(target)}',
-          initiator: _toPlayer(actor),
-          target: _toPlayer(target),
+          initiator: actor,
+          target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [_getPlayerId(actor)],
-          data: {
-            'skill': '使用解药',
-            'targetId': _getPlayerId(target),
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
+          visibleToPlayerIds: [actor.playerId],
         );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'actorId': actor.playerId,
+      'actorName': actor.name,
+      'actorRole': actor.role.roleId,
+      'skillType': SkillType.witchHeal.toString(),
+      'targetId': target.playerId,
+      'targetName': target.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '${actor.name} 使用解药救了 ${target.name}';
+  }
 
   @override
   void execute(GameState state) {
     state.cancelTonightKill();
-    // Antidote usage is now tracked through event history
-    // No need to update private data
   }
 }
 
 /// 女巫毒杀事件 - 仅女巫可见
-class WitchPoisonEvent extends BaseGameEvent {
+class WitchPoisonEvent extends GameEvent {
+  final Player actor;
+  final Player target;
+  final int? dayNumber;
+  final GamePhase? phase;
+
   WitchPoisonEvent({
-    required dynamic actor,
-    required dynamic target,
-    int? dayNumber,
-    String? phase,
+    required this.actor,
+    required this.target,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'poison_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'poison_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
-          description: '${_getPlayerName(actor)} 使用毒药毒杀了 ${_getPlayerName(target)}',
-          initiator: _toPlayer(actor),
-          target: _toPlayer(target),
+          initiator: actor,
+          target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [_getPlayerId(actor)],
-          data: {
-            'skill': '使用毒药',
-            'targetId': _getPlayerId(target),
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
+          visibleToPlayerIds: [actor.playerId],
         );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'actorId': actor.playerId,
+      'actorName': actor.name,
+      'actorRole': actor.role.roleId,
+      'skillType': SkillType.witchPoison.toString(),
+      'targetId': target.playerId,
+      'targetName': target.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '${actor.name} 使用毒药毒杀了 ${target.name}';
+  }
 
   @override
   void execute(GameState state) {
     state.setTonightPoisoned(target);
-    // Poison usage is now tracked through event history
-    // No need to update private data
   }
 }
 
 /// 投票事件 - 公开可见
-class VoteEvent extends BaseGameEvent {
+class VoteEvent extends GameEvent {
+  final Player voter;
+  final Player candidate;
+  final VoteType voteType;
+  final int? dayNumber;
+  final GamePhase? phase;
+
   VoteEvent({
-    required dynamic actor,
-    required dynamic target,
-    int? dayNumber,
-    String? phase,
+    required this.voter,
+    required this.candidate,
+    this.voteType = VoteType.normal,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'vote_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'vote_${voter.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.voteCast,
-          description: '${_getPlayerName(actor)} 投票给 ${_getPlayerName(target)}',
-          initiator: _toPlayer(actor),
-          target: _toPlayer(target),
+          initiator: voter,
+          target: candidate,
           visibility: EventVisibility.public,
-          data: {
-            'action': '投票',
-            'targetId': _getPlayerId(target),
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
         );
 
   @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'voterId': voter.playerId,
+      'voterName': voter.name,
+      'candidateId': candidate.playerId,
+      'candidateName': candidate.name,
+      'voteType': voteType.toString(),
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    final voteText = _getVoteText(voteType, locale);
+    return '${voter.name} $voteText ${candidate.name}';
+  }
+
+  String _getVoteText(VoteType voteType, String? locale) {
+    switch (voteType) {
+      case VoteType.normal:
+        return '投票给';
+      case VoteType.pk:
+        return 'PK投票给';
+    }
+  }
+
+  @override
   void execute(GameState state) {
-    state.addVote(initiator!, target!);
+    state.addVote(voter, candidate);
   }
 }
 
 /// 发言事件 - 公开可见
-class SpeakEvent extends BaseGameEvent {
+class SpeakEvent extends GameEvent {
+  final Player speaker;
   final String message;
+  final SpeechType speechType;
+  final int? dayNumber;
+  final GamePhase? phase;
 
   SpeakEvent({
-    required dynamic actor,
+    required this.speaker,
     required this.message,
-    int? dayNumber,
-    String? phase,
+    this.speechType = SpeechType.normal,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'speak_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'speak_${speaker.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.playerAction,
-          description: '${_getPlayerName(actor)} 发言: $message',
-          initiator: _toPlayer(actor),
-          visibility: EventVisibility.public,
-          data: {
-            'type': 'speak',
-            'message': message,
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
+          initiator: speaker,
+          visibility: _getDefaultVisibility(speechType),
+          visibleToRole: speechType == SpeechType.werewolfDiscussion ? 'werewolf' : null,
         );
+
+  static EventVisibility _getDefaultVisibility(SpeechType speechType) {
+    switch (speechType) {
+      case SpeechType.normal:
+      case SpeechType.lastWords:
+        return EventVisibility.public;
+      case SpeechType.werewolfDiscussion:
+        return EventVisibility.roleSpecific;
+    }
+  }
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'speakerId': speaker.playerId,
+      'speakerName': speaker.name,
+      'message': message,
+      'speechType': speechType.toString(),
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    final speechText = _getSpeechText(speechType, locale);
+    return '${speaker.name} $speechText: $message';
+  }
+
+  String _getSpeechText(SpeechType speechType, String? locale) {
+    switch (speechType) {
+      case SpeechType.normal:
+        return '发言';
+      case SpeechType.lastWords:
+        return '遗言';
+      case SpeechType.werewolfDiscussion:
+        return '狼人讨论';
+    }
+  }
 
   @override
   void execute(GameState state) {
-    // Message content is already stored in event data
-    // Players will access this through the event system
-    // No need for separate message broadcasting
+    // 发言事件不需要执行特殊逻辑，只是记录
   }
 }
 
 /// 狼人讨论事件 - 仅狼人可见
-class WerewolfDiscussionEvent extends BaseGameEvent {
-  final String message;
-
+class WerewolfDiscussionEvent extends SpeakEvent {
   WerewolfDiscussionEvent({
-    required dynamic actor,
-    required this.message,
-    int? dayNumber,
-    String? phase,
+    required super.speaker,
+    required super.message,
+    super.dayNumber,
+    super.phase,
   }) : super(
-          eventId: 'werewolf_discussion_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.playerAction,
-          description: '${_getPlayerName(actor)} 狼人讨论: $message',
-          initiator: _toPlayer(actor),
-          visibility: EventVisibility.roleSpecific,
-          visibleToRole: 'werewolf',
-          data: {
-            'type': 'werewolf_discussion',
-            'message': message,
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
+          speechType: SpeechType.werewolfDiscussion,
         );
-
-  @override
-  void execute(GameState state) {
-    // Message content is already stored in event data
-    // Werewolves will access this through the event system with roleSpecific visibility
-    // No need for separate message broadcasting
-  }
 }
 
 /// 猎人开枪事件 - 公开可见
-class HunterShootEvent extends BaseGameEvent {
+class HunterShootEvent extends GameEvent {
+  final Player actor;
+  final Player target;
+  final int? dayNumber;
+  final GamePhase? phase;
+
   HunterShootEvent({
-    required dynamic actor,
-    required dynamic target,
-    int? dayNumber,
-    String? phase,
+    required this.actor,
+    required this.target,
+    this.dayNumber,
+    this.phase,
   }) : super(
-          eventId: 'hunter_shoot_${_getPlayerId(actor)}_${DateTime.now().millisecondsSinceEpoch}',
+          eventId: 'hunter_shoot_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
-          description: '${_getPlayerName(actor)} 开枪带走了 ${_getPlayerName(target)}',
-          initiator: _toPlayer(actor),
-          target: _toPlayer(target),
+          initiator: actor,
+          target: target,
           visibility: EventVisibility.public,
-          data: {
-            'skill': '开枪',
-            'targetId': _getPlayerId(target),
-            'dayNumber': dayNumber,
-            'phase': phase,
-          },
         );
 
   @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'actorId': actor.playerId,
+      'actorName': actor.name,
+      'actorRole': actor.role.roleId,
+      'skillType': SkillType.hunterShoot.toString(),
+      'targetId': target.playerId,
+      'targetName': target.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '${actor.name} 开枪带走了 ${target.name}';
+  }
+
+  @override
   void execute(GameState state) {
-    // Kill the target
-    if (target != null) {
-      target!.die('被猎人开枪带走', state);
-    }
-    // Hunter shoot status is now tracked through event history
-    // No need to update private data
+    // Create death event for the target
+    final deathEvent = DeadEvent(
+      victim: target,
+      cause: DeathCause.hunterShot,
+      killer: actor,
+      dayNumber: dayNumber,
+      phase: phase,
+    );
+    deathEvent.execute(state);
+    state.addEvent(deathEvent);
   }
 }
 
 /// 阶段转换事件 - 公开可见
-class PhaseChangeEvent extends BaseGameEvent {
+class PhaseChangeEvent extends GameEvent {
   final GamePhase oldPhase;
   final GamePhase newPhase;
+  final int dayNumber;
 
   PhaseChangeEvent({
     required this.oldPhase,
     required this.newPhase,
-    int? dayNumber,
+    required this.dayNumber,
   }) : super(
           eventId: 'phase_change_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.phaseChange,
-          description: '游戏阶段从 ${oldPhase.name} 变为 ${newPhase.name}',
           visibility: EventVisibility.public,
-          data: {
-            'oldPhase': oldPhase.name,
-            'newPhase': newPhase.name,
-            'dayNumber': dayNumber,
-          },
         );
 
   @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'oldPhase': oldPhase.toString(),
+      'newPhase': newPhase.toString(),
+      'dayNumber': dayNumber,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    final oldPhaseText = _getPhaseText(oldPhase, locale);
+    final newPhaseText = _getPhaseText(newPhase, locale);
+    return '游戏阶段从 $oldPhaseText 变为 $newPhaseText';
+  }
+
+  String _getPhaseText(GamePhase phase, String? locale) {
+    switch (phase) {
+      case GamePhase.night:
+        return '夜晚';
+      case GamePhase.day:
+        return '白天';
+      case GamePhase.voting:
+        return '投票';
+      case GamePhase.ended:
+        return '结束';
+    }
+  }
+
+  @override
   void execute(GameState state) {
-    // Phase change is handled by GameState
+    // 阶段转换由GameState处理
+  }
+}
+
+/// 夜晚结果公告事件 - 公开可见
+class NightResultEvent extends GameEvent {
+  final List<DeadEvent> deathEvents;
+  final bool isPeacefulNight;
+  final int dayNumber;
+
+  NightResultEvent({
+    required this.deathEvents,
+    required this.isPeacefulNight,
+    required this.dayNumber,
+  }) : super(
+          eventId: 'night_result_${DateTime.now().millisecondsSinceEpoch}',
+          type: GameEventType.dayBreak,
+          visibility: EventVisibility.public,
+        );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'deathEvents': deathEvents.map((e) => e.getStructuredData()).toList(),
+      'isPeacefulNight': isPeacefulNight,
+      'dayNumber': dayNumber,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    if (isPeacefulNight) {
+      return '昨晚是平安夜，没有人死亡';
+    } else {
+      final deathMessages = deathEvents.map((e) => e.generateDescription()).join(', ');
+      return '昨晚有人死亡: $deathMessages';
+    }
+  }
+
+  @override
+  void execute(GameState state) {
+    // Night result announcement is handled by GameEngine
+    // This event just provides information to players
   }
 }
 
 /// 游戏开始事件 - 公开可见
-class GameStartEvent extends BaseGameEvent {
+class GameStartEvent extends GameEvent {
+  final int playerCount;
+  final Map<String, int> roleDistribution;
+
   GameStartEvent({
-    required int playerCount,
-    required Map<String, int> roleDistribution,
+    required this.playerCount,
+    required this.roleDistribution,
   }) : super(
           eventId: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.gameStart,
-          description: '游戏开始，共 $playerCount 名玩家',
           visibility: EventVisibility.public,
-          data: {
-            'playerCount': playerCount,
-            'roleDistribution': roleDistribution,
-          },
         );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'playerCount': playerCount,
+      'roleDistribution': roleDistribution,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '游戏开始，共 $playerCount 名玩家';
+  }
 
   @override
   void execute(GameState state) {
@@ -393,32 +688,88 @@ class GameStartEvent extends BaseGameEvent {
   }
 }
 
+/// 遗言事件 - 公开可见
+class LastWordsEvent extends SpeakEvent {
+  LastWordsEvent({
+    required super.speaker,
+    required super.message,
+    super.dayNumber,
+    super.phase,
+  }) : super(
+          speechType: SpeechType.lastWords,
+        );
+}
+
 /// 游戏结束事件 - 公开可见
-class GameEndEvent extends BaseGameEvent {
+class GameEndEvent extends GameEvent {
   final String winner;
   final int totalDays;
   final int finalPlayerCount;
+  final DateTime gameStartTime;
 
   GameEndEvent({
     required this.winner,
     required this.totalDays,
     required this.finalPlayerCount,
-    required DateTime startTime,
+    required this.gameStartTime,
   }) : super(
           eventId: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.gameEnd,
-          description: '游戏结束。获胜方: $winner',
           visibility: EventVisibility.public,
-          data: {
-            'winner': winner,
-            'duration': DateTime.now().difference(startTime).inMilliseconds,
-            'totalDays': totalDays,
-            'finalPlayerCount': finalPlayerCount,
-          },
         );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'winner': winner,
+      'duration': DateTime.now().difference(gameStartTime).inMilliseconds,
+      'totalDays': totalDays,
+      'finalPlayerCount': finalPlayerCount,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '游戏结束。获胜方: $winner';
+  }
 
   @override
   void execute(GameState state) {
     // Game end logic is handled by GameState
+  }
+}
+
+/// 系统错误事件 - 公开可见
+class SystemErrorEvent extends GameEvent {
+  final String errorMessage;
+  final dynamic error;
+
+  SystemErrorEvent({
+    required this.errorMessage,
+    required this.error,
+  }) : super(
+          eventId: 'error_${DateTime.now().millisecondsSinceEpoch}',
+          type: GameEventType.playerAction,
+          visibility: EventVisibility.public,
+        );
+
+  @override
+  Map<String, dynamic> getStructuredData() {
+    return {
+      'errorMessage': errorMessage,
+      'error': error.toString(),
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  String generateDescription({String? locale}) {
+    return '游戏错误: $errorMessage';
+  }
+
+  @override
+  void execute(GameState state) {
+    // Error events don't modify game state
   }
 }

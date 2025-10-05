@@ -1,4 +1,3 @@
-import 'dart:io';
 import '../player/player.dart';
 import '../player/role.dart';
 import '../utils/config_loader.dart';
@@ -69,36 +68,41 @@ enum EventVisibility {
   dead, // Only dead players can see
 }
 
-/// Game events
-class GameEvent {
+/// Base class for all structured game events
+abstract class GameEvent {
   final String eventId;
   final DateTime timestamp;
   final GameEventType type;
-  final String description;
-  final Map<String, dynamic> data;
   final Player? initiator;
   final Player? target;
-
-  /// Visibility scope of this event
   final EventVisibility visibility;
-
-  /// List of player IDs who can see this event (for playerSpecific visibility)
   final List<String> visibleToPlayerIds;
-
-  /// Role ID that can see this event (for roleSpecific visibility)
   final String? visibleToRole;
 
   GameEvent({
     required this.eventId,
     required this.type,
-    required this.description,
-    this.data = const {},
     this.initiator,
     this.target,
     this.visibility = EventVisibility.public,
     this.visibleToPlayerIds = const [],
     this.visibleToRole,
   }) : timestamp = DateTime.now();
+
+  /// 获取结构化的事件数据
+  Map<String, dynamic> getStructuredData();
+
+  /// 动态生成描述（用于日志显示和兼容性）
+  String generateDescription({String? locale});
+
+  /// 获取针对特定玩家的描述
+  String getDescriptionForPlayer(dynamic player, {String? locale}) {
+    // 默认实现，子类可以重写以实现特定的可见性逻辑
+    return generateDescription(locale: locale);
+  }
+
+  /// 执行事件逻辑
+  void execute(GameState state);
 
   /// Check if this event is visible to a specific player
   bool isVisibleTo(dynamic player) {
@@ -125,41 +129,34 @@ class GameEvent {
     }
   }
 
+  /// 兼容性方法：返回描述字符串
+  @Deprecated('Use generateDescription() instead')
+  String get description => generateDescription();
+
+  /// 兼容性方法：返回事件数据
+  @Deprecated('Use getStructuredData() instead')
+  Map<String, dynamic> get data => getStructuredData();
+
   @override
   String toString() {
-    return 'GameEvent($type: $description)';
+    return 'GameEvent($type: ${generateDescription()})';
   }
 
   Map<String, dynamic> toJson() {
+    final structuredData = getStructuredData();
     return {
       'eventId': eventId,
       'timestamp': timestamp.toIso8601String(),
       'type': type.name,
-      'description': description,
-      'data': data,
+      'description': generateDescription(), // 为了兼容性保留
+      'data': structuredData,
+      'structuredData': structuredData, // 新的结构化数据字段
       'initiator': initiator?.playerId,
       'target': target?.playerId,
       'visibility': visibility.name,
       'visibleToPlayerIds': visibleToPlayerIds,
       'visibleToRole': visibleToRole,
     };
-  }
-
-  factory GameEvent.fromJson(Map<String, dynamic> json) {
-    return GameEvent(
-      eventId: json['eventId'],
-      type: GameEventType.values.firstWhere((t) => t.name == json['type']),
-      description: json['description'],
-      data: Map<String, dynamic>.from(json['data']),
-      visibility: json['visibility'] != null
-          ? EventVisibility.values
-              .firstWhere((v) => v.name == json['visibility'])
-          : EventVisibility.public,
-      visibleToPlayerIds: json['visibleToPlayerIds'] != null
-          ? List<String>.from(json['visibleToPlayerIds'])
-          : [],
-      visibleToRole: json['visibleToRole'],
-    );
   }
 }
 
@@ -212,8 +209,8 @@ class GameState {
   List<Player> get gods => players.where((p) => p.role.isGod).toList();
 
   int get aliveWerewolves => werewolves.where((p) => p.isAlive).length;
-  int get aliveVillagers =>
-      alivePlayers.where((p) => !p.role.isWerewolf).length;
+  int get aliveVillagers => villagers.where((p) => p.isAlive).length;
+  int get aliveGoodGuys => alivePlayers.where((p) => !p.role.isWerewolf).length;
 
   // Methods
   void addEvent(GameEvent event) {
@@ -258,45 +255,6 @@ class GameState {
       dayNumber: dayNumber,
     );
     addEvent(event);
-
-    // 等待用户按回车键继续到下一阶段
-    await _waitForEnter(_getPhaseChangeMessage(oldPhase, newPhase));
-  }
-
-  /// 获取阶段转换提示消息
-  String _getPhaseChangeMessage(GamePhase oldPhase, GamePhase newPhase) {
-    switch (newPhase) {
-      case GamePhase.night:
-        return '进入夜晚阶段，按回车键继续...';
-      case GamePhase.day:
-        return '夜晚结束，进入白天讨论阶段，按回车键继续...';
-      case GamePhase.voting:
-        return '讨论结束，进入投票阶段，按回车键继续...';
-      case GamePhase.ended:
-        return '游戏结束，按回车键查看结果...';
-    }
-  }
-
-  /// 等待用户按回车键继续
-  Future<void> _waitForEnter(String message) async {
-    while (true) {
-      stdout.write(message);
-
-      try {
-        final input = stdin.readLineSync() ?? '';
-        if (input.trim().isEmpty) {
-          // 用户按了回车键（空输入）
-          break;
-        } else {
-          // 用户输入了其他内容，提醒重新输入
-          stdout.writeln('请按回车键继续，不要输入其他内容。');
-        }
-      } catch (e) {
-        // 输入流错误，直接退出等待
-        stdout.writeln('Input error: $e');
-        break;
-      }
-    }
   }
 
   void startGame() {
@@ -319,25 +277,38 @@ class GameState {
       winner: winner,
       totalDays: dayNumber,
       finalPlayerCount: alivePlayers.length,
-      startTime: startTime,
+      gameStartTime: startTime,
     );
     addEvent(event);
   }
 
-  void playerDeath(Player player, String cause) {
+  void playerDeath(Player player, DeathCause cause) {
     player.isAlive = false;
 
     final event = DeadEvent(
-      player: player,
+      victim: player,
       cause: cause,
       dayNumber: dayNumber,
-      phase: currentPhase.name,
+      phase: currentPhase,
     );
     addEvent(event);
   }
 
   /// Check if game should end (屠边规则)
   bool checkGameEnd() {
+    // Debug: 打印当前存活情况
+    LoggerUtil.instance.d('游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys');
+    LoggerUtil.instance
+        .d('存活玩家详情: ${alivePlayers.map((p) => p.formattedName).join(', ')}');
+
+    // 确保游戏有活跃玩家
+    if (alivePlayers.length < 2) {
+      LoggerUtil.instance.w('游戏异常：存活玩家少于2人');
+      winner = 'Game Error';
+      endGame('Game Error');
+      return true;
+    }
+
     // 好人胜利：所有狼人死亡
     if (aliveWerewolves == 0) {
       winner = 'Good';
@@ -346,33 +317,39 @@ class GameState {
       return true;
     }
 
-    // 狼人胜利条件1：屠神（所有神职死亡）
-    final aliveGods = gods.where((p) => p.isAlive).length;
-    if (aliveGods == 0 && gods.isNotEmpty) {
-      winner = 'Werewolves';
-      endGame('Werewolves');
-      LoggerUtil.instance.i('狼人阵营获胜！屠神成功（所有神职已出局）');
-      return true;
-    }
-
-    // 狼人胜利条件2：屠民（所有平民死亡）
-    final aliveVillagers = villagers.where((p) => p.isAlive).length;
-    if (aliveVillagers == 0 && villagers.isNotEmpty) {
-      winner = 'Werewolves';
-      endGame('Werewolves');
-      LoggerUtil.instance.i('狼人阵营获胜！屠民成功（所有平民已出局）');
-      return true;
-    }
-
-    // 狼人胜利条件3：人数优势（狼人数量 >= 好人数量，好人无法投票出狼）
-    final aliveGoodGuys = alivePlayers.where((p) => !p.role.isWerewolf).length;
+    // 狼人胜利：人数优势（狼人数量 >= 好人数量）
     if (aliveWerewolves >= aliveGoodGuys) {
       winner = 'Werewolves';
       endGame('Werewolves');
-      LoggerUtil.instance.i('狼人阵营获胜！人数优势（狼人 >= 好人）');
+      LoggerUtil.instance
+          .i('狼人阵营获胜！人数优势（狼人$aliveWerewolves >= 好人$aliveGoodGuys）');
       return true;
     }
 
+    // 狼人胜利条件：屠神（所有神职死亡且有平民）
+    final aliveGods = gods.where((p) => p.isAlive).length;
+    if (aliveGods == 0 && gods.isNotEmpty && aliveVillagers > 0) {
+      // 只有平民和狼人存活，且狼人数量足够
+      if (aliveWerewolves >= aliveVillagers) {
+        winner = 'Werewolves';
+        endGame('Werewolves');
+        LoggerUtil.instance.i('狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）');
+        return true;
+      }
+    }
+
+    // 狼人胜利条件：屠民（所有平民死亡且有神职）
+    if (aliveVillagers == 0 && villagers.isNotEmpty && aliveGods > 0) {
+      // 只有神职和狼人存活，且狼人数量足够
+      if (aliveWerewolves >= aliveGods) {
+        winner = 'Werewolves';
+        endGame('Werewolves');
+        LoggerUtil.instance.i('狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）');
+        return true;
+      }
+    }
+
+    LoggerUtil.instance.d('游戏继续，未达到结束条件');
     return false;
   }
 
@@ -546,13 +523,14 @@ class GameState {
     };
   }
 
+  // TODO: Implement proper event deserialization with event factory
   factory GameState.fromJson(Map<String, dynamic> json) {
     final config = GameConfig.fromJson(json['config']);
     final players =
         (json['players'] as List).map((p) => Player.fromJson(p)).toList();
-    final eventHistory = (json['eventHistory'] as List)
-        .map((e) => GameEvent.fromJson(e))
-        .toList();
+
+    // Skip event history deserialization for now - will implement event factory later
+    final eventHistory = <GameEvent>[];
 
     return GameState(
       gameId: json['gameId'],

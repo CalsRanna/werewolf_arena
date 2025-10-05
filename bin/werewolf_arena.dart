@@ -75,21 +75,8 @@ class WerewolfArenaGame {
   Future<void> _runGameLoop() async {
     await _createInitialState();
 
-    // 等待用户按回车键开始游戏
-    while (true) {
-      stdout.write('游戏初始化完成，按回车键开始游戏...');
-      try {
-        final input = stdin.readLineSync() ?? '';
-        if (input.trim().isEmpty) {
-          break;
-        } else {
-          stdout.writeln('请按回车键继续，不要输入其他内容。');
-        }
-      } catch (e) {
-        stdout.writeln('Input error: $e');
-        break;
-      }
-    }
+    // 游戏自动开始
+    LoggerUtil.instance.i('游戏初始化完成，自动开始游戏...');
 
     await engine.startGame();
 
@@ -124,8 +111,8 @@ class WerewolfArenaGame {
 
   /// 执行夜晚阶段 - UI与游戏引擎同步
   Future<void> _executeNightPhase(GameState state) async {
-    LoggerUtil.instance.i('🌙 Night Phase');
-    LoggerUtil.instance.i('[Judge]: Night phase started');
+    LoggerUtil.instance.i('第${state.dayNumber}天夜晚');
+    LoggerUtil.instance.i('[法官]: 天黑请闭眼');
 
     // Execute complete night phase with all role actions
     await engine.processWerewolfActions();
@@ -136,23 +123,42 @@ class WerewolfArenaGame {
     // Resolve all night actions
     await engine.resolveNightActions();
 
+    // Check for game end condition after night actions resolve
+    if (state.checkGameEnd()) {
+      _isRunning = false;
+      return;
+    }
+
     // Move to day phase
     await engine.currentState!.changePhase(GamePhase.day);
   }
 
   /// 执行白天阶段
   Future<void> _executeDayPhase(GameState state) async {
-    LoggerUtil.instance.i('☀️ Day Phase');
-    LoggerUtil.instance.i('Day phase started');
+    LoggerUtil.instance.i('第${state.dayNumber}天白天');
+    LoggerUtil.instance.i('[法官]: 天亮了');
     await engine.runDiscussionPhase();
+
+    // Check for game end condition after discussion
+    if (state.checkGameEnd()) {
+      _isRunning = false;
+      return;
+    }
+
     await engine.currentState!.changePhase(GamePhase.voting);
   }
 
   /// 执行投票阶段
   Future<void> _executeVotingPhase(GameState state) async {
-    LoggerUtil.instance.i('[Judge]: Voting phase started');
+    LoggerUtil.instance.i('[法官]: 现在开始投票');
     await engine.collectVotes();
     await engine.resolveVoting();
+
+    // Check for game end condition after voting resolution
+    if (state.checkGameEnd()) {
+      _isRunning = false;
+      return;
+    }
 
     // 增加天数，转到夜晚
     engine.currentState!.dayNumber++;
@@ -188,22 +194,51 @@ class WerewolfArenaGame {
     // 3. 创建固定编号的玩家，分配打乱后的角色
     for (int i = 0; i < config.playerCount; i++) {
       final name = '${i + 1}号玩家'; // 玩家编号固定（1号、2号、3号...）
-      final role = shuffledRoles[i];  // 角色是随机打乱的
-      final player = _createEnhancedAIPlayer(name, role);
+      final role = shuffledRoles[i]; // 角色是随机打乱的
+
+      // 为每个玩家获取模型配置
+      final modelConfig = _getPlayerModelConfig(i + 1, role);
+
+      final player =
+          _createEnhancedAIPlayer(name, role, modelConfig: modelConfig);
       players.add(player);
     }
-
-    // 4. 输出身份分配（供调试）
-    LoggerUtil.instance.d('身份分配如下：');
-    for (final player in players) {
-      LoggerUtil.instance.d('  ${player.name}: ${player.role.name}');
-    }
+    var message = players.map((player) => player.formattedName).join(', ');
+    LoggerUtil.instance.i(message);
 
     return players;
   }
 
+  /// 获取玩家的模型配置
+  PlayerModelConfig? _getPlayerModelConfig(int playerNumber, Role role) {
+    // 首先尝试从配置中获取玩家特定的模型配置
+    if (config.playerModelConfigs != null &&
+        config.playerModelConfigs!.containsKey(playerNumber.toString())) {
+      final playerConfig = config.playerModelConfigs![playerNumber.toString()];
+      return PlayerModelConfig.fromMap(playerConfig!);
+    }
+
+    // 尝试从角色特定的模型配置中获取
+    if (config.roleModelConfigs != null &&
+        config.roleModelConfigs!.containsKey(role.roleId)) {
+      final roleConfig = config.roleModelConfigs![role.roleId];
+      return PlayerModelConfig.fromMap(roleConfig!);
+    }
+
+    // 如果没有特定配置，使用默认的LLM配置
+    return PlayerModelConfig(
+      model: config.llmConfig.model,
+      apiKey: config.llmConfig.apiKey,
+      temperature: config.llmConfig.temperature,
+      maxTokens: config.llmConfig.maxTokens,
+      timeoutSeconds: config.llmConfig.timeoutSeconds,
+      maxRetries: config.llmConfig.maxRetries,
+    );
+  }
+
   /// 创建增强AI玩家
-  EnhancedAIPlayer _createEnhancedAIPlayer(String name, Role role) {
+  EnhancedAIPlayer _createEnhancedAIPlayer(String name, Role role,
+      {PlayerModelConfig? modelConfig}) {
     final playerId =
         'player_${DateTime.now().millisecondsSinceEpoch}_${RandomHelper().nextString(8)}';
 
@@ -213,6 +248,7 @@ class WerewolfArenaGame {
       role: role,
       llmService: llmService,
       promptManager: promptManager,
+      modelConfig: modelConfig,
     );
   }
 

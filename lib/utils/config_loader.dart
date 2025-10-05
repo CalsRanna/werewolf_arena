@@ -11,6 +11,8 @@ class GameConfig {
   final LoggingConfig loggingConfig;
   final DevelopmentConfig developmentConfig;
   final ActionOrderConfig actionOrder;
+  final Map<String, Map<String, dynamic>>? playerModelConfigs;
+  final Map<String, Map<String, dynamic>>? roleModelConfigs;
 
   GameConfig({
     required this.playerCount,
@@ -21,6 +23,8 @@ class GameConfig {
     required this.loggingConfig,
     required this.developmentConfig,
     required this.actionOrder,
+    this.playerModelConfigs,
+    this.roleModelConfigs,
   });
 
   static GameConfig loadFromFile(String configPath) {
@@ -48,6 +52,26 @@ class GameConfig {
     final loggingConfig = yaml['logging'] as YamlMap;
     final developmentConfig = yaml['development'] as YamlMap;
 
+    // Parse player-specific model configurations
+    Map<String, Map<String, dynamic>>? playerModelConfigs;
+    if (yaml['player_models'] != null) {
+      final playerModelsYaml = yaml['player_models'] as YamlMap;
+      playerModelConfigs = <String, Map<String, dynamic>>{};
+      for (final entry in playerModelsYaml.entries) {
+        playerModelConfigs![entry.key] = Map<String, dynamic>.from(entry.value);
+      }
+    }
+
+    // Parse role-specific model configurations
+    Map<String, Map<String, dynamic>>? roleModelConfigs;
+    if (yaml['role_models'] != null) {
+      final roleModelsYaml = yaml['role_models'] as YamlMap;
+      roleModelConfigs = <String, Map<String, dynamic>>{};
+      for (final entry in roleModelsYaml.entries) {
+        roleModelConfigs![entry.key] = Map<String, dynamic>.from(entry.value);
+      }
+    }
+
     return GameConfig(
       playerCount: gameConfig['player_count'],
       roleDistribution: Map<String, int>.from(gameConfig['roles']),
@@ -57,6 +81,8 @@ class GameConfig {
       loggingConfig: LoggingConfig._fromYaml(loggingConfig),
       developmentConfig: DevelopmentConfig._fromYaml(developmentConfig),
       actionOrder: ActionOrderConfig._fromYaml(gameConfig['action_order']),
+      playerModelConfigs: playerModelConfigs,
+      roleModelConfigs: roleModelConfigs,
     );
   }
 
@@ -70,6 +96,8 @@ class GameConfig {
       'loggingConfig': loggingConfig.toJson(),
       'developmentConfig': developmentConfig.toJson(),
       'actionOrder': actionOrder.toJson(),
+      'playerModelConfigs': playerModelConfigs,
+      'roleModelConfigs': roleModelConfigs,
     };
   }
 
@@ -83,6 +111,12 @@ class GameConfig {
       loggingConfig: LoggingConfig.fromJson(json['loggingConfig']),
       developmentConfig: DevelopmentConfig.fromJson(json['developmentConfig']),
       actionOrder: ActionOrderConfig.fromJson(json['actionOrder']),
+      playerModelConfigs: json['playerModelConfigs'] != null
+          ? Map<String, Map<String, dynamic>>.from(json['playerModelConfigs'])
+          : null,
+      roleModelConfigs: json['roleModelConfigs'] != null
+          ? Map<String, Map<String, dynamic>>.from(json['roleModelConfigs'])
+          : null,
     );
   }
 }

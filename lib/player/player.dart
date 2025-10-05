@@ -4,6 +4,72 @@ import '../game/game_event.dart';
 import '../utils/random_helper.dart';
 import '../utils/config_loader.dart';
 
+/// Player model configuration
+class PlayerModelConfig {
+  final String model;
+  final String apiKey;
+  final double temperature;
+  final int maxTokens;
+  final int timeoutSeconds;
+  final int maxRetries;
+
+  const PlayerModelConfig({
+    required this.model,
+    required this.apiKey,
+    this.temperature = 0.7,
+    this.maxTokens = 1000,
+    this.timeoutSeconds = 30,
+    this.maxRetries = 3,
+  });
+
+  /// Create a copy with updated values
+  PlayerModelConfig copyWith({
+    String? model,
+    String? apiKey,
+    double? temperature,
+    int? maxTokens,
+    int? timeoutSeconds,
+    int? maxRetries,
+  }) {
+    return PlayerModelConfig(
+      model: model ?? this.model,
+      apiKey: apiKey ?? this.apiKey,
+      temperature: temperature ?? this.temperature,
+      maxTokens: maxTokens ?? this.maxTokens,
+      timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
+      maxRetries: maxRetries ?? this.maxRetries,
+    );
+  }
+
+  /// Create from config map
+  factory PlayerModelConfig.fromMap(Map<String, dynamic> map) {
+    return PlayerModelConfig(
+      model: map['model'] ?? map['model'] ?? 'gpt-3.5-turbo',
+      apiKey: map['api_key'] ?? map['apiKey'] ?? '',
+      temperature: (map['temperature'] ?? 0.7).toDouble(),
+      maxTokens: map['max_tokens'] ?? map['maxTokens'] ?? 1000,
+      timeoutSeconds: map['timeout_seconds'] ?? map['timeoutSeconds'] ?? 30,
+      maxRetries: map['max_retries'] ?? map['maxRetries'] ?? 3,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'model': model,
+      'api_key': apiKey,
+      'temperature': temperature,
+      'max_tokens': maxTokens,
+      'timeout_seconds': timeoutSeconds,
+      'max_retries': maxRetries,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'PlayerModelConfig(model: $model, temperature: $temperature)';
+  }
+}
+
 /// Player types
 enum PlayerType {
   human, // Human player
@@ -16,6 +82,7 @@ abstract class Player {
   final String name;
   final Role role;
   final PlayerType type;
+  final PlayerModelConfig? modelConfig;
 
   bool isAlive;
   final Map<String, dynamic> privateData;
@@ -26,6 +93,7 @@ abstract class Player {
     required this.name,
     required this.role,
     required this.type,
+    this.modelConfig,
     this.isAlive = true,
     Map<String, dynamic>? privateData,
     List<GameEvent>? actionHistory,
@@ -97,26 +165,32 @@ abstract class Player {
       actor: this,
       target: target,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
   /// Create a protect event (for guards)
   GuardProtectEvent? createProtectEvent(Player target, GameState state) {
-    if (!isAlive || role.roleId != 'guard' || !state.isNight || !target.isAlive) {
+    if (!isAlive ||
+        role.roleId != 'guard' ||
+        !state.isNight ||
+        !target.isAlive) {
       return null;
     }
     return GuardProtectEvent(
       actor: this,
       target: target,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
   /// Create an investigate event (for seers)
   SeerInvestigateEvent? createInvestigateEvent(Player target, GameState state) {
-    if (!isAlive || role.roleId != 'seer' || !state.isNight || !target.isAlive) {
+    if (!isAlive ||
+        role.roleId != 'seer' ||
+        !state.isNight ||
+        !target.isAlive) {
       return null;
     }
     final result = target.role.isWerewolf ? 'Werewolf' : 'Good';
@@ -125,7 +199,7 @@ abstract class Player {
       target: target,
       investigationResult: result,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
@@ -141,13 +215,16 @@ abstract class Player {
       actor: this,
       target: target,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
   /// Create a poison event (for witches)
   WitchPoisonEvent? createPoisonEvent(Player target, GameState state) {
-    if (!isAlive || role.roleId != 'witch' || !state.isNight || !target.isAlive) {
+    if (!isAlive ||
+        role.roleId != 'witch' ||
+        !state.isNight ||
+        !target.isAlive) {
       return null;
     }
     if (role is WitchRole && !(role as WitchRole).hasPoison(state)) {
@@ -157,7 +234,7 @@ abstract class Player {
       actor: this,
       target: target,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
@@ -167,10 +244,10 @@ abstract class Player {
       return null;
     }
     return VoteEvent(
-      actor: this,
-      target: target,
+      voter: this,
+      candidate: target,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
@@ -180,23 +257,24 @@ abstract class Player {
       return null;
     }
     return SpeakEvent(
-      actor: this,
+      speaker: this,
       message: message,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
   /// Create a werewolf discussion event (only for werewolves during night phase)
-  WerewolfDiscussionEvent? createWerewolfDiscussionEvent(String message, GameState state) {
+  WerewolfDiscussionEvent? createWerewolfDiscussionEvent(
+      String message, GameState state) {
     if (!isAlive || !role.isWerewolf || state.isDay) {
       return null;
     }
     return WerewolfDiscussionEvent(
-      actor: this,
+      speaker: this,
       message: message,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
     );
   }
 
@@ -213,12 +291,25 @@ abstract class Player {
       actor: this,
       target: target,
       dayNumber: state.dayNumber,
-      phase: state.currentPhase.name,
+      phase: state.currentPhase,
+    );
+  }
+
+  /// Create a last words event
+  /// Note: Player should still be alive when creating last words (before actual death)
+  LastWordsEvent? createLastWordsEvent(String message, GameState state) {
+    // Allow last words to be created when player is about to die
+    // Don't check isAlive here - the game engine will handle the timing
+    return LastWordsEvent(
+      speaker: this,
+      message: message,
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase,
     );
   }
 
   /// Execute an event and add it to game state
-  void executeEvent(BaseGameEvent event, GameState state) {
+  void executeEvent(GameEvent event, GameState state) {
     state.addEvent(event);
     event.execute(state);
     addAction(event);
@@ -252,6 +343,14 @@ abstract class Player {
     return '$name: ${isAlive ? 'Alive' : 'Dead'}';
   }
 
+  /// Get formatted display name including player info and model
+  String get formattedName {
+    final modelName = modelConfig?.model ?? 'default';
+    final modelNameShort =
+        modelName.split('/').last; // Take only the part after the last slash
+    return '[$name](${role.name}) [$modelNameShort]';
+  }
+
   String getPrivateInfo() {
     return '''
 $name ($playerId)
@@ -264,7 +363,7 @@ Action History: ${actionHistory.length} entries
   }
 
   // Death handling
-  void die(String cause, GameState state) {
+  void die(DeathCause cause, GameState state) {
     isAlive = false;
     state.playerDeath(this, cause);
 
@@ -307,9 +406,8 @@ Action History: ${actionHistory.length} entries
           role: role,
           isAlive: json['isAlive'],
           privateData: Map<String, dynamic>.from(json['privateData']),
-          actionHistory: (json['actionHistory'] as List)
-              .map((e) => GameEvent.fromJson(e))
-              .toList(),
+          // TODO: Implement proper event deserialization with event factory
+          actionHistory: <GameEvent>[],
         );
       case PlayerType.ai:
         throw UnimplementedError(
@@ -361,6 +459,7 @@ class HumanPlayer extends Player {
     required super.playerId,
     required super.name,
     required super.role,
+    super.modelConfig,
   }) : super(
           type: PlayerType.human,
         );
@@ -392,6 +491,7 @@ abstract class AIPlayer extends Player {
     required super.playerId,
     required super.name,
     required super.role,
+    super.modelConfig,
     RandomHelper? random,
   })  : random = random ?? RandomHelper(),
         super(
@@ -412,7 +512,8 @@ abstract class AIPlayer extends Player {
 
   // Abstract methods for choosing targets
   Future<Player?> chooseNightTarget(GameState state);
-  Future<Player?> chooseVoteTarget(GameState state, {List<Player>? pkCandidates});
+  Future<Player?> chooseVoteTarget(GameState state,
+      {List<Player>? pkCandidates});
 
   // AI reasoning process
   Future<void> processInformation(GameState state) async {
@@ -470,6 +571,7 @@ class PlayerFactory {
     required String name,
     required Role role,
     PlayerType type = PlayerType.ai,
+    PlayerModelConfig? modelConfig,
   }) {
     final playerId =
         'player_${DateTime.now().millisecondsSinceEpoch}_${RandomHelper().nextString(8)}';
@@ -480,6 +582,7 @@ class PlayerFactory {
           playerId: playerId,
           name: name,
           role: role,
+          modelConfig: modelConfig,
         );
       case PlayerType.ai:
         throw UnimplementedError(

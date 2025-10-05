@@ -62,3 +62,7 @@ keys.json
 # Backup files
 *.bak
 *.backup
+
+# Configuration files
+config/default_config.yaml
+

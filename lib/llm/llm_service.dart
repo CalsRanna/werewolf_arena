@@ -110,6 +110,18 @@ class OpenAIService implements LLMService {
   final http.Client client;
   final ResponseCache cache;
 
+  // Instance-specific model and API key that can be updated per request
+  String? _instanceModel;
+  String? _instanceApiKey;
+
+  /// Create service from player model config
+  factory OpenAIService.fromPlayerConfig(PlayerModelConfig config) {
+    return OpenAIService(
+      apiKey: config.apiKey,
+      model: config.model,
+    );
+  }
+
   @override
   bool get isAvailable => apiKey.isNotEmpty;
 
@@ -120,6 +132,8 @@ class OpenAIService implements LLMService {
     required Map<String, dynamic> context,
     double temperature = 0.7,
     int maxTokens = 1000,
+    String? overrideModel,
+    String? overrideApiKey,
   }) async {
     final startTime = DateTime.now();
     final cacheKey = _generateCacheKey(systemPrompt, userPrompt, context);
@@ -140,6 +154,8 @@ class OpenAIService implements LLMService {
         temperature: temperature,
         maxTokens: maxTokens,
         context: context,
+        overrideModel: overrideModel,
+        overrideApiKey: overrideApiKey,
       );
 
       final responseTimeMs =
@@ -177,12 +193,27 @@ class OpenAIService implements LLMService {
     // rolePrompt已经包含了所有需要的信息,直接使用
     // 不需要额外的context构建
 
+    // Use player's model config if available
+    double temperature = 0.7;
+    int maxTokens = 1000;
+    String? overrideModel;
+    String? overrideApiKey;
+
+    if (player.modelConfig != null) {
+      temperature = player.modelConfig!.temperature;
+      maxTokens = player.modelConfig!.maxTokens;
+      overrideModel = player.modelConfig!.model;
+      overrideApiKey = player.modelConfig!.apiKey;
+    }
+
     final response = await generateResponse(
       systemPrompt: rolePrompt,
       userPrompt: '', // rolePrompt已经包含完整prompt
       context: {'phase': state.currentPhase.name},
-      temperature: 0.7,
-      maxTokens: 1000, // 增加token限制以支持更详细的推理
+      temperature: temperature,
+      maxTokens: maxTokens, // 增加token限制以支持更详细的推理
+      overrideModel: overrideModel,
+      overrideApiKey: overrideApiKey,
     );
 
     if (response.isValid) {
@@ -211,11 +242,24 @@ $context
 Please make appropriate statements based on your role and personality. Maintain character consistency.
 ''';
 
+    // Use player's model config if available
+    double temperature = 0.8;
+    String? overrideModel;
+    String? overrideApiKey;
+
+    if (player.modelConfig != null) {
+      temperature = player.modelConfig!.temperature;
+      overrideModel = player.modelConfig!.model;
+      overrideApiKey = player.modelConfig!.apiKey;
+    }
+
     final response = await generateResponse(
       systemPrompt: prompt,
       userPrompt: userPrompt,
       context: {'game_state': gameContext},
-      temperature: 0.8,
+      temperature: temperature,
+      overrideModel: overrideModel,
+      overrideApiKey: overrideApiKey,
     );
 
     if (response.isValid) {
@@ -236,11 +280,17 @@ Please make appropriate statements based on your role and personality. Maintain 
     required double temperature,
     required int maxTokens,
     required Map<String, dynamic> context,
+    String? overrideModel,
+    String? overrideApiKey,
   }) async {
     final url = Uri.parse('https://openrouter.ai/api/v1/chat/completions');
 
+    // Use override values if provided, otherwise use instance defaults
+    final effectiveModel = overrideModel ?? _instanceModel ?? model;
+    final effectiveApiKey = overrideApiKey ?? _instanceApiKey ?? apiKey;
+
     final headers = {
-      'Authorization': 'Bearer $apiKey',
+      'Authorization': 'Bearer $effectiveApiKey',
       'Content-Type': 'application/json',
     };
 
@@ -264,7 +314,7 @@ Please make appropriate statements based on your role and personality. Maintain 
           ];
 
     final body = jsonEncode({
-      'model': model,
+      'model': effectiveModel,
       'messages': messages,
       'temperature': temperature,
       'max_tokens': maxTokens,
@@ -277,7 +327,7 @@ Please make appropriate statements based on your role and personality. Maintain 
       final content = data['choices'][0]['message']['content'];
       final tokensUsed = data['usage']['total_tokens'] ?? 0;
 
-      LoggerUtil.instance.d('LLM call: model=$model, tokens=$tokensUsed, duration=0ms');
+      LoggerUtil.instance.d('LLM call: model=$effectiveModel, tokens=$tokensUsed, duration=0ms');
 
       return {
         'content': content,
@@ -318,6 +368,22 @@ Please make appropriate statements based on your role and personality. Maintain 
             if (p.name == targetStr || p.playerId == targetStr) {
               target = p;
               break;
+            }
+          }
+        }
+
+        // 如果还找不到，尝试通过数字匹配玩家名（支持 "5" -> "5号玩家"）
+        if (target == null) {
+          final targetStr = targetId.toString();
+          // 检查是否是纯数字
+          final numberMatch = RegExp(r'^\d+$').firstMatch(targetStr);
+          if (numberMatch != null) {
+            final playerName = '$targetStr号玩家';
+            for (final p in state.players) {
+              if (p.name == playerName) {
+                target = p;
+                break;
+              }
             }
           }
         }
