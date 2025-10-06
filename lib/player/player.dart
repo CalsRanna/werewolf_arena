@@ -336,7 +336,7 @@ abstract class Player {
     final modelName = modelConfig?.model ?? 'default';
     final modelNameShort =
         modelName.split('/').last; // Take only the part after the last slash
-    return '[$name](${role.name})<$modelNameShort>';
+    return '[$name]<$modelNameShort>(${role.name})';
   }
 
   String getPrivateInfo() {

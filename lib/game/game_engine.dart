@@ -476,7 +476,7 @@ class GameEngine {
               LoggerUtil.instance.i(
                 '${werewolf.formattedName}: $statement',
               );
-              discussionHistory.add('[${werewolf.formattedName}]: $statement');
+              discussionHistory.add('[${werewolf.name}]: $statement');
             } else {
               LoggerUtil.instance.w(
                   '${werewolf.name} cannot create werewolf discussion event');
@@ -1096,8 +1096,9 @@ class GameEngine {
 
   /// Handle last words for a player about to be executed
   Future<void> _handleLastWords(Player player, String executionType) async {
-    if (!player.isAlive)
+    if (!player.isAlive) {
       return; // Player should still be alive when leaving last words
+    }
 
     final state = _currentState!;
     LoggerUtil.instance.i('${player.formattedName}出局，有遗言');

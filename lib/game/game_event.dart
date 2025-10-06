@@ -111,19 +111,29 @@ class DeadEvent extends GameEvent {
   void execute(GameState state) {
     victim.isAlive = false;
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'victim': victim.playerId,
+      'cause': cause.name,
+      'killer': killer?.playerId,
+      'dayNumber': dayNumber,
+      'phase': phase?.name,
+    };
+  }
 }
 
 /// 狼人击杀事件 - 仅狼人可见
 class WerewolfKillEvent extends GameEvent {
   final Player actor;
-  @override
-  final Player target;
   final int? dayNumber;
   final GamePhase? phase;
 
   WerewolfKillEvent({
     required this.actor,
-    required this.target,
+    required Player target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -136,27 +146,25 @@ class WerewolfKillEvent extends GameEvent {
         );
   @override
   String generateDescription({String? locale}) {
-    return '${actor.name} 选择击杀 ${target.name}';
+    return '${actor.name} 选择击杀 ${target!.name}';
   }
 
   @override
   void execute(GameState state) {
     // Mark target for death (will be resolved at end of night)
-    state.setTonightVictim(target);
+    state.setTonightVictim(target!);
   }
 }
 
 /// 守卫保护事件 - 仅守卫可见
 class GuardProtectEvent extends GameEvent {
   final Player actor;
-  @override
-  final Player target;
   final int? dayNumber;
   final GamePhase? phase;
 
   GuardProtectEvent({
     required this.actor,
-    required this.target,
+    required Player target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -170,27 +178,25 @@ class GuardProtectEvent extends GameEvent {
         );
   @override
   String generateDescription({String? locale}) {
-    return '${actor.name} 守护了 ${target.name}';
+    return '${actor.name} 守护了 ${target!.name}';
   }
 
   @override
   void execute(GameState state) {
-    state.setTonightProtected(target);
+    state.setTonightProtected(target!);
   }
 }
 
 /// 预言家查验事件 - 仅预言家可见
 class SeerInvestigateEvent extends GameEvent {
   final Player actor;
-  @override
-  final Player target;
   final String investigationResult;
   final int? dayNumber;
   final GamePhase? phase;
 
   SeerInvestigateEvent({
     required this.actor,
-    required this.target,
+    required Player target,
     required this.investigationResult,
     this.dayNumber,
     this.phase,
@@ -205,7 +211,7 @@ class SeerInvestigateEvent extends GameEvent {
         );
   @override
   String generateDescription({String? locale}) {
-    return '${actor.name} 查验了 ${target.name}，结果是: $investigationResult';
+    return '${actor.name} 查验了 ${target!.name}，结果是: $investigationResult';
   }
 
   @override
@@ -218,14 +224,12 @@ class SeerInvestigateEvent extends GameEvent {
 /// 女巫救人事件 - 仅女巫可见
 class WitchHealEvent extends GameEvent {
   final Player actor;
-  @override
-  final Player target;
   final int? dayNumber;
   final GamePhase? phase;
 
   WitchHealEvent({
     required this.actor,
-    required this.target,
+    required Player target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -239,7 +243,7 @@ class WitchHealEvent extends GameEvent {
         );
   @override
   String generateDescription({String? locale}) {
-    return '${actor.name} 使用解药救了 ${target.name}';
+    return '${actor.name} 使用解药救了 ${target!.name}';
   }
 
   @override
@@ -251,14 +255,12 @@ class WitchHealEvent extends GameEvent {
 /// 女巫毒杀事件 - 仅女巫可见
 class WitchPoisonEvent extends GameEvent {
   final Player actor;
-  @override
-  final Player target;
   final int? dayNumber;
   final GamePhase? phase;
 
   WitchPoisonEvent({
     required this.actor,
-    required this.target,
+    required Player target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -272,12 +274,12 @@ class WitchPoisonEvent extends GameEvent {
         );
   @override
   String generateDescription({String? locale}) {
-    return '${actor.name} 使用毒药毒杀了 ${target.name}';
+    return '${actor.name} 使用毒药毒杀了 ${target!.name}';
   }
 
   @override
   void execute(GameState state) {
-    state.setTonightPoisoned(target);
+    state.setTonightPoisoned(target!);
   }
 }
 
@@ -321,6 +323,18 @@ class VoteEvent extends GameEvent {
   @override
   void execute(GameState state) {
     state.addVote(voter, candidate);
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'voter': voter.playerId,
+      'candidate': candidate.playerId,
+      'voteType': voteType.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.name,
+    };
   }
 }
 
@@ -379,6 +393,18 @@ class SpeakEvent extends GameEvent {
   void execute(GameState state) {
     // 发言事件不需要执行特殊逻辑，只是记录
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'speaker': speaker.playerId,
+      'message': message,
+      'speechType': speechType.name,
+      'dayNumber': dayNumber,
+      'phase': phase?.name,
+    };
+  }
 }
 
 /// 狼人讨论事件 - 仅狼人可见
@@ -396,14 +422,12 @@ class WerewolfDiscussionEvent extends SpeakEvent {
 /// 猎人开枪事件 - 公开可见
 class HunterShootEvent extends GameEvent {
   final Player actor;
-  @override
-  final Player target;
   final int? dayNumber;
   final GamePhase? phase;
 
   HunterShootEvent({
     required this.actor,
-    required this.target,
+    required Player target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -416,14 +440,14 @@ class HunterShootEvent extends GameEvent {
         );
   @override
   String generateDescription({String? locale}) {
-    return '${actor.name} 开枪带走了 ${target.name}';
+    return '${actor.name} 开枪带走了 ${target!.name}';
   }
 
   @override
   void execute(GameState state) {
     // Create death event for the target
     final deathEvent = DeadEvent(
-      victim: target,
+      victim: target!,
       cause: DeathCause.hunterShot,
       killer: actor,
       dayNumber: dayNumber,
@@ -472,6 +496,16 @@ class PhaseChangeEvent extends GameEvent {
   @override
   void execute(GameState state) {
     // 阶段转换由GameState处理
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'oldPhase': oldPhase.name,
+      'newPhase': newPhase.name,
+      'dayNumber': dayNumber,
+    };
   }
 }
 

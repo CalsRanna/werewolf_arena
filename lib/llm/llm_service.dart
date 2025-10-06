@@ -245,8 +245,6 @@ $gameContext
 
 Current situation:
 $context
-
-Please make appropriate statements based on your role and personality. Maintain character consistency.
 ''';
 
     // Use player's model config if available
@@ -320,7 +318,9 @@ Please make appropriate statements based on your role and personality. Maintain 
       'messages': messages,
     });
 
-    final response = await client.post(url, headers: headers, body: body);
+    final response = await client
+        .post(url, headers: headers, body: body)
+        .timeout(const Duration(seconds: 60));
 
     // Log request details
     LoggerUtil.instance.d('=== LLM API Request ===');
