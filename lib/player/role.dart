@@ -1,4 +1,3 @@
-import '../utils/random_helper.dart';
 import '../player/player.dart';
 import '../game/game_state.dart';
 import '../game/game_event.dart';
@@ -80,14 +79,6 @@ abstract class Role {
   // Virtual methods
   // Note: getAvailableActions has been removed.
   // Use Player.createXEvent() methods instead to create events.
-
-  bool canUseSkill(Skill skill, Player player, GameState state) {
-    return skill.canUse(player, state);
-  }
-
-  void useSkill(Skill skill, Player player, {Player? target, GameState? state}) {
-    skill.use(player, target: target, state: state);
-  }
 
   String getNightActionDescription(GameState state) {
     return '';
@@ -366,26 +357,5 @@ class RoleFactory {
       default:
         throw ArgumentError('Unknown role type: $roleId');
     }
-  }
-
-  static Role createByType(RoleType type) {
-    switch (type) {
-      case RoleType.villager:
-        return VillagerRole();
-      case RoleType.werewolf:
-        return WerewolfRole();
-      case RoleType.god:
-        // Return a random god role
-        final godRoles = ['seer', 'witch', 'hunter', 'guard'];
-        return createRole(godRoles[RandomHelper().nextInt(godRoles.length)]);
-    }
-  }
-
-  static List<String> getAllRoleIds() {
-    return ['villager', 'werewolf', 'seer', 'witch', 'hunter', 'guard'];
-  }
-
-  static List<RoleType> getAllRoleTypes() {
-    return RoleType.values;
   }
 }

@@ -384,16 +384,6 @@ class LoggingConfig {
       maxLogFiles: json['maxLogFiles'],
     );
   }
-
-  static LoggingConfig defaultConfig() {
-    return LoggingConfig(
-      level: 'INFO',
-      enableConsole: true,
-      enableFile: false,
-      maxLogSizeMb: 10,
-      maxLogFiles: 5,
-    );
-  }
 }
 
 class DevelopmentConfig {

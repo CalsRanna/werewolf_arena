@@ -34,12 +34,6 @@ enum SpeechType {
   werewolfDiscussion,
 }
 
-/// 游戏状态事件类型
-enum GameStateEventType {
-  start,
-  end,
-}
-
 /// 玩家死亡事件 - 完全结构化
 class DeadEvent extends GameEvent {
   final Player victim;

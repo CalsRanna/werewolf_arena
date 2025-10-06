@@ -128,31 +128,6 @@ class GameEngine {
     }
   }
 
-  /// Main game loop
-  Future<void> _runGameLoop() async {
-    LoggerUtil.instance.i('Main game loop started');
-
-    while (!isGameEnded && isGameRunning) {
-      try {
-        await _processGamePhase();
-
-        // Check game end condition
-        if (_currentState!.checkGameEnd()) {
-          await _endGame();
-          break;
-        }
-
-        // Small delay to prevent overwhelming
-        await Future.delayed(const Duration(milliseconds: 100));
-      } catch (e) {
-        LoggerUtil.instance.e('Game loop error: $e');
-        await _handleGameError(e);
-      }
-    }
-
-    LoggerUtil.instance.i('Main game loop ended');
-  }
-
   /// Process game phase
   Future<void> _processGamePhase() async {
     final state = _currentState!;
@@ -1281,58 +1256,6 @@ class GameEngine {
 
     _stateController.add(state);
     _eventController.add(state.eventHistory.last);
-  }
-
-  /// Pause game
-  void pauseGame() {
-    if (isGameRunning) {
-      _status = GameStatus.paused;
-      LoggerUtil.instance.i('Game paused');
-    }
-  }
-
-  /// Resume game
-  void resumeGame() {
-    if (_status == GameStatus.paused) {
-      _status = GameStatus.playing;
-      LoggerUtil.instance.i('Game resumed');
-      unawaited(_runGameLoop());
-    }
-  }
-
-  /// Stop game
-  void stopGame() {
-    _status = GameStatus.ended;
-    LoggerUtil.instance.i('Game manually stopped');
-
-    if (_currentState != null) {
-      _currentState!.endGame('manually stopped');
-    }
-  }
-
-  /// Get game statistics
-  Map<String, dynamic> getGameStats() {
-    if (_currentState == null) {
-      return {'status': 'no_game'};
-    }
-
-    final state = _currentState!;
-    return {
-      'gameId': state.gameId,
-      'status': _status.name,
-      'currentPhase': state.currentPhase.name,
-      'dayNumber': state.dayNumber,
-      'playerCount': state.players.length,
-      'alivePlayers': state.alivePlayers.length,
-      'deadPlayers': state.deadPlayers.length,
-      'winner': state.winner,
-      'duration': state.lastUpdateTime != null
-          ? state.lastUpdateTime!.difference(state.startTime).inMilliseconds
-          : 0,
-      'totalEvents': state.eventHistory.length,
-      'werewolvesAlive': state.aliveWerewolves,
-      'villagersAlive': state.aliveVillagers,
-    };
   }
 
   /// Dispose game engine

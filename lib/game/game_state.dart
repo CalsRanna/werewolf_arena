@@ -31,19 +31,6 @@ enum GameStatus {
   playing, // In game
   paused, // Paused
   ended; // Ended
-
-  String get displayName {
-    switch (this) {
-      case GameStatus.waiting:
-        return 'Waiting to start';
-      case GameStatus.playing:
-        return 'Playing';
-      case GameStatus.paused:
-        return 'Paused';
-      case GameStatus.ended:
-        return 'Ended';
-    }
-  }
 }
 
 /// Game event types
@@ -470,21 +457,6 @@ class GameState {
   T? getMetadata<T>(String key) => metadata[key] as T?;
   void setMetadata<T>(String key, T value) => metadata[key] = value;
   void removeMetadata(String key) => metadata.remove(key);
-
-  GameState copy() {
-    return GameState(
-      gameId: gameId,
-      config: config,
-      players: List<Player>.from(players),
-      currentPhase: currentPhase,
-      status: status,
-      dayNumber: dayNumber,
-      eventHistory: List<GameEvent>.from(eventHistory),
-      metadata: Map<String, dynamic>.from(metadata),
-    )
-      ..lastUpdateTime = lastUpdateTime
-      ..winner = winner;
-  }
 
   Map<String, dynamic> toJson() {
     return {

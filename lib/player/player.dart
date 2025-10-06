@@ -2,7 +2,6 @@ import 'role.dart';
 import '../game/game_state.dart';
 import '../game/game_event.dart';
 import '../utils/random_helper.dart';
-import '../utils/config_loader.dart';
 
 /// Player model configuration
 class PlayerModelConfig {
@@ -327,27 +326,12 @@ abstract class Player {
     return '$name (${isAlive ? 'Alive' : 'Dead'}) - ${role.name}';
   }
 
-  String getPublicInfo() {
-    return '$name: ${isAlive ? 'Alive' : 'Dead'}';
-  }
-
   /// Get formatted display name including player info and model
   String get formattedName {
     final modelName = modelConfig?.model ?? 'default';
     final modelNameShort =
         modelName.split('/').last; // Take only the part after the last slash
     return '[$name]<$modelNameShort>(${role.name})';
-  }
-
-  String getPrivateInfo() {
-    return '''
-$name ($playerId)
-Type: ${type.name}
-Status: ${isAlive ? 'Alive' : 'Dead'}
-Role: ${role.getRoleInfo()}
-Private Data: ${privateData.keys.length} items
-Action History: ${actionHistory.length} entries
-''';
   }
 
   // Death handling
@@ -358,14 +342,6 @@ Action History: ${actionHistory.length} entries
     // Handle hunter death
     if (role is HunterRole) {
       setPrivateData('can_shoot', true);
-    }
-  }
-
-  // Revival (rare cases)
-  void revive(GameState state) {
-    if (!isAlive) {
-      isAlive = true;
-      setPrivateData('revived_this_game', true);
     }
   }
 
@@ -400,24 +376,6 @@ Action History: ${actionHistory.length} entries
       case PlayerType.ai:
         throw UnimplementedError(
             'AI player deserialization must be implemented by concrete AI player classes');
-    }
-  }
-
-  // Copy method
-  Player copy() {
-    switch (type) {
-      case PlayerType.human:
-        return HumanPlayer(
-          playerId: playerId,
-          name: name,
-          role: role,
-        )
-          ..isAlive = isAlive
-          ..privateData.addAll(Map<String, dynamic>.from(privateData))
-          ..actionHistory.addAll(List<GameEvent>.from(actionHistory));
-      case PlayerType.ai:
-        throw UnimplementedError(
-            'AI player copying must be implemented by concrete subclasses');
     }
   }
 
@@ -550,76 +508,5 @@ abstract class AIPlayer extends Player {
     // Since AIPlayer is abstract, this will be overridden by concrete implementations
     throw UnimplementedError(
         'AIPlayer.fromJson must be implemented by concrete subclasses');
-  }
-}
-
-// Player factory
-class PlayerFactory {
-  static Player createPlayer({
-    required String name,
-    required Role role,
-    PlayerType type = PlayerType.ai,
-    PlayerModelConfig? modelConfig,
-  }) {
-    final playerId =
-        'player_${DateTime.now().millisecondsSinceEpoch}_${RandomHelper().nextString(8)}';
-
-    switch (type) {
-      case PlayerType.human:
-        return HumanPlayer(
-          playerId: playerId,
-          name: name,
-          role: role,
-          modelConfig: modelConfig,
-        );
-      case PlayerType.ai:
-        throw UnimplementedError(
-            'AI players must use EnhancedAIPlayer from ai_player.dart');
-    }
-  }
-
-  static List<Player> createPlayersFromConfig(GameConfig config) {
-    throw UnimplementedError(
-        '请使用 GameEngine 中的 createEnhancedPlayers 方法来创建包含AI服务的玩家');
-  }
-
-  static List<String> generatePlayerNames(int count) {
-    final names = [
-      'Alice',
-      'Bob',
-      'Charlie',
-      'Diana',
-      'Eve',
-      'Frank',
-      'Grace',
-      'Henry',
-      'Ivy',
-      'Jack',
-      'Kate',
-      'Liam',
-      'Mia',
-      'Noah',
-      'Olivia',
-      'Peter',
-      'Quinn',
-      'Rachel',
-      'Sam',
-      'Tom',
-      'Uma',
-      'Victor',
-      'Wendy',
-      'Xavier',
-      'Yara',
-      'Zoe'
-    ];
-
-    if (count > names.length) {
-      // Generate numbered names if we run out
-      for (int i = names.length; i < count; i++) {
-        names.add('Player${i + 1}');
-      }
-    }
-
-    return names.sublist(0, count);
   }
 }
