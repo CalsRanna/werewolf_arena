@@ -105,7 +105,6 @@ logging:
   level: "info"
   enable_console: true
   enable_file: true
-  log_file_path: "logs/werewolf_arena.log"
   max_log_size_mb: 10
   max_log_files: 5
 

@@ -344,7 +344,6 @@ class LoggingConfig {
   final String level;
   final bool enableConsole;
   final bool enableFile;
-  final String logFilePath;
   final int maxLogSizeMb;
   final int maxLogFiles;
 
@@ -352,7 +351,6 @@ class LoggingConfig {
     required this.level,
     required this.enableConsole,
     required this.enableFile,
-    required this.logFilePath,
     required this.maxLogSizeMb,
     required this.maxLogFiles,
   });
@@ -362,7 +360,6 @@ class LoggingConfig {
       level: yaml['level'],
       enableConsole: yaml['enable_console'],
       enableFile: yaml['enable_file'],
-      logFilePath: yaml['log_file_path'],
       maxLogSizeMb: yaml['max_log_size_mb'],
       maxLogFiles: yaml['max_log_files'],
     );
@@ -373,7 +370,6 @@ class LoggingConfig {
       'level': level,
       'enableConsole': enableConsole,
       'enableFile': enableFile,
-      'logFilePath': logFilePath,
       'maxLogSizeMb': maxLogSizeMb,
       'maxLogFiles': maxLogFiles,
     };
@@ -384,7 +380,6 @@ class LoggingConfig {
       level: json['level'],
       enableConsole: json['enableConsole'],
       enableFile: json['enableFile'],
-      logFilePath: json['logFilePath'],
       maxLogSizeMb: json['maxLogSizeMb'],
       maxLogFiles: json['maxLogFiles'],
     );
@@ -395,7 +390,6 @@ class LoggingConfig {
       level: 'INFO',
       enableConsole: true,
       enableFile: false,
-      logFilePath: 'logs/game.log',
       maxLogSizeMb: 10,
       maxLogFiles: 5,
     );

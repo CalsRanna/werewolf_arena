@@ -33,7 +33,8 @@ class WerewolfArenaGame {
     config = await _loadConfig(parsedArgs['config']);
 
     // Determine log level - use debug if debug flag is set
-    final logLevel = parsedArgs['debug'] == true ? 'debug' : config.loggingConfig.level;
+    final logLevel =
+        parsedArgs['debug'] == true ? 'debug' : config.loggingConfig.level;
 
     // Initialize unified logger
     LoggerUtil.instance.initialize(
@@ -41,7 +42,6 @@ class WerewolfArenaGame {
       enableFile: config.loggingConfig.enableFile,
       useColors: config.uiConfig.enableColors,
       logLevel: logLevel,
-      logFilePath: config.loggingConfig.logFilePath,
     );
 
     // Log debug mode status

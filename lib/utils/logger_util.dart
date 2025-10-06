@@ -54,7 +54,6 @@ class LoggerUtil {
   final DateFormat _fileNameFormat = DateFormat('yyyy-MM-dd_HH-mm-ss');
   IOSink? _fileLogSink;
 
-  
   LoggerUtil._internal();
 
   /// 获取单例实例
@@ -69,7 +68,6 @@ class LoggerUtil {
     bool enableFile = true,
     bool useColors = true,
     String logLevel = 'info',
-    String? logFilePath,
     String? gameId,
   }) {
     _enableConsole = enableConsole;
@@ -79,7 +77,7 @@ class LoggerUtil {
 
     _setupLogger();
     if (_enableFile) {
-      _setupFileLogging(logFilePath, gameId);
+      _setupFileLogging(gameId);
     }
   }
 
@@ -88,7 +86,7 @@ class LoggerUtil {
     Logger.root.clearListeners();
   }
 
-  void _setupFileLogging(String? logFilePath, String? gameId) {
+  void _setupFileLogging(String? gameId) {
     try {
       // Create game-specific directory if gameId is provided
       Directory logDir;
@@ -103,7 +101,7 @@ class LoggerUtil {
         logDir.createSync(recursive: true);
       }
 
-      final fileName = logFilePath ??
+      final fileName =
           'werewolf_arena_${_fileNameFormat.format(DateTime.now())}.log';
       final fullPath = path.join(logDir.path, path.basename(fileName));
       final logFile = File(fullPath);
