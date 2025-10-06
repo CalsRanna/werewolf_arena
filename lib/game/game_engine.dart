@@ -3,6 +3,7 @@ import 'game_state.dart';
 import 'game_event.dart';
 import '../player/player.dart';
 import '../player/role.dart';
+import '../llm/enhanced_prompts.dart';
 import '../utils/logger_util.dart';
 import '../utils/config_loader.dart';
 import '../utils/random_helper.dart';
@@ -42,7 +43,7 @@ class GameEngine {
     try {
       // Create initial game state (players must be set separately)
       _currentState = GameState(
-        gameId: 'game_${DateTime.now().millisecondsSinceEpoch}',
+        gameId: 'game_${DateTime.now().toString()}',
         config: config,
         players: [], // Will be set by setPlayers method
       );
@@ -316,8 +317,7 @@ class GameEngine {
 
     // Log the speaking order
     final direction = config.actionOrder.isReverse ? "逆序" : "顺序";
-    LoggerUtil.instance
-        .i('[法官]: 从${orderNames.first}开始， $direction发言');
+    LoggerUtil.instance.i('[法官]: 从${orderNames.first}开始， $direction发言');
 
     return orderedPlayers;
   }
@@ -367,49 +367,21 @@ class GameEngine {
       // Now proceed with kill decision after discussion
       final victims = <Player, int>{};
 
-      for (int i = 0; i < werewolves.length; i++) {
-        final werewolf = werewolves[i];
+      LoggerUtil.instance.i('狼人讨论结束，开始同时投票选择击杀目标');
+
+      // Collect all werewolf voting tasks
+      final voteFutures = <Future<void>>[];
+
+      for (final werewolf in werewolves) {
         if (werewolf is AIPlayer && werewolf.isAlive) {
-          try {
-            // Update player event log before action
-            PlayerLogger.instance.updatePlayerEvents(werewolf, state);
-
-            await werewolf.processInformation(state);
-
-            // 调试：检查狼人是否能看到讨论历史
-            final discussionEvents = state.eventHistory
-                .where((e) =>
-                    e.type == GameEventType.playerAction &&
-                    e.data['type'] == 'werewolf_discussion' &&
-                    (e.data['dayNumber'] as int?) == state.dayNumber)
-                .toList();
-
-            LoggerUtil.instance
-                .d('${werewolf.name} 可见的讨论事件数量: ${discussionEvents.length}');
-            if (discussionEvents.isNotEmpty) {
-              LoggerUtil.instance
-                  .d('讨论内容预览: ${discussionEvents.first.data['message']}');
-            }
-
-            final target = await werewolf.chooseNightTarget(state);
-            if (target != null && target.isAlive) {
-              victims[target] = (victims[target] ?? 0) + 1;
-              LoggerUtil.instance.i(
-                  '${werewolf.formattedName}选择击杀${target.formattedName}');
-            } else {
-              LoggerUtil.instance.i('${werewolf.name} made no valid choice');
-            }
-          } catch (e) {
-            LoggerUtil.instance
-                .e('Werewolf ${werewolf.name} action failed: $e');
-          }
-
-          // Delay between werewolf actions
-          if (i < werewolves.length - 1) {
-            await Future.delayed(const Duration(milliseconds: 1000));
-          }
+          voteFutures.add(_processWerewolfVote(werewolf, state, victims));
         }
       }
+
+      // Wait for all werewolves to vote simultaneously
+      await Future.wait(voteFutures);
+
+      LoggerUtil.instance.i('所有狼人投票完成');
 
       // Select victim with most votes
       if (victims.isNotEmpty) {
@@ -419,8 +391,7 @@ class GameEngine {
         final event = firstWerewolf.createKillEvent(victim, state);
         if (event != null) {
           firstWerewolf.executeEvent(event, state);
-          LoggerUtil.instance
-              .i('狼人最终选择击杀${victim.formattedName}');
+          LoggerUtil.instance.i('狼人最终选择击杀${victim.formattedName}');
         }
       } else {
         LoggerUtil.instance.i('Werewolves chose no target');
@@ -428,6 +399,41 @@ class GameEngine {
     }
 
     await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  /// Process single werewolf's vote (used for simultaneous voting)
+  Future<void> _processWerewolfVote(
+      AIPlayer werewolf, GameState state, Map<Player, int> victims) async {
+    try {
+      // Update player event log before action
+      PlayerLogger.instance.updatePlayerEvents(werewolf, state);
+
+      await werewolf.processInformation(state);
+
+      // 调试：检查狼人是否能看到讨论历史
+      final discussionEvents = state.eventHistory
+          .whereType<WerewolfDiscussionEvent>()
+          .where((e) => e.dayNumber == state.dayNumber)
+          .toList();
+
+      LoggerUtil.instance
+          .d('${werewolf.name} 可见的讨论事件数量: ${discussionEvents.length}');
+      if (discussionEvents.isNotEmpty) {
+        LoggerUtil.instance
+            .d('讨论内容预览: ${discussionEvents.first.message}');
+      }
+
+      final target = await werewolf.chooseNightTarget(state);
+      if (target != null && target.isAlive) {
+        victims[target] = (victims[target] ?? 0) + 1;
+        LoggerUtil.instance
+            .i('${werewolf.formattedName}选择击杀${target.formattedName}');
+      } else {
+        LoggerUtil.instance.i('${werewolf.name} 没有选择有效目标');
+      }
+    } catch (e) {
+      LoggerUtil.instance.e('Werewolf ${werewolf.name} voting failed: $e');
+    }
   }
 
   /// Process werewolf discussion phase - werewolves discuss tactics before killing
@@ -453,12 +459,8 @@ class GameEngine {
           // Build context for werewolf discussion
           String context;
           if (state.dayNumber == 1) {
-            // First night - focus on overall strategy
-            context = '狼人讨论阶段：这是第一个夜晚，请与其他狼人队友讨论整局战术，包括：\n'
-                '1. 首刀策略（选择什么类型的目标）\n'
-                '2. 如何在白天伪装成好人\n'
-                '3. 如何应对可能的预言家跳身份\n'
-                '4. 队友配合策略';
+            // First night - use enhanced werewolf discussion prompt
+            context = EnhancedPrompts.werewolfDiscussionPrompt;
           } else {
             // Later nights - based on day discussions
             context = '狼人讨论阶段：请与其他狼人队友讨论今晚的策略，包括选择击杀目标、分析场上局势等。';
@@ -534,8 +536,8 @@ class GameEngine {
             final event = guard.createProtectEvent(target, state);
             if (event != null) {
               guard.executeEvent(event, state);
-              LoggerUtil.instance.i(
-                  '${guard.formattedName}守护了${target.formattedName}');
+              LoggerUtil.instance
+                  .i('${guard.formattedName}守护了${target.formattedName}');
             } else {
               LoggerUtil.instance
                   .i('${guard.name} made no valid protection choice');
@@ -859,64 +861,69 @@ class GameEngine {
     _stateController.add(state);
   }
 
-  /// Collect votes - players vote in order (public method)
+  /// Collect votes - all players vote simultaneously (public method)
   Future<void> collectVotes({List<Player>? pkCandidates}) async {
     final state = _currentState!;
-    final alivePlayers =
-        _getActionOrder(state.alivePlayers.where((p) => p.isAlive).toList());
+    final alivePlayers = state.alivePlayers.where((p) => p.isAlive).toList();
 
     // 如果是PK投票，排除PK候选人自己
     final voters = pkCandidates != null
         ? alivePlayers.where((p) => !pkCandidates.contains(p)).toList()
         : alivePlayers;
 
-    // Each player votes in turn
-    for (int i = 0; i < voters.length; i++) {
-      final voter = voters[i];
+    LoggerUtil.instance.i('投票阶段开始，${voters.length}名玩家同时投票');
 
-      // Double check: ensure player is still alive and can vote
+    // 收集所有玩家的投票任务
+    final voteFutures = <Future<void>>[];
+
+    for (final voter in voters) {
       if (voter is AIPlayer && voter.isAlive) {
-        try {
-          // Update player event log before action
-          PlayerLogger.instance.updatePlayerEvents(voter, state);
+        voteFutures.add(_processSingleVote(voter, state, pkCandidates));
+      }
+    }
 
-          // Ensure each step completes fully
-          await voter.processInformation(state);
-          final target =
-              await voter.chooseVoteTarget(state, pkCandidates: pkCandidates);
+    // 等待所有玩家同时完成投票
+    await Future.wait(voteFutures);
 
-          if (target != null && target.isAlive) {
-            // 额外验证：如果是PK投票，确保目标在PK候选人中
-            if (pkCandidates != null && !pkCandidates.contains(target)) {
-              LoggerUtil.instance.w(
-                  '${voter.formattedName}投票给${target.formattedName} who is not in PK candidates, vote ignored');
-              LoggerUtil.instance.i('${voter.name} abstained or voted invalid');
-              continue;
-            }
+    LoggerUtil.instance.i('所有玩家投票完成');
+  }
 
-            final event = voter.createVoteEvent(target, state);
-            if (event != null) {
-              voter.executeEvent(event, state);
-              LoggerUtil.instance.i(
-                  '${voter.formattedName}投票给${target.formattedName}');
-            } else {
-              LoggerUtil.instance.i(
-                  '${voter.formattedName} abstained or action invalid');
-            }
-          } else {
-            LoggerUtil.instance.i(
-                '${voter.formattedName} abstained or action invalid');
-          }
+  /// Process single player's vote (used for simultaneous voting)
+  Future<void> _processSingleVote(
+      AIPlayer voter, GameState state, List<Player>? pkCandidates) async {
+    try {
+      // Update player event log before action
+      PlayerLogger.instance.updatePlayerEvents(voter, state);
 
-          // Mark completion before moving to next player
-        } catch (e) {
-          LoggerUtil.instance.e('Player ${voter.name} voting failed: $e');
-          LoggerUtil.instance.i('${voter.name} abstained due to error');
+      // Each player makes their decision independently
+      await voter.processInformation(state);
+      final target =
+          await voter.chooseVoteTarget(state, pkCandidates: pkCandidates);
+
+      if (target != null && target.isAlive) {
+        // 额外验证：如果是PK投票，确保目标在PK候选人中
+        if (pkCandidates != null && !pkCandidates.contains(target)) {
+          LoggerUtil.instance.w(
+              '${voter.formattedName}投票给${target.formattedName} who is not in PK candidates, vote ignored');
+          return;
         }
 
-        // Longer delay to ensure proper sequencing
-        await Future.delayed(const Duration(milliseconds: 800));
+        final event = voter.createVoteEvent(target, state);
+        if (event != null) {
+          voter.executeEvent(event, state);
+          LoggerUtil.instance
+              .i('${voter.formattedName}投票给${target.formattedName}');
+        } else {
+          LoggerUtil.instance
+              .i('${voter.formattedName} abstained or action invalid');
+        }
+      } else {
+        LoggerUtil.instance
+            .i('${voter.formattedName} abstained or action invalid');
       }
+    } catch (e) {
+      LoggerUtil.instance.e('Player ${voter.name} voting failed: $e');
+      LoggerUtil.instance.i('${voter.name} abstained due to error');
     }
   }
 
@@ -1079,8 +1086,6 @@ class GameEngine {
     if (hunter.role is HunterRole) {
       final hunterRole = hunter.role as HunterRole;
       if (hunterRole.canShoot(_currentState!)) {
-        LoggerUtil.instance.i('Hunter can shoot!');
-
         // Simple AI: shoot most suspicious player
         if (hunter is AIPlayer) {
           final state = _currentState!;
@@ -1147,8 +1152,7 @@ class GameEngine {
     final event = player.createLastWordsEvent(lastWords, state);
     if (event != null) {
       player.executeEvent(event, state);
-      LoggerUtil.instance
-          .i('${player.formattedName}: $lastWords');
+      LoggerUtil.instance.i('${player.formattedName}: $lastWords');
     } else {
       LoggerUtil.instance
           .w('Failed to create last words event for ${player.name}');

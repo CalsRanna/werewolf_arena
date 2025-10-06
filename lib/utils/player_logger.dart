@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
-import 'package:intl/intl.dart';
 import '../game/game_state.dart';
 import '../player/player.dart';
 import 'logger_util.dart';
@@ -10,7 +9,6 @@ class PlayerLogger {
   static PlayerLogger? _instance;
 
   final String _playerLogsDirName = 'player_logs';
-  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
   final Map<String, IOSink> _playerSinks = {};
 
   PlayerLogger._internal();

@@ -242,8 +242,7 @@ class EnhancedAIPlayer extends AIPlayer {
         }
 
         // Store reasoning in action events, not private data
-        LoggerUtil.instance
-            .d('${formattedName}投票给${target.formattedName}');
+        LoggerUtil.instance.d('$formattedName投票给${target.formattedName}');
         return target;
       }
 

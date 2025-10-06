@@ -1,6 +1,7 @@
 import '../utils/random_helper.dart';
 import '../player/player.dart';
 import '../game/game_state.dart';
+import '../game/game_event.dart';
 
 /// Role types
 enum RoleType {
@@ -206,19 +207,15 @@ class WitchRole extends Role {
 
   bool hasAntidote(GameState state) {
     // Check if antidote has been used by looking at heal events
-    final healEvents = state.eventHistory.where((e) =>
-        e.type == GameEventType.skillUsed &&
-        e.data['skill'] == '使用解药' &&
-        e.initiator?.role == this).toList();
+    final healEvents = state.eventHistory.whereType<WitchHealEvent>()
+        .where((e) => e.initiator?.role == this).toList();
     return healEvents.isEmpty; // Has antidote if never used
   }
 
   bool hasPoison(GameState state) {
     // Check if poison has been used by looking at poison events
-    final poisonEvents = state.eventHistory.where((e) =>
-        e.type == GameEventType.skillUsed &&
-        e.data['skill'] == '使用毒药' &&
-        e.initiator?.role == this).toList();
+    final poisonEvents = state.eventHistory.whereType<WitchPoisonEvent>()
+        .where((e) => e.initiator?.role == this).toList();
     return poisonEvents.isEmpty; // Has poison if never used
   }
 
@@ -249,10 +246,8 @@ class HunterRole extends Role {
   bool canShoot(GameState state) {
     final player = state.players.firstWhere((p) => p.role == this);
     // Check if hunter has already shot by looking at shoot events
-    final shootEvents = state.eventHistory.where((e) =>
-        e.type == GameEventType.skillUsed &&
-        e.data['skill'] == '开枪' &&
-        e.initiator?.role == this).toList();
+    final shootEvents = state.eventHistory.whereType<HunterShootEvent>()
+        .where((e) => e.initiator?.role == this).toList();
     return !player.isAlive && shootEvents.isEmpty; // Can shoot if dead and never shot
   }
 }
@@ -279,10 +274,8 @@ class GuardRole extends Role {
   Player? getLastGuarded(GameState state) {
     // Find the most recent protect event by this guard
     final protectEvents = state.eventHistory
-        .where((e) =>
-            e.type == GameEventType.skillUsed &&
-            e.data['skill'] == 'Protect' &&
-            e.initiator?.role == this)
+        .whereType<GuardProtectEvent>()
+        .where((e) => e.initiator?.role == this)
         .toList();
 
     if (protectEvents.isEmpty) return null;

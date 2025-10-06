@@ -58,7 +58,7 @@ class GameConfig {
       final playerModelsYaml = yaml['player_models'] as YamlMap;
       playerModelConfigs = <String, Map<String, dynamic>>{};
       for (final entry in playerModelsYaml.entries) {
-        playerModelConfigs![entry.key] = Map<String, dynamic>.from(entry.value);
+        playerModelConfigs[entry.key] = Map<String, dynamic>.from(entry.value);
       }
     }
 
@@ -68,7 +68,7 @@ class GameConfig {
       final roleModelsYaml = yaml['role_models'] as YamlMap;
       roleModelConfigs = <String, Map<String, dynamic>>{};
       for (final entry in roleModelsYaml.entries) {
-        roleModelConfigs![entry.key] = Map<String, dynamic>.from(entry.value);
+        roleModelConfigs[entry.key] = Map<String, dynamic>.from(entry.value);
       }
     }
 
@@ -124,8 +124,6 @@ class GameConfig {
 class LLMConfig {
   final String model;
   final String apiKey;
-  final double temperature;
-  final int maxTokens;
   final int timeoutSeconds;
   final int maxRetries;
   final PromptSettings prompts;
@@ -133,8 +131,6 @@ class LLMConfig {
   LLMConfig({
     required this.model,
     required this.apiKey,
-    required this.temperature,
-    required this.maxTokens,
     required this.timeoutSeconds,
     required this.maxRetries,
     required this.prompts,
@@ -146,8 +142,6 @@ class LLMConfig {
     return LLMConfig(
       model: yaml['model'],
       apiKey: yaml['api_key'] ?? Platform.environment['OPENAI_API_KEY'] ?? '',
-      temperature: yaml['temperature'],
-      maxTokens: yaml['max_tokens'],
       timeoutSeconds: yaml['timeout_seconds'],
       maxRetries: yaml['max_retries'],
       prompts: PromptSettings._fromYaml(promptsYaml),
@@ -158,8 +152,6 @@ class LLMConfig {
     return {
       'model': model,
       'apiKey': apiKey,
-      'temperature': temperature,
-      'maxTokens': maxTokens,
       'timeoutSeconds': timeoutSeconds,
       'maxRetries': maxRetries,
       'prompts': prompts.toJson(),
@@ -170,8 +162,6 @@ class LLMConfig {
     return LLMConfig(
       model: json['model'],
       apiKey: json['apiKey'],
-      temperature: json['temperature'],
-      maxTokens: json['maxTokens'],
       timeoutSeconds: json['timeoutSeconds'],
       maxRetries: json['maxRetries'],
       prompts: PromptSettings.fromJson(json['prompts']),

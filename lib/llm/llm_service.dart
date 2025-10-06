@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../game/game_state.dart';
+import '../llm/json_cleaner.dart';
 import '../player/player.dart';
 import '../utils/logger_util.dart';
 
@@ -76,8 +77,6 @@ abstract class LLMService {
     required String systemPrompt,
     required String userPrompt,
     required Map<String, dynamic> context,
-    double temperature = 0.7,
-    int maxTokens = 1000,
   });
 
   Future<LLMResponse> generateAction({
@@ -97,6 +96,7 @@ abstract class LLMService {
 }
 
 /// OpenAI API implementation
+/// Note: openai_dart dependency is available but the original HTTP implementation is kept for stability
 class OpenAIService implements LLMService {
   OpenAIService({
     required this.apiKey,
@@ -130,8 +130,6 @@ class OpenAIService implements LLMService {
     required String systemPrompt,
     required String userPrompt,
     required Map<String, dynamic> context,
-    double temperature = 0.7,
-    int maxTokens = 1000,
     String? overrideModel,
     String? overrideApiKey,
   }) async {
@@ -141,6 +139,11 @@ class OpenAIService implements LLMService {
     // Try cache first
     final cachedResponse = cache.get(cacheKey);
     if (cachedResponse != null) {
+      LoggerUtil.instance.d('📦 Using cached response');
+      LoggerUtil.instance.d('Cache key: $cacheKey');
+      LoggerUtil.instance.d(
+          'Cached content: ${cachedResponse.length > 200 ? "${cachedResponse.substring(0, 200)}..." : cachedResponse}');
+
       return LLMResponse.success(
         content: cachedResponse,
         responseTimeMs: DateTime.now().difference(startTime).inMilliseconds,
@@ -151,8 +154,6 @@ class OpenAIService implements LLMService {
       final apiResponse = await _makeAPIRequest(
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
-        temperature: temperature,
-        maxTokens: maxTokens,
         context: context,
         overrideModel: overrideModel,
         overrideApiKey: overrideApiKey,
@@ -171,11 +172,23 @@ class OpenAIService implements LLMService {
       // Cache successful response
       if (response.isValid) {
         cache.put(cacheKey, response.content);
+        LoggerUtil.instance.d('💾 Response cached with key: $cacheKey');
       }
+
+      LoggerUtil.instance.d('🎯 LLM Response processed successfully');
+      LoggerUtil.instance.d('Total response time: ${responseTimeMs}ms');
+      LoggerUtil.instance.d('Response validity: ${response.isValid}');
+      LoggerUtil.instance
+          .d('Response content length: ${response.content.length}');
 
       return response;
     } catch (e) {
-      LoggerUtil.instance.w(e.toString());
+      LoggerUtil.instance.d('❌ LLM API Exception occurred');
+      LoggerUtil.instance.d('Exception type: ${e.runtimeType}');
+      LoggerUtil.instance.d('Exception details: $e');
+      LoggerUtil.instance.d(
+          'Total time before failure: ${DateTime.now().difference(startTime).inMilliseconds}ms');
+
       return LLMResponse.error(
         content: 'Error: $e',
         errors: [e.toString()],
@@ -194,14 +207,10 @@ class OpenAIService implements LLMService {
     // 不需要额外的context构建
 
     // Use player's model config if available
-    double temperature = 0.7;
-    int maxTokens = 1000;
     String? overrideModel;
     String? overrideApiKey;
 
     if (player.modelConfig != null) {
-      temperature = player.modelConfig!.temperature;
-      maxTokens = player.modelConfig!.maxTokens;
       overrideModel = player.modelConfig!.model;
       overrideApiKey = player.modelConfig!.apiKey;
     }
@@ -210,8 +219,6 @@ class OpenAIService implements LLMService {
       systemPrompt: rolePrompt,
       userPrompt: '', // rolePrompt已经包含完整prompt
       context: {'phase': state.currentPhase.name},
-      temperature: temperature,
-      maxTokens: maxTokens, // 增加token限制以支持更详细的推理
       overrideModel: overrideModel,
       overrideApiKey: overrideApiKey,
     );
@@ -243,12 +250,10 @@ Please make appropriate statements based on your role and personality. Maintain 
 ''';
 
     // Use player's model config if available
-    double temperature = 0.8;
     String? overrideModel;
     String? overrideApiKey;
 
     if (player.modelConfig != null) {
-      temperature = player.modelConfig!.temperature;
       overrideModel = player.modelConfig!.model;
       overrideApiKey = player.modelConfig!.apiKey;
     }
@@ -257,7 +262,6 @@ Please make appropriate statements based on your role and personality. Maintain 
       systemPrompt: prompt,
       userPrompt: userPrompt,
       context: {'game_state': gameContext},
-      temperature: temperature,
       overrideModel: overrideModel,
       overrideApiKey: overrideApiKey,
     );
@@ -277,8 +281,6 @@ Please make appropriate statements based on your role and personality. Maintain 
   Future<Map<String, dynamic>> _makeAPIRequest({
     required String systemPrompt,
     required String userPrompt,
-    required double temperature,
-    required int maxTokens,
     required Map<String, dynamic> context,
     String? overrideModel,
     String? overrideApiKey,
@@ -316,18 +318,27 @@ Please make appropriate statements based on your role and personality. Maintain 
     final body = jsonEncode({
       'model': effectiveModel,
       'messages': messages,
-      'temperature': temperature,
-      'max_tokens': maxTokens,
     });
 
     final response = await client.post(url, headers: headers, body: body);
+
+    // Log request details
+    LoggerUtil.instance.d('=== LLM API Request ===');
+    LoggerUtil.instance.d('URL: $url');
+    LoggerUtil.instance.d('Model: $effectiveModel');
+    LoggerUtil.instance.d('Request body: $body');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final content = data['choices'][0]['message']['content'];
       final tokensUsed = data['usage']['total_tokens'] ?? 0;
 
-      LoggerUtil.instance.d('LLM call: model=$effectiveModel, tokens=$tokensUsed, duration=0ms');
+      LoggerUtil.instance.d('✅ LLM API Success');
+      LoggerUtil.instance.d('Response status: ${response.statusCode}');
+      LoggerUtil.instance.d('Response body: ${response.body}');
+      LoggerUtil.instance.d('Tokens used: $tokensUsed');
+      LoggerUtil.instance.d(
+          'Content preview: ${content.length > 200 ? content.substring(0, 200) + "..." : content}');
 
       return {
         'content': content,
@@ -337,6 +348,12 @@ Please make appropriate statements based on your role and personality. Maintain 
     } else {
       final error = jsonDecode(response.body);
       final errorMessage = error['error']['message'] ?? 'Unknown error';
+
+      LoggerUtil.instance.d('❌ LLM API Error');
+      LoggerUtil.instance.d('Response status: ${response.statusCode}');
+      LoggerUtil.instance.d('Response body: ${response.body}');
+      LoggerUtil.instance.d('Error message: $errorMessage');
+
       throw Exception('OpenAI API error: $errorMessage');
     }
   }
@@ -346,142 +363,103 @@ Please make appropriate statements based on your role and personality. Maintain 
     Player player,
     GameState state,
   ) async {
+    LoggerUtil.instance
+        .d('Attempting to parse action response from: ${response.content}');
+
+    // Try multiple parsing strategies in order
+    Map<String, dynamic>? jsonData;
+    String parsingStrategy = '';
+
+    // Strategy 1: Direct JSON parsing after cleaning
     try {
-      // Clean up the response content to extract pure JSON
       final cleanedContent = _extractJsonFromResponse(response.content);
-      final jsonData = jsonDecode(cleanedContent);
+      jsonData = jsonDecode(cleanedContent);
+      parsingStrategy = 'direct parsing';
+      LoggerUtil.instance.d('Strategy 1 (direct parsing) succeeded');
+    } catch (e) {
+      LoggerUtil.instance.d('Strategy 1 (direct parsing) failed: $e');
+    }
 
-      // 支持多种target字段名: target_id, target, 目标
-      final targetId = jsonData['target_id'] ?? jsonData['target'] ?? jsonData['目标'];
-      final statement = jsonData['statement'] ?? jsonData['陈述'] ?? '';
-      final reasoning = jsonData['reasoning'] ?? jsonData['推理'] ?? '';
+    // Strategy 2: Enhanced JSON cleaner partial extraction
+    if (jsonData == null) {
+      try {
+        jsonData = JsonCleaner.extractPartialJson(response.content);
+        if (jsonData != null) {
+          parsingStrategy = 'partial extraction';
+          LoggerUtil.instance.d('Strategy 2 (partial extraction) succeeded');
+        }
+      } catch (e) {
+        LoggerUtil.instance.d('Strategy 2 (partial extraction) failed: $e');
+      }
+    }
 
-      final targets = <Player>[];
-      if (targetId != null && targetId.toString().isNotEmpty) {
-        // 首先尝试直接通过ID查找
-        Player? target = state.getPlayerById(targetId.toString());
+    // If all parsing strategies failed, return empty response
+    if (jsonData == null) {
+      LoggerUtil.instance
+          .w('All parsing strategies failed for response: ${response.content}');
+      return LLMResponse.success(
+        content: response.content,
+        parsedData: <String, dynamic>{},
+        targets: <Player>[],
+        statement: '',
+        tokensUsed: response.tokensUsed,
+        responseTimeMs: response.responseTimeMs,
+      );
+    }
 
-        // 如果找不到,尝试通过玩家名字查找(支持"3号玩家"这样的格式)
-        if (target == null) {
-          final targetStr = targetId.toString();
+    // Successfully parsed data, now process it
+    LoggerUtil.instance.d(
+        'Successfully parsed action response using $parsingStrategy: action=${jsonData['action']}, target=${jsonData['target']}');
+
+    // 支持多种target字段名: target_id, target, 目标
+    final targetId =
+        jsonData['target_id'] ?? jsonData['target'] ?? jsonData['目标'];
+    final statement = jsonData['statement'] ?? jsonData['陈述'] ?? '';
+    final reasoning = jsonData['reasoning'] ?? jsonData['推理'] ?? '';
+
+    final targets = <Player>[];
+    if (targetId != null && targetId.toString().isNotEmpty) {
+      // 首先尝试直接通过ID查找
+      Player? target = state.getPlayerById(targetId.toString());
+
+      // 如果找不到,尝试通过玩家名字查找(支持"3号玩家"这样的格式)
+      if (target == null) {
+        final targetStr = targetId.toString();
+        for (final p in state.players) {
+          if (p.name == targetStr || p.playerId == targetStr) {
+            target = p;
+            break;
+          }
+        }
+      }
+
+      // 如果还找不到，尝试通过数字匹配玩家名（支持 "5" -> "5号玩家"）
+      if (target == null) {
+        final targetStr = targetId.toString();
+        // 检查是否是纯数字
+        final numberMatch = RegExp(r'^\d+$').firstMatch(targetStr);
+        if (numberMatch != null) {
+          final playerName = '$targetStr号玩家';
           for (final p in state.players) {
-            if (p.name == targetStr || p.playerId == targetStr) {
+            if (p.name == playerName) {
               target = p;
               break;
             }
           }
         }
-
-        // 如果还找不到，尝试通过数字匹配玩家名（支持 "5" -> "5号玩家"）
-        if (target == null) {
-          final targetStr = targetId.toString();
-          // 检查是否是纯数字
-          final numberMatch = RegExp(r'^\d+$').firstMatch(targetStr);
-          if (numberMatch != null) {
-            final playerName = '$targetStr号玩家';
-            for (final p in state.players) {
-              if (p.name == playerName) {
-                target = p;
-                break;
-              }
-            }
-          }
-        }
-
-        if (target != null) {
-          targets.add(target);
-        } else {
-          LoggerUtil.instance.w('Target not found: $targetId');
-        }
       }
 
-      // 存储reasoning到parsedData
-      final parsedData = Map<String, dynamic>.from(jsonData);
-      if (!parsedData.containsKey('reasoning') && reasoning.isNotEmpty) {
-        parsedData['reasoning'] = reasoning;
+      if (target != null) {
+        targets.add(target);
+      } else {
+        LoggerUtil.instance.w('Target not found: $targetId');
       }
-
-      return LLMResponse.success(
-        content: response.content,
-        parsedData: parsedData,
-        targets: targets,
-        statement: statement,
-        tokensUsed: response.tokensUsed,
-        responseTimeMs: response.responseTimeMs,
-      );
-    } catch (e) {
-      LoggerUtil.instance.e('Failed to parse action response: $e');
-      LoggerUtil.instance.e('Response content: ${response.content}');
-
-      // Try to extract any useful information even if JSON parsing fails
-      return _handleParseError(response, e);
-    }
-  }
-
-  /// Extract JSON from response content, handling markdown formatting and other issues
-  String _extractJsonFromResponse(String content) {
-    // Remove markdown code blocks
-    String cleaned = content;
-
-    // Remove ```json and ``` markers
-    cleaned = cleaned.replaceAll(RegExp(r'```json\s*'), '');
-    cleaned = cleaned.replaceAll(RegExp(r'```\s*$'), '');
-    cleaned = cleaned.replaceAll(RegExp(r'^```\s*'), '');
-
-    // Remove any leading/trailing whitespace
-    cleaned = cleaned.trim();
-
-    // Try to find JSON object within the text
-    final jsonStart = cleaned.indexOf('{');
-    final jsonEnd = cleaned.lastIndexOf('}');
-
-    if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
-      cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
     }
 
-    LoggerUtil.instance.d('Cleaned JSON: $cleaned');
-    return cleaned;
-  }
-
-  /// Handle parsing errors with fallback strategies
-  LLMResponse _handleParseError(LLMResponse response, dynamic error) {
-    LoggerUtil.instance.w('Attempting to extract information from malformed response');
-
-    final content = response.content.toLowerCase();
-    final parsedData = <String, dynamic>{};
-    final targets = <Player>[];
-    String statement = '';
-
-    // Try to extract basic information using regex patterns
-    try {
-      // Look for action type
-      final actionMatch = RegExp(r'"action"\s*:\s*"([^"]+)"').firstMatch(content);
-      if (actionMatch != null) {
-        parsedData['action'] = actionMatch.group(1);
-      }
-
-      // Look for target
-      final targetMatch = RegExp(r'"target"\s*:\s*"([^"]+)"').firstMatch(content);
-      if (targetMatch != null) {
-        parsedData['target'] = targetMatch.group(1);
-      }
-
-      // Look for reasoning
-      final reasoningMatch = RegExp(r'"reasoning"\s*:\s*"([^"]+)"').firstMatch(content);
-      if (reasoningMatch != null) {
-        parsedData['reasoning'] = reasoningMatch.group(1);
-      }
-
-      // Look for statement
-      final statementMatch = RegExp(r'"statement"\s*:\s*"([^"]+)"').firstMatch(content);
-      if (statementMatch != null) {
-        statement = statementMatch.group(1) ?? '';
-        parsedData['statement'] = statement;
-      }
-
-      LoggerUtil.instance.i('Extracted partial data from malformed JSON: $parsedData');
-    } catch (e) {
-      LoggerUtil.instance.e('Failed to extract any data from malformed response: $e');
+    // 存储reasoning到parsedData
+    final parsedData = Map<String, dynamic>.from(jsonData);
+    if (!parsedData.containsKey('reasoning') && reasoning.isNotEmpty) {
+      parsedData['reasoning'] = reasoning;
     }
 
     return LLMResponse.success(
@@ -492,6 +470,14 @@ Please make appropriate statements based on your role and personality. Maintain 
       tokensUsed: response.tokensUsed,
       responseTimeMs: response.responseTimeMs,
     );
+  }
+
+  /// Extract JSON from response content, handling markdown formatting and other issues
+  String _extractJsonFromResponse(String content) {
+    // Use the enhanced JSON cleaner
+    final cleaned = JsonCleaner.extractJson(content);
+    LoggerUtil.instance.d('Cleaned JSON: $cleaned');
+    return cleaned;
   }
 
   String _buildContext(Player player, GameState state) {

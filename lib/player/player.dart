@@ -8,16 +8,12 @@ import '../utils/config_loader.dart';
 class PlayerModelConfig {
   final String model;
   final String apiKey;
-  final double temperature;
-  final int maxTokens;
   final int timeoutSeconds;
   final int maxRetries;
 
   const PlayerModelConfig({
     required this.model,
     required this.apiKey,
-    this.temperature = 0.7,
-    this.maxTokens = 1000,
     this.timeoutSeconds = 30,
     this.maxRetries = 3,
   });
@@ -26,16 +22,12 @@ class PlayerModelConfig {
   PlayerModelConfig copyWith({
     String? model,
     String? apiKey,
-    double? temperature,
-    int? maxTokens,
     int? timeoutSeconds,
     int? maxRetries,
   }) {
     return PlayerModelConfig(
       model: model ?? this.model,
       apiKey: apiKey ?? this.apiKey,
-      temperature: temperature ?? this.temperature,
-      maxTokens: maxTokens ?? this.maxTokens,
       timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
       maxRetries: maxRetries ?? this.maxRetries,
     );
@@ -46,8 +38,6 @@ class PlayerModelConfig {
     return PlayerModelConfig(
       model: map['model'] ?? map['model'] ?? 'gpt-3.5-turbo',
       apiKey: map['api_key'] ?? map['apiKey'] ?? '',
-      temperature: (map['temperature'] ?? 0.7).toDouble(),
-      maxTokens: map['max_tokens'] ?? map['maxTokens'] ?? 1000,
       timeoutSeconds: map['timeout_seconds'] ?? map['timeoutSeconds'] ?? 30,
       maxRetries: map['max_retries'] ?? map['maxRetries'] ?? 3,
     );
@@ -57,8 +47,6 @@ class PlayerModelConfig {
     return {
       'model': model,
       'api_key': apiKey,
-      'temperature': temperature,
-      'max_tokens': maxTokens,
       'timeout_seconds': timeoutSeconds,
       'max_retries': maxRetries,
     };
@@ -66,7 +54,7 @@ class PlayerModelConfig {
 
   @override
   String toString() {
-    return 'PlayerModelConfig(model: $model, temperature: $temperature)';
+    return 'PlayerModelConfig(model: $model)';
   }
 }
 
@@ -348,7 +336,7 @@ abstract class Player {
     final modelName = modelConfig?.model ?? 'default';
     final modelNameShort =
         modelName.split('/').last; // Take only the part after the last slash
-    return '[$name](${role.name}) [$modelNameShort]';
+    return '[$name](${role.name})<$modelNameShort>';
   }
 
   String getPrivateInfo() {

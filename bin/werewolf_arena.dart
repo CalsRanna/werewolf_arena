@@ -32,14 +32,22 @@ class WerewolfArenaGame {
     // Load configuration
     config = await _loadConfig(parsedArgs['config']);
 
+    // Determine log level - use debug if debug flag is set
+    final logLevel = parsedArgs['debug'] == true ? 'debug' : config.loggingConfig.level;
+
     // Initialize unified logger
     LoggerUtil.instance.initialize(
       enableConsole: true,
       enableFile: config.loggingConfig.enableFile,
       useColors: config.uiConfig.enableColors,
-      logLevel: config.loggingConfig.level,
+      logLevel: logLevel,
       logFilePath: config.loggingConfig.logFilePath,
     );
+
+    // Log debug mode status
+    if (parsedArgs['debug'] == true) {
+      LoggerUtil.instance.d('🐛 Debug mode enabled - log level set to DEBUG');
+    }
 
     // Initialize LLM service
     llmService = _createLLMService(config.llmConfig);
@@ -229,8 +237,6 @@ class WerewolfArenaGame {
     return PlayerModelConfig(
       model: config.llmConfig.model,
       apiKey: config.llmConfig.apiKey,
-      temperature: config.llmConfig.temperature,
-      maxTokens: config.llmConfig.maxTokens,
       timeoutSeconds: config.llmConfig.timeoutSeconds,
       maxRetries: config.llmConfig.maxRetries,
     );

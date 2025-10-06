@@ -89,9 +89,8 @@ abstract class GameEvent {
     this.visibleToRole,
   }) : timestamp = DateTime.now();
 
-  /// 获取结构化的事件数据
-  Map<String, dynamic> getStructuredData();
-
+  
+  
   /// 动态生成描述（用于日志显示和兼容性）
   String generateDescription({String? locale});
 
@@ -129,28 +128,17 @@ abstract class GameEvent {
     }
   }
 
-  /// 兼容性方法：返回描述字符串
-  @Deprecated('Use generateDescription() instead')
-  String get description => generateDescription();
-
-  /// 兼容性方法：返回事件数据
-  @Deprecated('Use getStructuredData() instead')
-  Map<String, dynamic> get data => getStructuredData();
-
+  
   @override
   String toString() {
     return 'GameEvent($type: ${generateDescription()})';
   }
 
   Map<String, dynamic> toJson() {
-    final structuredData = getStructuredData();
     return {
       'eventId': eventId,
       'timestamp': timestamp.toIso8601String(),
       'type': type.name,
-      'description': generateDescription(), // 为了兼容性保留
-      'data': structuredData,
-      'structuredData': structuredData, // 新的结构化数据字段
       'initiator': initiator?.playerId,
       'target': target?.playerId,
       'visibility': visibility.name,
@@ -314,15 +302,6 @@ class GameState {
       winner = 'Good';
       endGame('Good');
       LoggerUtil.instance.i('好人阵营获胜！所有狼人已出局');
-      return true;
-    }
-
-    // 狼人胜利：人数优势（狼人数量 >= 好人数量）
-    if (aliveWerewolves >= aliveGoodGuys) {
-      winner = 'Werewolves';
-      endGame('Werewolves');
-      LoggerUtil.instance
-          .i('狼人阵营获胜！人数优势（狼人$aliveWerewolves >= 好人$aliveGoodGuys）');
       return true;
     }
 

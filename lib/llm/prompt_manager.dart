@@ -1,4 +1,6 @@
 import '../game/game_state.dart';
+import '../game/game_event.dart';
+import '../llm/enhanced_prompts.dart';
 import '../player/player.dart';
 import '../player/ai_player.dart';
 
@@ -47,250 +49,17 @@ class PromptManager {
 **最后指令：** 你已经完全理解并内化了以上所有规则。你就是“逻辑链”。现在，游戏开始。接收你的第一份信息，展现你的顶级实力吧。
 ''';
 
-    _rolePrompts['werewolf'] = '''
-【你的真实身份】你是狼人！你的队友是：{将在context中注入}
+    _rolePrompts['werewolf'] = EnhancedPrompts.enhancedWerewolfPrompt;
 
-【狼人核心策略】
-1. **完美伪装**
-   - 像好人一样思考和发言
-   - 积极参与盘逻辑，但要故意盘错方向
-   - 表现出"在努力找狼"的样子
+    _rolePrompts['villager'] = EnhancedPrompts.enhancedVillagerPrompt;
 
-2. **保护队友**
-   - 不要直接说队友好，太明显
-   - 可以"盘逻辑"后得出队友是好人的结论
-   - 队友被怀疑时，转移注意力到其他人
-   - 绝不投票给队友
+    _rolePrompts['seer'] = EnhancedPrompts.enhancedSeerPrompt;
 
-3. **带节奏技巧**
-   - 找准一个好人，咬死他
-   - 制造好人之间的对立和猜疑
-   - 抓别人发言的"爆点"（哪怕是正常的）
-   - 质疑预言家的验人逻辑
+    _rolePrompts['witch'] = EnhancedPrompts.enhancedWitchPrompt;
 
-4. **团队协调（重要！）**
-   - 夜晚击杀必须遵循团队讨论的决策
-   - 如果队友们在讨论中明确建议刀某人，必须选择该目标
-   - 狼人团队行动必须统一，个人偏好服从团队决策
-   - 团队协调比个人判断更重要
+    _rolePrompts['hunter'] = EnhancedPrompts.enhancedHunterPrompt;
 
-5. **高级战术**
-   - 可以假装怀疑队友（做切割）
-   - 可以"盘逻辑"引导大家投错人
-   - 在关键时刻可以爆身份保队友
-   - 观察谁是真预言家，优先刀他
-
-【发言要点】
-- 不要表现得太激进或太保守
-- 要有具体的逻辑分析，不能空口白牙
-- 积极抓别人的"矛盾"和"爆点"
-- 站边时要有理由，不能随便站
-
-【示例】
-"我盘了一下昨天的投票，5号说投6号，结果投了8号，这个归票很怪。而且5号一直在引导大家的注意力，我觉得他狼面很大。"
-''';
-
-    _rolePrompts['villager'] = '''
-【你的真实身份】你是村民！
-
-【村民优势】
-- 没有包袱，可以大胆怀疑任何人
-- 死了也不亏，用生命换信息
-- 可以用激进打法逼狼露出马脚
-
-【村民打法】
-1. **积极盘逻辑**
-   - 对比每个玩家前后发言的变化
-   - 抓发言矛盾和行为异常
-   - 分析投票行为（谁保护谁，谁针对谁）
-
-2. **帮神职建立信任**
-   - 站好预言家，打对跳
-   - 推测谁可能是女巫、守卫
-   - 为神职分担压力
-
-3. **制造信息**
-   - 可以诈身份钓鱼（假装自己是神）
-   - 故意试探可疑对象
-   - 制造讨论话题
-
-【发言重点】
-- 要有观点，有理有据
-- 敢于质疑，即使是大多数人的观点
-- 观察谁在带节奏，谁在浑水摸鱼
-
-【示例】
-"我盘了一下，3号昨天说要投6号，结果投了8号。今天又说相信预言家，但逻辑站不住。我怀疑3号是狼。"
-''';
-
-    _rolePrompts['seer'] = '''
-【你的真实身份】你是预言家！你的查验记录：{将在context中注入}
-
-【关键说明】
-- 查杀 = 狼人（必须立即报出）
-- 金水 = 好人（可以作为你的金水）
-
-【预言家策略】
-1. **起跳时机**
-   - 拿到查杀必须立即跳，不能藏
-   - 连续金水可以暂时藏身份，但第二天必须跳
-   - 根据局势决定早跳还是晚跳，但最晚不超过第3天
-
-2. **报验人（强制要求！）**
-   - 【绝对必须】每次发言都必须包含查验结果！不能隐藏！
-   - 查杀："我是预言家，昨晚验了X号，X号查杀！必须投他！"
-   - 金水："我是预言家，昨晚验了X号，X号金水。我们可以信任他。"
-   - 说明验人理由："验X号是因为他昨天的发言有问题/表现可疑"
-   - 报警徽流："我的警徽流是Y号、Z号，这两个位置发言模糊"
-
-3. **利用查验结果分析局势**
-   - 基于查验结果盘逻辑链
-   - 分析谁在保护查杀目标，谁在攻击金水目标
-   - 通过投票行为验证你的判断
-
-4. **应对悍跳狼**
-   - 分析对跳的验人逻辑是否合理
-   - 指出对方警徽流的问题
-   - 用你的查验结果推导狼坑
-
-5. **引导好人（核心职责）**
-   - 明确指出谁是狼（基于查验）
-   - 推荐大家跟谁投票
-   - 为好人阵营提供明确方向
-
-【发言重点】
-- 【强制】每次发言都必须包含查验结果信息
-- 验人理由要合理，展现你的分析能力
-- 警徽流要有逻辑，不能随意乱打
-- 对悍跳狼要有力反击，保护好人阵营
-- 承担领导责任，不要怕暴露身份
-
-【示例1（查杀）】
-"我是预言家，昨晚验了3号，3号查杀！我验3号是因为他昨天一直在带节奏，发言逻辑有问题。我的警徽流是7号、9号。今天必须投3号，他是狼！"
-
-【示例2（金水）】
-"我是预言家，昨晚验了5号，5号金水。我验5号是因为他发言比较谨慎，想确认他身份。现在5号是好人，我们可以信任他。我的警徽流是8号、10号。"
-
-【特别提醒】
-- 你是好人阵营的核心，必须承担领导责任
-- 不要藏身份太久，好人需要你的信息
-- 你的查验结果是好人最可靠的情报，必须分享
-''';
-
-    _rolePrompts['witch'] = '''
-【你的真实身份】你是女巫！解药和毒药各一瓶
-
-【女巫核心优势】
-- 绝不能暴露身份（否则必被刀）
-- 【关键优势】你知道每晚谁死了（这是独有信息！）
-- 用药要谨慎，关键时刻才用
-- 你是好人阵营最强大的角色之一
-
-【用药策略】
-1. **解药使用**
-   - 首夜：如果感觉像神职可以救，否则可以留着
-   - 中期：优先救确认的神职（预言家、猎人等）
-   - 后期：谨慎使用，解药威慑比实际使用更有价值
-
-2. **毒药使用**
-   - 只毒你基本确认是狼人的玩家
-   - 可以在平安夜使用毒药来验证身份
-   - 后期可以毒掉悍跳的假预言家
-
-3. **信息优势利用（重要！）**
-   - 你知道每晚的死亡情况，这是你的独特优势
-   - 可以根据刀法分析狼人思路："昨晚的刀法很奇怪"
-   - 推测狼人目标："刀这个位置像是要找神"
-   - 引导好人思考："为什么偏偏刀这个人？"
-
-【发言技巧】
-1. **巧妙利用信息**
-   - 不要直接说"昨晚X死了"（暴露你有信息）
-   - 可以说："昨晚这个死法很有意思"
-   - 分析刀法："从刀法看，狼人很聪明"
-   - 引导大家思考死亡背后的逻辑
-
-2. **隐藏身份发言**
-   - 像村民一样分析局势，但展现更高水平的推理
-   - 可以暗示你对某些情况有"特殊感觉"
-   - 重点分析刀法和死亡的逻辑关系
-
-3. **观察和推理**
-   - 观察谁在刻意回避讨论死亡情况
-   - 分析谁对死亡的解读有问题
-   - 记录可疑行为，为下毒做准备
-
-【发言要点】
-- 【核心】充分利用你的信息优势，但要巧妙隐藏
-- 分析刀法逻辑，展现你的推理能力
-- 可以适度引导但不要强行控制局面
-- 保持村民的发言风格，但展现更高水平
-- 为关键的下毒决策积累信息
-
-【示例】
-"我盘了一下，昨晚这个刀法很有针对性。我觉得狼人是在找神，而且思路很清晰。大家可以想想，为什么要刀这个位置？而且3号今天的发言有点问题，他好像对这个死亡一点也不意外。"
-
-【特别提醒】
-- 你的信息优势是最大的武器，但必须巧妙使用
-- 不要直接暴露你知道死亡信息，要通过分析表现出来
-- 用药要谨慎，特别是毒药，确保目标是狼人
-- 你是好人阵营的秘密武器，在关键时刻可以改变局势
-''';
-
-    _rolePrompts['hunter'] = '''
-【你的真实身份】你是猎人！死后可以开枪带走一人
-
-【猎人策略】
-1. **藏身份**
-   - 不要轻易暴露（狼会避开你）
-   - 可以在关键时刻跳身份自保
-
-2. **威慑**
-   - 适度暗示身份让狼忌惮
-   - "某些人最好想清楚后果"
-   - "我已经锁定目标了"
-
-3. **开枪目标**
-   - 记住最可疑的人
-   - 观察谁最想推你出局
-   - 优先带走确定的狼
-
-【发言风格】
-- 可以强硬一些
-- 敢于质疑和挑战
-- 制造压迫感
-
-【示例】
-"我觉得3号狼面很大，一直在带节奏。如果今天要投我，我会让某些人后悔的。"
-''';
-
-    _rolePrompts['guard'] = '''
-【你的真实身份】你是守卫！每晚可以守护一人
-
-【守卫策略】
-1. **守护目标**
-   - 优先保护预言家
-   - 根据狼的刀法推测谁危险
-   - 不能连续守同一人（规则限制）
-
-2. **隐藏身份**
-   - 绝不暴露守护信息
-   - 不要说"我守了谁"
-   - 平安夜不要乱说话
-
-3. **推理能力**
-   - 从刀法判断狼的思路
-   - 预判下一刀目标
-   - 观察谁可能是神
-
-【发言重点】
-- 完全伪装成村民
-- 分析局势帮助好人
-- 不要露出任何破绽
-
-【示例】
-"我盘了一下，昨晚的刀应该是冲神去的。3号今天的发言很奇怪，建议重点关注。"
-''';
+    _rolePrompts['guard'] = EnhancedPrompts.enhancedGuardPrompt;
   }
 
   String getActionPrompt({
@@ -313,15 +82,14 @@ class PromptManager {
     if (player.role.isWerewolf && state.currentPhase == GamePhase.night) {
       final discussionEvents = state.eventHistory
           .where((e) =>
-              e.type == GameEventType.playerAction &&
-              e.data['type'] == 'werewolf_discussion' &&
-              (e.data['dayNumber'] as int?) == state.dayNumber)
+              e is WerewolfDiscussionEvent && e.dayNumber == state.dayNumber)
+          .cast<WerewolfDiscussionEvent>()
           .toList();
 
       if (discussionEvents.isNotEmpty) {
         final discussions = discussionEvents.map((e) {
           final speaker = e.initiator?.name ?? '未知';
-          final message = e.data['message'] as String? ?? '';
+          final message = e.message;
           return '[$speaker]: $message';
         }).join('\n\n');
 
@@ -354,18 +122,7 @@ $contextPrompt
 当前游戏阶段：${state.currentPhase.name}
 存活玩家：${state.alivePlayers.map((p) => p.name).join(', ')}$werewolfDiscussionContext
 
-请返回纯JSON格式（不要使用markdown格式或代码块）：
-{
-  "action": "动作类型 (kill/investigate/heal/poison/vote/speak/protect)",
-  "target": "目标玩家ID (如果需要)",
-  "reasoning": "你的推理过程${player.role.isWerewolf ? '，特别说明你如何基于团队讨论选择目标' : ''}",
-  "statement": "你要发表的公开陈述"
-}
-
-重要提醒：
-- 必须返回有效的JSON格式，不要使用```json或其他标记
-- 确保所有字符串字段都用双引号包围
-- 不要在JSON外添加任何额外文字或解释${player.role.isWerewolf ? '\n- 狼人必须严格遵循团队讨论的决策，选择团队商议的目标' : ''}
+${EnhancedPrompts.jsonInstruction}${player.role.isWerewolf ? '\n- 狼人必须严格遵循团队讨论的决策，选择团队商议的目标' : ''}
 
 ''';
   }
@@ -389,17 +146,16 @@ $contextPrompt
 
     // 从游戏事件中查找该玩家在本轮讨论阶段的发言
     final todaySpeeches = state.eventHistory
+        .whereType<SpeakEvent>()
         .where((e) =>
-            e.type == GameEventType.playerAction &&
-            e.data['type'] == 'speak' &&
             e.initiator?.playerId == player.playerId &&
-            (e.data['dayNumber'] as int?) == state.dayNumber)
+            e.dayNumber == state.dayNumber)
         .toList();
 
     String speechContext = '';
     if (todaySpeeches.isNotEmpty) {
       final lastSpeech = todaySpeeches.last;
-      final speechContent = lastSpeech.data['message'] as String? ?? '';
+      final speechContent = lastSpeech.message;
       if (speechContent.isNotEmpty) {
         speechContext = '''
 
@@ -413,13 +169,11 @@ $speechContent
 
     // 提取所有玩家的发言历史
     final allSpeeches = state.eventHistory
-        .where((e) =>
-            e.type == GameEventType.playerAction &&
-            e.data['type'] == 'speak' &&
-            (e.data['dayNumber'] as int?) == state.dayNumber)
+        .whereType<SpeakEvent>()
+        .where((e) => e.dayNumber == state.dayNumber)
         .map((e) {
-      final speaker = e.initiator?.name ?? '未知';
-      final message = e.data['message'] as String? ?? '';
+      final speaker = e.speaker.name;
+      final message = e.message;
       return '[$speaker]: $message';
     }).join('\n\n');
 
@@ -569,16 +323,14 @@ $strategyPrompt
     if (player.role.roleId == 'seer') {
       final investigations = <String>[];
       final investigateEvents = state.eventHistory
-          .where((e) =>
-              e.type == GameEventType.skillUsed &&
-              e.data['skill'] == 'Investigate' &&
-              e.initiator?.playerId == player.playerId)
+          .whereType<SeerInvestigateEvent>()
+          .where((e) => e.initiator?.playerId == player.playerId)
           .toList();
 
       for (final event in investigateEvents) {
-        final result = event.data['result'] ?? 'Unknown';
-        final targetName = event.target?.name ?? '未知';
-        final night = event.data['dayNumber'] ?? '?';
+        final result = event.investigationResult;
+        final targetName = event.target.name;
+        final night = event.dayNumber ?? '?';
         // 重要：明确查验结果的含义
         final resultDesc = result == 'Werewolf' ? '狼人(查杀)' : '好人(金水)';
         investigations.add('- 第$night夜查验$targetName: $resultDesc');
@@ -662,11 +414,9 @@ $strategyPrompt
 
     // 特别处理：如果当前是白天阶段，检查当前轮次是否有发言
     final currentDaySpeaks = visibleEvents
+        .whereType<SpeakEvent>()
         .where((event) =>
-            event.type == GameEventType.playerAction &&
-            event.data['type'] == 'speak' &&
-            event.data['phase'] == GamePhase.day.name &&
-            (event.data['dayNumber'] as int?) == state.dayNumber)
+            event.phase == GamePhase.day && event.dayNumber == state.dayNumber)
         .toList();
 
     if (state.currentPhase == GamePhase.day && currentDaySpeaks.isEmpty) {
@@ -696,29 +446,49 @@ $formattedEvents
 
     switch (event.type) {
       case GameEventType.gameStart:
-        return '[$timestamp] 🎮 游戏开始 - ${event.description}';
+        return '[$timestamp] 🎮 游戏开始';
 
       case GameEventType.gameEnd:
-        return '[$timestamp] 🏁 游戏结束 - ${event.description}';
+        return '[$timestamp] 🏁 游戏结束';
 
       case GameEventType.phaseChange:
-        final oldPhase = event.data['oldPhase'] ?? '';
-        final newPhase = event.data['newPhase'] ?? '';
-        return '[$timestamp] 🔄 阶段转换: $oldPhase → $newPhase';
+        if (event is PhaseChangeEvent) {
+          final oldPhase = event.oldPhase.toString();
+          final newPhase = event.newPhase.toString();
+          return '[$timestamp] 🔄 阶段转换: $oldPhase → $newPhase';
+        }
+        return '[$timestamp] 🔄 阶段转换';
 
       case GameEventType.playerDeath:
-        final cause = event.data['cause'] ?? '未知原因';
-        final playerName = event.initiator?.name ?? '未知玩家';
-        return '[$timestamp] ☠️ $playerName 死亡 - 原因: $cause';
+        if (event is DeadEvent) {
+          final cause = event.cause.toString();
+          final playerName = event.victim.name;
+          return '[$timestamp] ☠️ $playerName 死亡 - 原因: $cause';
+        }
+        return '[$timestamp] ☠️ 玩家死亡';
 
       case GameEventType.skillUsed:
-        final skill = event.data['skill'] ?? '技能';
         final actorName = event.initiator?.name ?? '未知玩家';
-        final targetName = event.target?.name ?? '';
-        if (targetName.isNotEmpty) {
-          return '[$timestamp] ✨ $actorName 使用 $skill → $targetName';
+        if (event is WerewolfKillEvent) {
+          final targetName = event.target.name;
+          return '[$timestamp] 🐺 $actorName 选择击杀 $targetName';
+        } else if (event is GuardProtectEvent) {
+          final targetName = event.target.name;
+          return '[$timestamp] 🛡️ $actorName 守护了 $targetName';
+        } else if (event is SeerInvestigateEvent) {
+          final targetName = event.target.name;
+          return '[$timestamp] 🔍 $actorName 查验了 $targetName';
+        } else if (event is WitchHealEvent) {
+          final targetName = event.target.name;
+          return '[$timestamp] 💊 $actorName 使用解药救了 $targetName';
+        } else if (event is WitchPoisonEvent) {
+          final targetName = event.target.name;
+          return '[$timestamp] ☠️ $actorName 使用毒药毒杀了 $targetName';
+        } else if (event is HunterShootEvent) {
+          final targetName = event.target.name;
+          return '[$timestamp] 🔫 $actorName 开枪带走了 $targetName';
         }
-        return '[$timestamp] ✨ $actorName 使用 $skill';
+        return '[$timestamp] ✨ $actorName 使用技能';
 
       case GameEventType.voteCast:
         final voterName = event.initiator?.name ?? '未知玩家';
@@ -726,28 +496,27 @@ $formattedEvents
         return '[$timestamp] 🗳️ $voterName 投票给 $targetName';
 
       case GameEventType.playerAction:
-        final actionType = event.data['type'] ?? '';
-        final speakerName = event.initiator?.name ?? '未知玩家';
-        final message = event.data['message'] ?? '';
-
-        if (actionType == 'speak') {
-          // 白天发言内容
-          return '[$timestamp] 💬 [$speakerName]: $message';
-        } else if (actionType == 'werewolf_discussion') {
-          // 狼人讨论内容
-          return '[$timestamp] 🐺 [$speakerName] (狼人讨论): $message';
+        if (event is SpeakEvent) {
+          final speakerName = event.speaker.name;
+          final message = event.message;
+          if (event.speechType == SpeechType.normal) {
+            return '[$timestamp] 💬 [$speakerName]: $message';
+          } else if (event.speechType == SpeechType.lastWords) {
+            return '[$timestamp] 💀 [$speakerName] (遗言): $message';
+          } else if (event.speechType == SpeechType.werewolfDiscussion) {
+            return '[$timestamp] 🐺 [$speakerName] (狼人讨论): $message';
+          }
         }
-        return '[$timestamp] 🎯 ${event.description}';
+        return '[$timestamp] 🎯 ${event.generateDescription()}';
 
       case GameEventType.dayBreak:
-        // Check if this is a night result event
-        if (event.data.containsKey('isPeacefulNight')) {
-          final isPeaceful = event.data['isPeacefulNight'] as bool? ?? false;
-          final messages = event.data['deathMessages'] as List<dynamic>? ?? [];
-          if (isPeaceful) {
+        if (event is NightResultEvent) {
+          if (event.isPeacefulNight) {
             return '[$timestamp] ☀️ 天亮了 - 昨晚是平安夜，没有人死亡';
           } else {
-            final deathInfo = messages.join(', ');
+            final deathInfo = event.deathEvents
+                .map((e) => e.generateDescription())
+                .join(', ');
             return '[$timestamp] ☀️ 天亮了 - $deathInfo';
           }
         }
@@ -907,7 +676,8 @@ $strategyAdvice
   }
 
   /// 替换角色提示词中的占位符
-  String _replaceRolePromptPlaceholders(String rolePrompt, Player player, GameState state) {
+  String _replaceRolePromptPlaceholders(
+      String rolePrompt, Player player, GameState state) {
     String replacedPrompt = rolePrompt;
 
     if (player.role.roleId == 'werewolf') {
@@ -932,16 +702,14 @@ $strategyAdvice
       // 替换预言家查验记录
       final investigations = <String>[];
       final investigateEvents = state.eventHistory
-          .where((e) =>
-              e.type == GameEventType.skillUsed &&
-              e.data['skill'] == 'Investigate' &&
-              e.initiator?.playerId == player.playerId)
+          .whereType<SeerInvestigateEvent>()
+          .where((e) => e.initiator?.playerId == player.playerId)
           .toList();
 
       for (final event in investigateEvents) {
-        final result = event.data['result'] ?? 'Unknown';
-        final targetName = event.target?.name ?? '未知';
-        final night = event.data['dayNumber'] ?? '?';
+        final result = event.investigationResult;
+        final targetName = event.target.name;
+        final night = event.dayNumber ?? '?';
         final resultDesc = result == 'Werewolf' ? '狼人(查杀)' : '好人(金水)';
         investigations.add('第$night夜查验$targetName: $resultDesc');
       }

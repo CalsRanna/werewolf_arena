@@ -5,7 +5,8 @@
       "Bash(dart analyze:*)",
       "Bash(dart run:*)",
       "Bash(dart:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
