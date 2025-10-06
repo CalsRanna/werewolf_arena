@@ -79,7 +79,6 @@ class GameEngine {
     }
 
     _currentState!.players = players;
-    LoggerUtil.instance.i('Players set, count: ${players.length}');
 
     // Notify listeners of the update
     _stateController.add(_currentState!);
@@ -291,8 +290,8 @@ class GameEngine {
 
     // Build order string for logging
     final orderNames = <String>[];
-
-    if (config.actionOrder.isReverse) {
+    final isReverse = RandomHelper().nextBool();
+    if (isReverse) {
       // Reverse order
       for (int i = 0; i < allPlayersSorted.length; i++) {
         final currentIndex = (startingIndex - i + allPlayersSorted.length) %
@@ -316,8 +315,8 @@ class GameEngine {
     }
 
     // Log the speaking order
-    final direction = config.actionOrder.isReverse ? "逆序" : "顺序";
-    LoggerUtil.instance.i('[法官]: 从${orderNames.first}开始， $direction发言');
+    final direction = isReverse ? "逆序" : "顺序";
+    LoggerUtil.instance.i('[法官]: 从${orderNames.first}开始$direction发言');
 
     return orderedPlayers;
   }
@@ -367,8 +366,6 @@ class GameEngine {
       // Now proceed with kill decision after discussion
       final victims = <Player, int>{};
 
-      LoggerUtil.instance.i('狼人讨论结束，开始同时投票选择击杀目标');
-
       // Collect all werewolf voting tasks
       final voteFutures = <Future<void>>[];
 
@@ -381,8 +378,6 @@ class GameEngine {
       // Wait for all werewolves to vote simultaneously
       await Future.wait(voteFutures);
 
-      LoggerUtil.instance.i('所有狼人投票完成');
-
       // Select victim with most votes
       if (victims.isNotEmpty) {
         final victim =
@@ -391,7 +386,7 @@ class GameEngine {
         final event = firstWerewolf.createKillEvent(victim, state);
         if (event != null) {
           firstWerewolf.executeEvent(event, state);
-          LoggerUtil.instance.i('狼人最终选择击杀${victim.formattedName}');
+          LoggerUtil.instance.i('狼人选择击杀${victim.formattedName}');
         }
       } else {
         LoggerUtil.instance.i('Werewolves chose no target');
@@ -882,7 +877,7 @@ class GameEngine {
     // 等待所有玩家同时完成投票
     await Future.wait(voteFutures);
 
-    LoggerUtil.instance.i('所有玩家投票完成');
+    LoggerUtil.instance.i('[法官]: 投票结束');
   }
 
   /// Process single player's vote (used for simultaneous voting)
@@ -936,7 +931,7 @@ class GameEngine {
       for (final entry in sortedResults) {
         final player = state.getPlayerById(entry.key);
         LoggerUtil.instance.i(
-            '[法官]: ${player?.formattedName ?? '[${player?.name ?? entry.key}](${player?.role.name})'}: ${entry.value}票');
+            '${player?.formattedName ?? '[${player?.name ?? entry.key}](${player?.role.name})'}: ${entry.value}票');
       }
     }
 
