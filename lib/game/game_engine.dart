@@ -347,7 +347,7 @@ class GameEngine {
             final event = werewolf.createKillEvent(target, state);
             if (event != null) {
               werewolf.executeEvent(event, state);
-              LoggerUtil.instance.i('Werewolf chose victim: ${target.name}');
+              LoggerUtil.instance.i('狼人选择击杀${target.formattedName}');
             } else {
               LoggerUtil.instance
                   .i('Werewolf did not choose a valid kill target');
@@ -419,8 +419,7 @@ class GameEngine {
       LoggerUtil.instance
           .d('${werewolf.name} 可见的讨论事件数量: ${discussionEvents.length}');
       if (discussionEvents.isNotEmpty) {
-        LoggerUtil.instance
-            .d('讨论内容预览: ${discussionEvents.first.message}');
+        LoggerUtil.instance.d('讨论内容预览: ${discussionEvents.first.message}');
       }
 
       final target = await werewolf.chooseNightTarget(state);
@@ -482,21 +481,21 @@ class GameEngine {
               LoggerUtil.instance.i(
                 '${werewolf.formattedName}: $statement',
               );
-              discussionHistory.add('[${werewolf.name}]: $statement');
+              discussionHistory.add('[${werewolf.formattedName}]: $statement');
             } else {
               LoggerUtil.instance.w(
                   '${werewolf.name} cannot create werewolf discussion event');
-              LoggerUtil.instance.i('[${werewolf.name}] (狼人讨论): [无法创建讨论事件]');
+              LoggerUtil.instance.i('[${werewolf.formattedName}]: [无法创建讨论事件]');
             }
           } else {
             LoggerUtil.instance
                 .w('${werewolf.name} generated empty statement in discussion');
-            LoggerUtil.instance.i('[${werewolf.name}] (狼人讨论): [生成内容为空]');
+            LoggerUtil.instance.i('[${werewolf.formattedName}]: [生成内容为空]');
           }
         } catch (e) {
           LoggerUtil.instance
               .e('Werewolf ${werewolf.name} discussion failed: $e');
-          LoggerUtil.instance.i('[${werewolf.name}] (狼人讨论): [因技术问题无法发言]');
+          LoggerUtil.instance.i('[${werewolf.formattedName}]: [因技术问题无法发言]');
         }
 
         // Delay between werewolf discussions
@@ -826,7 +825,7 @@ class GameEngine {
                   .w('${player.name} cannot speak in current phase');
             }
           } else {
-            LoggerUtil.instance.i('${player.name} did not speak');
+            LoggerUtil.instance.i('${player.formattedName} did not speak');
           }
         } catch (e) {
           LoggerUtil.instance.e('Player ${player.name} speech failed: $e');
@@ -870,8 +869,6 @@ class GameEngine {
     final voters = pkCandidates != null
         ? alivePlayers.where((p) => !pkCandidates.contains(p)).toList()
         : alivePlayers;
-
-    LoggerUtil.instance.i('投票阶段开始，${voters.length}名玩家同时投票');
 
     // 收集所有玩家的投票任务
     final voteFutures = <Future<void>>[];
