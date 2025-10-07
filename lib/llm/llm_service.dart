@@ -83,7 +83,8 @@ class LLMResponse {
   final int responseTimeMs;
 
   @override
-  String toString() => 'LLMResponse(isValid: $isValid, targets: ${targets.length}, statement: ${statement.isNotEmpty})';
+  String toString() =>
+      'LLMResponse(isValid: $isValid, targets: ${targets.length}, statement: ${statement.isNotEmpty})';
 }
 
 /// OpenAI API service using openai_dart package
@@ -94,10 +95,11 @@ class OpenAIService {
     OpenAIClient? client,
     this.baseUrl = 'https://api.openai.com/v1',
     this.retryConfig = const RetryConfig(),
-  }) : _client = client ?? OpenAIClient(
-          apiKey: apiKey,
-          baseUrl: baseUrl,
-        );
+  }) : _client = client ??
+            OpenAIClient(
+              apiKey: apiKey,
+              baseUrl: baseUrl,
+            );
 
   final String apiKey;
   final String model;
@@ -136,7 +138,8 @@ class OpenAIService {
           overrideApiKey: overrideApiKey,
         );
 
-        final responseTimeMs = DateTime.now().difference(startTime).inMilliseconds;
+        final responseTimeMs =
+            DateTime.now().difference(startTime).inMilliseconds;
 
         // 如果重试过，记录成功日志
         if (attempt > 1) {
@@ -154,13 +157,15 @@ class OpenAIService {
 
         if (attempt == retryConfig.maxAttempts) {
           // 最后一次尝试失败，记录错误日志
-          LoggerUtil.instance.e('LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException');
+          LoggerUtil.instance.e(
+              'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException');
           break;
         }
 
         // 记录重试日志
         final delay = _calculateBackoffDelay(attempt);
-        LoggerUtil.instance.w('LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e');
+        LoggerUtil.instance.w(
+            'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e');
 
         // 计算退避延迟时间
         await Future.delayed(delay);
@@ -169,7 +174,8 @@ class OpenAIService {
 
     // 所有重试都失败了
     return LLMResponse.error(
-      content: 'Error after ${retryConfig.maxAttempts} attempts: $lastException',
+      content:
+          'Error after ${retryConfig.maxAttempts} attempts: $lastException',
       errors: [lastException.toString()],
       responseTimeMs: DateTime.now().difference(startTime).inMilliseconds,
     );
@@ -179,8 +185,9 @@ class OpenAIService {
   Duration _calculateBackoffDelay(int attempt) {
     final multiplier = math.pow(retryConfig.backoffMultiplier, attempt - 1);
     final delay = retryConfig.initialDelay * multiplier;
-    return Duration(milliseconds:
-        delay.inMilliseconds.clamp(0, retryConfig.maxDelay.inMilliseconds));
+    return Duration(
+        milliseconds:
+            delay.inMilliseconds.clamp(0, retryConfig.maxDelay.inMilliseconds));
   }
 
   Future<LLMResponse> generateAction({
@@ -252,7 +259,8 @@ $context
     if (response.isValid) {
       // 解析 JSON 响应
       final parsedData = await _parseJsonResponse(response.content);
-      final statement = parsedData['statement']?.toString() ?? response.content.trim();
+      final statement =
+          parsedData['statement']?.toString() ?? response.content.trim();
 
       return LLMResponse.success(
         content: response.content,
@@ -309,19 +317,16 @@ $context
           if (msg['role'] == 'system') {
             return ChatCompletionMessage.system(content: msg['content'] ?? '');
           } else {
-            return ChatCompletionMessage.user(content: ChatCompletionUserMessageContent.string(msg['content'] ?? ''));
+            return ChatCompletionMessage.user(
+                content: ChatCompletionUserMessageContent.string(
+                    msg['content'] ?? ''));
           }
         }).toList(),
-        temperature: 0.7,
-        maxTokens: 2000,
       );
 
       // 调试信息：输出请求详情
-      LoggerUtil.instance.d('API Request - Model: $effectiveModel, Messages: ${messages.length}');
-      if (effectiveModel.contains('deepseek') || effectiveModel.contains('claude') ||
-          effectiveModel.contains('gemini') || effectiveModel.contains('grok')) {
-        LoggerUtil.instance.w('Using non-OpenAI model: $effectiveModel with baseUrl: $baseUrl');
-      }
+      LoggerUtil.instance.d(
+          'API Request - Model: $effectiveModel, Messages: ${messages.length}');
 
       final response = await client.createChatCompletion(request: request);
 
