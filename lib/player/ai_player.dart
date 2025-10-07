@@ -228,19 +228,6 @@ class EnhancedAIPlayer extends AIPlayer {
           }
         }
 
-        // 狼人不能投队友
-        if (role.isWerewolf) {
-          final isTeammate = state.players.any((p) =>
-              p.playerId == target.playerId &&
-              p.role.isWerewolf &&
-              p.playerId != playerId);
-          if (isTeammate) {
-            LoggerUtil.instance.w(
-                '$playerId (werewolf) tried to vote for teammate ${target.playerId}, choosing fallback');
-            return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
-          }
-        }
-
         // Store reasoning in action events, not private data
         LoggerUtil.instance.d('$formattedName投票给${target.formattedName}');
         return target;
@@ -314,8 +301,8 @@ class EnhancedAIPlayer extends AIPlayer {
       }
 
       // LLM failed, return empty string
-      LoggerUtil.instance
-          .e('LLM statement generation failed for $playerId: invalid response - ${response.errors.join(', ')}');
+      LoggerUtil.instance.e(
+          'LLM statement generation failed for $playerId: invalid response - ${response.errors.join(', ')}');
       return '';
     } catch (e) {
       LoggerUtil.instance.e('AI statement generation error for $playerId: $e');

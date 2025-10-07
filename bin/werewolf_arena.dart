@@ -2,20 +2,20 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:args/args.dart';
-import 'package:werewolf_arena/game/game_engine.dart';
-import 'package:werewolf_arena/game/game_state.dart';
-import 'package:werewolf_arena/llm/llm_service.dart';
-import 'package:werewolf_arena/llm/prompt_manager.dart';
-import 'package:werewolf_arena/player/ai_player.dart';
-import 'package:werewolf_arena/player/player.dart';
-import 'package:werewolf_arena/player/role.dart';
-import 'package:werewolf_arena/utils/config_loader.dart';
-import 'package:werewolf_arena/utils/logger_util.dart';
-import 'package:werewolf_arena/utils/random_helper.dart';
+import '../lib/game/game_engine.dart';
+import '../lib/game/game_state.dart';
+import '../lib/llm/llm_service.dart';
+import '../lib/llm/prompt_manager.dart';
+import '../lib/player/ai_player.dart';
+import '../lib/player/player.dart';
+import '../lib/player/role.dart';
+import '../lib/utils/config.dart';
+import '../lib/utils/logger_util.dart';
+import '../lib/utils/random_helper.dart';
 
 /// Werewolf game main program
 class WerewolfArenaGame {
-  late final GameConfig config;
+  late final ConfigManager configManager;
   late final GameEngine engine;
   late final OpenAIService llmService;
   late final PromptManager promptManager;
@@ -29,18 +29,40 @@ class WerewolfArenaGame {
     // Parse command line arguments
     final parsedArgs = _parseArguments(args);
 
-    // Load configuration
-    config = await _loadConfig(parsedArgs['config']);
+    // Initialize configuration system
+    configManager = ConfigManager.instance;
+    await configManager.initialize();
+
+    // Set scenario if specified
+    final scenarioId = parsedArgs['scenario'];
+    final playerCount = int.tryParse(parsedArgs['players'] ?? '') ?? 12;
+
+    if (scenarioId != null) {
+      configManager.setCurrentScenario(scenarioId);
+    } else {
+      // Auto-select scenario based on player count
+      final availableScenarios = configManager.getAvailableScenarios(playerCount);
+      if (availableScenarios.isNotEmpty) {
+        configManager.setCurrentScenario(availableScenarios.first.id);
+        LoggerUtil.instance.i('自动选择场景: ${availableScenarios.first.name}');
+      } else {
+        LoggerUtil.instance.e('没有找到适合 $playerCount 名玩家的场景');
+        exit(1);
+      }
+    }
+
+    final gameConfig = configManager.gameConfig;
+    final llmConfig = configManager.llmConfig;
 
     // Determine log level - use debug if debug flag is set
     final logLevel =
-        parsedArgs['debug'] == true ? 'debug' : config.loggingConfig.level;
+        parsedArgs['debug'] == true ? 'debug' : gameConfig.loggingConfig.level;
 
     // Initialize unified logger
     LoggerUtil.instance.initialize(
       enableConsole: true,
-      enableFile: config.loggingConfig.enableFile,
-      useColors: config.uiConfig.enableColors,
+      enableFile: gameConfig.loggingConfig.enableFile,
+      useColors: gameConfig.uiConfig.enableColors,
       logLevel: logLevel,
     );
 
@@ -50,13 +72,13 @@ class WerewolfArenaGame {
     }
 
     // Initialize LLM service
-    llmService = _createLLMService(config.llmConfig);
+    llmService = _createLLMService(llmConfig);
 
     // Initialize prompt manager
     promptManager = PromptManager();
 
     // Initialize game engine
-    engine = GameEngine(config: config);
+    engine = GameEngine(configManager: configManager);
   }
 
   /// Run application
@@ -175,30 +197,24 @@ class WerewolfArenaGame {
   List<Player> _createPlayers() {
     final players = <Player>[];
     final random = RandomHelper();
+    final currentScenario = configManager.scenario!;
 
-    // 1. 创建角色列表
-    final roles = <Role>[];
-    for (final roleEntry in config.roleDistribution.entries) {
-      final roleId = roleEntry.key;
-      final count = roleEntry.value;
+    // 1. 从场景创建角色列表
+    final roleIds = currentScenario.getExpandedRoles();
 
-      for (int i = 0; i < count; i++) {
-        if (roles.length >= config.playerCount) break;
-        final role = RoleFactory.createRole(roleId);
-        roles.add(role);
-      }
+    // 验证角色数量
+    if (roleIds.length != currentScenario.playerCount) {
+      throw Exception('角色配置不匹配: 需要 ${currentScenario.playerCount} 个角色，但只有 ${roleIds.length} 个');
     }
 
-    // 填充剩余位置为村民
-    while (roles.length < config.playerCount) {
-      roles.add(VillagerRole());
-    }
+    // 2. 创建角色实例
+    final roles = roleIds.map((roleId) => currentScenario.createRole(roleId)).toList();
 
-    // 2. 打乱角色顺序（这样身份分配就是随机的）
+    // 3. 打乱角色顺序（这样身份分配就是随机的）
     final shuffledRoles = random.shuffle(roles);
 
-    // 3. 创建固定编号的玩家，分配打乱后的角色
-    for (int i = 0; i < config.playerCount; i++) {
+    // 4. 创建固定编号的玩家，分配打乱后的角色
+    for (int i = 0; i < currentScenario.playerCount; i++) {
       final name = '${i + 1}号玩家'; // 玩家编号固定（1号、2号、3号...）
       final role = shuffledRoles[i]; // 角色是随机打乱的
 
@@ -217,26 +233,15 @@ class WerewolfArenaGame {
 
   /// 获取玩家的模型配置
   PlayerModelConfig? _getPlayerModelConfig(int playerNumber, Role role) {
-    // 首先尝试从配置中获取玩家特定的模型配置
-    if (config.playerModelConfigs != null &&
-        config.playerModelConfigs!.containsKey(playerNumber.toString())) {
-      final playerConfig = config.playerModelConfigs![playerNumber.toString()];
-      return PlayerModelConfig.fromMap(playerConfig!);
-    }
+    // 使用新的配置管理器获取模型配置
+    final modelConfigMap = configManager.getPlayerLLMConfig(playerNumber);
 
-    // 尝试从角色特定的模型配置中获取
-    if (config.roleModelConfigs != null &&
-        config.roleModelConfigs!.containsKey(role.roleId)) {
-      final roleConfig = config.roleModelConfigs![role.roleId];
-      return PlayerModelConfig.fromMap(roleConfig!);
-    }
-
-    // 如果没有特定配置，使用默认的LLM配置
     return PlayerModelConfig(
-      model: config.llmConfig.model,
-      apiKey: config.llmConfig.apiKey,
-      timeoutSeconds: config.llmConfig.timeoutSeconds,
-      maxRetries: config.llmConfig.maxRetries,
+      model: modelConfigMap['model'],
+      apiKey: modelConfigMap['api_key'],
+      baseUrl: modelConfigMap['base_url'],
+      timeoutSeconds: modelConfigMap['timeout_seconds'],
+      maxRetries: modelConfigMap['max_retries'],
     );
   }
 
@@ -270,15 +275,30 @@ class WerewolfArenaGame {
   /// 解析命令行参数
   ArgResults _parseArguments(List<String> args) {
     final parser = ArgParser()
-      ..addOption('config', abbr: 'c', help: '配置文件路径')
+      ..addOption('scenario', abbr: 's', help: '游戏场景ID')
       ..addOption('players', abbr: 'p', help: '玩家数量')
       ..addFlag('debug', abbr: 'd', help: '调试模式')
       ..addFlag('test', abbr: 't', help: '测试模式')
       ..addFlag('help', abbr: 'h', help: '显示帮助信息')
+      ..addFlag('list-scenarios', help: '列出所有可用场景')
       ..addFlag('colors', help: '启用颜色输出', defaultsTo: true);
 
     try {
-      return parser.parse(args);
+      final results = parser.parse(args);
+
+      // 显示帮助信息
+      if (results['help'] == true) {
+        _printHelp(parser);
+        exit(0);
+      }
+
+      // 列出可用场景
+      if (results['list-scenarios'] == true) {
+        _printScenarios();
+        exit(0);
+      }
+
+      return results;
     } on FormatException catch (e) {
       LoggerUtil.instance.e('参数解析错误: $e');
       LoggerUtil.instance.i(parser.usage);
@@ -286,12 +306,48 @@ class WerewolfArenaGame {
     }
   }
 
-  /// 加载配置
-  Future<GameConfig> _loadConfig(String? configPath) async {
-    if (configPath != null) {
-      return GameConfig.loadFromFile(configPath);
-    } else {
-      return GameConfig.loadDefault();
+  /// 打印帮助信息
+  void _printHelp(ArgParser parser) {
+    print('狼人杀竞技场 - AI对战游戏');
+    print('');
+    print('用法: dart bin/werewolf_arena.dart [选项]');
+    print('');
+    print('选项:');
+    print(parser.usage);
+    print('');
+    print('示例:');
+    print('  dart bin/werewolf_arena.dart --scenario standard_12_players');
+    print('  dart bin/werewolf_arena.dart --players 9');
+    print('  dart bin/werewolf_arena.dart --debug');
+    print('  dart bin/werewolf_arena.dart --list-scenarios');
+  }
+
+  /// 打印可用场景列表
+  void _printScenarios() {
+    final tempConfigManager = ConfigManager.instance;
+    try {
+      // 临时初始化以获取场景信息
+      tempConfigManager.initialize();
+      final scenarios = tempConfigManager.scenarioManager.getScenarioSummaries();
+
+      if (scenarios.isEmpty) {
+        print('没有找到可用的场景配置。');
+        return;
+      }
+
+      print('可用游戏场景:');
+      print('');
+      for (final scenario in scenarios) {
+        print('ID: ${scenario['id']}');
+        print('名称: ${scenario['name']}');
+        print('描述: ${scenario['description']}');
+        print('玩家数: ${scenario['playerCount']}');
+        print('难度: ${scenario['difficulty']}');
+        print('标签: ${(scenario['tags'] as List).join(', ')}');
+        print('---');
+      }
+    } catch (e) {
+      print('无法加载场景配置: $e');
     }
   }
 

@@ -1,6 +1,8 @@
 import '../player/player.dart';
 import '../player/role.dart';
-import '../utils/config_loader.dart';
+import '../utils/config.dart';
+import 'game_scenario.dart';
+import 'scenarios_simple_9.dart';
 import '../utils/logger_util.dart';
 import 'game_event.dart';
 
@@ -137,6 +139,7 @@ class GameState {
   final String gameId;
   final DateTime startTime;
   final GameConfig config;
+  final GameScenario scenario;
 
   GamePhase currentPhase;
   GameStatus status;
@@ -154,6 +157,7 @@ class GameState {
   GameState({
     required this.gameId,
     required this.config,
+    required this.scenario,
     required this.players,
     this.currentPhase = GamePhase.night,
     this.status = GameStatus.waiting,
@@ -285,7 +289,7 @@ class GameState {
     if (aliveWerewolves == 0) {
       winner = 'Good';
       endGame('Good');
-      LoggerUtil.instance.i('好人阵营获胜！所有狼人已出局');
+      LoggerUtil.instance.i('好人阵营获胜！所有狼人已出局\n');
       return true;
     }
 
@@ -296,7 +300,7 @@ class GameState {
       if (aliveWerewolves >= aliveVillagers) {
         winner = 'Werewolves';
         endGame('Werewolves');
-        LoggerUtil.instance.i('狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）');
+        LoggerUtil.instance.i('狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）\n');
         return true;
       }
     }
@@ -307,7 +311,7 @@ class GameState {
       if (aliveWerewolves >= aliveGods) {
         winner = 'Werewolves';
         endGame('Werewolves');
-        LoggerUtil.instance.i('狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）');
+        LoggerUtil.instance.i('狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）\n');
         return true;
       }
     }
@@ -460,6 +464,7 @@ class GameState {
       'gameId': gameId,
       'startTime': startTime.toIso8601String(),
       'config': config.toJson(),
+      'scenario': scenario.toJson(),
       'currentPhase': currentPhase.name,
       'status': status.name,
       'dayNumber': dayNumber,
@@ -474,6 +479,7 @@ class GameState {
   // TODO: Implement proper event deserialization with event factory
   factory GameState.fromJson(Map<String, dynamic> json) {
     final config = GameConfig.fromJson(json['config']);
+    // 注意：场景不再从JSON反序列化，而是在游戏运行时设置
     final players =
         (json['players'] as List).map((p) => Player.fromJson(p)).toList();
 
@@ -483,6 +489,7 @@ class GameState {
     return GameState(
       gameId: json['gameId'],
       config: config,
+      scenario: Simple9PlayersScenario(), // 临时使用默认场景
       players: players,
       currentPhase:
           GamePhase.values.firstWhere((p) => p.name == json['currentPhase']),

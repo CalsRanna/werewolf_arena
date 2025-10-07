@@ -3,6 +3,7 @@ import '../game/game_event.dart';
 import '../llm/enhanced_prompts.dart';
 import '../player/player.dart';
 import '../player/ai_player.dart';
+import '../utils/config.dart';
 
 /// 提示词管理器
 class PromptManager {
@@ -14,8 +15,8 @@ class PromptManager {
   }
 
   void _initializePrompts() {
-    _systemPrompts['base'] = '''
-你是狼人杀高手"逻辑链"，目标是带领你的阵营获胜。
+    _systemPrompts['base'] = '';
+    _systemPrompts['base_template'] = '''你是狼人杀高手"逻辑链"，目标是带领你的阵营获胜。
 
 核心原则：
 - 完全沉浸角色，绝不暴露AI身份
@@ -24,14 +25,7 @@ class PromptManager {
 - 发言自然口语化，用"我觉得"、"盘一下"等表达
 - 禁用Markdown语法和括号注释
 
-游戏规则（12人标准局-无警长）：
-- 配置：4狼+4民+预言家+女巫+猎人+守卫
-- 重要：无警长无警徽，禁提相关术语
-- 预言家每晚查验一人（好人/狼人）
-- 女巫有解药毒药各一瓶，同夜不能同用
-- 猎人死亡可开枪（被毒除外）
-- 守卫每晚守一人，不能连守，同守同救死
-- 胜利：好人出清狼/狼人数≥好人数
+{scenario_rules}
 
 直接输出发言或决策，不要加"我的发言如下"等前缀。
 ''';
@@ -56,7 +50,7 @@ class PromptManager {
     required Map<String, dynamic> knowledge,
   }) {
     String rolePrompt = _rolePrompts[player.role.roleId] ?? '';
-    final basePrompt = _systemPrompts['base'] ?? '';
+    final basePrompt = _generateBaseSystemPrompt();
 
     final contextPrompt = _buildContextPrompt(player, state, knowledge);
     final personalityPrompt = _buildPersonalityPrompt(personality);
@@ -155,7 +149,7 @@ ${pkReminder.isNotEmpty ? 'PK候选:${pkCandidates!.map((p) => p.name).join(',')
     required Personality personality,
   }) {
     String rolePrompt = _rolePrompts[player.role.roleId] ?? '';
-    final basePrompt = _systemPrompts['base'] ?? '';
+    final basePrompt = _generateBaseSystemPrompt();
 
     final contextPrompt = _buildContextPrompt(player, state, {});
     final personalityPrompt = _buildPersonalityPrompt(personality);
@@ -339,6 +333,22 @@ $formatted''';
     systemPrompts.forEach((key, value) {
       _systemPrompts[key] = value;
     });
+  }
+
+  /// 生成当前场景的基础系统提示词
+  String _generateBaseSystemPrompt() {
+    final configManager = ConfigManager.instance;
+    final currentScenario = configManager.scenario;
+
+    if (currentScenario == null) {
+      // 如果没有设置场景，使用默认基础提示词
+      return '你是狼人杀游戏的高手玩家。';
+    }
+
+    final template = _systemPrompts['base_template'] ?? '';
+    final scenarioRules = currentScenario.rulesDescription;
+
+    return template.replaceAll('{scenario_rules}', scenarioRules);
   }
 
   /// 替换角色提示词中的占位符

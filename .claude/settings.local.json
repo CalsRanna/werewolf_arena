@@ -10,7 +10,8 @@
       "mcp__context7__resolve-library-id",
       "WebSearch",
       "Read(//Users/cals/**)",
-      "mcp__context7__get-library-docs"
+      "mcp__context7__get-library-docs",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

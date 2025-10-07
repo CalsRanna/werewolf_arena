@@ -5,15 +5,22 @@ import '../player/player.dart';
 import '../player/role.dart';
 import '../llm/enhanced_prompts.dart';
 import '../utils/logger_util.dart';
-import '../utils/config_loader.dart';
+import '../utils/config.dart';
+import 'game_scenario.dart';
 import '../utils/random_helper.dart';
 import '../utils/player_logger.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {
-  GameEngine({required this.config, RandomHelper? random})
+  GameEngine({required this.configManager, RandomHelper? random})
       : random = random ?? RandomHelper();
-  final GameConfig config;
+  final ConfigManager configManager;
+
+  /// 获取游戏配置
+  GameConfig get config => configManager.gameConfig;
+
+  /// 获取当前场景
+  GameScenario get currentScenario => configManager.scenario!;
   final RandomHelper random;
 
   GameState? _currentState;
@@ -43,17 +50,10 @@ class GameEngine {
       _currentState = GameState(
         gameId: 'game_${DateTime.now().toString()}',
         config: config,
+        scenario: currentScenario,
         players: [], // Will be set by setPlayers method
       );
 
-      // Reinitialize LoggerUtil with gameId for game-specific logging
-      LoggerUtil.instance.initialize(
-        enableConsole: true,
-        enableFile: true,
-        useColors: true,
-        logLevel: 'info',
-        gameId: _currentState!.gameId,
-      );
 
       // Initialize player logger for debugging (after LoggerUtil gameId is set)
       PlayerLogger.instance.initialize();
@@ -1250,6 +1250,5 @@ class GameEngine {
     _eventController.close();
     _stateController.close();
     PlayerLogger.instance.dispose();
-    LoggerUtil.instance.i('Game engine disposed');
   }
 }
