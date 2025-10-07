@@ -38,8 +38,6 @@ class GameEngine {
 
   /// Initialize game
   Future<void> initializeGame() async {
-    LoggerUtil.instance.i('Initializing game...');
-
     try {
       // Create initial game state (players must be set separately)
       _currentState = GameState(
@@ -59,10 +57,6 @@ class GameEngine {
 
       // Initialize player logger for debugging (after LoggerUtil gameId is set)
       PlayerLogger.instance.initialize();
-
-      LoggerUtil.instance.d('default_config.yaml');
-      LoggerUtil.instance
-          .i('Game engine initialized, waiting for player setup');
 
       _stateController.add(_currentState!);
       _status = GameStatus.waiting;
@@ -95,14 +89,8 @@ class GameEngine {
       return;
     }
 
-    LoggerUtil.instance.i('Starting game...');
     _status = GameStatus.playing;
     _currentState!.startGame();
-
-    // Create game log
-    LoggerUtil.instance.i(
-      'Started new game: ${_currentState!.gameId} with ${_currentState!.players.length} players',
-    );
 
     _stateController.add(_currentState!);
     _eventController.add(_currentState!.eventHistory.last);
@@ -458,9 +446,8 @@ class GameEngine {
               LoggerUtil.instance.i('[${werewolf.formattedName}]: [无法创建讨论事件]');
             }
           } else {
-            LoggerUtil.instance
-                .w('${werewolf.name} generated empty statement in discussion');
-            LoggerUtil.instance.i('[${werewolf.formattedName}]: [生成内容为空]');
+            LoggerUtil.instance.w('${werewolf.formattedName}没有发言');
+            LoggerUtil.instance.i('[${werewolf.formattedName}]: ');
           }
         } catch (e) {
           LoggerUtil.instance

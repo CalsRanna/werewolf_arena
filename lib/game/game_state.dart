@@ -76,8 +76,6 @@ abstract class GameEvent {
     this.visibleToRole,
   }) : timestamp = DateTime.now();
 
-  
-  
   /// 动态生成描述（用于日志显示和兼容性）
   String generateDescription({String? locale});
 
@@ -115,7 +113,6 @@ abstract class GameEvent {
     }
   }
 
-  
   @override
   String toString() {
     return 'GameEvent($type: ${generateDescription()})';
@@ -126,8 +123,8 @@ abstract class GameEvent {
       'eventId': eventId,
       'timestamp': timestamp.toIso8601String(),
       'type': type.name,
-      'initiator': initiator?.playerId,
-      'target': target?.playerId,
+      'initiator': initiator?.name,
+      'target': target?.name,
       'visibility': visibility.name,
       'visibleToPlayerIds': visibleToPlayerIds,
       'visibleToRole': visibleToRole,

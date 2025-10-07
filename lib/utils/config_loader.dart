@@ -73,8 +73,8 @@ class GameConfig {
     }
 
     return GameConfig(
-      playerCount: gameConfig['player_count'],
-      roleDistribution: Map<String, int>.from(gameConfig['roles']),
+      playerCount: gameConfig['player_count'] ?? 12,
+      roleDistribution: Map<String, int>.from(gameConfig['roles'] ?? {}),
       llmConfig: LLMConfig._fromYaml(llmConfig),
       timing: GameTiming._fromYaml(gameConfig['timing']),
       uiConfig: UIConfig._fromYaml(uiConfig),
@@ -124,6 +124,7 @@ class GameConfig {
 class LLMConfig {
   final String model;
   final String apiKey;
+  final String? baseUrl;
   final int timeoutSeconds;
   final int maxRetries;
   final PromptSettings prompts;
@@ -131,6 +132,7 @@ class LLMConfig {
   LLMConfig({
     required this.model,
     required this.apiKey,
+    this.baseUrl,
     required this.timeoutSeconds,
     required this.maxRetries,
     required this.prompts,
@@ -140,10 +142,11 @@ class LLMConfig {
     final promptsYaml = yaml['prompts'] as YamlMap;
 
     return LLMConfig(
-      model: yaml['model'],
+      model: yaml['model'] ?? 'gpt-3.5-turbo',
       apiKey: yaml['api_key'] ?? Platform.environment['OPENAI_API_KEY'] ?? '',
-      timeoutSeconds: yaml['timeout_seconds'],
-      maxRetries: yaml['max_retries'],
+      baseUrl: yaml['base_url'],
+      timeoutSeconds: yaml['timeout_seconds'] ?? 30,
+      maxRetries: yaml['max_retries'] ?? 3,
       prompts: PromptSettings._fromYaml(promptsYaml),
     );
   }
@@ -220,10 +223,10 @@ class GameTiming {
 
   factory GameTiming._fromYaml(YamlMap yaml) {
     return GameTiming(
-      nightDuration: yaml['night_duration'],
-      dayDiscussion: yaml['day_discussion'],
-      votingDuration: yaml['voting_duration'],
-      actionConfirmation: yaml['action_confirmation'],
+      nightDuration: yaml['night_duration'] ?? 30,
+      dayDiscussion: yaml['day_discussion'] ?? 60,
+      votingDuration: yaml['voting_duration'] ?? 30,
+      actionConfirmation: yaml['action_confirmation'] ?? 5,
     );
   }
 
@@ -264,15 +267,15 @@ class UIConfig {
   });
 
   factory UIConfig._fromYaml(YamlMap yaml) {
-    final displayYaml = yaml['display'] as YamlMap;
+    final displayYaml = yaml['display'] as YamlMap?;
 
     return UIConfig(
-      consoleWidth: yaml['console_width'],
-      enableColors: yaml['enable_colors'],
-      enableAnimations: yaml['enable_animations'],
-      showDebugInfo: yaml['show_debug_info'],
-      logLevel: yaml['log_level'],
-      display: DisplaySettings._fromYaml(displayYaml),
+      consoleWidth: yaml['console_width'] ?? 80,
+      enableColors: yaml['enable_colors'] ?? true,
+      enableAnimations: yaml['enable_animations'] ?? true,
+      showDebugInfo: yaml['show_debug_info'] ?? false,
+      logLevel: yaml['log_level'] ?? 'info',
+      display: displayYaml != null ? DisplaySettings._fromYaml(displayYaml) : DisplaySettings.defaults(),
     );
   }
 
@@ -314,10 +317,19 @@ class DisplaySettings {
 
   factory DisplaySettings._fromYaml(YamlMap yaml) {
     return DisplaySettings(
-      showPlayerStatus: yaml['show_player_status'],
-      showGameState: yaml['show_game_state'],
-      showActionHistory: yaml['show_action_history'],
-      showStatistics: yaml['show_statistics'],
+      showPlayerStatus: yaml['show_player_status'] ?? true,
+      showGameState: yaml['show_game_state'] ?? true,
+      showActionHistory: yaml['show_action_history'] ?? true,
+      showStatistics: yaml['show_statistics'] ?? true,
+    );
+  }
+
+  static DisplaySettings defaults() {
+    return DisplaySettings(
+      showPlayerStatus: true,
+      showGameState: true,
+      showActionHistory: true,
+      showStatistics: true,
     );
   }
 
@@ -357,11 +369,11 @@ class LoggingConfig {
 
   factory LoggingConfig._fromYaml(YamlMap yaml) {
     return LoggingConfig(
-      level: yaml['level'],
-      enableConsole: yaml['enable_console'],
-      enableFile: yaml['enable_file'],
-      maxLogSizeMb: yaml['max_log_size_mb'],
-      maxLogFiles: yaml['max_log_files'],
+      level: yaml['level'] ?? 'info',
+      enableConsole: yaml['enable_console'] ?? true,
+      enableFile: yaml['enable_file'] ?? true,
+      maxLogSizeMb: 10, // 默认10MB
+      maxLogFiles: yaml['backup_count'] ?? 5,
     );
   }
 
@@ -403,11 +415,11 @@ class DevelopmentConfig {
 
   factory DevelopmentConfig._fromYaml(YamlMap yaml) {
     return DevelopmentConfig(
-      enableDebugMode: yaml['enable_debug_mode'],
-      enableTestMode: yaml['enable_test_mode'],
-      mockLlmResponses: yaml['mock_llm_responses'],
-      saveGameStates: yaml['save_game_states'],
-      autoSaveInterval: yaml['auto_save_interval'],
+      enableDebugMode: yaml['debug_mode'] ?? false,
+      enableTestMode: false, // 不支持
+      mockLlmResponses: yaml['testing']?['enable_mock_llm'] ?? false,
+      saveGameStates: yaml['testing']?['save_game_states'] ?? false,
+      autoSaveInterval: 60, // 默认60秒
     );
   }
 

@@ -110,9 +110,9 @@ class DeadEvent extends GameEvent {
   Map<String, dynamic> toJson() {
     return {
       ...super.toJson(),
-      'victim': victim.playerId,
+      'victim': victim.name,
       'cause': cause.name,
-      'killer': killer?.playerId,
+      'killer': killer?.name,
       'dayNumber': dayNumber,
       'phase': phase?.name,
     };
@@ -323,8 +323,8 @@ class VoteEvent extends GameEvent {
   Map<String, dynamic> toJson() {
     return {
       ...super.toJson(),
-      'voter': voter.playerId,
-      'candidate': candidate.playerId,
+      'voter': voter.name,
+      'candidate': candidate.name,
       'voteType': voteType.name,
       'dayNumber': dayNumber,
       'phase': phase?.name,
@@ -392,7 +392,7 @@ class SpeakEvent extends GameEvent {
   Map<String, dynamic> toJson() {
     return {
       ...super.toJson(),
-      'speaker': speaker.playerId,
+      'speaker': speaker.name,
       'message': message,
       'speechType': speechType.name,
       'dayNumber': dayNumber,

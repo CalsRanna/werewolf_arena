@@ -7,12 +7,14 @@ import '../utils/random_helper.dart';
 class PlayerModelConfig {
   final String model;
   final String apiKey;
+  final String? baseUrl;
   final int timeoutSeconds;
   final int maxRetries;
 
   const PlayerModelConfig({
     required this.model,
     required this.apiKey,
+    this.baseUrl,
     this.timeoutSeconds = 30,
     this.maxRetries = 3,
   });
@@ -21,12 +23,14 @@ class PlayerModelConfig {
   PlayerModelConfig copyWith({
     String? model,
     String? apiKey,
+    String? baseUrl,
     int? timeoutSeconds,
     int? maxRetries,
   }) {
     return PlayerModelConfig(
       model: model ?? this.model,
       apiKey: apiKey ?? this.apiKey,
+      baseUrl: baseUrl ?? this.baseUrl,
       timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
       maxRetries: maxRetries ?? this.maxRetries,
     );
@@ -37,6 +41,7 @@ class PlayerModelConfig {
     return PlayerModelConfig(
       model: map['model'] ?? map['model'] ?? 'gpt-3.5-turbo',
       apiKey: map['api_key'] ?? map['apiKey'] ?? '',
+      baseUrl: map['base_url'] ?? map['baseUrl'],
       timeoutSeconds: map['timeout_seconds'] ?? map['timeoutSeconds'] ?? 30,
       maxRetries: map['max_retries'] ?? map['maxRetries'] ?? 3,
     );
@@ -46,6 +51,7 @@ class PlayerModelConfig {
     return {
       'model': model,
       'api_key': apiKey,
+      if (baseUrl != null) 'base_url': baseUrl,
       'timeout_seconds': timeoutSeconds,
       'max_retries': maxRetries,
     };

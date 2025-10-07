@@ -6,7 +6,11 @@
       "Bash(dart run:*)",
       "Bash(dart:*)",
       "Bash(find:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "mcp__context7__resolve-library-id",
+      "WebSearch",
+      "Read(//Users/cals/**)",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [],
     "ask": []

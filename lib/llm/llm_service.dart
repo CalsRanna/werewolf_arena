@@ -1,10 +1,26 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:math' as math;
+import 'package:openai_dart/openai_dart.dart';
 import '../game/game_state.dart';
 import '../llm/json_cleaner.dart';
 import '../player/player.dart';
 import '../utils/logger_util.dart';
+
+/// LLM API retry configuration
+class RetryConfig {
+  final int maxAttempts;
+  final Duration initialDelay;
+  final double backoffMultiplier;
+  final Duration maxDelay;
+
+  const RetryConfig({
+    this.maxAttempts = 3,
+    this.initialDelay = const Duration(seconds: 1),
+    this.backoffMultiplier = 2.0,
+    this.maxDelay = const Duration(seconds: 10),
+  });
+}
 
 /// LLM response
 class LLMResponse {
@@ -56,6 +72,7 @@ class LLMResponse {
       responseTimeMs: responseTimeMs,
     );
   }
+
   final String content;
   final Map<String, dynamic> parsedData;
   final List<Player> targets;
@@ -66,66 +83,39 @@ class LLMResponse {
   final int responseTimeMs;
 
   @override
-  String toString() {
-    return 'LLMResponse(isValid: $isValid, targets: ${targets.length}, statement: ${statement.isNotEmpty})';
-  }
+  String toString() => 'LLMResponse(isValid: $isValid, targets: ${targets.length}, statement: ${statement.isNotEmpty})';
 }
 
-/// LLM service interface
-abstract class LLMService {
-  Future<LLMResponse> generateResponse({
-    required String systemPrompt,
-    required String userPrompt,
-    required Map<String, dynamic> context,
-  });
-
-  Future<LLMResponse> generateAction({
-    required Player player,
-    required GameState state,
-    required String rolePrompt,
-  });
-
-  Future<LLMResponse> generateStatement({
-    required Player player,
-    required GameState state,
-    required String context,
-    required String prompt,
-  });
-
-  bool get isAvailable;
-}
-
-/// OpenAI API implementation
-/// Note: openai_dart dependency is available but the original HTTP implementation is kept for stability
-class OpenAIService implements LLMService {
+/// OpenAI API service using openai_dart package
+class OpenAIService {
   OpenAIService({
     required this.apiKey,
     this.model = 'gpt-3.5-turbo',
-    http.Client? client,
-    ResponseCache? cache,
-  })  : client = client ?? http.Client(),
-        cache = cache ?? ResponseCache();
+    OpenAIClient? client,
+    this.baseUrl = 'https://api.openai.com/v1',
+    this.retryConfig = const RetryConfig(),
+  }) : _client = client ?? OpenAIClient(
+          apiKey: apiKey,
+          baseUrl: baseUrl,
+        );
+
   final String apiKey;
   final String model;
-  final http.Client client;
-  final ResponseCache cache;
-
-  // Instance-specific model and API key that can be updated per request
-  String? _instanceModel;
-  String? _instanceApiKey;
+  final String baseUrl;
+  final RetryConfig retryConfig;
+  final OpenAIClient _client;
 
   /// Create service from player model config
   factory OpenAIService.fromPlayerConfig(PlayerModelConfig config) {
     return OpenAIService(
       apiKey: config.apiKey,
       model: config.model,
+      baseUrl: config.baseUrl ?? 'https://api.openai.com/v1',
     );
   }
 
-  @override
   bool get isAvailable => apiKey.isNotEmpty;
 
-  @override
   Future<LLMResponse> generateResponse({
     required String systemPrompt,
     required String userPrompt,
@@ -134,93 +124,80 @@ class OpenAIService implements LLMService {
     String? overrideApiKey,
   }) async {
     final startTime = DateTime.now();
-    final cacheKey = _generateCacheKey(systemPrompt, userPrompt, context);
+    Exception? lastException;
 
-    // Try cache first
-    final cachedResponse = cache.get(cacheKey);
-    if (cachedResponse != null) {
-      LoggerUtil.instance.d('📦 Using cached response');
-      LoggerUtil.instance.d('Cache key: $cacheKey');
-      LoggerUtil.instance.d(
-          'Cached content: ${cachedResponse.length > 200 ? "${cachedResponse.substring(0, 200)}..." : cachedResponse}');
+    for (int attempt = 1; attempt <= retryConfig.maxAttempts; attempt++) {
+      try {
+        final apiResponse = await _makeChatCompletionRequest(
+          systemPrompt: systemPrompt,
+          userPrompt: userPrompt,
+          context: context,
+          overrideModel: overrideModel,
+          overrideApiKey: overrideApiKey,
+        );
 
-      return LLMResponse.success(
-        content: cachedResponse,
-        responseTimeMs: DateTime.now().difference(startTime).inMilliseconds,
-      );
-    }
+        final responseTimeMs = DateTime.now().difference(startTime).inMilliseconds;
 
-    try {
-      final apiResponse = await _makeAPIRequest(
-        systemPrompt: systemPrompt,
-        userPrompt: userPrompt,
-        context: context,
-        overrideModel: overrideModel,
-        overrideApiKey: overrideApiKey,
-      );
+        // 如果重试过，记录成功日志
+        if (attempt > 1) {
+          LoggerUtil.instance.i('LLM API call succeeded on attempt $attempt');
+        }
 
-      final responseTimeMs =
-          DateTime.now().difference(startTime).inMilliseconds;
+        return LLMResponse.success(
+          content: apiResponse['content'],
+          parsedData: apiResponse['parsedData'],
+          tokensUsed: apiResponse['tokensUsed'],
+          responseTimeMs: responseTimeMs,
+        );
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
 
-      // Convert API response to LLMResponse
-      final response = LLMResponse.success(
-        content: apiResponse['content'] ?? '',
-        tokensUsed: apiResponse['tokensUsed'] ?? 0,
-        responseTimeMs: responseTimeMs,
-      );
+        if (attempt == retryConfig.maxAttempts) {
+          // 最后一次尝试失败，记录错误日志
+          LoggerUtil.instance.e('LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException');
+          break;
+        }
 
-      // Cache successful response
-      if (response.isValid) {
-        cache.put(cacheKey, response.content);
-        LoggerUtil.instance.d('💾 Response cached with key: $cacheKey');
+        // 记录重试日志
+        final delay = _calculateBackoffDelay(attempt);
+        LoggerUtil.instance.w('LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e');
+
+        // 计算退避延迟时间
+        await Future.delayed(delay);
       }
-
-      LoggerUtil.instance.d('🎯 LLM Response processed successfully');
-      LoggerUtil.instance.d('Total response time: ${responseTimeMs}ms');
-      LoggerUtil.instance.d('Response validity: ${response.isValid}');
-      LoggerUtil.instance
-          .d('Response content length: ${response.content.length}');
-
-      return response;
-    } catch (e) {
-      LoggerUtil.instance.d('❌ LLM API Exception occurred');
-      LoggerUtil.instance.d('Exception type: ${e.runtimeType}');
-      LoggerUtil.instance.d('Exception details: $e');
-      LoggerUtil.instance.d(
-          'Total time before failure: ${DateTime.now().difference(startTime).inMilliseconds}ms');
-
-      return LLMResponse.error(
-        content: 'Error: $e',
-        errors: [e.toString()],
-        responseTimeMs: DateTime.now().difference(startTime).inMilliseconds,
-      );
     }
+
+    // 所有重试都失败了
+    return LLMResponse.error(
+      content: 'Error after ${retryConfig.maxAttempts} attempts: $lastException',
+      errors: [lastException.toString()],
+      responseTimeMs: DateTime.now().difference(startTime).inMilliseconds,
+    );
   }
 
-  @override
+  /// 计算指数退避延迟时间
+  Duration _calculateBackoffDelay(int attempt) {
+    final multiplier = math.pow(retryConfig.backoffMultiplier, attempt - 1);
+    final delay = retryConfig.initialDelay * multiplier;
+    return Duration(milliseconds:
+        delay.inMilliseconds.clamp(0, retryConfig.maxDelay.inMilliseconds));
+  }
+
   Future<LLMResponse> generateAction({
     required Player player,
     required GameState state,
     required String rolePrompt,
   }) async {
-    // rolePrompt已经包含了所有需要的信息,直接使用
-    // 不需要额外的context构建
-
-    // Use player's model config if available
-    String? overrideModel;
-    String? overrideApiKey;
-
-    if (player.modelConfig != null) {
-      overrideModel = player.modelConfig!.model;
-      overrideApiKey = player.modelConfig!.apiKey;
-    }
+    // Use player's model config if available, otherwise use defaults
+    final effectiveModel = player.modelConfig?.model ?? model;
+    final effectiveApiKey = player.modelConfig?.apiKey ?? apiKey;
 
     final response = await generateResponse(
       systemPrompt: rolePrompt,
       userPrompt: '', // rolePrompt已经包含完整prompt
       context: {'phase': state.currentPhase.name},
-      overrideModel: overrideModel,
-      overrideApiKey: overrideApiKey,
+      overrideModel: effectiveModel,
+      overrideApiKey: effectiveApiKey,
     );
 
     if (response.isValid) {
@@ -230,7 +207,6 @@ class OpenAIService implements LLMService {
     return response;
   }
 
-  @override
   Future<LLMResponse> generateStatement({
     required Player player,
     required GameState state,
@@ -239,7 +215,21 @@ class OpenAIService implements LLMService {
   }) async {
     final gameContext = _buildContext(player, state);
 
-    final userPrompt = '''
+    // 修改 prompt 要求返回 JSON 格式
+    final jsonPrompt = '''
+$prompt
+
+请返回 JSON 格式的回复：
+{
+  "statement": "你的发言内容",
+  "reasoning": "你的推理过程（可选）"
+}
+
+注意：
+1. statement 字段必须包含你的发言内容，语言与提示词一致
+2. 直接返回 JSON，不要包含其他格式
+3. 发言内容要符合你的角色身份和当前游戏情境
+
 Current game state:
 $gameContext
 
@@ -247,28 +237,27 @@ Current situation:
 $context
 ''';
 
-    // Use player's model config if available
-    String? overrideModel;
-    String? overrideApiKey;
-
-    if (player.modelConfig != null) {
-      overrideModel = player.modelConfig!.model;
-      overrideApiKey = player.modelConfig!.apiKey;
-    }
+    // Use player's model config if available, otherwise use defaults
+    final effectiveModel = player.modelConfig?.model ?? model;
+    final effectiveApiKey = player.modelConfig?.apiKey ?? apiKey;
 
     final response = await generateResponse(
-      systemPrompt: prompt,
-      userPrompt: userPrompt,
+      systemPrompt: '你是一个狼人游戏玩家，请根据提示生成 JSON 格式的回复。',
+      userPrompt: jsonPrompt,
       context: {'game_state': gameContext},
-      overrideModel: overrideModel,
-      overrideApiKey: overrideApiKey,
+      overrideModel: effectiveModel,
+      overrideApiKey: effectiveApiKey,
     );
 
     if (response.isValid) {
+      // 解析 JSON 响应
+      final parsedData = await _parseJsonResponse(response.content);
+      final statement = parsedData['statement']?.toString() ?? response.content.trim();
+
       return LLMResponse.success(
         content: response.content,
-        statement: response.content.trim(),
-        parsedData: response.parsedData,
+        statement: statement,
+        parsedData: parsedData,
         responseTimeMs: response.responseTimeMs,
       );
     }
@@ -276,86 +265,109 @@ $context
     return response;
   }
 
-  Future<Map<String, dynamic>> _makeAPIRequest({
+  Future<Map<String, dynamic>> _makeChatCompletionRequest({
     required String systemPrompt,
     required String userPrompt,
     required Map<String, dynamic> context,
     String? overrideModel,
     String? overrideApiKey,
   }) async {
-    final url = Uri.parse('https://openrouter.ai/api/v1/chat/completions');
+    // Use override values if provided, otherwise use defaults
+    final effectiveModel = overrideModel ?? model;
+    final effectiveApiKey = overrideApiKey ?? apiKey;
 
-    // Use override values if provided, otherwise use instance defaults
-    final effectiveModel = overrideModel ?? _instanceModel ?? model;
-    final effectiveApiKey = overrideApiKey ?? _instanceApiKey ?? apiKey;
+    // Use existing client or create new one with different API key
+    final client = effectiveApiKey != apiKey
+        ? OpenAIClient(apiKey: effectiveApiKey, baseUrl: baseUrl)
+        : _client;
 
-    final headers = {
-      'Authorization': 'Bearer $effectiveApiKey',
-      'Content-Type': 'application/json',
-    };
+    // 构建消息列表
+    final messages = <Map<String, String>>[];
 
-    // 如果userPrompt为空,将systemPrompt作为用户消息
-    final messages = userPrompt.isEmpty
-        ? [
-            {
-              'role': 'user',
-              'content': systemPrompt,
-            },
-          ]
-        : [
-            {
-              'role': 'system',
-              'content': systemPrompt,
-            },
-            {
-              'role': 'user',
-              'content': userPrompt,
-            },
-          ];
-
-    final body = jsonEncode({
-      'model': effectiveModel,
-      'messages': messages,
-    });
-
-    final response = await client
-        .post(url, headers: headers, body: body)
-        .timeout(const Duration(seconds: 60));
-
-    // Log request details
-    LoggerUtil.instance.d('=== LLM API Request ===');
-    LoggerUtil.instance.d('URL: $url');
-    LoggerUtil.instance.d('Model: $effectiveModel');
-    LoggerUtil.instance.d('Request body: $body');
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final content = data['choices'][0]['message']['content'];
-      final tokensUsed = data['usage']['total_tokens'] ?? 0;
-
-      LoggerUtil.instance.d('✅ LLM API Success');
-      LoggerUtil.instance.d('Response status: ${response.statusCode}');
-      LoggerUtil.instance.d('Response body: ${response.body}');
-      LoggerUtil.instance.d('Tokens used: $tokensUsed');
-      LoggerUtil.instance.d(
-          'Content preview: ${content.length > 200 ? content.substring(0, 200) + "..." : content}');
-
-      return {
-        'content': content,
-        'tokensUsed': tokensUsed,
-        'success': true,
-      };
+    if (userPrompt.isEmpty) {
+      // 如果userPrompt为空,将systemPrompt作为用户消息
+      messages.add({
+        'role': 'user',
+        'content': systemPrompt,
+      });
     } else {
-      final error = jsonDecode(response.body);
-      final errorMessage = error['error']['message'] ?? 'Unknown error';
-
-      LoggerUtil.instance.d('❌ LLM API Error');
-      LoggerUtil.instance.d('Response status: ${response.statusCode}');
-      LoggerUtil.instance.d('Response body: ${response.body}');
-      LoggerUtil.instance.d('Error message: $errorMessage');
-
-      throw Exception('OpenAI API error: $errorMessage');
+      // 正常情况：system + user消息
+      messages.add({
+        'role': 'system',
+        'content': systemPrompt,
+      });
+      messages.add({
+        'role': 'user',
+        'content': userPrompt,
+      });
     }
+
+    try {
+      final request = CreateChatCompletionRequest(
+        model: ChatCompletionModel.modelId(effectiveModel),
+        messages: messages.map((msg) {
+          if (msg['role'] == 'system') {
+            return ChatCompletionMessage.system(content: msg['content'] ?? '');
+          } else {
+            return ChatCompletionMessage.user(content: ChatCompletionUserMessageContent.string(msg['content'] ?? ''));
+          }
+        }).toList(),
+        temperature: 0.7,
+        maxTokens: 2000,
+      );
+
+      // 调试信息：输出请求详情
+      LoggerUtil.instance.d('API Request - Model: $effectiveModel, Messages: ${messages.length}');
+      if (effectiveModel.contains('deepseek') || effectiveModel.contains('claude') ||
+          effectiveModel.contains('gemini') || effectiveModel.contains('grok')) {
+        LoggerUtil.instance.w('Using non-OpenAI model: $effectiveModel with baseUrl: $baseUrl');
+      }
+
+      final response = await client.createChatCompletion(request: request);
+
+      if (response.choices.isNotEmpty) {
+        final message = response.choices.first.message;
+        final content = message.content ?? '';
+        final tokensUsed = response.usage?.totalTokens ?? 0;
+
+        return {
+          'content': content,
+          'tokensUsed': tokensUsed,
+          'parsedData': <String, dynamic>{},
+        };
+      } else {
+        throw Exception('No choices returned from OpenAI API');
+      }
+    } on OpenAIClientException catch (e) {
+      // 提供更详细的错误信息
+      final errorInfo = 'OpenAI API error: ${e.message}';
+      if (e.code != null) {
+        throw Exception('$errorInfo (Code: ${e.code})');
+      }
+      throw Exception(errorInfo);
+    } catch (e) {
+      throw Exception('Unexpected API call error: $e');
+    }
+  }
+
+  /// 通用 JSON 响应解析方法
+  Future<Map<String, dynamic>> _parseJsonResponse(String content) async {
+    // Strategy 1: Direct JSON parsing after cleaning
+    try {
+      final cleanedContent = _extractJsonFromResponse(content);
+      return jsonDecode(cleanedContent);
+    } catch (e) {
+      // Strategy 1 failed, try next
+    }
+
+    // Strategy 2: Enhanced JSON cleaner partial extraction
+    final partialJson = JsonCleaner.extractPartialJson(content);
+    if (partialJson != null) {
+      return partialJson;
+    }
+
+    // Strategy 3: Return empty JSON if all parsing strategies failed
+    return <String, dynamic>{};
   }
 
   Future<LLMResponse> _parseActionResponse(
@@ -363,40 +375,9 @@ $context
     Player player,
     GameState state,
   ) async {
-    LoggerUtil.instance
-        .d('Attempting to parse action response from: ${response.content}');
+    final jsonData = await _parseJsonResponse(response.content);
 
-    // Try multiple parsing strategies in order
-    Map<String, dynamic>? jsonData;
-    String parsingStrategy = '';
-
-    // Strategy 1: Direct JSON parsing after cleaning
-    try {
-      final cleanedContent = _extractJsonFromResponse(response.content);
-      jsonData = jsonDecode(cleanedContent);
-      parsingStrategy = 'direct parsing';
-      LoggerUtil.instance.d('Strategy 1 (direct parsing) succeeded');
-    } catch (e) {
-      LoggerUtil.instance.d('Strategy 1 (direct parsing) failed: $e');
-    }
-
-    // Strategy 2: Enhanced JSON cleaner partial extraction
-    if (jsonData == null) {
-      try {
-        jsonData = JsonCleaner.extractPartialJson(response.content);
-        if (jsonData != null) {
-          parsingStrategy = 'partial extraction';
-          LoggerUtil.instance.d('Strategy 2 (partial extraction) succeeded');
-        }
-      } catch (e) {
-        LoggerUtil.instance.d('Strategy 2 (partial extraction) failed: $e');
-      }
-    }
-
-    // If all parsing strategies failed, return empty response
-    if (jsonData == null) {
-      LoggerUtil.instance
-          .w('All parsing strategies failed for response: ${response.content}');
+    if (jsonData.isEmpty) {
       return LLMResponse.success(
         content: response.content,
         parsedData: <String, dynamic>{},
@@ -406,10 +387,6 @@ $context
         responseTimeMs: response.responseTimeMs,
       );
     }
-
-    // Successfully parsed data, now process it
-    LoggerUtil.instance.d(
-        'Successfully parsed action response using $parsingStrategy: action=${jsonData['action']}, target=${jsonData['target']}');
 
     // 支持多种target字段名: target_id, target, 目标
     final targetId =
@@ -451,8 +428,6 @@ $context
 
       if (target != null) {
         targets.add(target);
-      } else {
-        LoggerUtil.instance.w('Target not found: $targetId');
       }
     }
 
@@ -474,10 +449,7 @@ $context
 
   /// Extract JSON from response content, handling markdown formatting and other issues
   String _extractJsonFromResponse(String content) {
-    // Use the enhanced JSON cleaner
-    final cleaned = JsonCleaner.extractJson(content);
-    LoggerUtil.instance.d('Cleaned JSON: $cleaned');
-    return cleaned;
+    return JsonCleaner.extractJson(content);
   }
 
   String _buildContext(Player player, GameState state) {
@@ -494,71 +466,7 @@ Your role: ${player.role.name}
 ''';
   }
 
-  String _generateCacheKey(
-      String systemPrompt, String userPrompt, Map<String, dynamic> context) {
-    final combined = '$systemPrompt|$userPrompt|${context.toString()}';
-    return combined.hashCode.toRadixString(16);
-  }
-
   void dispose() {
-    client.close();
+    // OpenAIClient doesn't need explicit disposal
   }
-}
-
-/// Response cache
-class ResponseCache {
-  ResponseCache({
-    this.maxAge = const Duration(minutes: 30),
-    this.maxSize = 1000,
-  });
-  final Map<String, CacheEntry> _cache = {};
-  final Duration maxAge;
-  final int maxSize;
-
-  String? get(String key) {
-    final entry = _cache[key];
-    if (entry == null) return null;
-
-    if (DateTime.now().difference(entry.timestamp) > maxAge) {
-      _cache.remove(key);
-      return null;
-    }
-
-    return entry.response;
-  }
-
-  void put(String key, String response) {
-    if (_cache.length >= maxSize) {
-      _evictOldest();
-    }
-
-    _cache[key] = CacheEntry(
-      response: response,
-      timestamp: DateTime.now(),
-    );
-  }
-
-  void _evictOldest() {
-    if (_cache.isEmpty) return;
-
-    final oldest = _cache.entries.reduce(
-        (a, b) => a.value.timestamp.isBefore(b.value.timestamp) ? a : b);
-
-    _cache.remove(oldest.key);
-  }
-
-  void clear() {
-    _cache.clear();
-  }
-
-  int get size => _cache.length;
-}
-
-class CacheEntry {
-  CacheEntry({
-    required this.response,
-    required this.timestamp,
-  });
-  final String response;
-  final DateTime timestamp;
 }

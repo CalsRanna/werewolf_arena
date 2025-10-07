@@ -125,7 +125,7 @@ Personality traits:
 
 /// AI player implementation
 class EnhancedAIPlayer extends AIPlayer {
-  final LLMService llmService;
+  final OpenAIService llmService;
   final PromptManager promptManager;
   final Personality personality;
 
@@ -315,7 +315,7 @@ class EnhancedAIPlayer extends AIPlayer {
 
       // LLM failed, return empty string
       LoggerUtil.instance
-          .e('LLM statement generation failed for $playerId: invalid response');
+          .e('LLM statement generation failed for $playerId: invalid response - ${response.errors.join(', ')}');
       return '';
     } catch (e) {
       LoggerUtil.instance.e('AI statement generation error for $playerId: $e');

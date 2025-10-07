@@ -17,7 +17,7 @@ import 'package:werewolf_arena/utils/random_helper.dart';
 class WerewolfArenaGame {
   late final GameConfig config;
   late final GameEngine engine;
-  late final LLMService llmService;
+  late final OpenAIService llmService;
   late final PromptManager promptManager;
 
   bool _isRunning = false;
@@ -57,8 +57,6 @@ class WerewolfArenaGame {
 
     // Initialize game engine
     engine = GameEngine(config: config);
-
-    LoggerUtil.instance.i('Werewolf Arena initialized successfully');
   }
 
   /// Run application
@@ -84,7 +82,7 @@ class WerewolfArenaGame {
     await _createInitialState();
 
     // 游戏自动开始
-    LoggerUtil.instance.i('游戏初始化完成，自动开始游戏...');
+    LoggerUtil.instance.i('游戏初始化完成，自动开始游戏\n');
 
     await engine.startGame();
 
@@ -298,7 +296,7 @@ class WerewolfArenaGame {
   }
 
   /// 创建LLM服务
-  LLMService _createLLMService(LLMConfig llmConfig) {
+  OpenAIService _createLLMService(LLMConfig llmConfig) {
     final apiKey = llmConfig.apiKey.isNotEmpty
         ? llmConfig.apiKey
         : Platform.environment['OPENAI_API_KEY'] ?? '';
@@ -314,6 +312,7 @@ class WerewolfArenaGame {
     return OpenAIService(
       apiKey: apiKey,
       model: llmConfig.model,
+      baseUrl: llmConfig.baseUrl ?? 'https://api.openai.com/v1',
     );
   }
 
@@ -321,9 +320,7 @@ class WerewolfArenaGame {
   void _cleanup() {
     _isRunning = false;
 
-    if (llmService is OpenAIService) {
-      (llmService as OpenAIService).dispose();
-    }
+    llmService.dispose();
 
     engine.dispose();
     LoggerUtil.instance.dispose(); // 确保关闭所有日志文件
