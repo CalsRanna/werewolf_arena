@@ -2,16 +2,16 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:args/args.dart';
-import '../lib/game/game_engine.dart';
-import '../lib/game/game_state.dart';
-import '../lib/llm/llm_service.dart';
-import '../lib/llm/prompt_manager.dart';
-import '../lib/player/ai_player.dart';
-import '../lib/player/player.dart';
-import '../lib/player/role.dart';
-import '../lib/utils/config.dart';
-import '../lib/utils/logger_util.dart';
-import '../lib/utils/random_helper.dart';
+import 'package:werewolf_arena/game/game_engine.dart';
+import 'package:werewolf_arena/game/game_state.dart';
+import 'package:werewolf_arena/llm/llm_service.dart';
+import 'package:werewolf_arena/llm/prompt_manager.dart';
+import 'package:werewolf_arena/player/ai_player.dart';
+import 'package:werewolf_arena/player/player.dart';
+import 'package:werewolf_arena/player/role.dart';
+import 'package:werewolf_arena/utils/config.dart';
+import 'package:werewolf_arena/utils/logger_util.dart';
+import 'package:werewolf_arena/utils/random_helper.dart';
 
 /// Werewolf game main program
 class WerewolfArenaGame {
@@ -41,7 +41,8 @@ class WerewolfArenaGame {
       configManager.setCurrentScenario(scenarioId);
     } else {
       // Auto-select scenario based on player count
-      final availableScenarios = configManager.getAvailableScenarios(playerCount);
+      final availableScenarios =
+          configManager.getAvailableScenarios(playerCount);
       if (availableScenarios.isNotEmpty) {
         configManager.setCurrentScenario(availableScenarios.first.id);
         LoggerUtil.instance.i('自动选择场景: ${availableScenarios.first.name}');
@@ -204,11 +205,13 @@ class WerewolfArenaGame {
 
     // 验证角色数量
     if (roleIds.length != currentScenario.playerCount) {
-      throw Exception('角色配置不匹配: 需要 ${currentScenario.playerCount} 个角色，但只有 ${roleIds.length} 个');
+      throw Exception(
+          '角色配置不匹配: 需要 ${currentScenario.playerCount} 个角色，但只有 ${roleIds.length} 个');
     }
 
     // 2. 创建角色实例
-    final roles = roleIds.map((roleId) => currentScenario.createRole(roleId)).toList();
+    final roles =
+        roleIds.map((roleId) => currentScenario.createRole(roleId)).toList();
 
     // 3. 打乱角色顺序（这样身份分配就是随机的）
     final shuffledRoles = random.shuffle(roles);
@@ -328,7 +331,8 @@ class WerewolfArenaGame {
     try {
       // 临时初始化以获取场景信息
       tempConfigManager.initialize();
-      final scenarios = tempConfigManager.scenarioManager.getScenarioSummaries();
+      final scenarios =
+          tempConfigManager.scenarioManager.getScenarioSummaries();
 
       if (scenarios.isEmpty) {
         print('没有找到可用的场景配置。');

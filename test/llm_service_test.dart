@@ -1,9 +1,8 @@
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
-import '../lib/llm/llm_service.dart';
-import '../lib/player/player.dart';
-import '../lib/game/game_state.dart';
-import '../lib/player/role.dart';
+import 'package:werewolf_arena/llm/llm_service.dart';
+import 'package:werewolf_arena/player/player.dart';
+import 'package:werewolf_arena/game/game_state.dart';
 
 class MockGameState extends Mock implements GameState {}
 
@@ -68,7 +67,8 @@ void main() {
       );
 
       expect(serviceWithCustomRetry.retryConfig.maxAttempts, equals(5));
-      expect(serviceWithCustomRetry.retryConfig.initialDelay, equals(const Duration(milliseconds: 500)));
+      expect(serviceWithCustomRetry.retryConfig.initialDelay,
+          equals(const Duration(milliseconds: 500)));
     });
 
     test('Service availability check', () {

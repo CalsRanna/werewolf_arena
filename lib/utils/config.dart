@@ -29,9 +29,12 @@ class GameConfig {
   }
 
   factory GameConfig._fromYaml(YamlMap yaml) {
-    final uiConfig = yaml['ui'] as YamlMap? ?? YamlMap.wrap(_getDefaultUIConfig())!;
-    final loggingConfig = yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig())!;
-    final developmentConfig = yaml['development'] as YamlMap? ?? YamlMap.wrap(_getDefaultDevelopmentConfig())!;
+    final uiConfig =
+        yaml['ui'] as YamlMap? ?? YamlMap.wrap(_getDefaultUIConfig());
+    final loggingConfig =
+        yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig());
+    final developmentConfig = yaml['development'] as YamlMap? ??
+        YamlMap.wrap(_getDefaultDevelopmentConfig());
 
     return GameConfig(
       uiConfig: UIConfig._fromYaml(uiConfig),
@@ -146,7 +149,9 @@ class LLMConfig {
 
     return LLMConfig(
       model: defaultLLMConfig['model'] ?? 'gpt-3.5-turbo',
-      apiKey: defaultLLMConfig['api_key'] ?? Platform.environment['OPENAI_API_KEY'] ?? '',
+      apiKey: defaultLLMConfig['api_key'] ??
+          Platform.environment['OPENAI_API_KEY'] ??
+          '',
       baseUrl: defaultLLMConfig['base_url'],
       timeoutSeconds: defaultLLMConfig['timeout_seconds'] ?? 30,
       maxRetries: defaultLLMConfig['max_retries'] ?? 3,
@@ -178,7 +183,8 @@ class LLMConfig {
       maxRetries: json['maxRetries'],
       prompts: PromptSettings.fromJson(json['prompts']),
       llmSettings: Map<String, dynamic>.from(json['llmSettings']),
-      playerModels: Map<String, Map<String, dynamic>>.from(json['playerModels']),
+      playerModels:
+          Map<String, Map<String, dynamic>>.from(json['playerModels']),
     );
   }
 }
@@ -252,7 +258,9 @@ class UIConfig {
       enableAnimations: yaml['enable_animations'] ?? true,
       showDebugInfo: yaml['show_debug_info'] ?? false,
       logLevel: yaml['log_level'] ?? 'info',
-      display: displayYaml != null ? DisplaySettings._fromYaml(displayYaml) : DisplaySettings.defaults(),
+      display: displayYaml != null
+          ? DisplaySettings._fromYaml(displayYaml)
+          : DisplaySettings.defaults(),
     );
   }
 
@@ -448,13 +456,11 @@ class ConfigManager {
 
     // 加载游戏配置
     gameConfig = GameConfig.loadFromFile(
-      gameConfigPath ?? path.join(configDir, 'game_config.yaml')
-    );
+        gameConfigPath ?? path.join(configDir, 'game_config.yaml'));
 
     // 加载LLM配置
     llmConfig = LLMConfig.loadFromFile(
-      llmConfigPath ?? path.join(configDir, 'llm_config.yaml')
-    );
+        llmConfigPath ?? path.join(configDir, 'llm_config.yaml'));
 
     // 初始化场景管理器
     scenarioManager = ScenarioManager();
