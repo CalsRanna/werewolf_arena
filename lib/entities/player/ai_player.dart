@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'player.dart';
-import '../game/game_state.dart';
-import '../game/game_event.dart';
-import '../llm/llm_service.dart';
-import '../llm/prompt_manager.dart';
-import '../utils/random_helper.dart';
-import '../utils/logger_util.dart';
+import '../../core/state/game_state.dart';
+import '../../core/state/game_event.dart';
+import '../../infrastructure/llm/llm_service.dart';
+import '../../infrastructure/llm/prompt_manager.dart';
+import '../../shared/random_helper.dart';
+import '../../infrastructure/logging/logger.dart';
 import 'ai_personality_state.dart';
 
 /// AI personality traits

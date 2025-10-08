@@ -1,36 +1,25 @@
 import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:path/path.dart' as path;
+import '../../core/rules/game_scenario.dart';
+import '../../core/rules/game_scenario_manager.dart';
 
+/// 游戏基础配置（只包含UI和日志设置）
 class GameConfig {
-  final int playerCount;
-  final Map<String, int> roleDistribution;
-  final LLMConfig llmConfig;
-  final GameTiming timing;
   final UIConfig uiConfig;
   final LoggingConfig loggingConfig;
   final DevelopmentConfig developmentConfig;
-  final ActionOrderConfig actionOrder;
-  final Map<String, Map<String, dynamic>>? playerModelConfigs;
-  final Map<String, Map<String, dynamic>>? roleModelConfigs;
 
   GameConfig({
-    required this.playerCount,
-    required this.roleDistribution,
-    required this.llmConfig,
-    required this.timing,
     required this.uiConfig,
     required this.loggingConfig,
     required this.developmentConfig,
-    required this.actionOrder,
-    this.playerModelConfigs,
-    this.roleModelConfigs,
   });
 
   static GameConfig loadFromFile(String configPath) {
     final file = File(configPath);
     if (!file.existsSync()) {
-      throw Exception('Configuration file not found: $configPath');
+      throw Exception('游戏配置文件不存在: $configPath');
     }
 
     final yamlString = file.readAsStringSync();
@@ -39,88 +28,78 @@ class GameConfig {
     return GameConfig._fromYaml(yamlMap);
   }
 
-  static GameConfig loadDefault() {
-    final configPath =
-        path.join(Directory.current.path, 'config', 'default_config.yaml');
-    return loadFromFile(configPath);
-  }
-
   factory GameConfig._fromYaml(YamlMap yaml) {
-    final gameConfig = yaml['game'] as YamlMap;
-    final llmConfig = yaml['llm'] as YamlMap;
-    final uiConfig = yaml['ui'] as YamlMap;
-    final loggingConfig = yaml['logging'] as YamlMap;
-    final developmentConfig = yaml['development'] as YamlMap;
-
-    // Parse player-specific model configurations
-    Map<String, Map<String, dynamic>>? playerModelConfigs;
-    if (yaml['player_models'] != null) {
-      final playerModelsYaml = yaml['player_models'] as YamlMap;
-      playerModelConfigs = <String, Map<String, dynamic>>{};
-      for (final entry in playerModelsYaml.entries) {
-        playerModelConfigs[entry.key] = Map<String, dynamic>.from(entry.value);
-      }
-    }
-
-    // Parse role-specific model configurations
-    Map<String, Map<String, dynamic>>? roleModelConfigs;
-    if (yaml['role_models'] != null) {
-      final roleModelsYaml = yaml['role_models'] as YamlMap;
-      roleModelConfigs = <String, Map<String, dynamic>>{};
-      for (final entry in roleModelsYaml.entries) {
-        roleModelConfigs[entry.key] = Map<String, dynamic>.from(entry.value);
-      }
-    }
+    final uiConfig =
+        yaml['ui'] as YamlMap? ?? YamlMap.wrap(_getDefaultUIConfig());
+    final loggingConfig =
+        yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig());
+    final developmentConfig = yaml['development'] as YamlMap? ??
+        YamlMap.wrap(_getDefaultDevelopmentConfig());
 
     return GameConfig(
-      playerCount: gameConfig['player_count'] ?? 12,
-      roleDistribution: Map<String, int>.from(gameConfig['roles'] ?? {}),
-      llmConfig: LLMConfig._fromYaml(llmConfig),
-      timing: GameTiming._fromYaml(gameConfig['timing']),
       uiConfig: UIConfig._fromYaml(uiConfig),
       loggingConfig: LoggingConfig._fromYaml(loggingConfig),
       developmentConfig: DevelopmentConfig._fromYaml(developmentConfig),
-      actionOrder: ActionOrderConfig._fromYaml(gameConfig['action_order']),
-      playerModelConfigs: playerModelConfigs,
-      roleModelConfigs: roleModelConfigs,
     );
+  }
+
+  static Map<String, dynamic> _getDefaultUIConfig() {
+    return {
+      'console_width': 80,
+      'enable_colors': true,
+      'enable_animations': true,
+      'show_debug_info': false,
+      'log_level': 'info',
+      'display': {
+        'show_player_status': true,
+        'show_game_state': true,
+        'show_action_history': true,
+        'show_statistics': true,
+      }
+    };
+  }
+
+  static Map<String, dynamic> _getDefaultLoggingConfig() {
+    return {
+      'level': 'info',
+      'enable_console': true,
+      'enable_file': true,
+      'backup_count': 5,
+    };
+  }
+
+  static Map<String, dynamic> _getDefaultDevelopmentConfig() {
+    return {
+      'debug_mode': false,
+      'step_by_step': false,
+      'auto_start': true,
+      'fast_mode': false,
+      'testing': {
+        'enable_mock_llm': false,
+        'deterministic_random': false,
+        'save_game_states': false,
+      }
+    };
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'playerCount': playerCount,
-      'roleDistribution': roleDistribution,
-      'llmConfig': llmConfig.toJson(),
-      'timing': timing.toJson(),
       'uiConfig': uiConfig.toJson(),
       'loggingConfig': loggingConfig.toJson(),
       'developmentConfig': developmentConfig.toJson(),
-      'actionOrder': actionOrder.toJson(),
-      'playerModelConfigs': playerModelConfigs,
-      'roleModelConfigs': roleModelConfigs,
     };
   }
 
   static GameConfig fromJson(Map<String, dynamic> json) {
     return GameConfig(
-      playerCount: json['playerCount'],
-      roleDistribution: Map<String, int>.from(json['roleDistribution']),
-      llmConfig: LLMConfig.fromJson(json['llmConfig']),
-      timing: GameTiming.fromJson(json['timing']),
       uiConfig: UIConfig.fromJson(json['uiConfig']),
       loggingConfig: LoggingConfig.fromJson(json['loggingConfig']),
       developmentConfig: DevelopmentConfig.fromJson(json['developmentConfig']),
-      actionOrder: ActionOrderConfig.fromJson(json['actionOrder']),
-      playerModelConfigs: json['playerModelConfigs'] != null
-          ? Map<String, Map<String, dynamic>>.from(json['playerModelConfigs'])
-          : null,
-      roleModelConfigs: json['roleModelConfigs'] != null
-          ? Map<String, Map<String, dynamic>>.from(json['roleModelConfigs'])
-          : null,
     );
   }
 }
 
+/// LLM配置（包含玩家模型配置）
 class LLMConfig {
   final String model;
   final String apiKey;
@@ -128,6 +107,8 @@ class LLMConfig {
   final int timeoutSeconds;
   final int maxRetries;
   final PromptSettings prompts;
+  final Map<String, dynamic> llmSettings;
+  final Map<String, Map<String, dynamic>> playerModels;
 
   LLMConfig({
     required this.model,
@@ -136,18 +117,47 @@ class LLMConfig {
     required this.timeoutSeconds,
     required this.maxRetries,
     required this.prompts,
+    required this.llmSettings,
+    required this.playerModels,
   });
 
+  static LLMConfig loadFromFile(String configPath) {
+    final file = File(configPath);
+    if (!file.existsSync()) {
+      throw Exception('LLM配置文件不存在: $configPath');
+    }
+
+    final yamlString = file.readAsStringSync();
+    final yamlMap = loadYaml(yamlString) as YamlMap;
+
+    return LLMConfig._fromYaml(yamlMap);
+  }
+
   factory LLMConfig._fromYaml(YamlMap yaml) {
+    final defaultLLMConfig = yaml['default_llm'] as YamlMap;
     final promptsYaml = yaml['prompts'] as YamlMap;
+    final llmSettingsYaml = yaml['llm_settings'] as YamlMap? ?? {};
+
+    // 解析玩家模型配置
+    final playerModels = <String, Map<String, dynamic>>{};
+    if (yaml['player_models'] != null) {
+      final playerModelsYaml = yaml['player_models'] as YamlMap;
+      for (final entry in playerModelsYaml.entries) {
+        playerModels[entry.key] = Map<String, dynamic>.from(entry.value);
+      }
+    }
 
     return LLMConfig(
-      model: yaml['model'] ?? 'gpt-3.5-turbo',
-      apiKey: yaml['api_key'] ?? Platform.environment['OPENAI_API_KEY'] ?? '',
-      baseUrl: yaml['base_url'],
-      timeoutSeconds: yaml['timeout_seconds'] ?? 30,
-      maxRetries: yaml['max_retries'] ?? 3,
+      model: defaultLLMConfig['model'] ?? 'gpt-3.5-turbo',
+      apiKey: defaultLLMConfig['api_key'] ??
+          Platform.environment['OPENAI_API_KEY'] ??
+          '',
+      baseUrl: defaultLLMConfig['base_url'],
+      timeoutSeconds: defaultLLMConfig['timeout_seconds'] ?? 30,
+      maxRetries: defaultLLMConfig['max_retries'] ?? 3,
       prompts: PromptSettings._fromYaml(promptsYaml),
+      llmSettings: Map<String, dynamic>.from(llmSettingsYaml),
+      playerModels: playerModels,
     );
   }
 
@@ -155,9 +165,12 @@ class LLMConfig {
     return {
       'model': model,
       'apiKey': apiKey,
+      'baseUrl': baseUrl,
       'timeoutSeconds': timeoutSeconds,
       'maxRetries': maxRetries,
       'prompts': prompts.toJson(),
+      'llmSettings': llmSettings,
+      'playerModels': playerModels,
     };
   }
 
@@ -165,29 +178,37 @@ class LLMConfig {
     return LLMConfig(
       model: json['model'],
       apiKey: json['apiKey'],
+      baseUrl: json['baseUrl'],
       timeoutSeconds: json['timeoutSeconds'],
       maxRetries: json['maxRetries'],
       prompts: PromptSettings.fromJson(json['prompts']),
+      llmSettings: Map<String, dynamic>.from(json['llmSettings']),
+      playerModels:
+          Map<String, Map<String, dynamic>>.from(json['playerModels']),
     );
   }
 }
 
+/// 提示词设置
 class PromptSettings {
   final bool enableContext;
   final bool strategyHints;
   final bool personalityTraits;
+  final String baseSystemPrompt;
 
   PromptSettings({
     required this.enableContext,
     required this.strategyHints,
     required this.personalityTraits,
+    required this.baseSystemPrompt,
   });
 
   factory PromptSettings._fromYaml(YamlMap yaml) {
     return PromptSettings(
-      enableContext: yaml['enable_context'],
-      strategyHints: yaml['strategy_hints'],
-      personalityTraits: yaml['personality_traits'],
+      enableContext: yaml['enable_context'] ?? true,
+      strategyHints: yaml['strategy_hints'] ?? true,
+      personalityTraits: yaml['personality_traits'] ?? true,
+      baseSystemPrompt: yaml['base_system_prompt'] ?? '',
     );
   }
 
@@ -196,6 +217,7 @@ class PromptSettings {
       'enableContext': enableContext,
       'strategyHints': strategyHints,
       'personalityTraits': personalityTraits,
+      'baseSystemPrompt': baseSystemPrompt,
     };
   }
 
@@ -204,51 +226,12 @@ class PromptSettings {
       enableContext: json['enableContext'],
       strategyHints: json['strategyHints'],
       personalityTraits: json['personalityTraits'],
+      baseSystemPrompt: json['baseSystemPrompt'],
     );
   }
 }
 
-class GameTiming {
-  final int nightDuration;
-  final int dayDiscussion;
-  final int votingDuration;
-  final int actionConfirmation;
-
-  GameTiming({
-    required this.nightDuration,
-    required this.dayDiscussion,
-    required this.votingDuration,
-    required this.actionConfirmation,
-  });
-
-  factory GameTiming._fromYaml(YamlMap yaml) {
-    return GameTiming(
-      nightDuration: yaml['night_duration'] ?? 30,
-      dayDiscussion: yaml['day_discussion'] ?? 60,
-      votingDuration: yaml['voting_duration'] ?? 30,
-      actionConfirmation: yaml['action_confirmation'] ?? 5,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'nightDuration': nightDuration,
-      'dayDiscussion': dayDiscussion,
-      'votingDuration': votingDuration,
-      'actionConfirmation': actionConfirmation,
-    };
-  }
-
-  static GameTiming fromJson(Map<String, dynamic> json) {
-    return GameTiming(
-      nightDuration: json['nightDuration'],
-      dayDiscussion: json['dayDiscussion'],
-      votingDuration: json['votingDuration'],
-      actionConfirmation: json['actionConfirmation'],
-    );
-  }
-}
-
+/// UI配置
 class UIConfig {
   final int consoleWidth;
   final bool enableColors;
@@ -275,7 +258,9 @@ class UIConfig {
       enableAnimations: yaml['enable_animations'] ?? true,
       showDebugInfo: yaml['show_debug_info'] ?? false,
       logLevel: yaml['log_level'] ?? 'info',
-      display: displayYaml != null ? DisplaySettings._fromYaml(displayYaml) : DisplaySettings.defaults(),
+      display: displayYaml != null
+          ? DisplaySettings._fromYaml(displayYaml)
+          : DisplaySettings.defaults(),
     );
   }
 
@@ -302,6 +287,7 @@ class UIConfig {
   }
 }
 
+/// 显示设置
 class DisplaySettings {
   final bool showPlayerStatus;
   final bool showGameState;
@@ -352,6 +338,7 @@ class DisplaySettings {
   }
 }
 
+/// 日志配置
 class LoggingConfig {
   final String level;
   final bool enableConsole;
@@ -372,7 +359,7 @@ class LoggingConfig {
       level: yaml['level'] ?? 'info',
       enableConsole: yaml['enable_console'] ?? true,
       enableFile: yaml['enable_file'] ?? true,
-      maxLogSizeMb: 10, // 默认10MB
+      maxLogSizeMb: 10,
       maxLogFiles: yaml['backup_count'] ?? 5,
     );
   }
@@ -398,6 +385,7 @@ class LoggingConfig {
   }
 }
 
+/// 开发配置
 class DevelopmentConfig {
   final bool enableDebugMode;
   final bool enableTestMode;
@@ -416,10 +404,10 @@ class DevelopmentConfig {
   factory DevelopmentConfig._fromYaml(YamlMap yaml) {
     return DevelopmentConfig(
       enableDebugMode: yaml['debug_mode'] ?? false,
-      enableTestMode: false, // 不支持
+      enableTestMode: false,
       mockLlmResponses: yaml['testing']?['enable_mock_llm'] ?? false,
       saveGameStates: yaml['testing']?['save_game_states'] ?? false,
-      autoSaveInterval: 60, // 默认60秒
+      autoSaveInterval: 60,
     );
   }
 
@@ -444,37 +432,75 @@ class DevelopmentConfig {
   }
 }
 
-class ActionOrderConfig {
-  final String type;
-  final String direction;
+/// 新的配置管理器
+class ConfigManager {
+  late final GameConfig gameConfig;
+  late final LLMConfig llmConfig;
+  late final ScenarioManager scenarioManager;
+  GameScenario? currentScenario;
 
-  ActionOrderConfig({
-    required this.type,
-    required this.direction,
-  });
+  ConfigManager._();
 
-  factory ActionOrderConfig._fromYaml(YamlMap yaml) {
-    return ActionOrderConfig(
-      type: yaml['type'] ?? 'sequential',
-      direction: yaml['direction'] ?? 'forward',
-    );
+  static ConfigManager? _instance;
+  static ConfigManager get instance {
+    _instance ??= ConfigManager._();
+    return _instance!;
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type,
-      'direction': direction,
+  /// 初始化配置系统
+  Future<void> initialize({
+    String? gameConfigPath,
+    String? llmConfigPath,
+  }) async {
+    final configDir = path.join(Directory.current.path, 'config');
+
+    // 加载游戏配置
+    gameConfig = GameConfig.loadFromFile(
+        gameConfigPath ?? path.join(configDir, 'game_config.yaml'));
+
+    // 加载LLM配置
+    llmConfig = LLMConfig.loadFromFile(
+        llmConfigPath ?? path.join(configDir, 'llm_config.yaml'));
+
+    // 初始化场景管理器
+    scenarioManager = ScenarioManager();
+    scenarioManager.initialize();
+  }
+
+  /// 设置当前场景
+  void setCurrentScenario(String scenarioId) {
+    final scenario = scenarioManager.getScenario(scenarioId);
+    if (scenario == null) {
+      throw Exception('场景不存在: $scenarioId');
+    }
+    currentScenario = scenario;
+  }
+
+  /// 获取当前场景
+  GameScenario? get scenario => currentScenario;
+
+  /// 获取适合指定玩家数量的场景
+  List<GameScenario> getAvailableScenarios(int playerCount) {
+    return scenarioManager.getScenariosByPlayerCount(playerCount);
+  }
+
+  /// 为指定玩家获取LLM配置
+  Map<String, dynamic> getPlayerLLMConfig(int playerNumber) {
+    // 使用默认配置
+    Map<String, dynamic> config = {
+      'model': llmConfig.model,
+      'api_key': llmConfig.apiKey,
+      'base_url': llmConfig.baseUrl,
+      'timeout_seconds': llmConfig.timeoutSeconds,
+      'max_retries': llmConfig.maxRetries,
     };
-  }
 
-  static ActionOrderConfig fromJson(Map<String, dynamic> json) {
-    return ActionOrderConfig(
-      type: json['type'],
-      direction: json['direction'],
-    );
-  }
+    // 应用玩家特定配置
+    String playerKey = playerNumber.toString();
+    if (llmConfig.playerModels.containsKey(playerKey)) {
+      config.addAll(llmConfig.playerModels[playerKey]!);
+    }
 
-  bool get isSequential => type == 'sequential';
-  bool get isForward => direction == 'forward';
-  bool get isReverse => direction == 'reverse';
+    return config;
+  }
 }

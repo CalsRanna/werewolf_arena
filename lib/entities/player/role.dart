@@ -1,6 +1,6 @@
-import '../player/player.dart';
-import '../game/game_state.dart';
-import '../game/game_event.dart';
+import 'player.dart';
+import '../../core/state/game_state.dart';
+import '../../core/state/game_event.dart';
 
 /// Role types
 enum RoleType {

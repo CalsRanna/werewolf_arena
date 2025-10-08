@@ -4,12 +4,15 @@ import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 
-/// 日志类别枚举
+/// 日志文件类别枚举 - 保留通用日志分类和原有兼容性
 enum LogCategory {
+  general('general.log'),
+  debug('debug.log'),
+  error('errors.log'),
+  // 为了兼容性保留原有枚举值
   gameFlow('game_flow.log'),
   aiDecision('ai_decisions.log'),
-  llmApi('llm_api.log'),
-  error('errors.log');
+  llmApi('llm_api.log');
 
   const LogCategory(this.fileName);
   final String fileName;
@@ -107,7 +110,7 @@ class MultiFileOutput extends LogOutput {
     if (category != null && _outputs.containsKey(category)) {
       _outputs[category]?.output(event);
     } else {
-      // 默认写入 game_flow.log
+      // 默认写入 game_flow.log 保持兼容性
       _outputs[LogCategory.gameFlow]?.output(event);
     }
 
@@ -233,33 +236,46 @@ class LoggerUtil {
 
   /// 普通日志方法
   void t(String message, [LogCategory? category]) =>
-      _logWithCategory(Level.trace, message, category);
+      _logWithCategory(level: Level.trace, message: message, category: category);
 
   void d(String message, [LogCategory? category]) =>
-      _logWithCategory(Level.debug, message, category);
+      _logWithCategory(level: Level.debug, message: message, category: category);
 
   void i(String message, [LogCategory? category]) =>
-      _logWithCategory(Level.info, message, category);
+      _logWithCategory(level: Level.info, message: message, category: category);
 
   void w(String message, [LogCategory? category]) =>
-      _logWithCategory(Level.warning, message, category);
+      _logWithCategory(level: Level.warning, message: message, category: category);
 
-  void e(String message,
-          [Object? error, StackTrace? stackTrace, LogCategory? category]) =>
-      _logWithCategory(Level.error, message, category, error, stackTrace);
+  void e(String message, [Object? error, StackTrace? stackTrace, LogCategory? category]) =>
+      _logWithCategory(level: Level.error, message: message, category: category, error: error, stackTrace: stackTrace);
 
-  void f(String message,
-          [Object? error, StackTrace? stackTrace, LogCategory? category]) =>
-      _logWithCategory(Level.fatal, message, category, error, stackTrace);
+  void f(String message, [Object? error, StackTrace? stackTrace, LogCategory? category]) =>
+      _logWithCategory(level: Level.fatal, message: message, category: category, error: error, stackTrace: stackTrace);
+
+  // === 便捷方法，指定默认类别 ===
+
+  /// 调试日志（默认写入 debug.log）
+  void debug(String message) => d(message, LogCategory.debug);
+
+  /// 错误日志（默认写入 error.log）
+  void error(String message, {Object? error, StackTrace? stackTrace}) =>
+      e(message, error, stackTrace, LogCategory.error);
+
+  /// 通用日志（默认写入 general.log）
+  void info(String message) => i(message, LogCategory.general);
+
+  /// 警告日志（默认写入 general.log）
+  void warn(String message) => w(message, LogCategory.general);
 
   /// 带类别的日志记录
-  void _logWithCategory(
-    Level level,
-    String message,
-    LogCategory? category, [
+  void _logWithCategory({
+    required Level level,
+    required String message,
+    LogCategory? category,
     Object? error,
     StackTrace? stackTrace,
-  ]) {
+  }) {
     if (category != null) {
       runZoned(
         () =>
@@ -271,6 +287,7 @@ class LoggerUtil {
     }
   }
 
+  
   /// 清理资源
   Future<void> dispose() async {
     await _multiOutput?.disposeAll();

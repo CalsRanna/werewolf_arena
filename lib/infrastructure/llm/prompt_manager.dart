@@ -1,11 +1,11 @@
-import '../game/game_state.dart';
-import '../game/game_event.dart';
-import '../game/logic_contradiction_detector.dart';
-import '../llm/enhanced_prompts.dart';
-import '../player/player.dart';
-import '../player/role.dart';
-import '../player/ai_player.dart';
-import '../utils/config.dart';
+import '../../core/state/game_state.dart';
+import '../../core/state/game_event.dart';
+import '../../core/logic/logic_contradiction_detector.dart';
+import 'enhanced_prompts.dart';
+import '../../entities/player/player.dart';
+import '../../entities/player/role.dart';
+import '../../entities/player/ai_player.dart';
+import '../config/config.dart';
 
 /// 提示词管理器
 class PromptManager {

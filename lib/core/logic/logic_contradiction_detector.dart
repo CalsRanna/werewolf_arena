@@ -1,7 +1,7 @@
-import '../game/game_state.dart';
-import '../game/game_event.dart';
-import '../player/player.dart';
-import '../player/role.dart';
+import '../state/game_state.dart';
+import '../state/game_event.dart';
+import '../../entities/player/player.dart';
+import '../../entities/player/role.dart';
 
 /// 逻辑矛盾检测器 - 为AI玩家提供常识判断支持
 class LogicContradictionDetector {
@@ -151,8 +151,10 @@ class LogicContradictionDetector {
   /// 生成带有标签的事件描述
   static String formatEventWithTags(GameEvent event, GameState state) {
     if (event is SpeakEvent) {
-      final tags = detectContradictions(event.message, event.speaker, state);
-      final baseDescription = '${event.speaker.name}: ${event.message}';
+      final speakerName = event.speaker.name;
+      final message = event.message;
+      final tags = detectContradictions(message, event.speaker, state);
+      final baseDescription = '$speakerName: $message';
 
       if (tags.isNotEmpty) {
         final tagString = tags.join(' ');

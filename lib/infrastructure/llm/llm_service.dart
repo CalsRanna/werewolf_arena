@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:openai_dart/openai_dart.dart';
-import '../game/game_state.dart';
-import '../llm/json_cleaner.dart';
-import '../player/player.dart';
-import '../utils/logger_util.dart';
+import '../../core/state/game_state.dart';
+import 'json_cleaner.dart';
+import '../../entities/player/player.dart';
+import '../logging/logger.dart';
 
 /// LLM API retry configuration
 class RetryConfig {

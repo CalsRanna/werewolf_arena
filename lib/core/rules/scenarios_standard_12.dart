@@ -1,46 +1,50 @@
 import 'game_scenario.dart';
-import 'game_state.dart';
+import '../state/game_state.dart';
 
-/// 简单9人局场景
-/// 3狼3民3神配置，适合新手
-class Simple9PlayersScenario extends GameScenario {
+/// 标准12人局场景
+/// 4狼+4民+4神配置，无警长
+class Standard12PlayersScenario extends GameScenario {
   @override
-  String get id => 'simple_9_players';
-
-  @override
-  String get name => '简单9人局';
+  String get id => 'standard_12_players';
 
   @override
-  String get description => '3狼3民3神配置，规则简单，适合新手练习';
+  String get name => '标准12人局';
 
   @override
-  int get playerCount => 9;
+  String get description => '经典4狼4民4神配置，无警长，适合平衡的游戏体验';
 
   @override
-  String get difficulty => 'easy';
+  int get playerCount => 12;
 
   @override
-  List<String> get tags => ['新手', '简单', '教学'];
+  String get difficulty => 'medium';
+
+  @override
+  List<String> get tags => ['经典', '平衡', '无警长'];
 
   @override
   Map<String, int> get roleDistribution => {
-    'werewolf': 3,
-    'villager': 3,
+    'werewolf': 4,
+    'villager': 4,
     'seer': 1,
     'witch': 1,
     'hunter': 1,
+    'guard': 1,
   };
 
   @override
   String get rulesDescription => '''
-- 配置：3狼+3民+预言家+女巫+猎人
+- 配置：4狼+4民+预言家+女巫+猎人+守卫
+- 重要：无警长无警徽，禁提相关术语
 - 预言家每晚查验一人（好人/狼人）
 - 女巫有解药毒药各一瓶，同夜不能同用
 - 猎人死亡可开枪（被毒除外）
+- 守卫每晚守一人，不能连守，同守同救死
 - 胜利：好人出清狼/狼人数≥好人数''';
 
   @override
   List<String> get nightActionPriority => [
+    'guard',
     'werewolf',
     'seer',
     'witch',
@@ -49,8 +53,8 @@ class Simple9PlayersScenario extends GameScenario {
 
   @override
   void initialize(GameState gameState) {
-    // 简单局初始化，可以给新手一些提示
-    gameState.metadata['is新手模式'] = true;
+    // 标准局不需要特殊初始化
+    // 可以在这里设置一些初始状态或标记
   }
 
   @override
@@ -100,10 +104,7 @@ class Simple9PlayersScenario extends GameScenario {
 
   @override
   void handlePhaseEnd(GameState gameState) {
-    // 简单局可以在阶段结束时给出一些提示
-    if (gameState.isDay && gameState.dayNumber == 1) {
-      // 第一天白天可以给一些新手提示
-      gameState.metadata['day1提示'] = '记住要仔细观察每个人的发言，找出逻辑漏洞';
-    }
+    // 标准局在阶段结束时不需要特殊处理
+    // 可以在这里添加一些场景特定的逻辑
   }
 }

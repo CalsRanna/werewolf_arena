@@ -1,9 +1,9 @@
-import '../player/player.dart';
-import '../player/role.dart';
-import '../utils/config.dart';
-import 'game_scenario.dart';
-import 'scenarios_simple_9.dart';
-import '../utils/logger_util.dart';
+import '../../entities/player/player.dart';
+import '../../entities/player/role.dart';
+import '../../infrastructure/config/config.dart';
+import '../rules/game_scenario.dart';
+import '../rules/scenarios_simple_9.dart';
+import '../../infrastructure/logging/logger.dart';
 import 'game_event.dart';
 
 /// Game phases

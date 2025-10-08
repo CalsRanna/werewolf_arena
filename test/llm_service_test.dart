@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:werewolf_arena/llm/llm_service.dart';
-import 'package:werewolf_arena/player/player.dart';
-import 'package:werewolf_arena/game/game_state.dart';
+import 'package:werewolf_arena/infrastructure/llm/llm_service.dart';
+import 'package:werewolf_arena/entities/player/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 
 class MockGameState extends Mock implements GameState {}
 

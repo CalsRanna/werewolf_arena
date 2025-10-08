@@ -1,7 +1,7 @@
 import 'role.dart';
-import '../game/game_state.dart';
-import '../game/game_event.dart';
-import '../utils/random_helper.dart';
+import '../../core/state/game_state.dart';
+import '../../core/state/game_event.dart';
+import '../../shared/random_helper.dart';
 
 /// Player model configuration
 class PlayerModelConfig {
@@ -338,7 +338,7 @@ abstract class Player {
     return '$name (${isAlive ? 'Alive' : 'Dead'}) - ${role.name}';
   }
 
-  String get formattedName => '[${name.padLeft(8)}|${role.name.padLeft(4)}]';
+  String get formattedName => '[${name.padLeft(5)}|${role.name.padLeft(4)}]';
 
   // Death handling
   void die(DeathCause cause, GameState state) {
@@ -391,9 +391,7 @@ abstract class Player {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Player &&
-        other.name == name &&
-        other.role == role;
+    return other is Player && other.name == name && other.role == role;
   }
 
   @override

@@ -1,5 +1,5 @@
-import '../player/role.dart';
-import 'game_state.dart';
+import '../../entities/player/role.dart';
+import '../state/game_state.dart';
 
 /// 游戏场景抽象类
 /// 定义不同游戏板子的基础接口和行为

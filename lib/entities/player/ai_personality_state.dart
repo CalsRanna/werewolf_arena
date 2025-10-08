@@ -1,5 +1,5 @@
-import '../player/player.dart';
-import '../game/game_state.dart';
+import 'player.dart';
+import '../../core/state/game_state.dart';
 
 /// AI性格状态 - 为AI玩家添加记忆和性格特征
 class AIPersonalityState {
@@ -44,14 +44,16 @@ class AIPersonalityState {
 
   /// 更新对某玩家的信任度
   void updateTrustLevel(String playerName, double deltaChange, String reason) {
-    trustLevels[playerName] = (trustLevels[playerName] ?? 0.5) + deltaChange;
-    trustLevels[playerName] = trustLevels[playerName]!.clamp(0.0, 1.0);
+    final currentValue = trustLevels[playerName] ?? 0.5;
+    trustLevels[playerName] = (currentValue + deltaChange).clamp(0.0, 1.0);
 
     // 记录信任度变化的原因
-    memory[playerName]?.add(reason);
-    if (memory[playerName]!.length > 10) {
-      memory[playerName]?.removeAt(0); // 只保留最近10条记忆
+    final playerMemory = memory[playerName] ?? <String>[];
+    playerMemory.add(reason);
+    if (playerMemory.length > 10) {
+      playerMemory.removeAt(0); // 只保留最近10条记忆
     }
+    memory[playerName] = playerMemory;
   }
 
   /// 根据性格类型调整决策权重

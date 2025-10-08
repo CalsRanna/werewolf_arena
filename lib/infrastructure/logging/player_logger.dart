@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
-import '../game/game_state.dart';
-import '../player/player.dart';
-import 'logger_util.dart';
+import '../../core/state/game_state.dart';
+import '../../entities/player/player.dart';
+import 'logger.dart';
 
 /// Player-specific logger for debugging event visibility
 class PlayerLogger {
