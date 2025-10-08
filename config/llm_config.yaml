@@ -4,7 +4,7 @@
 # 默认LLM配置
 default_llm:
   model: "deepseek/deepseek-chat-v3.1"
-  api_key: "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"
+  api_key: "YOUR_KEY_HERE"
   base_url: "https://openrouter.ai/api/v1"
   timeout_seconds: 30
   max_retries: 3
@@ -13,84 +13,84 @@ default_llm:
 player_models:
   "1":
     model: "deepseek/deepseek-v3.2-exp"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "2":
     model: "anthropic/claude-sonnet-4.5"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "3":
     model: "deepseek/deepseek-chat-v3.1"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "4":
     model: "deepseek/deepseek-r1-0528"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "5":
     model: "deepseek/deepseek-chat-v3-0324"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "6":
     model: "anthropic/claude-sonnet-4"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "7":
     model: "anthropic/claude-3.5-sonnet"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "8":
     model: "openai/gpt-5"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "9":
     model: "openai/o3"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "10":
     model: "google/gemini-2.5-pro"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "11":
     model: "x-ai/grok-4"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
 
   "12":
     model: "qwen/qwen3-max"
-    api_key: "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"
+    api_key: "YOUR_KEY_HERE"
     base_url: "https://openrouter.ai/api/v1"
     timeout_seconds: 30
     max_retries: 3
