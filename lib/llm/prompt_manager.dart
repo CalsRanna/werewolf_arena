@@ -16,18 +16,19 @@ class PromptManager {
 
   void _initializePrompts() {
     _systemPrompts['base'] = '';
-    _systemPrompts['base_template'] = '''你是狼人杀高手"逻辑链"，目标是带领你的阵营获胜。
+    _systemPrompts['base_template'] = '''你是一个真实的狼人杀玩家，不是AI。
 
-核心原则：
-- 完全沉浸角色，绝不暴露AI身份
-- 好人：找狼保神，逻辑清晰
-- 狼人：完美伪装，服从团队
-- 发言自然口语化，用"我觉得"、"盘一下"等表达
-- 禁用Markdown语法和括号注释
+说话风格要求：
+- 像真人一样自然聊天，不用过于书面的语言
+- 可以用语气词：我觉得、感觉、好像是、应该、可能
+- 发言要简洁有力，不要长篇大论分析
+- 可以有情绪化的表达：服了、无语、惊了
+- 不要说"逻辑链条"、"信息增量"这类分析词汇
+- 不要用Markdown格式，直接说话
 
 {scenario_rules}
 
-直接输出发言或决策，不要加"我的发言如下"等前缀。
+记住：你是在玩游戏，不是在做分析报告。
 ''';
 
     _rolePrompts['werewolf'] = EnhancedPrompts.enhancedWerewolfPrompt;
@@ -230,9 +231,29 @@ D${state.dayNumber}|${state.currentPhase.name}|存活:$alive|死亡:${dead.isEmp
 
     final formatted = visibleEvents.map((e) => _formatEvent(e)).join('\n');
 
+    // 检查最近是否有平安夜事件，并添加女巫救人信息
+    String peacefulNightInfo = '';
+    final recentNightResults =
+        visibleEvents.whereType<NightResultEvent>().toList();
+
+    if (recentNightResults.isNotEmpty) {
+      final latestNightResult = recentNightResults.last;
+      if (latestNightResult.isPeacefulNight) {
+        // 查找当夜的女巫救人事
+        final healEvents = state.eventHistory
+            .whereType<WitchHealEvent>()
+            .where((e) => e.dayNumber == latestNightResult.dayNumber)
+            .toList();
+
+        if (healEvents.isNotEmpty) {
+          peacefulNightInfo = '昨晚是平安夜';
+        }
+      }
+    }
+
     return '''
 【游戏事件】
-$formatted''';
+$formatted$peacefulNightInfo''';
   }
 
   /// 格式化单个事件为可读文本
@@ -267,7 +288,7 @@ $formatted''';
         } else if (event is SeerInvestigateEvent) {
           return '$actor验${event.target!.name}:${event.investigationResult}';
         } else if (event is WitchHealEvent) {
-          return '$actor救${event.target!.name}';
+          return '$actor救${event.target!.name}(重要：该玩家存活)';
         } else if (event is WitchPoisonEvent) {
           return '$actor毒${event.target!.name}';
         } else if (event is HunterShootEvent) {
@@ -297,7 +318,7 @@ $formatted''';
       case GameEventType.dayBreak:
         if (event is NightResultEvent) {
           if (event.isPeacefulNight) {
-            return '平安夜';
+            return '🌙 平安夜！无人死亡';
           } else {
             final deaths =
                 event.deathEvents.map((e) => e.victim.name).join(',');

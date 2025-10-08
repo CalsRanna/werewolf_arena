@@ -39,56 +39,56 @@ class Personality {
     switch (roleId) {
       case 'werewolf':
         return Personality(
-          aggressiveness: random.nextDoubleRange(0.7, 0.9),
-          logicThinking: random.nextDoubleRange(0.6, 0.8),
-          cooperativeness: random.nextDoubleRange(0.8, 1.0),
-          honesty: random.nextDoubleRange(0.1, 0.3),
-          expressiveness: random.nextDoubleRange(0.5, 0.8),
+          aggressiveness: random.nextDoubleRange(0.4, 0.9), // 更大的变化范围
+          logicThinking: random.nextDoubleRange(0.3, 0.8), // 降低最低逻辑要求
+          cooperativeness: random.nextDoubleRange(0.6, 1.0),
+          honesty: random.nextDoubleRange(0.1, 0.4), // 允许更多样性
+          expressiveness: random.nextDoubleRange(0.3, 0.9), // 更大表达范围
         );
 
       case 'seer':
         return Personality(
-          aggressiveness: random.nextDoubleRange(0.2, 0.4),
-          logicThinking: random.nextDoubleRange(0.8, 1.0),
-          cooperativeness: random.nextDoubleRange(0.6, 0.8),
-          honesty: random.nextDoubleRange(0.7, 0.9),
-          expressiveness: random.nextDoubleRange(0.4, 0.7),
+          aggressiveness: random.nextDoubleRange(0.1, 0.6), // 可以更激进
+          logicThinking: random.nextDoubleRange(0.6, 0.9), // 允许非完美逻辑
+          cooperativeness: random.nextDoubleRange(0.5, 0.9),
+          honesty: random.nextDoubleRange(0.8, 1.0),
+          expressiveness: random.nextDoubleRange(0.2, 0.8), // 可以更沉静或激动
         );
 
       case 'witch':
         return Personality(
-          aggressiveness: random.nextDoubleRange(0.3, 0.6),
-          logicThinking: random.nextDoubleRange(0.7, 0.9),
-          cooperativeness: random.nextDoubleRange(0.5, 0.7),
-          honesty: random.nextDoubleRange(0.6, 0.8),
-          expressiveness: random.nextDoubleRange(0.5, 0.8),
+          aggressiveness: random.nextDoubleRange(0.2, 0.8), // 更大范围
+          logicThinking: random.nextDoubleRange(0.4, 0.8), // 允许直觉决策
+          cooperativeness: random.nextDoubleRange(0.4, 0.8),
+          honesty: random.nextDoubleRange(0.5, 0.9),
+          expressiveness: random.nextDoubleRange(0.3, 0.9),
         );
 
       case 'hunter':
         return Personality(
-          aggressiveness: random.nextDoubleRange(0.6, 0.8),
-          logicThinking: random.nextDoubleRange(0.5, 0.7),
-          cooperativeness: random.nextDoubleRange(0.4, 0.6),
-          honesty: random.nextDoubleRange(0.8, 1.0),
-          expressiveness: random.nextDoubleRange(0.7, 0.9),
+          aggressiveness: random.nextDoubleRange(0.4, 0.9), // 更大变化
+          logicThinking: random.nextDoubleRange(0.3, 0.7), // 降低逻辑要求
+          cooperativeness: random.nextDoubleRange(0.3, 0.7),
+          honesty: random.nextDoubleRange(0.7, 1.0),
+          expressiveness: random.nextDoubleRange(0.5, 1.0), // 可以非常情绪化
         );
 
       case 'guard':
         return Personality(
-          aggressiveness: random.nextDoubleRange(0.1, 0.3),
-          logicThinking: random.nextDoubleRange(0.6, 0.8),
-          cooperativeness: random.nextDoubleRange(0.7, 0.9),
-          honesty: random.nextDoubleRange(0.8, 1.0),
-          expressiveness: random.nextDoubleRange(0.3, 0.6),
+          aggressiveness: random.nextDoubleRange(0.1, 0.5), // 可以有攻击性
+          logicThinking: random.nextDoubleRange(0.4, 0.8), // 允许直觉守护
+          cooperativeness: random.nextDoubleRange(0.6, 1.0),
+          honesty: random.nextDoubleRange(0.7, 1.0),
+          expressiveness: random.nextDoubleRange(0.2, 0.7),
         );
 
       default: // villager
         return Personality(
-          aggressiveness: random.nextDoubleRange(0.3, 0.5),
-          logicThinking: random.nextDoubleRange(0.4, 0.6),
-          cooperativeness: random.nextDoubleRange(0.5, 0.7),
-          honesty: random.nextDoubleRange(0.6, 0.8),
-          expressiveness: random.nextDoubleRange(0.4, 0.7),
+          aggressiveness: random.nextDoubleRange(0.2, 0.8), // 更大范围
+          logicThinking: random.nextDoubleRange(0.2, 0.7), // 允许直觉判断
+          cooperativeness: random.nextDoubleRange(0.4, 0.8),
+          honesty: random.nextDoubleRange(0.5, 0.9),
+          expressiveness: random.nextDoubleRange(0.3, 0.9), // 可以很情绪化
         );
     }
   }

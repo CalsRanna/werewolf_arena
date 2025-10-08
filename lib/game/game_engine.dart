@@ -613,8 +613,7 @@ class GameEngine {
             LoggerUtil.instance
                 .i('[法官]: ${state.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？');
           } else {
-            LoggerUtil.instance.i(
-                '[法官]: 平安夜. 你有一瓶解药，你要使用吗？');
+            LoggerUtil.instance.i('[法官]: 平安夜. 你有一瓶解药，你要使用吗？');
           }
 
           // Give witch time to think about antidote
@@ -628,28 +627,22 @@ class GameEngine {
             await witch.processInformation(state);
 
             // Ask witch specifically about antidote
-            final shouldUseAntidote = await _askWitchAboutAntidote(witch, state);
+            final shouldUseAntidote =
+                await _askWitchAboutAntidote(witch, state);
 
             if (shouldUseAntidote && state.tonightVictim != null) {
               final event = witch.createHealEvent(state.tonightVictim!, state);
               if (event != null) {
                 witch.executeEvent(event, state);
-                LoggerUtil.instance
-                    .i('[法官]: ${witch.formattedName}选择使用解药救${state.tonightVictim!.formattedName}');
-
-                // 添加公告事件，通知所有玩家有人被救
-                final announcement = JudgeAnnouncementEvent(
-                  announcement: '${state.tonightVictim!.formattedName}昨晚被女巫救活',
-                  dayNumber: state.dayNumber,
-                  phase: state.currentPhase,
-                );
-                state.addEvent(announcement);
+                LoggerUtil.instance.i(
+                    '[法官]: ${witch.formattedName}选择使用解药救${state.tonightVictim!.formattedName}');
               }
             } else {
               LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用解药');
             }
           } catch (e) {
-            LoggerUtil.instance.e('Witch ${witch.name} antidote decision failed: $e');
+            LoggerUtil.instance
+                .e('Witch ${witch.name} antidote decision failed: $e');
             LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用解药');
           }
         }
@@ -686,7 +679,8 @@ class GameEngine {
               LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用毒药');
             }
           } catch (e) {
-            LoggerUtil.instance.e('Witch ${witch.name} poison decision failed: $e');
+            LoggerUtil.instance
+                .e('Witch ${witch.name} poison decision failed: $e');
             LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用毒药');
           }
         }
@@ -767,7 +761,7 @@ class GameEngine {
     );
     state.addEvent(nightResultEvent);
 
-    // Also log to console
+    // Announce night results to console
     if (isPeacefulNight) {
       LoggerUtil.instance.i(
         '昨晚是平安夜，没有人死亡',
@@ -779,6 +773,19 @@ class GameEngine {
         );
       }
     }
+
+    // Announce current alive players
+    final alivePlayers = state.alivePlayers;
+    final alivePlayerNames = alivePlayers.map((p) => p.name).join('、');
+    LoggerUtil.instance.i('当前存活玩家：$alivePlayerNames');
+
+    // Create announcement event for alive players
+    final aliveAnnouncement = JudgeAnnouncementEvent(
+      announcement: '当前存活玩家：$alivePlayerNames',
+      dayNumber: state.dayNumber,
+      phase: state.currentPhase,
+    );
+    state.addEvent(aliveAnnouncement);
   }
 
   /// Run discussion phase - players speak in order (public method)
@@ -1315,12 +1322,13 @@ ${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
 ''';
 
       // Get LLM decision for antidote
-      final response = await (witch as EnhancedAIPlayer).llmService.generateSimpleDecision(
-        player: witch,
-        prompt: antidotePrompt,
-        options: ['使用解药', '不使用解药'],
-        state: state,
-      );
+      final response =
+          await (witch as EnhancedAIPlayer).llmService.generateSimpleDecision(
+                player: witch,
+                prompt: antidotePrompt,
+                options: ['使用解药', '不使用解药'],
+                state: state,
+              );
 
       return response == '使用解药';
     } catch (e) {
@@ -1351,11 +1359,12 @@ ${state.players.where((p) => p.isAlive).map((p) => '- ${p.playerId}号 ${p.name}
 ''';
 
       // Get LLM decision for poison
-      final response = await (witch as EnhancedAIPlayer).llmService.generatePoisonDecision(
-        player: witch,
-        prompt: poisonPrompt,
-        state: state,
-      );
+      final response =
+          await (witch as EnhancedAIPlayer).llmService.generatePoisonDecision(
+                player: witch,
+                prompt: poisonPrompt,
+                state: state,
+              );
 
       return response;
     } catch (e) {
