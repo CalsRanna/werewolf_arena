@@ -2,6 +2,7 @@ import 'dart:async';
 import 'game_state.dart';
 import 'game_event.dart';
 import '../player/player.dart';
+import '../player/ai_player.dart';
 import '../player/role.dart';
 import '../llm/enhanced_prompts.dart';
 import '../utils/logger_util.dart';
@@ -606,56 +607,88 @@ class GameEngine {
         // Tonight victim is available through state.tonightVictim
         // No need to set it in witch role anymore
 
-        // First, ask about healing (antidote)
-        if (witchRole.hasAntidote(state) && state.tonightVictim != null) {
-          LoggerUtil.instance
-              .i('[法官]: ${state.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？');
-        } else if (witchRole.hasAntidote(state)) {
-          LoggerUtil.instance.i(
-              '[法官]: No one was killed tonight. Do you want to use your antidote anyway?');
-        }
+        // Step 1: Handle antidote decision
+        if (witchRole.hasAntidote(state)) {
+          if (state.tonightVictim != null) {
+            LoggerUtil.instance
+                .i('[法官]: ${state.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？');
+          } else {
+            LoggerUtil.instance.i(
+                '[法官]: 平安夜. 你有一瓶解药，你要使用吗？');
+          }
 
-        // Then ask about poison
-        if (witchRole.hasPoison(state)) {
-          LoggerUtil.instance.i('[法官]: 你有一瓶毒药，你要用吗？');
-        }
+          // Give witch time to think about antidote
+          await Future.delayed(Duration(milliseconds: 1000));
 
-        try {
-          // Update player event log before action
-          PlayerLogger.instance.updatePlayerEvents(witch, state);
+          try {
+            // Update player event log before action
+            PlayerLogger.instance.updatePlayerEvents(witch, state);
 
-          await witch.processInformation(state);
-          final target = await witch.chooseNightTarget(state);
+            LoggerUtil.instance.i('[法官]: ${witch.formattedName}正在思考是否使用解药...');
+            await witch.processInformation(state);
 
-          if (target != null) {
-            // Witch can either heal or poison
-            if (target == state.tonightVictim && witchRole.hasAntidote(state)) {
-              // Try to heal the victim
-              final event = witch.createHealEvent(target, state);
+            // Ask witch specifically about antidote
+            final shouldUseAntidote = await _askWitchAboutAntidote(witch, state);
+
+            if (shouldUseAntidote && state.tonightVictim != null) {
+              final event = witch.createHealEvent(state.tonightVictim!, state);
               if (event != null) {
                 witch.executeEvent(event, state);
                 LoggerUtil.instance
-                    .i('[法官]: Witch chose to use antidote to ${target.name}');
+                    .i('[法官]: ${witch.formattedName}选择使用解药救${state.tonightVictim!.formattedName}');
+
+                // 添加公告事件，通知所有玩家有人被救
+                final announcement = JudgeAnnouncementEvent(
+                  announcement: '${state.tonightVictim!.formattedName}昨晚被女巫救活',
+                  dayNumber: state.dayNumber,
+                  phase: state.currentPhase,
+                );
+                state.addEvent(announcement);
               }
-            } else if (target.isAlive && witchRole.hasPoison(state)) {
-              // Try to poison someone
-              final event = witch.createPoisonEvent(target, state);
+            } else {
+              LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用解药');
+            }
+          } catch (e) {
+            LoggerUtil.instance.e('Witch ${witch.name} antidote decision failed: $e');
+            LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用解药');
+          }
+        }
+
+        // Step 2: Handle poison decision (separate from antidote)
+        if (witchRole.hasPoison(state)) {
+          LoggerUtil.instance.i('[法官]: 你有一瓶毒药，你要使用吗？');
+
+          // Give witch time to think about poison
+          await Future.delayed(Duration(milliseconds: 1000));
+
+          try {
+            LoggerUtil.instance.i('[法官]: ${witch.formattedName}正在思考是否使用毒药...');
+
+            // Ask witch specifically about poison
+            final poisonTarget = await _askWitchAboutPoison(witch, state);
+
+            if (poisonTarget != null) {
+              final event = witch.createPoisonEvent(poisonTarget, state);
               if (event != null) {
                 witch.executeEvent(event, state);
                 LoggerUtil.instance.i(
-                    '[法官]: ${witch.formattedName}使用毒药攻击了${target.formattedName}');
+                    '[法官]: ${witch.formattedName}选择使用毒药攻击${poisonTarget.formattedName}');
+
+                // 添加公告事件，通知所有玩家有人被毒（但不说明是谁毒的）
+                final announcement = JudgeAnnouncementEvent(
+                  announcement: '${poisonTarget.formattedName}昨晚被毒杀',
+                  dayNumber: state.dayNumber,
+                  phase: state.currentPhase,
+                );
+                state.addEvent(announcement);
               }
             } else {
-              LoggerUtil.instance
-                  .i('[法官]: Witch chose not to use potions or action invalid');
+              LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用毒药');
             }
-          } else {
-            LoggerUtil.instance.i('[法官]: Witch chose not to use potions');
+          } catch (e) {
+            LoggerUtil.instance.e('Witch ${witch.name} poison decision failed: $e');
+            LoggerUtil.instance.i('[法官]: ${witch.formattedName}选择不使用毒药');
           }
-        } catch (e) {
-          LoggerUtil.instance.e('Witch ${witch.name} action failed: $e');
-          LoggerUtil.instance
-              .i('[法官]: Witch chose not to use potions due to error');
         }
 
         // Delay between witch actions
@@ -1260,6 +1293,75 @@ class GameEngine {
 
     _stateController.add(state);
     _eventController.add(state.eventHistory.last);
+  }
+
+  /// Ask witch specifically about antidote usage
+  Future<bool> _askWitchAboutAntidote(AIPlayer witch, GameState state) async {
+    try {
+      // Create a specific prompt for antidote decision
+      final antidotePrompt = '''
+你是一个女巫。今晚${state.tonightVictim?.formattedName ?? '没有玩家'}死亡。
+
+你现在需要决定是否使用你的解药：
+- 如果使用解药，可以救活今晚死亡的玩家
+- 解药只能使用一次，使用后就没有了
+- 如果不使用，解药可以保留到后续夜晚
+
+请简单回答：
+- "使用解药" - 救活今晚死亡的玩家
+- "不使用解药" - 保留解药到后续夜晚
+
+${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
+''';
+
+      // Get LLM decision for antidote
+      final response = await (witch as EnhancedAIPlayer).llmService.generateSimpleDecision(
+        player: witch,
+        prompt: antidotePrompt,
+        options: ['使用解药', '不使用解药'],
+        state: state,
+      );
+
+      return response == '使用解药';
+    } catch (e) {
+      LoggerUtil.instance.e('Error asking witch about antidote: $e');
+      return false; // Default to not using antidote on error
+    }
+  }
+
+  /// Ask witch specifically about poison usage and target
+  Future<Player?> _askWitchAboutPoison(AIPlayer witch, GameState state) async {
+    try {
+      // Create a specific prompt for poison decision
+      final poisonPrompt = '''
+你是一个女巫。你有一瓶毒药可以毒杀一名玩家。
+
+现在你需要决定是否使用毒药：
+- 如果使用毒药，选择一名玩家进行毒杀
+- 毒药只能使用一次，使用后就没有了
+- 你可以毒杀任何存活的玩家（包括你自己，但不推荐）
+- 考虑当前的游戏局势和谁是可疑的狼人
+
+请回答：
+1. 是否使用毒药（"使用毒药" 或 "不使用毒药"）
+2. 如果选择使用，指定要毒杀的玩家编号
+
+当前存活的玩家：
+${state.players.where((p) => p.isAlive).map((p) => '- ${p.playerId}号 ${p.name}').join('\n')}
+''';
+
+      // Get LLM decision for poison
+      final response = await (witch as EnhancedAIPlayer).llmService.generatePoisonDecision(
+        player: witch,
+        prompt: poisonPrompt,
+        state: state,
+      );
+
+      return response;
+    } catch (e) {
+      LoggerUtil.instance.e('Error asking witch about poison: $e');
+      return null; // Default to not using poison on error
+    }
   }
 
   /// Dispose game engine

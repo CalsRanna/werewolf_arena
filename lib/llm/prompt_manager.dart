@@ -247,6 +247,8 @@ $formatted''';
       case GameEventType.phaseChange:
         if (event is PhaseChangeEvent) {
           return '${event.oldPhase.name}→${event.newPhase.name}';
+        } else if (event is JudgeAnnouncementEvent) {
+          return '📢 ${event.announcement}';
         }
         return '阶段转换';
 

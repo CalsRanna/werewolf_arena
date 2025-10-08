@@ -143,7 +143,10 @@ class OpenAIService {
 
         // 如果重试过，记录成功日志
         if (attempt > 1) {
-          LoggerUtil.instance.i('LLM API call succeeded on attempt $attempt', LogCategory.llmApi);
+          LoggerUtil.instance.d(
+            'LLM API call succeeded on attempt $attempt',
+            LogCategory.llmApi,
+          );
         }
 
         return LLMResponse.success(
@@ -158,14 +161,18 @@ class OpenAIService {
         if (attempt == retryConfig.maxAttempts) {
           // 最后一次尝试失败，记录错误日志
           LoggerUtil.instance.e(
-              'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException', null, null, LogCategory.llmApi);
+              'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException',
+              null,
+              null,
+              LogCategory.llmApi);
           break;
         }
 
         // 记录重试日志
         final delay = _calculateBackoffDelay(attempt);
         LoggerUtil.instance.w(
-            'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e', LogCategory.llmApi);
+            'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e',
+            LogCategory.llmApi);
 
         // 计算退避延迟时间
         await Future.delayed(delay);
@@ -326,7 +333,8 @@ $context
 
       // 调试信息：输出请求详情
       LoggerUtil.instance.d(
-          'API Request - Model: $effectiveModel, Messages: ${messages.length}', LogCategory.llmApi);
+          'API Request - Model: $effectiveModel, Messages: ${messages.length}',
+          LogCategory.llmApi);
 
       final response = await client.createChatCompletion(request: request);
 
@@ -469,6 +477,124 @@ Dead players: ${deadPlayers.isNotEmpty ? deadPlayers : 'None'}
 Your status: ${player.isAlive ? 'Alive' : 'Dead'}
 Your role: ${player.role.name}
 ''';
+  }
+
+  /// Generate simple decision from limited options
+  Future<String> generateSimpleDecision({
+    required Player player,
+    required String prompt,
+    required List<String> options,
+    required GameState state,
+  }) async {
+    final context = _buildContext(player, state);
+
+    final fullPrompt = '''
+$context
+
+$prompt
+
+请直接选择其中一个选项：
+${options.map((opt) => '- $opt').join('\n')}
+''';
+
+    try {
+      final response = await generateResponse(
+        systemPrompt: '你是一个狼人杀游戏中的女巫角色。请根据提示做出决策，直接回答选项内容。',
+        userPrompt: fullPrompt,
+        context: {},
+      );
+
+      final content = response.content.trim();
+
+      // Check if response matches any of the options
+      for (final option in options) {
+        if (content.contains(option)) {
+          return option;
+        }
+      }
+
+      // If no exact match, try to find closest option
+      for (final option in options) {
+        if (content.toLowerCase().contains(option.toLowerCase())) {
+          return option;
+        }
+      }
+
+      // Default to first option if no match found
+      return options.first;
+    } catch (e) {
+      LoggerUtil.instance.e('Error generating simple decision: $e');
+      return options.first; // Default to first option on error
+    }
+  }
+
+  /// Generate poison decision with target selection
+  Future<Player?> generatePoisonDecision({
+    required Player player,
+    required String prompt,
+    required GameState state,
+  }) async {
+    final context = _buildContext(player, state);
+
+    final fullPrompt = '''
+$context
+
+$prompt
+
+请按照以下格式回答：
+1. 决定是否使用毒药（"使用毒药" 或 "不使用毒药"）
+2. 如果选择使用，请提供要毒杀的玩家编号
+
+例如：
+- "不使用毒药"
+- "使用毒药，目标：3号玩家"
+''';
+
+    try {
+      final response = await generateResponse(
+        systemPrompt: '你是一个狼人杀游戏中的女巫角色。请根据提示决定是否使用毒药以及选择目标。严格按照要求的格式回答。',
+        userPrompt: fullPrompt,
+        context: {},
+      );
+
+      final content = response.content.trim();
+
+      // Check if witch decides not to use poison
+      if (content.contains('不使用毒药')) {
+        return null;
+      }
+
+      // Check if witch decides to use poison
+      if (content.contains('使用毒药')) {
+        // Extract player number from response
+        final numberRegex = RegExp(r'(\d+)号');
+        final match = numberRegex.firstMatch(content);
+
+        if (match != null) {
+          final playerNumber = int.tryParse(match.group(1) ?? '');
+          if (playerNumber != null) {
+            // Find player by number
+            for (final p in state.players) {
+              if (p.playerId == playerNumber.toString() && p.isAlive) {
+                return p;
+              }
+            }
+          }
+        }
+
+        // Try to find player by name
+        for (final p in state.players) {
+          if (p.isAlive && content.contains(p.name)) {
+            return p;
+          }
+        }
+      }
+
+      return null; // Default to not using poison if parsing fails
+    } catch (e) {
+      LoggerUtil.instance.e('Error generating poison decision: $e');
+      return null; // Default to not using poison on error
+    }
   }
 
   void dispose() {

@@ -212,6 +212,44 @@ class WitchPoisonEvent extends GameEvent {
   }
 }
 
+/// 法官公告事件 - 公开可见，用于通知所有玩家公共信息
+class JudgeAnnouncementEvent extends GameEvent {
+  final String announcement;
+  final int? dayNumber;
+  final GamePhase? phase;
+
+  JudgeAnnouncementEvent({
+    required this.announcement,
+    this.dayNumber,
+    this.phase,
+  }) : super(
+          eventId:
+              'announcement_${DateTime.now().millisecondsSinceEpoch}',
+          type: GameEventType.phaseChange, // 使用phaseChange类型作为公告
+          visibility: EventVisibility.public,
+        );
+
+  @override
+  void execute(GameState state) {
+    // 公告事件不需要执行具体逻辑，只是传递信息
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'announcement': announcement,
+      'dayNumber': dayNumber,
+      'phase': phase?.name,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'JudgeAnnouncement: $announcement';
+  }
+}
+
 /// 投票事件 - 公开可见
 class VoteEvent extends GameEvent {
   final Player voter;

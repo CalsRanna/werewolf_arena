@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
-import 'package:intl/intl.dart';
 
 /// 日志类别枚举
 enum LogCategory {
@@ -124,14 +123,13 @@ class MultiFileOutput extends LogOutput {
 
 /// 自定义 Printer：简化格式，提高性能
 class CompactPrinter extends LogPrinter {
-  final DateFormat _timestampFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
   final bool useColors;
 
   CompactPrinter({this.useColors = true});
 
   @override
   List<String> log(LogEvent event) {
-    final timestamp = _timestampFormat.format(event.time);
+    final timestamp = event.time.toString().substring(20);
     final level = event.level.name.toUpperCase().padLeft(7);
     final message = event.message;
 
@@ -188,8 +186,9 @@ class LoggerUtil {
     bool useColors = true,
   }) async {
     // 创建会话目录
-    final dateFormat = DateFormat('yyyy-MM-dd_HH-mm-ss');
-    final sessionName = dateFormat.format(DateTime.now());
+    var now = DateTime.now();
+    final sessionName =
+        now.toString().substring(20).replaceAll(':', '-').replaceAll(' ', '_');
     _gameSessionDir = path.join('logs', sessionName);
 
     // 初始化文件输出

@@ -332,15 +332,7 @@ abstract class Player {
     return '$name (${isAlive ? 'Alive' : 'Dead'}) - ${role.name}';
   }
 
-  /// Get formatted display name including player info and model
-  String get formattedName {
-    final modelName = modelConfig?.model ?? 'default';
-    final modelNameShort =
-        modelName.split('/').last; // Take only the part after the last slash
-    final formatted =
-        '${name.padLeft(8)}|${modelNameShort.padLeft(16)}|${role.name.padLeft(8)}';
-    return '[$formatted]';
-  }
+  String get formattedName => '[${name.padLeft(8)}|${role.name.padLeft(4)}]';
 
   // Death handling
   void die(DeathCause cause, GameState state) {
