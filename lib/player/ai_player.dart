@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'player.dart';
 import '../game/game_state.dart';
+import '../game/game_event.dart';
 import '../llm/llm_service.dart';
 import '../llm/prompt_manager.dart';
 import '../utils/random_helper.dart';
 import '../utils/logger_util.dart';
+import 'ai_personality_state.dart';
 
 /// AI personality traits
 class Personality {
@@ -128,11 +130,11 @@ class EnhancedAIPlayer extends AIPlayer {
   final OpenAIService llmService;
   final PromptManager promptManager;
   final Personality personality;
+  late final AIPersonalityState personalityState; // 性格状态系统
 
   DateTime? _lastActionTime;
 
   EnhancedAIPlayer({
-    required super.playerId,
     required super.name,
     required super.role,
     required this.llmService,
@@ -141,7 +143,39 @@ class EnhancedAIPlayer extends AIPlayer {
     Personality? personality,
     RandomHelper? random,
   })  : personality = personality ?? Personality.forRole(role.roleId),
-        super(random: random ?? RandomHelper());
+        super(random: random ?? RandomHelper()) {
+    // 初始化性格状态
+    _initializePersonalityState();
+  }
+
+  /// 初始化性格状态系统
+  void _initializePersonalityState() {
+    // 根据角色选择合适的性格类型
+    switch (role.roleId) {
+      case 'werewolf':
+        personalityState = AIPersonalityFactory.createAggressive();
+        break;
+      case 'seer':
+        personalityState = AIPersonalityFactory.createLogical();
+        break;
+      case 'villager':
+        personalityState = AIPersonalityFactory.createFollower();
+        break;
+      case 'witch':
+      case 'hunter':
+        personalityState = AIPersonalityFactory.createEmotional();
+        break;
+      default:
+        personalityState = AIPersonalityFactory.createRandom();
+    }
+
+    // 用原始性格数值调整基础性格
+    personalityState.aggressiveness = personality.aggressiveness;
+    personalityState.logicThinking = personality.logicThinking;
+    personalityState.cooperativeness = personality.cooperativeness;
+    personalityState.honesty = personality.honesty;
+    personalityState.expressiveness = personality.expressiveness;
+  }
 
   /// Choose target for night action based on role
   @override
@@ -151,10 +185,18 @@ class EnhancedAIPlayer extends AIPlayer {
     _lastActionTime = DateTime.now();
 
     try {
+      // 初始化信任度（如果还没有）
+      if (personalityState.trustLevels.isEmpty) {
+        personalityState.initializeTrustLevels(state.players, name);
+      }
+
       // Update knowledge before making decision
       await updateKnowledge(state);
 
-      // Get role-specific prompt
+      // 更新个人信念
+      personalityState.updatePersonalBeliefs(state);
+
+      // Get role-specific prompt with personality state
       final rolePrompt = promptManager.getActionPrompt(
         player: this,
         state: state,
@@ -175,14 +217,14 @@ class EnhancedAIPlayer extends AIPlayer {
         // Store reasoning and statement in game events, not private data
         // The AI's reasoning will be captured in the action event itself
         LoggerUtil.instance
-            .d('Player action: $playerId chose target ${target.playerId}', LogCategory.aiDecision);
+            .d('Player action: $name chose target ${target.name}', LogCategory.aiDecision);
         return target;
       }
 
       // If LLM fails, fallback to random target
       return _chooseFallbackTarget(state);
     } catch (e) {
-      LoggerUtil.instance.e('AI target selection error for $playerId: $e');
+      LoggerUtil.instance.e('AI target selection error for $name: $e');
       return _chooseFallbackTarget(state);
     }
   }
@@ -223,7 +265,7 @@ class EnhancedAIPlayer extends AIPlayer {
           // PK投票阶段 - 必须投PK候选人
           if (!pkCandidates.contains(target)) {
             LoggerUtil.instance.w(
-                '$playerId tried to vote for ${target.playerId} who is not in PK candidates, choosing fallback');
+                '$name tried to vote for ${target.name} who is not in PK candidates, choosing fallback');
             return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
           }
         }
@@ -236,7 +278,7 @@ class EnhancedAIPlayer extends AIPlayer {
       // If LLM fails, fallback to random target
       return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
     } catch (e) {
-      LoggerUtil.instance.e('AI vote selection error for $playerId: $e');
+      LoggerUtil.instance.e('AI vote selection error for $name: $e');
       return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
     }
   }
@@ -249,11 +291,11 @@ class EnhancedAIPlayer extends AIPlayer {
     if (pkCandidates != null && pkCandidates.isNotEmpty) {
       // PK投票 - 只能从PK候选人中选择
       availableTargets =
-          pkCandidates.where((p) => p.playerId != playerId).toList();
+          pkCandidates.where((p) => p.name != name).toList();
     } else {
       // 普通投票 - 从所有存活玩家中选择
       availableTargets =
-          state.alivePlayers.where((p) => p.playerId != playerId).toList();
+          state.alivePlayers.where((p) => p.name != name).toList();
     }
 
     // 如果是狼人，排除队友
@@ -269,7 +311,7 @@ class EnhancedAIPlayer extends AIPlayer {
   /// Fallback target selection
   Player? _chooseFallbackTarget(GameState state) {
     final availableTargets =
-        state.alivePlayers.where((p) => p.playerId != playerId).toList();
+        state.alivePlayers.where((p) => p.name != name).toList();
 
     if (availableTargets.isEmpty) return null;
     return random.randomChoice(availableTargets);
@@ -281,7 +323,10 @@ class EnhancedAIPlayer extends AIPlayer {
       // Update knowledge
       await updateKnowledge(state);
 
-      // Get conversation prompt
+      // 分析其他玩家的发言（如果存在）
+      _analyzePlayerSpeeches(state);
+
+      // Get conversation prompt with personality state
       final prompt = promptManager.getStatementPrompt(
         player: this,
         state: state,
@@ -297,15 +342,21 @@ class EnhancedAIPlayer extends AIPlayer {
       );
 
       if (response.isValid && response.statement.isNotEmpty) {
+        // 记录发言历史
+        personalityState.speechHistory.add(response.statement);
+        if (personalityState.speechHistory.length > 5) {
+          personalityState.speechHistory.removeAt(0); // 只保留最近5次发言
+        }
+
         return response.statement;
       }
 
       // LLM failed, return empty string
       LoggerUtil.instance.e(
-          'LLM statement generation failed for $playerId: invalid response - ${response.errors.join(', ')}');
+          'LLM statement generation failed for $name: invalid response - ${response.errors.join(', ')}');
       return '';
     } catch (e) {
-      LoggerUtil.instance.e('AI statement generation error for $playerId: $e');
+      LoggerUtil.instance.e('AI statement generation error for $name: $e');
       return '';
     }
   }
@@ -320,6 +371,72 @@ class EnhancedAIPlayer extends AIPlayer {
   Future<void> updateKnowledge(GameState state) async {
     // Knowledge base functionality removed per user request
     // All game information is now handled through events and prompts
+  }
+
+  /// 分析其他玩家的发言并更新信任度
+  void _analyzePlayerSpeeches(GameState state) {
+    final recentEvents = state.eventHistory.whereType<SpeakEvent>().toList();
+
+    // 只分析最近的5个发言事件
+    final recentSpeeches = recentEvents.length > 5
+        ? recentEvents.sublist(recentEvents.length - 5)
+        : recentEvents;
+
+    for (final speech in recentSpeeches) {
+      if (speech.speaker.name != name) {
+        final isLogical = _isLogicalSpeech(speech.message);
+        personalityState.analyzeSpeech(speech.speaker.name, speech.message, isLogical);
+      }
+    }
+  }
+
+  /// 简单的逻辑性判断
+  bool _isLogicalSpeech(String speech) {
+    final lowerSpeech = speech.toLowerCase();
+
+    // 检测明显的聊爆发言
+    if (lowerSpeech.contains('随便验') ||
+        lowerSpeech.contains('凭感觉') ||
+        lowerSpeech.contains('没什么理由')) {
+      return false;
+    }
+
+    // 检测事实性错误
+    if (lowerSpeech.contains('死了') || lowerSpeech.contains('挂了')) {
+      // 这里应该和游戏状态比对，简化处理
+      return false;
+    }
+
+    return true;
+  }
+
+  /// 记录投票结果并更新状态
+  void recordVoteResult(Player target, bool wasCorrect) {
+    personalityState.recordVote(target.name);
+
+    if (wasCorrect) {
+      personalityState.recordCorrectDecision();
+    } else {
+      personalityState.recordMistake();
+    }
+  }
+
+  /// 获取当前的性格状态描述
+  String getPersonalityStateDescription() {
+    return personalityState.generatePersonalityDescription();
+  }
+
+  /// 获取当前对其他玩家的信任度信息
+  String getTrustLevelInfo() {
+    final info = <String>[];
+    personalityState.trustLevels.forEach((playerName, trustLevel) {
+      if (trustLevel < 0.3) {
+        info.add('怀疑$playerName');
+      } else if (trustLevel > 0.8) {
+        info.add('信任$playerName');
+      }
+    });
+    return info.join(', ');
   }
 
   // Serialization

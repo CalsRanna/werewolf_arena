@@ -409,14 +409,14 @@ $context
 
     final targets = <Player>[];
     if (targetId != null && targetId.toString().isNotEmpty) {
-      // 首先尝试直接通过ID查找
-      Player? target = state.getPlayerById(targetId.toString());
+      // 首先尝试直接通过名字查找
+      Player? target = state.getPlayerByName(targetId.toString());
 
       // 如果找不到,尝试通过玩家名字查找(支持"3号玩家"这样的格式)
       if (target == null) {
         final targetStr = targetId.toString();
         for (final p in state.players) {
-          if (p.name == targetStr || p.playerId == targetStr) {
+          if (p.name == targetStr) {
             target = p;
             break;
           }
@@ -573,9 +573,9 @@ $prompt
         if (match != null) {
           final playerNumber = int.tryParse(match.group(1) ?? '');
           if (playerNumber != null) {
-            // Find player by number
+            // Find player by name or number
             for (final p in state.players) {
-              if (p.playerId == playerNumber.toString() && p.isAlive) {
+              if (p.name == playerNumber.toString() && p.isAlive) {
                 return p;
               }
             }

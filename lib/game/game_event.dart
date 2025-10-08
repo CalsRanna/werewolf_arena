@@ -49,7 +49,7 @@ class DeadEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'death_${victim.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'death_${victim.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.playerDeath,
           initiator: victim,
           target: killer,
@@ -87,7 +87,7 @@ class WerewolfKillEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'kill_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'kill_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
           initiator: actor,
           target: target,
@@ -114,12 +114,12 @@ class GuardProtectEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'protect_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'protect_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
           initiator: actor,
           target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [actor.playerId],
+          visibleToPlayerNames: [actor.name],
         );
   
   @override
@@ -143,12 +143,12 @@ class SeerInvestigateEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'investigate_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'investigate_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
           initiator: actor,
           target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [actor.playerId],
+          visibleToPlayerNames: [actor.name],
         );
   
   @override
@@ -171,12 +171,12 @@ class WitchHealEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'heal_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'heal_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
           initiator: actor,
           target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [actor.playerId],
+          visibleToPlayerNames: [actor.name],
         );
   
   @override
@@ -198,12 +198,12 @@ class WitchPoisonEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'poison_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'poison_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
           initiator: actor,
           target: target,
           visibility: EventVisibility.playerSpecific,
-          visibleToPlayerIds: [actor.playerId],
+          visibleToPlayerNames: [actor.name],
         );
   
   @override
@@ -266,7 +266,7 @@ class VoteEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'vote_${voter.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'vote_${voter.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.voteCast,
           initiator: voter,
           target: candidate,
@@ -307,7 +307,7 @@ class SpeakEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'speak_${speaker.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'speak_${speaker.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.playerAction,
           initiator: speaker,
           visibility: _getDefaultVisibility(speechType),
@@ -369,7 +369,7 @@ class HunterShootEvent extends GameEvent {
     this.phase,
   }) : super(
           eventId:
-              'hunter_shoot_${actor.playerId}_${DateTime.now().millisecondsSinceEpoch}',
+              'hunter_shoot_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
           initiator: actor,
           target: target,

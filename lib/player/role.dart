@@ -286,7 +286,7 @@ class GuardRole extends Role {
     }
 
     // 排除上次守护的玩家
-    return allPlayers.where((p) => p.playerId != lastGuarded.playerId).toList();
+    return allPlayers.where((p) => p.name != lastGuarded.name).toList();
   }
 }
 

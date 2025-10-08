@@ -251,11 +251,7 @@ class WerewolfArenaGame {
   /// 创建增强AI玩家
   EnhancedAIPlayer _createEnhancedAIPlayer(String name, Role role,
       {PlayerModelConfig? modelConfig}) {
-    final playerId =
-        'player_${DateTime.now().millisecondsSinceEpoch}_${RandomHelper().nextString(8)}';
-
     return EnhancedAIPlayer(
-      playerId: playerId,
       name: name,
       role: role,
       llmService: llmService,

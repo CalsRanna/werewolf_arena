@@ -1,5 +1,6 @@
 import '../game/game_state.dart';
 import '../game/game_event.dart';
+import '../game/logic_contradiction_detector.dart';
 import '../llm/enhanced_prompts.dart';
 import '../player/player.dart';
 import '../player/role.dart';
@@ -27,9 +28,40 @@ class PromptManager {
 - 不要说"逻辑链条"、"信息增量"这类分析词汇
 - 不要用Markdown格式，直接说话
 
+【狼人杀常识红线 - 比任何发言都更可信的基本规则】
+⚠️ **以下规则是判断身份的核心依据，违反这些规则的玩家极有可能是狼人：**
+
+1. **聊爆是最大的狼面**：
+   - 如果一个自称预言家的玩家说"随便验的"、"凭感觉"、"中间挑的" → 基本确定是假预言家
+   - 如果发言前后矛盾，搞错基本游戏信息 → 基本确定是狼人
+   - 真预言家绝对不会有这种低级失误
+
+2. **刀口会说话**：
+   - 如果自称预言家的玩家死了，对跳的预言家活下来了 → 活着的嫌疑极大
+   - 需要极强的逻辑才能推翻这一点，默认情况下活着的对跳者更可能是狼
+
+3. **女巫的毒药是必杀的**：
+   - 如果女巫声称毒了某人但那人没死 → 必有蹊跷，需要全场关注和解释
+   - 可能情况：女巫撒谎、守卫保护、或者系统特殊情况
+   - 这是一个巨大的疑点，必须追问到底
+
+4. **平安夜的逻辑**：
+   - 平安夜意味着要么女巫救人，要么狼人未击中或被守卫保护
+   - 平安夜后声称被刀但存活的玩家，如果没有合理解释 → 可疑度极高
+
+5. **投票行为暴露身份**：
+   - 好人不会投票给确认的预言家（除非被狼人欺骗）
+   - 狼人会保护队友，避免投票给狼队友
+   - 反常的投票模式往往能暴露真实身份
+
+【决策原则】
+- 当出现明显违反常识红线的玩家时，优先针对他们
+- 不要被复杂的"逻辑分析"迷惑，常识往往更可靠
+- 宁可错杀一个可疑的，也不要放过一个聊爆的
+
 {scenario_rules}
 
-记住：你是在玩游戏，不是在做分析报告。
+记住：你是在玩游戏，不是在做分析报告。要用真实玩家的直觉和常识来判断！
 ''';
 
     _rolePrompts['werewolf'] = EnhancedPrompts.enhancedWerewolfPrompt;
@@ -73,7 +105,7 @@ class PromptManager {
 
       if (discussionEvents.isNotEmpty) {
         final discussions = discussionEvents.map((e) {
-          final speaker = e.initiator?.name ?? '?';
+          final speaker = e.initiator?.name ?? '??';
           return '$speaker: ${e.message}';
         }).join('\n');
 
@@ -189,7 +221,7 @@ $conversationPrompt
     if (player.role.roleId == 'seer') {
       final investigations = state.eventHistory
           .whereType<SeerInvestigateEvent>()
-          .where((e) => e.initiator?.playerId == player.playerId)
+          .where((e) => e.initiator?.name == player.name)
           .map((e) {
         final result = e.investigationResult == 'Werewolf' ? '狼' : '好人';
         return '第${e.dayNumber}夜:${e.target!.name}=$result';
@@ -204,7 +236,7 @@ $conversationPrompt
     String werewolfTeamInfo = '';
     if (player.role.roleId == 'werewolf') {
       final teammates = state.players
-          .where((p) => p.role.isWerewolf && p.playerId != player.playerId)
+          .where((p) => p.role.isWerewolf && p.name != player.name)
           .map((p) => p.name)
           .toList();
       if (teammates.isNotEmpty) {
@@ -223,6 +255,9 @@ D${state.dayNumber}|${state.currentPhase.name}|存活:$alive|死亡:${dead.isEmp
   }
 
   String _buildConversationPromptFromEvents(Player player, GameState state) {
+    // 设置当前游戏状态，用于逻辑矛盾检测
+    _currentState = state;
+
     final visibleEvents =
         state.eventHistory.where((event) => event.isVisibleTo(player)).toList();
 
@@ -257,8 +292,14 @@ D${state.dayNumber}|${state.currentPhase.name}|存活:$alive|死亡:${dead.isEmp
 $formatted$peacefulNightInfo''';
   }
 
-  /// 格式化单个事件为可读文本
+  /// 格式化单个事件为可读文本，包含逻辑矛盾检测
   String _formatEvent(GameEvent event) {
+    // 对于发言事件，使用逻辑矛盾检测器
+    if (event is SpeakEvent && _currentState != null) {
+      return LogicContradictionDetector.formatEventWithTags(event, _currentState!);
+    }
+
+    // 其他事件使用原有逻辑
     switch (event.type) {
       case GameEventType.gameStart:
         return '游戏开始';
@@ -281,7 +322,7 @@ $formatted$peacefulNightInfo''';
         return '玩家死亡';
 
       case GameEventType.skillUsed:
-        final actor = event.initiator?.name ?? '?';
+        final actor = event.initiator?.name ?? '??';
         if (event is WerewolfKillEvent) {
           return '$actor刀${event.target!.name}';
         } else if (event is GuardProtectEvent) {
@@ -298,8 +339,8 @@ $formatted$peacefulNightInfo''';
         return '$actor使用技能';
 
       case GameEventType.voteCast:
-        final voter = event.initiator?.name ?? '?';
-        final target = event.target?.name ?? '?';
+        final voter = event.initiator?.name ?? '??';
+        final target = event.target?.name ?? '??';
         return '$voter投$target';
 
       case GameEventType.playerAction:
@@ -335,6 +376,9 @@ $formatted$peacefulNightInfo''';
         return '天黑';
     }
   }
+
+  // 存储当前游戏状态的引用，用于逻辑检测
+  GameState? _currentState;
 
   String _getTraitLevel(double value) {
     if (value < 0.2) return '很低';
@@ -387,7 +431,7 @@ $formatted$peacefulNightInfo''';
     if (player.role.roleId == 'werewolf') {
       // 替换狼人队友信息
       final teammates = state.players
-          .where((p) => p.role.isWerewolf && p.playerId != player.playerId)
+          .where((p) => p.role.isWerewolf && p.name != player.name)
           .map((p) => p.name)
           .toList();
 
@@ -407,7 +451,7 @@ $formatted$peacefulNightInfo''';
       final investigations = <String>[];
       final investigateEvents = state.eventHistory
           .whereType<SeerInvestigateEvent>()
-          .where((e) => e.initiator?.playerId == player.playerId)
+          .where((e) => e.initiator?.name == player.name)
           .toList();
 
       for (final event in investigateEvents) {

@@ -65,7 +65,7 @@ abstract class GameEvent {
   final Player? initiator;
   final Player? target;
   final EventVisibility visibility;
-  final List<String> visibleToPlayerIds;
+  final List<String> visibleToPlayerNames;
   final String? visibleToRole;
 
   GameEvent({
@@ -74,7 +74,7 @@ abstract class GameEvent {
     this.initiator,
     this.target,
     this.visibility = EventVisibility.public,
-    this.visibleToPlayerIds = const [],
+    this.visibleToPlayerNames = const [],
     this.visibleToRole,
   }) : timestamp = DateTime.now();
 
@@ -85,7 +85,7 @@ abstract class GameEvent {
   /// Check if this event is visible to a specific player
   bool isVisibleTo(dynamic player) {
     // Extract player properties (support both Player and test objects)
-    final playerId = player.playerId as String;
+    final playerName = player.name as String;
     final role = player.role as Role;
     final isAlive = player.isAlive as bool;
 
@@ -100,7 +100,7 @@ abstract class GameEvent {
         return visibleToRole != null && role.roleId == visibleToRole;
 
       case EventVisibility.playerSpecific:
-        return visibleToPlayerIds.contains(playerId);
+        return visibleToPlayerNames.contains(playerName);
 
       case EventVisibility.dead:
         return !isAlive;
@@ -120,7 +120,7 @@ abstract class GameEvent {
       'initiator': initiator?.name,
       'target': target?.name,
       'visibility': visibility.name,
-      'visibleToPlayerIds': visibleToPlayerIds,
+      'visibleToPlayerNames': visibleToPlayerNames,
       'visibleToRole': visibleToRole,
     };
   }
@@ -312,9 +312,9 @@ class GameState {
     return false;
   }
 
-  Player? getPlayerById(String playerId) {
+  Player? getPlayerByName(String playerName) {
     try {
-      return players.firstWhere((p) => p.playerId == playerId);
+      return players.firstWhere((p) => p.name == playerName);
     } catch (e) {
       return null;
     }
@@ -335,24 +335,24 @@ class GameState {
 
   void setTonightVictim(Player? victim) {
     tonightVictim = victim;
-    setMetadata('tonight_victim', victim?.playerId);
+    setMetadata('tonight_victim', victim?.name);
   }
 
   void setTonightProtected(Player? protected) {
     tonightProtected = protected;
-    setMetadata('tonight_protected', protected?.playerId);
+    setMetadata('tonight_protected', protected?.name);
   }
 
   // Night action management methods
   Player? get tonightPoisoned {
     final poisonedId = getMetadata<String>('tonight_poisoned');
-    return poisonedId != null ? getPlayerById(poisonedId) : null;
+    return poisonedId != null ? getPlayerByName(poisonedId) : null;
   }
 
   bool get killCancelled => getMetadata('kill_cancelled') ?? false;
 
   void setTonightPoisoned(Player? poisoned) {
-    setMetadata('tonight_poisoned', poisoned?.playerId);
+    setMetadata('tonight_poisoned', poisoned?.name);
   }
 
   void cancelTonightKill() {
@@ -373,7 +373,7 @@ class GameState {
 
   void addVote(Player voter, Player target) {
     final currentVotes = votes;
-    currentVotes[voter.playerId] = target.playerId;
+    currentVotes[voter.name] = target.name;
     setMetadata('votes', currentVotes);
   }
 
@@ -414,7 +414,7 @@ class GameState {
 
     // 得票最多的玩家出局
     if (tiedPlayers.isNotEmpty && maxVotes > 0) {
-      return getPlayerById(tiedPlayers.first);
+      return getPlayerByName(tiedPlayers.first);
     }
     return null;
   }
@@ -425,21 +425,21 @@ class GameState {
     if (results.isEmpty) return [];
 
     int maxVotes = 0;
-    List<String> tiedPlayerIds = [];
+    List<String> tiedPlayerNames = [];
 
     for (final entry in results.entries) {
       if (entry.value > maxVotes) {
         maxVotes = entry.value;
-        tiedPlayerIds = [entry.key];
+        tiedPlayerNames = [entry.key];
       } else if (entry.value == maxVotes) {
-        tiedPlayerIds.add(entry.key);
+        tiedPlayerNames.add(entry.key);
       }
     }
 
     // 只有当有2个或以上玩家平票时才返回
-    if (tiedPlayerIds.length > 1) {
-      return tiedPlayerIds
-          .map((id) => getPlayerById(id))
+    if (tiedPlayerNames.length > 1) {
+      return tiedPlayerNames
+          .map((name) => getPlayerByName(name))
           .whereType<Player>()
           .toList();
     }

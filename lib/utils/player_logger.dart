@@ -44,33 +44,33 @@ class PlayerLogger {
   }
 
   /// Get or create log sink for a player
-  IOSink _getPlayerSink(String playerId) {
-    if (!_playerSinks.containsKey(playerId)) {
+  IOSink _getPlayerSink(String playerName) {
+    if (!_playerSinks.containsKey(playerName)) {
       try {
-        final fileName = 'player_$playerId.log';
+        final fileName = 'player_$playerName.log';
         final fullPath = path.join(_getPlayerLogsDir(), fileName);
         final logFile = File(fullPath);
-        _playerSinks[playerId] =
+        _playerSinks[playerName] =
             logFile.openWrite(mode: FileMode.write); // Overwrite each time
       } catch (e) {
-        stdout.writeln('Failed to create log file for player $playerId: $e');
+        stdout.writeln('Failed to create log file for player $playerName: $e');
         rethrow;
       }
     }
-    return _playerSinks[playerId]!;
+    return _playerSinks[playerName]!;
   }
 
   /// Update player's visible events log before their action
   void updatePlayerEvents(Player player, GameState state) {
     try {
       // Close existing sink if it exists
-      if (_playerSinks.containsKey(player.playerId)) {
-        _playerSinks[player.playerId]!.close();
-        _playerSinks.remove(player.playerId);
+      if (_playerSinks.containsKey(player.name)) {
+        _playerSinks[player.name]!.close();
+        _playerSinks.remove(player.name);
       }
 
       // Create new sink with write mode (overwrites file)
-      final sink = _getPlayerSink(player.playerId);
+      final sink = _getPlayerSink(player.name);
 
       // Write all visible events to completely overwrite the file
       final visibleEvents = state.getEventsForPlayer(player);
@@ -85,7 +85,7 @@ class PlayerLogger {
       sink.flush();
     } catch (e) {
       stdout.writeln(
-          'Failed to update events log for player ${player.playerId}: $e');
+          'Failed to update events log for player ${player.name}: $e');
     }
   }
 

@@ -205,7 +205,7 @@ class GameEngine {
 
     // Find the index of the last dead player in the sorted list
     final deadPlayerIndex = allPlayersSorted
-        .indexWhere((p) => p.playerId == lastDeadPlayer.playerId);
+        .indexWhere((p) => p.name == lastDeadPlayer.name);
     if (deadPlayerIndex == -1) {
       // Fallback to normal ordering if something goes wrong
       return _reorderFromStartingPoint(allPlayersSorted, players, 0,
@@ -255,7 +255,7 @@ class GameEngine {
       List<Player> alivePlayers, int startingIndex,
       {bool shouldAnnounce = false}) {
     final orderedPlayers = <Player>[];
-    final alivePlayerIds = alivePlayers.map((p) => p.playerId).toSet();
+    final alivePlayerNames = alivePlayers.map((p) => p.name).toSet();
 
     // Build order string for logging
     final orderNames = <String>[];
@@ -266,7 +266,7 @@ class GameEngine {
         final currentIndex = (startingIndex - i + allPlayersSorted.length) %
             allPlayersSorted.length;
         final player = allPlayersSorted[currentIndex];
-        if (alivePlayerIds.contains(player.playerId)) {
+        if (alivePlayerNames.contains(player.name)) {
           orderedPlayers.add(player);
           orderNames.add(player.name);
         }
@@ -276,7 +276,7 @@ class GameEngine {
       for (int i = 0; i < allPlayersSorted.length; i++) {
         final currentIndex = (startingIndex + i) % allPlayersSorted.length;
         final player = allPlayersSorted[currentIndex];
-        if (alivePlayerIds.contains(player.playerId)) {
+        if (alivePlayerNames.contains(player.name)) {
           orderedPlayers.add(player);
           orderNames.add(player.name);
         }
@@ -945,7 +945,7 @@ class GameEngine {
       final sortedResults = voteResults.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
       for (final entry in sortedResults) {
-        final player = state.getPlayerById(entry.key);
+        final player = state.getPlayerByName(entry.key);
         LoggerUtil.instance.i(
             '${player?.formattedName ?? '[${player?.name ?? entry.key}](${player?.role.name})'}: ${entry.value}票');
       }
@@ -1049,7 +1049,7 @@ class GameEngine {
       final sortedResults = pkResults.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
       for (final entry in sortedResults) {
-        final player = state.getPlayerById(entry.key);
+        final player = state.getPlayerByName(entry.key);
         LoggerUtil.instance
             .i('  ${player?.name ?? entry.key}: ${entry.value} votes');
       }
@@ -1344,7 +1344,7 @@ ${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
 2. 如果选择使用，指定要毒杀的玩家编号
 
 当前存活的玩家：
-${state.players.where((p) => p.isAlive).map((p) => '- ${p.playerId}号 ${p.name}').join('\n')}
+${state.players.where((p) => p.isAlive).map((p) => '- ${p.name}').join('\n')}
 ''';
 
       // Get LLM decision for poison

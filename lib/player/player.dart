@@ -71,7 +71,6 @@ enum PlayerType {
 
 /// Base player class
 abstract class Player {
-  final String playerId;
   final String name;
   final Role role;
   final PlayerType type;
@@ -82,7 +81,6 @@ abstract class Player {
   final List<GameEvent> actionHistory;
 
   Player({
-    required this.playerId,
     required this.name,
     required this.role,
     required this.type,
@@ -174,7 +172,7 @@ abstract class Player {
     // 检查是否连续两晚守护同一人
     final guardRole = role as GuardRole;
     final lastGuarded = guardRole.getLastGuarded(state);
-    if (lastGuarded != null && lastGuarded.playerId == target.playerId) {
+    if (lastGuarded != null && lastGuarded.name == target.name) {
       return null; // 不能连续两晚守护同一人
     }
 
@@ -356,7 +354,6 @@ abstract class Player {
   // Serialization
   Map<String, dynamic> toJson() {
     return {
-      'playerId': playerId,
       'name': name,
       'role': role.toJson(),
       'type': type.name,
@@ -373,7 +370,6 @@ abstract class Player {
     switch (type) {
       case PlayerType.human:
         return HumanPlayer._fromJson(
-          playerId: json['playerId'],
           name: json['name'],
           role: role,
           isAlive: json['isAlive'],
@@ -396,21 +392,19 @@ abstract class Player {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is Player &&
-        other.playerId == playerId &&
         other.name == name &&
         other.role == role;
   }
 
   @override
   int get hashCode {
-    return playerId.hashCode ^ name.hashCode ^ role.hashCode;
+    return name.hashCode ^ role.hashCode;
   }
 }
 
 /// Human player
 class HumanPlayer extends Player {
   HumanPlayer({
-    required super.playerId,
     required super.name,
     required super.role,
     super.modelConfig,
@@ -419,7 +413,6 @@ class HumanPlayer extends Player {
         );
 
   factory HumanPlayer._fromJson({
-    required String playerId,
     required String name,
     required Role role,
     required bool isAlive,
@@ -427,7 +420,6 @@ class HumanPlayer extends Player {
     required List<GameEvent> actionHistory,
   }) {
     return HumanPlayer(
-      playerId: playerId,
       name: name,
       role: role,
     )
@@ -442,7 +434,6 @@ abstract class AIPlayer extends Player {
   final RandomHelper random;
 
   AIPlayer({
-    required super.playerId,
     required super.name,
     required super.role,
     super.modelConfig,
@@ -506,7 +497,6 @@ abstract class AIPlayer extends Player {
   }
 
   factory AIPlayer.fromJson({
-    required String playerId,
     required String name,
     required Role role,
     required bool isAlive,

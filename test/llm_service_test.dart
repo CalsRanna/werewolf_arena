@@ -32,7 +32,6 @@ void main() {
       // 设置基本的mock返回值
       when(() => mockPlayer.modelConfig).thenReturn(null);
       when(() => mockPlayer.name).thenReturn('Test Player');
-      when(() => mockPlayer.playerId).thenReturn('test-player-id');
       when(() => mockState.currentPhase).thenReturn(GamePhase.day);
     });
 
