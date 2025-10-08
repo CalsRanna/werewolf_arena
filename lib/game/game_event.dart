@@ -1,6 +1,5 @@
 import 'game_state.dart';
 import '../player/player.dart';
-import '../player/role.dart';
 
 /// 死亡原因枚举
 enum DeathCause {
@@ -56,51 +55,7 @@ class DeadEvent extends GameEvent {
           target: killer,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    final causeText = _getCauseText(cause, locale);
-    return '${victim.name} $causeText';
-  }
-
-  @override
-  String getDescriptionForPlayer(dynamic player, {String? locale}) {
-    // 根据玩家身份决定显示多少细节
-    final canSeeDeathCause = _canSeeDeathCause(player);
-
-    if (canSeeDeathCause) {
-      return generateDescription(locale: locale);
-    } else {
-      // 隐藏死因，只显示基本信息
-      return '${victim.name} 死亡';
-    }
-  }
-
-  bool _canSeeDeathCause(dynamic player) {
-    final playerId = player.playerId as String;
-    final role = player.role as Role;
-    final isAlive = player.isAlive as bool;
-
-    return role.isWerewolf ||
-        role.roleId == 'witch' ||
-        playerId == victim.playerId ||
-        !isAlive; // 死人知道一切
-  }
-
-  String _getCauseText(DeathCause cause, String? locale) {
-    switch (cause) {
-      case DeathCause.werewolfKill:
-        return '被狼人杀死';
-      case DeathCause.vote:
-        return '被投票处决';
-      case DeathCause.poison:
-        return '被毒死';
-      case DeathCause.hunterShot:
-        return '被猎人击毙';
-      case DeathCause.other:
-        return '死亡';
-    }
-  }
-
+  
   @override
   void execute(GameState state) {
     victim.isAlive = false;
@@ -138,11 +93,7 @@ class WerewolfKillEvent extends GameEvent {
           target: target,
           visibility: EventVisibility.allWerewolves,
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '${actor.name} 选择击杀 ${target!.name}';
-  }
-
+  
   @override
   void execute(GameState state) {
     // Mark target for death (will be resolved at end of night)
@@ -170,11 +121,7 @@ class GuardProtectEvent extends GameEvent {
           visibility: EventVisibility.playerSpecific,
           visibleToPlayerIds: [actor.playerId],
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '${actor.name} 守护了 ${target!.name}';
-  }
-
+  
   @override
   void execute(GameState state) {
     state.setTonightProtected(target!);
@@ -203,11 +150,7 @@ class SeerInvestigateEvent extends GameEvent {
           visibility: EventVisibility.playerSpecific,
           visibleToPlayerIds: [actor.playerId],
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '${actor.name} 查验了 ${target!.name}，结果是: $investigationResult';
-  }
-
+  
   @override
   void execute(GameState state) {
     // Investigation result is already stored in the event data
@@ -235,11 +178,7 @@ class WitchHealEvent extends GameEvent {
           visibility: EventVisibility.playerSpecific,
           visibleToPlayerIds: [actor.playerId],
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '${actor.name} 使用解药救了 ${target!.name}';
-  }
-
+  
   @override
   void execute(GameState state) {
     state.cancelTonightKill();
@@ -266,11 +205,7 @@ class WitchPoisonEvent extends GameEvent {
           visibility: EventVisibility.playerSpecific,
           visibleToPlayerIds: [actor.playerId],
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '${actor.name} 使用毒药毒杀了 ${target!.name}';
-  }
-
+  
   @override
   void execute(GameState state) {
     state.setTonightPoisoned(target!);
@@ -299,21 +234,7 @@ class VoteEvent extends GameEvent {
           target: candidate,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    final voteText = _getVoteText(voteType, locale);
-    return '${voter.name} $voteText ${candidate.name}';
-  }
-
-  String _getVoteText(VoteType voteType, String? locale) {
-    switch (voteType) {
-      case VoteType.normal:
-        return '投票给';
-      case VoteType.pk:
-        return 'PK投票给';
-    }
-  }
-
+  
   @override
   void execute(GameState state) {
     state.addVote(voter, candidate);
@@ -366,23 +287,7 @@ class SpeakEvent extends GameEvent {
     }
   }
 
-  @override
-  String generateDescription({String? locale}) {
-    final speechText = _getSpeechText(speechType, locale);
-    return '${speaker.name} $speechText: $message';
-  }
-
-  String _getSpeechText(SpeechType speechType, String? locale) {
-    switch (speechType) {
-      case SpeechType.normal:
-        return '发言';
-      case SpeechType.lastWords:
-        return '遗言';
-      case SpeechType.werewolfDiscussion:
-        return '狼人讨论';
-    }
-  }
-
+  
   @override
   void execute(GameState state) {
     // 发言事件不需要执行特殊逻辑，只是记录
@@ -432,11 +337,7 @@ class HunterShootEvent extends GameEvent {
           target: target,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '${actor.name} 开枪带走了 ${target!.name}';
-  }
-
+  
   @override
   void execute(GameState state) {
     // Create death event for the target
@@ -467,26 +368,7 @@ class PhaseChangeEvent extends GameEvent {
           type: GameEventType.phaseChange,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    final oldPhaseText = _getPhaseText(oldPhase, locale);
-    final newPhaseText = _getPhaseText(newPhase, locale);
-    return '游戏阶段从 $oldPhaseText 变为 $newPhaseText';
-  }
-
-  String _getPhaseText(GamePhase phase, String? locale) {
-    switch (phase) {
-      case GamePhase.night:
-        return '夜晚';
-      case GamePhase.day:
-        return '白天';
-      case GamePhase.voting:
-        return '投票';
-      case GamePhase.ended:
-        return '结束';
-    }
-  }
-
+  
   @override
   void execute(GameState state) {
     // 阶段转换由GameState处理
@@ -518,17 +400,7 @@ class NightResultEvent extends GameEvent {
           type: GameEventType.dayBreak,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    if (isPeacefulNight) {
-      return '昨晚是平安夜，没有人死亡';
-    } else {
-      final deathMessages =
-          deathEvents.map((e) => e.generateDescription()).join(', ');
-      return '昨晚有人死亡: $deathMessages';
-    }
-  }
-
+  
   @override
   void execute(GameState state) {
     // Night result announcement is handled by GameEngine
@@ -549,11 +421,7 @@ class GameStartEvent extends GameEvent {
           type: GameEventType.gameStart,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '游戏开始，共 $playerCount 名玩家';
-  }
-
+  
   @override
   void execute(GameState state) {
     // Game start logic is handled by GameState
@@ -589,11 +457,7 @@ class GameEndEvent extends GameEvent {
           type: GameEventType.gameEnd,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '游戏结束。获胜方: $winner';
-  }
-
+  
   @override
   void execute(GameState state) {
     // Game end logic is handled by GameState
@@ -613,13 +477,43 @@ class SystemErrorEvent extends GameEvent {
           type: GameEventType.playerAction,
           visibility: EventVisibility.public,
         );
-  @override
-  String generateDescription({String? locale}) {
-    return '游戏错误: $errorMessage';
-  }
-
+  
   @override
   void execute(GameState state) {
     // Error events don't modify game state
+  }
+}
+
+/// 发言顺序公告事件 - 公开可见
+class SpeechOrderAnnouncementEvent extends GameEvent {
+  final List<Player> speakingOrder;
+  final int dayNumber;
+  final String direction; // "顺序" 或 "逆序"
+
+  SpeechOrderAnnouncementEvent({
+    required this.speakingOrder,
+    required this.dayNumber,
+    required this.direction,
+  }) : super(
+          eventId:
+              'speech_order_${DateTime.now().millisecondsSinceEpoch}',
+          type: GameEventType.playerAction,
+          visibility: EventVisibility.public,
+        );
+
+  
+  @override
+  void execute(GameState state) {
+    // 发言顺序公告不需要修改游戏状态
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'speakingOrder': speakingOrder.map((p) => p.name).toList(),
+      'dayNumber': dayNumber,
+      'direction': direction,
+    };
   }
 }

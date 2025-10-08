@@ -289,7 +289,8 @@ $formatted''';
             return '$speaker(狼): ${event.message}';
           }
         }
-        return event.generateDescription();
+        // 直接返回事件类型，让 LLM 理解结构化数据
+        return '事件类型: ${event.type.name}';
 
       case GameEventType.dayBreak:
         if (event is NightResultEvent) {

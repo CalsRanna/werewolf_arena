@@ -78,15 +78,7 @@ abstract class GameEvent {
     this.visibleToRole,
   }) : timestamp = DateTime.now();
 
-  /// 动态生成描述（用于日志显示和兼容性）
-  String generateDescription({String? locale});
-
-  /// 获取针对特定玩家的描述
-  String getDescriptionForPlayer(dynamic player, {String? locale}) {
-    // 默认实现，子类可以重写以实现特定的可见性逻辑
-    return generateDescription(locale: locale);
-  }
-
+  
   /// 执行事件逻辑
   void execute(GameState state);
 
@@ -117,7 +109,7 @@ abstract class GameEvent {
 
   @override
   String toString() {
-    return 'GameEvent($type: ${generateDescription()})';
+    return 'GameEvent($type: $eventId)';
   }
 
   Map<String, dynamic> toJson() {

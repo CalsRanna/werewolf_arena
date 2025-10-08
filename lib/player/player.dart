@@ -337,7 +337,9 @@ abstract class Player {
     final modelName = modelConfig?.model ?? 'default';
     final modelNameShort =
         modelName.split('/').last; // Take only the part after the last slash
-    return '[$name]<$modelNameShort>(${role.name})';
+    final formatted =
+        '${name.padLeft(8)}|${modelNameShort.padLeft(16)}|${role.name.padLeft(8)}';
+    return '[$formatted]';
   }
 
   // Death handling

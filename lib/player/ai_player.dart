@@ -175,7 +175,7 @@ class EnhancedAIPlayer extends AIPlayer {
         // Store reasoning and statement in game events, not private data
         // The AI's reasoning will be captured in the action event itself
         LoggerUtil.instance
-            .d('Player action: $playerId chose target ${target.playerId}');
+            .d('Player action: $playerId chose target ${target.playerId}', LogCategory.aiDecision);
         return target;
       }
 
@@ -229,7 +229,7 @@ class EnhancedAIPlayer extends AIPlayer {
         }
 
         // Store reasoning in action events, not private data
-        LoggerUtil.instance.d('$formattedName投票给${target.formattedName}');
+        LoggerUtil.instance.d('$formattedName投票给${target.formattedName}', LogCategory.aiDecision);
         return target;
       }
 

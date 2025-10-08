@@ -54,7 +54,6 @@ class GameEngine {
         players: [], // Will be set by setPlayers method
       );
 
-
       // Initialize player logger for debugging (after LoggerUtil gameId is set)
       PlayerLogger.instance.initialize();
 
@@ -165,7 +164,8 @@ class GameEngine {
   }
 
   /// Get player action order based on last death/execution as starting point
-  List<Player> _getActionOrder(List<Player> players) {
+  List<Player> _getActionOrder(List<Player> players,
+      {bool shouldAnnounce = false}) {
     if (players.isEmpty) return [];
 
     // Get all players sorted by their numbers for baseline ordering
@@ -198,7 +198,8 @@ class GameEngine {
         '[法官]: 法官随机选择 ${startingPlayer.name} 作为发言起始点',
       );
 
-      return _reorderFromStartingPoint(allPlayersSorted, players, randomIndex);
+      return _reorderFromStartingPoint(allPlayersSorted, players, randomIndex,
+          shouldAnnounce: shouldAnnounce);
     }
 
     // Find the index of the last dead player in the sorted list
@@ -206,7 +207,8 @@ class GameEngine {
         .indexWhere((p) => p.playerId == lastDeadPlayer.playerId);
     if (deadPlayerIndex == -1) {
       // Fallback to normal ordering if something goes wrong
-      return _reorderFromStartingPoint(allPlayersSorted, players, 0);
+      return _reorderFromStartingPoint(allPlayersSorted, players, 0,
+          shouldAnnounce: shouldAnnounce);
     }
 
     // Determine starting point (next player after the dead one)
@@ -218,12 +220,14 @@ class GameEngine {
       final currentPlayer = allPlayersSorted[currentIndex];
       if (currentPlayer.isAlive) {
         return _reorderFromStartingPoint(
-            allPlayersSorted, players, currentIndex);
+            allPlayersSorted, players, currentIndex,
+            shouldAnnounce: shouldAnnounce);
       }
     }
 
     // Should not reach here, but fallback just in case
-    return _reorderFromStartingPoint(allPlayersSorted, players, 0);
+    return _reorderFromStartingPoint(allPlayersSorted, players, 0,
+        shouldAnnounce: shouldAnnounce);
   }
 
   /// Find the last player who died or was executed
@@ -247,7 +251,8 @@ class GameEngine {
 
   /// Reorder players starting from a specific index
   List<Player> _reorderFromStartingPoint(List<Player> allPlayersSorted,
-      List<Player> alivePlayers, int startingIndex) {
+      List<Player> alivePlayers, int startingIndex,
+      {bool shouldAnnounce = false}) {
     final orderedPlayers = <Player>[];
     final alivePlayerIds = alivePlayers.map((p) => p.playerId).toSet();
 
@@ -281,6 +286,17 @@ class GameEngine {
     final direction = isReverse ? "逆序" : "顺序";
     LoggerUtil.instance.i('[法官]: 从${orderNames.first}开始$direction发言');
 
+    // Create speech order announcement event if requested
+    if (shouldAnnounce && orderedPlayers.isNotEmpty) {
+      final state = _currentState!;
+      final speechOrderEvent = SpeechOrderAnnouncementEvent(
+        speakingOrder: orderedPlayers,
+        dayNumber: state.dayNumber,
+        direction: direction,
+      );
+      state.addEvent(speechOrderEvent);
+    }
+
     return orderedPlayers;
   }
 
@@ -309,7 +325,7 @@ class GameEngine {
             final event = werewolf.createKillEvent(target, state);
             if (event != null) {
               werewolf.executeEvent(event, state);
-              LoggerUtil.instance.i('狼人选择击杀${target.formattedName}');
+              LoggerUtil.instance.i('[法官]: 狼人选择击杀${target.formattedName}');
             } else {
               LoggerUtil.instance
                   .i('Werewolf did not choose a valid kill target');
@@ -349,7 +365,7 @@ class GameEngine {
         final event = firstWerewolf.createKillEvent(victim, state);
         if (event != null) {
           firstWerewolf.executeEvent(event, state);
-          LoggerUtil.instance.i('狼人选择击杀${victim.formattedName}');
+          LoggerUtil.instance.i('[法官]: 狼人选择击杀${victim.formattedName}');
         }
       } else {
         LoggerUtil.instance.i('Werewolves chose no target');
@@ -726,7 +742,7 @@ class GameEngine {
     } else {
       for (final death in deathEvents) {
         LoggerUtil.instance.i(
-          '${death.victim.name} 死亡: ${death.generateDescription()}',
+          '${death.victim.name} 死亡，死因: ${death.cause.name}',
         );
       }
     }
@@ -735,8 +751,9 @@ class GameEngine {
   /// Run discussion phase - players speak in order (public method)
   Future<void> runDiscussionPhase() async {
     final state = _currentState!;
-    final alivePlayers =
-        _getActionOrder(state.alivePlayers.where((p) => p.isAlive).toList());
+    final alivePlayers = _getActionOrder(
+        state.alivePlayers.where((p) => p.isAlive).toList(),
+        shouldAnnounce: true);
 
     // Collect speech history for this discussion round
     final discussionHistory = <String>[];

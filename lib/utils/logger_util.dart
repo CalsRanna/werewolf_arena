@@ -132,7 +132,7 @@ class CompactPrinter extends LogPrinter {
   @override
   List<String> log(LogEvent event) {
     final timestamp = _timestampFormat.format(event.time);
-    final level = event.level.name.toUpperCase().padRight(7);
+    final level = event.level.name.toUpperCase().padLeft(7);
     final message = event.message;
 
     final logLine = '[$timestamp] [$level] $message';

@@ -143,7 +143,7 @@ class OpenAIService {
 
         // 如果重试过，记录成功日志
         if (attempt > 1) {
-          LoggerUtil.instance.i('LLM API call succeeded on attempt $attempt');
+          LoggerUtil.instance.i('LLM API call succeeded on attempt $attempt', LogCategory.llmApi);
         }
 
         return LLMResponse.success(
@@ -158,14 +158,14 @@ class OpenAIService {
         if (attempt == retryConfig.maxAttempts) {
           // 最后一次尝试失败，记录错误日志
           LoggerUtil.instance.e(
-              'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException');
+              'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException', null, null, LogCategory.llmApi);
           break;
         }
 
         // 记录重试日志
         final delay = _calculateBackoffDelay(attempt);
         LoggerUtil.instance.w(
-            'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e');
+            'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e', LogCategory.llmApi);
 
         // 计算退避延迟时间
         await Future.delayed(delay);
@@ -326,7 +326,7 @@ $context
 
       // 调试信息：输出请求详情
       LoggerUtil.instance.d(
-          'API Request - Model: $effectiveModel, Messages: ${messages.length}');
+          'API Request - Model: $effectiveModel, Messages: ${messages.length}', LogCategory.llmApi);
 
       final response = await client.createChatCompletion(request: request);
 
