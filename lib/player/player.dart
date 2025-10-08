@@ -170,6 +170,14 @@ abstract class Player {
         !target.isAlive) {
       return null;
     }
+
+    // 检查是否连续两晚守护同一人
+    final guardRole = role as GuardRole;
+    final lastGuarded = guardRole.getLastGuarded(state);
+    if (lastGuarded != null && lastGuarded.playerId == target.playerId) {
+      return null; // 不能连续两晚守护同一人
+    }
+
     return GuardProtectEvent(
       actor: this,
       target: target,

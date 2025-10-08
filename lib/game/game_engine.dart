@@ -460,16 +460,16 @@ class GameEngine {
             } else {
               LoggerUtil.instance.w(
                   '${werewolf.name} cannot create werewolf discussion event');
-              LoggerUtil.instance.i('[${werewolf.formattedName}]: [无法创建讨论事件]');
+              LoggerUtil.instance.i('[${werewolf.formattedName}]: 无法创建讨论事件');
             }
           } else {
             LoggerUtil.instance.w('${werewolf.formattedName}没有发言');
-            LoggerUtil.instance.i('[${werewolf.formattedName}]: ');
+            LoggerUtil.instance.i('${werewolf.formattedName}: ');
           }
         } catch (e) {
           LoggerUtil.instance
               .e('Werewolf ${werewolf.name} discussion failed: $e');
-          LoggerUtil.instance.i('[${werewolf.formattedName}]: [因技术问题无法发言]');
+          LoggerUtil.instance.i('[${werewolf.formattedName}]: 因技术问题无法发言');
         }
 
         // Delay between werewolf discussions
@@ -479,6 +479,7 @@ class GameEngine {
       }
     }
 
+    LoggerUtil.instance.i('[法官]: 狼人请选择击杀目标');
     await Future.delayed(const Duration(milliseconds: 800));
   }
 
@@ -622,8 +623,6 @@ class GameEngine {
           try {
             // Update player event log before action
             PlayerLogger.instance.updatePlayerEvents(witch, state);
-
-            LoggerUtil.instance.i('[法官]: ${witch.formattedName}正在思考是否使用解药...');
             await witch.processInformation(state);
 
             // Ask witch specifically about antidote
@@ -655,8 +654,6 @@ class GameEngine {
           await Future.delayed(Duration(milliseconds: 1000));
 
           try {
-            LoggerUtil.instance.i('[法官]: ${witch.formattedName}正在思考是否使用毒药...');
-
             // Ask witch specifically about poison
             final poisonTarget = await _askWitchAboutPoison(witch, state);
 
@@ -972,7 +969,7 @@ class GameEngine {
       final tiedPlayers = state.getTiedPlayers();
       if (tiedPlayers.length > 1) {
         LoggerUtil.instance.i(
-          'Tied vote: ${tiedPlayers.map((p) => p.name).join(', ')} - entering PK phase',
+          '[法官]: ${tiedPlayers.map((p) => p.formattedName).join(', ')}平票',
         );
         await _handlePKPhase(tiedPlayers);
       } else if (voteResults.isEmpty) {
@@ -988,14 +985,6 @@ class GameEngine {
   /// Handle PK (平票) phase - tied players speak, then others vote
   Future<void> _handlePKPhase(List<Player> tiedPlayers) async {
     final state = _currentState!;
-
-    LoggerUtil.instance.i('=== PK Phase ===');
-    LoggerUtil.instance.i(
-      'Tied players: ${tiedPlayers.map((p) => p.name).join(', ')}',
-    );
-
-    // PK玩家依次发言
-    LoggerUtil.instance.i('PK players will now speak in order...');
 
     for (int i = 0; i < tiedPlayers.length; i++) {
       final player = tiedPlayers[i];

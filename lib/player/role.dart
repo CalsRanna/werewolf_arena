@@ -275,6 +275,19 @@ class GuardRole extends Role {
     protectEvents.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return protectEvents.first.target;
   }
+
+  /// 获取守卫可以守护的玩家列表（排除上次守护的玩家）
+  List<Player> getAvailableTargets(GameState state) {
+    final allPlayers = state.players.where((p) => p.isAlive).toList();
+    final lastGuarded = getLastGuarded(state);
+
+    if (lastGuarded == null) {
+      return allPlayers;
+    }
+
+    // 排除上次守护的玩家
+    return allPlayers.where((p) => p.playerId != lastGuarded.playerId).toList();
+  }
 }
 
 // Skill implementations

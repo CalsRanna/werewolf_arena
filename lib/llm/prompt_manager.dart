@@ -2,6 +2,7 @@ import '../game/game_state.dart';
 import '../game/game_event.dart';
 import '../llm/enhanced_prompts.dart';
 import '../player/player.dart';
+import '../player/role.dart';
 import '../player/ai_player.dart';
 import '../utils/config.dart';
 
@@ -311,6 +312,9 @@ $formatted$peacefulNightInfo''';
           } else if (event.speechType == SpeechType.werewolfDiscussion) {
             return '$speaker(狼): ${event.message}';
           }
+        } else if (event is SpeechOrderAnnouncementEvent) {
+          final order = event.speakingOrder.map((p) => p.name).join('→');
+          return '📣 发言顺序: $order (${event.direction})';
         }
         // 直接返回事件类型，让 LLM 理解结构化数据
         return '事件类型: ${event.type.name}';
@@ -425,6 +429,35 @@ $formatted$peacefulNightInfo''';
           '暂无查验记录',
         );
       }
+    } else if (player.role.roleId == 'guard') {
+      // 替换守卫可守护目标列表
+      final guardRole = player.role as GuardRole;
+      final availableTargets = guardRole.getAvailableTargets(state);
+      final lastGuarded = guardRole.getLastGuarded(state);
+
+      String targetsInfo = '';
+      if (availableTargets.isNotEmpty) {
+        targetsInfo = '可守护玩家: ${availableTargets.map((p) => p.name).join(', ')}';
+      } else {
+        targetsInfo = '无可守护玩家';
+      }
+
+      String lastGuardedInfo = '';
+      if (lastGuarded != null) {
+        lastGuardedInfo = '上次守护: ${lastGuarded.name}（今晚不可守护）';
+      } else {
+        lastGuardedInfo = '上次守护: 无';
+      }
+
+      replacedPrompt = replacedPrompt.replaceAll(
+        '{available_targets}',
+        targetsInfo,
+      );
+
+      replacedPrompt = replacedPrompt.replaceAll(
+        '{last_guarded}',
+        lastGuardedInfo,
+      );
     }
 
     return replacedPrompt;

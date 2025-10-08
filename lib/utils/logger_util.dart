@@ -129,7 +129,7 @@ class CompactPrinter extends LogPrinter {
 
   @override
   List<String> log(LogEvent event) {
-    final timestamp = event.time.toString().substring(20);
+    final timestamp = event.time.toString().substring(0, 20);
     final level = event.level.name.toUpperCase().padLeft(7);
     final message = event.message;
 
@@ -187,8 +187,11 @@ class LoggerUtil {
   }) async {
     // 创建会话目录
     var now = DateTime.now();
-    final sessionName =
-        now.toString().substring(20).replaceAll(':', '-').replaceAll(' ', '_');
+    final sessionName = now
+        .toString()
+        .substring(0, 20)
+        .replaceAll(':', '-')
+        .replaceAll(' ', '_');
     _gameSessionDir = path.join('logs', sessionName);
 
     // 初始化文件输出

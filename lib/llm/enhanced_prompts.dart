@@ -97,6 +97,9 @@ class EnhancedPrompts {
   static const String enhancedGuardPrompt = '''
 你是守卫！每晚守护一人（不能连守）
 
+{available_targets}
+{last_guarded}
+
 核心策略：
 - 预判狼人刀法，守护关键神职
 - 首夜可守中置位（5-8号），避开边角
