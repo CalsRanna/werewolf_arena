@@ -26,7 +26,6 @@ class WerewolfArenaApp extends StatelessWidget {
   ThemeData _getTheme() {
     var appBarTheme = AppBarTheme(
       titleTextStyle: TextStyle(
-        fontFamily: 'Raleway',
         fontWeight: FontWeight.w500,
         fontSize: 22,
         height: 1.5,
@@ -38,11 +37,6 @@ class WerewolfArenaApp extends StatelessWidget {
       seedColor: Color(0xFF6366F1), // 紫色主题
     );
 
-    return ThemeData(
-      appBarTheme: appBarTheme,
-      colorScheme: colorScheme,
-      fontFamily: 'Raleway',
-      useMaterial3: true,
-    );
+    return ThemeData(appBarTheme: appBarTheme, colorScheme: colorScheme);
   }
 }

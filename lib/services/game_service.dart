@@ -4,7 +4,6 @@ import 'package:werewolf_arena/core/engine/game_engine_callbacks.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/state/game_event.dart';
 import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/entities/player/role.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 
@@ -15,13 +14,20 @@ class GameService implements GameEventCallbacks {
   ConfigManager? _configManager;
 
   // 事件流控制器
-  final StreamController<String> _gameEventController = StreamController.broadcast();
-  final StreamController<void> _onGameStartController = StreamController.broadcast();
-  final StreamController<String> _onPhaseChangeController = StreamController.broadcast();
-  final StreamController<String> _onPlayerActionController = StreamController.broadcast();
-  final StreamController<String> _onGameEndController = StreamController.broadcast();
-  final StreamController<String> _onErrorController = StreamController.broadcast();
-  final StreamController<GameState> _onGameStateChangedController = StreamController.broadcast();
+  final StreamController<String> _gameEventController =
+      StreamController.broadcast();
+  final StreamController<void> _onGameStartController =
+      StreamController.broadcast();
+  final StreamController<String> _onPhaseChangeController =
+      StreamController.broadcast();
+  final StreamController<String> _onPlayerActionController =
+      StreamController.broadcast();
+  final StreamController<String> _onGameEndController =
+      StreamController.broadcast();
+  final StreamController<String> _onErrorController =
+      StreamController.broadcast();
+  final StreamController<GameState> _onGameStateChangedController =
+      StreamController.broadcast();
 
   // 公开的事件流
   Stream<String> get gameEvents => _gameEventController.stream;
@@ -30,7 +36,8 @@ class GameService implements GameEventCallbacks {
   Stream<String> get playerActionStream => _onPlayerActionController.stream;
   Stream<String> get gameEndStream => _onGameEndController.stream;
   Stream<String> get errorStream => _onErrorController.stream;
-  Stream<GameState> get gameStateChangedStream => _onGameStateChangedController.stream;
+  Stream<GameState> get gameStateChangedStream =>
+      _onGameStateChangedController.stream;
 
   /// 获取当前游戏状态
   GameState? get currentState => _gameEngine?.currentState;
@@ -117,7 +124,11 @@ class GameService implements GameEventCallbacks {
   // ============ GameEventCallbacks 实现 ============
 
   @override
-  void onGameStart(GameState state, int playerCount, Map<String, int> roleDistribution) {
+  void onGameStart(
+    GameState state,
+    int playerCount,
+    Map<String, int> roleDistribution,
+  ) {
     final rolesStr = roleDistribution.entries
         .map((e) => '${e.key}: ${e.value}')
         .join(', ');
@@ -125,7 +136,12 @@ class GameService implements GameEventCallbacks {
   }
 
   @override
-  void onGameEnd(GameState state, String winner, int totalDays, int finalPlayerCount) {
+  void onGameEnd(
+    GameState state,
+    String winner,
+    int totalDays,
+    int finalPlayerCount,
+  ) {
     _gameEventController.add('游戏结束 - 获胜方: $winner, 总天数: $totalDays');
     _onGameEndController.add('游戏结束: $winner 获胜');
   }
@@ -133,16 +149,24 @@ class GameService implements GameEventCallbacks {
   @override
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
     final phaseStr = _getPhaseString(newPhase);
-    _gameEventController.add('阶段变更: ${_getPhaseString(oldPhase)} -> $phaseStr (第${dayNumber}天)');
+    _gameEventController.add(
+      '阶段变更: ${_getPhaseString(oldPhase)} -> $phaseStr (第${dayNumber}天)',
+    );
     _onPhaseChangeController.add(phaseStr);
   }
 
   @override
-  void onPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details}) {
+  void onPlayerAction(
+    Player player,
+    String actionType,
+    dynamic target, {
+    Map<String, dynamic>? details,
+  }) {
     final targetStr = target is Player ? target.name : target.toString();
     var message = '${player.name} 执行 $actionType -> $targetStr';
     if (details != null && details.isNotEmpty) {
-      message += ' (${details.entries.map((e) => '${e.key}: ${e.value}').join(', ')})';
+      message +=
+          ' (${details.entries.map((e) => '${e.key}: ${e.value}').join(', ')})';
     }
     _gameEventController.add(message);
     _onPlayerActionController.add(message);
@@ -160,7 +184,9 @@ class GameService implements GameEventCallbacks {
 
   @override
   void onPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
-    final typeStr = speechType != null ? '[${_getSpeechTypeString(speechType)}]' : '';
+    final typeStr = speechType != null
+        ? '[${_getSpeechTypeString(speechType)}]'
+        : '';
     _gameEventController.add('$typeStr${player.name}: $message');
   }
 
@@ -199,7 +225,11 @@ class GameService implements GameEventCallbacks {
   }
 
   @override
-  void onVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates) {
+  void onVoteResults(
+    Map<String, int> results,
+    Player? executed,
+    List<Player>? pkCandidates,
+  ) {
     if (results.isEmpty) {
       _gameEventController.add('没有投票结果');
       return;
