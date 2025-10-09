@@ -129,6 +129,11 @@ class ConfigService {
     return _configManager!.scenarioManager;
   }
 
+  /// 获取ConfigManager实例
+  ConfigManager? get configManager {
+    return _configManager;
+  }
+
   /// 确保已初始化
   void _ensureInitialized() {
     if (!_isInitialized || _configManager == null) {

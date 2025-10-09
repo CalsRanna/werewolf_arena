@@ -1,8 +1,17 @@
 import 'dart:io';
 import 'package:args/args.dart';
+import 'package:werewolf_arena/core/engine/game_engine.dart';
+import 'package:werewolf_arena/services/config_service.dart';
+import 'package:werewolf_arena/widget/console/game_console.dart';
+import 'package:werewolf_arena/widget/console/console_callback_handler.dart';
 
 /// Console adapter for running the game in terminal mode
 class ConsoleAdapter {
+  final GameConsole _console = GameConsole.instance;
+  late final ConfigService _configService;
+  late final GameEngine _gameEngine;
+  late final ConsoleCallbackHandler _callbackHandler;
+
   ConsoleAdapter();
 
   Future<void> runConsoleMode(List<String> arguments) async {
@@ -28,24 +37,79 @@ class ConsoleAdapter {
         return;
       }
 
-      print('========================================');
-      print('      狼人杀竞技场 - 控制台模式      ');
-      print('========================================\n');
+      // 初始化控制台
+      _console.initialize(useColors: true);
+      _console.printHeader('狼人杀竞技场 - 控制台模式', color: ConsoleColor.green);
 
-      // TODO: 实现游戏逻辑
       // 1. 加载配置
-      // 2. 初始化游戏引擎
-      // 3. 创建玩家
-      // 4. 开始游戏循环
-      // 5. 显示游戏结果
+      _console.printLine('📝 正在加载配置...');
+      _configService = ConfigService();
+      await _configService.ensureInitialized();
 
-      print('控制台模式正在开发中...');
-      print('请使用 Flutter GUI 模式运行游戏。');
-      print('\n提示: 运行 "flutter run -d macos" 或其他平台来启动 GUI 应用。');
+      final configPath = argResults['config'] as String?;
+      if (configPath != null) {
+        _console.printLine('   使用自定义配置: $configPath');
+        // TODO: 加载自定义配置文件
+      } else {
+        _console.printLine('   使用默认配置');
+      }
+
+      // 2. 初始化游戏引擎
+      _console.printLine('🎮 正在初始化游戏引擎...');
+      _callbackHandler = ConsoleCallbackHandler();
+      _gameEngine = GameEngine(
+        configManager: _configService.configManager!,
+        callbacks: _callbackHandler,
+      );
+
+      // 3. 创建玩家
+      _console.printLine('👥 正在创建AI玩家...');
+      final playerCountStr = argResults['players'] as String?;
+
+      // 选择合适的场景
+      if (playerCountStr != null) {
+        final playerCount = int.tryParse(playerCountStr);
+        if (playerCount == null) {
+          _console.displayError('无效的玩家数量: $playerCountStr');
+          exit(1);
+        }
+        await _configService.autoSelectScenario(playerCount);
+      }
+
+      // 使用当前场景创建玩家
+      final scenario = _configService.currentScenario;
+      if (scenario == null) {
+        _console.displayError('无法获取游戏场景');
+        exit(1);
+      }
+
+      final players = _configService.createPlayersForScenario(scenario);
+      _console.printLine('   创建了 ${players.length} 个玩家');
+
+      // 设置玩家到游戏引擎
+      await _gameEngine.initializeGame();
+      _gameEngine.setPlayers(players);
+
+      _console.printLine();
+      _console.printSeparator('=', 60);
+      _console.printLine();
+
+      // 4. 开始游戏循环
+      _console.printLine('🚀 开始游戏...\n');
+      await _gameEngine.startGame();
+
+      // 执行游戏循环,直到游戏结束
+      while (!_gameEngine.isGameEnded) {
+        await _gameEngine.executeGameStep();
+      }
+
+      // 5. 游戏结束
+      _console.printLine();
+      _console.printSeparator('=', 60);
+      _console.printLine('✅ 游戏已结束');
 
     } catch (e, stackTrace) {
-      print('错误: $e');
-      print('堆栈跟踪: $stackTrace');
+      _console.displayError('运行错误: $e', errorDetails: stackTrace);
       exit(1);
     }
   }
@@ -57,5 +121,11 @@ class ConsoleAdapter {
     print('');
     print('选项:');
     print(parser.usage);
+    print('');
+    print('示例:');
+    print('  dart run bin/console.dart                    # 使用默认配置运行');
+    print('  dart run bin/console.dart -p 8              # 指定8个玩家');
+    print('  dart run bin/console.dart -c my_config.yaml # 使用自定义配置');
+    print('  dart run bin/console.dart -d                # 启用调试模式');
   }
 }
