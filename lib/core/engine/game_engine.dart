@@ -418,6 +418,8 @@ class GameEngine {
           }
         } catch (e) {
           LoggerUtil.instance.e('Werewolf ${werewolf.name} action failed: $e');
+          final errorMsg = _formatErrorMessage(e, '狼人 ${werewolf.name} 行动失败');
+          _notifyErrorMessage(errorMsg);
         }
       }
     } else {
@@ -487,6 +489,8 @@ class GameEngine {
       }
     } catch (e) {
       LoggerUtil.instance.e('Werewolf ${werewolf.name} voting failed: $e');
+      final errorMsg = _formatErrorMessage(e, '狼人 ${werewolf.name} 投票失败');
+      _notifyErrorMessage(errorMsg);
     }
   }
 
@@ -595,6 +599,7 @@ class GameEngine {
           }
         } catch (e) {
           LoggerUtil.instance.e('Guard ${guard.name} action failed: $e');
+          _notifyErrorMessage('守卫 ${guard.name} 行动失败: $e');
         }
 
         // Delay between guard actions
@@ -646,6 +651,7 @@ class GameEngine {
           }
         } catch (e) {
           LoggerUtil.instance.e('${seer.name} action failed: $e');
+          _notifyErrorMessage('预言家 ${seer.name} 行动失败: $e');
         }
 
         // Delay between seer actions
@@ -711,6 +717,7 @@ class GameEngine {
           } catch (e) {
             LoggerUtil.instance
                 .e('Witch ${witch.name} antidote decision failed: $e');
+            _notifyErrorMessage('女巫 ${witch.name} 解药决策失败: $e');
             _notifySystemMessage('${witch.formattedName}选择不使用解药');
           }
         }
@@ -746,6 +753,7 @@ class GameEngine {
           } catch (e) {
             LoggerUtil.instance
                 .e('Witch ${witch.name} poison decision failed: $e');
+            _notifyErrorMessage('女巫 ${witch.name} 毒药决策失败: $e');
             _notifySystemMessage('${witch.formattedName}选择不使用毒药');
           }
         }
@@ -968,7 +976,7 @@ class GameEngine {
       }
     } catch (e) {
       LoggerUtil.instance.e('Player ${voter.name} voting failed: $e');
-      _notifyErrorMessage('${voter.name} abstained due to error');
+      _notifyErrorMessage('玩家 ${voter.name} 投票失败: $e');
     }
   }
 
@@ -1164,6 +1172,7 @@ class GameEngine {
       } catch (e) {
         LoggerUtil.instance
             .e('Error generating last words for ${player.name}: $e');
+        _notifyErrorMessage('玩家 ${player.name} 遗言生成失败: $e');
         lastWords = '我没有什么要说的了。'; // Fallback on error
       }
     } else {
@@ -1251,6 +1260,7 @@ ${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
       return response == '使用解药';
     } catch (e) {
       LoggerUtil.instance.e('Error asking witch about antidote: $e');
+      _notifyErrorMessage('女巫解药查询失败: $e');
       return false; // Default to not using antidote on error
     }
   }
@@ -1287,6 +1297,7 @@ ${state.players.where((p) => p.isAlive).map((p) => '- ${p.name}').join('\n')}
       return response;
     } catch (e) {
       LoggerUtil.instance.e('Error asking witch about poison: $e');
+      _notifyErrorMessage('女巫毒药查询失败: $e');
       return null; // Default to not using poison on error
     }
   }
@@ -1296,5 +1307,33 @@ ${state.players.where((p) => p.isAlive).map((p) => '- ${p.name}').join('\n')}
     _eventController.close();
     _stateController.close();
     PlayerLogger.instance.dispose();
+  }
+
+  /// 格式化错误消息，提供更友好的提示
+  String _formatErrorMessage(dynamic error, String context) {
+    final errorStr = error.toString();
+
+    // 检查是否是API密钥相关的错误
+    if (errorStr.contains('YOUR_KEY_HERE') ||
+        errorStr.contains('API key') ||
+        errorStr.contains('Unauthorized') ||
+        errorStr.contains('401')) {
+      return '$context - API密钥未配置或无效。请在config/llm_config.yaml中配置正确的API密钥';
+    }
+
+    // 检查是否是网络相关的错误
+    if (errorStr.contains('SocketException') ||
+        errorStr.contains('Connection') ||
+        errorStr.contains('timeout')) {
+      return '$context - 网络连接失败。请检查网络连接和API服务是否可用';
+    }
+
+    // 检查是否是OpenAI API错误
+    if (errorStr.contains('OpenAI')) {
+      return '$context - LLM服务调用失败: $errorStr';
+    }
+
+    // 默认错误消息
+    return '$context: $errorStr';
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -16,17 +17,39 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin {
   final GameViewModel viewModel = GetIt.instance.get<GameViewModel>();
   late TabController _tabController;
+  StreamSubscription? _snackBarSubscription;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     viewModel.initSignals();
+
+    // 监听SnackBar消息
+    _snackBarSubscription = viewModel.snackBarMessages.listen((message) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red[700],
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: '关闭',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _snackBarSubscription?.cancel();
     viewModel.dispose();
     super.dispose();
   }
@@ -184,11 +207,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
             // 控制按钮
             _buildControlButtons(),
 
-            SizedBox(height: 24),
-
-            // 游戏速度控制
-            _buildSpeedControl(),
-
             Spacer(),
 
             // 底部提示
@@ -209,7 +227,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '点击开始游戏按钮启动AI对战',
+                        '点击"开始游戏"启动，然后用"下一步"按钮推进游戏',
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -227,8 +245,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
   // 游戏区域
   Widget _buildGameArea() {
-    final isPaused = viewModel.isPaused.value;
-
     return Card(
       margin: Responsive.getResponsiveCardMargin(context),
       elevation: 4,
@@ -240,27 +256,24 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.people, color: Theme.of(context).colorScheme.primary),
-                    SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        viewModel.formattedTime.value,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.people, color: Theme.of(context).colorScheme.primary),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          viewModel.formattedTime.value,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-                if (isPaused)
-                  Chip(
-                    avatar: Icon(Icons.pause_circle, size: 16),
-                    label: Text('已暂停'),
-                    backgroundColor: Colors.orange.withValues(alpha: 0.2),
+                    ],
                   ),
+                ),
               ],
             ),
             Divider(height: 24),
@@ -319,8 +332,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
           _buildGameStatus(),
           SizedBox(height: 16),
           _buildControlButtons(),
-          SizedBox(height: 16),
-          _buildSpeedControl(),
           if (!isRunning) ...[
             SizedBox(height: 16),
             Container(
@@ -339,7 +350,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '点击开始游戏按钮启动AI对战',
+                      '点击"开始游戏"启动，然后用"下一步"按钮推进游戏',
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -418,13 +429,12 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
   Widget _buildControlButtons() {
     final canStart = viewModel.canStartGame.value;
-    final canPause = viewModel.canPauseGame.value;
-    final canResume = viewModel.canResumeGame.value;
+    final canNext = viewModel.canNextStep.value;
     final isRunning = viewModel.isGameRunning.value;
-    final isPaused = viewModel.isPaused.value;
 
     return Column(
       children: [
+        // 开始游戏按钮
         SizedBox(
           width: double.infinity,
           height: 48,
@@ -442,18 +452,24 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
         SizedBox(height: 12),
 
+        // 下一步和重置按钮
         Row(
           children: [
             Expanded(
+              flex: 2,
               child: SizedBox(
-                height: 40,
-                child: OutlinedButton.icon(
-                  onPressed: (canPause || canResume)
-                      ? () => isPaused ? viewModel.resumeGame() : viewModel.pauseGame()
-                      : null,
-                  icon: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 18),
-                  label: Text(isPaused ? '恢复' : '暂停'),
-                  style: OutlinedButton.styleFrom(
+                height: 44,
+                child: ElevatedButton.icon(
+                  onPressed: canNext ? () => viewModel.executeNextStep() : null,
+                  icon: Icon(Icons.skip_next, size: 20),
+                  label: Text('下一步', style: TextStyle(fontSize: 15)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: canNext
+                        ? Theme.of(context).colorScheme.secondary
+                        : null,
+                    foregroundColor: canNext
+                        ? Theme.of(context).colorScheme.onSecondary
+                        : null,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -464,7 +480,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
             SizedBox(width: 8),
             Expanded(
               child: SizedBox(
-                height: 40,
+                height: 44,
                 child: OutlinedButton.icon(
                   onPressed: isRunning ? () => viewModel.resetGame() : null,
                   icon: Icon(Icons.refresh, size: 18),
@@ -477,50 +493,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
                 ),
               ),
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSpeedControl() {
-    final speed = viewModel.gameSpeed.value;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.speed, size: 16, color: Theme.of(context).colorScheme.primary),
-            SizedBox(width: 8),
-            Text(
-              '游戏速度',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            Spacer(),
-            Text(
-              '${speed.toStringAsFixed(1)}x',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 8),
-        Slider(
-          value: speed,
-          min: 0.5,
-          max: 5.0,
-          divisions: 9,
-          label: '${speed.toStringAsFixed(1)}x',
-          onChanged: (value) => viewModel.setGameSpeed(value),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('0.5x', style: TextStyle(fontSize: 10, color: Colors.grey)),
-            Text('5.0x', style: TextStyle(fontSize: 10, color: Colors.grey)),
           ],
         ),
       ],

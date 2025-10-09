@@ -12,6 +12,7 @@ class GameService implements GameEventCallbacks {
   bool _isInitialized = false;
   GameEngine? _gameEngine;
   ConfigManager? _configManager;
+  bool _isExecutingStep = false;
 
   // 事件流控制器
   final StreamController<String> _gameEventController =
@@ -44,6 +45,9 @@ class GameService implements GameEventCallbacks {
 
   /// 游戏是否已结束
   bool get isGameEnded => _gameEngine?.isGameEnded ?? true;
+
+  /// 是否正在执行步骤
+  bool get isExecutingStep => _isExecutingStep;
 
   /// 初始化游戏服务
   Future<void> initialize() async {
@@ -93,13 +97,27 @@ class GameService implements GameEventCallbacks {
   /// 执行下一步
   Future<void> executeNextStep() async {
     _ensureInitialized();
-    await _gameEngine!.executeGameStep();
-    _gameEventController.add('执行下一步');
+
+    if (_isExecutingStep) {
+      _gameEventController.add('正在执行步骤，请稍候...');
+      return;
+    }
+
+    try {
+      _isExecutingStep = true;
+      await _gameEngine!.executeGameStep();
+      _gameEventController.add('执行下一步完成');
+    } finally {
+      _isExecutingStep = false;
+    }
   }
 
   /// 重置游戏
   Future<void> resetGame() async {
     _ensureInitialized();
+
+    // 重置执行标志
+    _isExecutingStep = false;
 
     // 清理旧引擎
     _gameEngine?.dispose();

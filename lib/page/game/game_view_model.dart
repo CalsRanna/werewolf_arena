@@ -13,15 +13,18 @@ class GameViewModel {
 
   // Signals 状态管理
   final Signal<bool> isGameRunning = signal(false);
+  final Signal<bool> isExecutingStep = signal(false);
   final Signal<int> currentDay = signal(0);
   final Signal<String> currentPhase = signal('等待开始');
   final Signal<List<Player>> players = signal([]);
   final Signal<List<String>> eventLog = signal([]);
   final Signal<String> gameStatus = signal('准备就绪');
-  final Signal<bool> isPaused = signal(false);
-  final Signal<double> gameSpeed = signal(1.0);
   final Signal<int> selectedPlayerCount = signal(12);
   final Signal<String> selectedScenario = signal('标准场景');
+
+  // SnackBar提示用的StreamController
+  final StreamController<String> _snackBarMessageController = StreamController.broadcast();
+  Stream<String> get snackBarMessages => _snackBarMessageController.stream;
 
   // 计算属性
   late final formattedTime = computed(() {
@@ -36,12 +39,10 @@ class GameViewModel {
     return !isGameRunning.value && players.value.isNotEmpty;
   });
 
-  late final canPauseGame = computed(() {
-    return isGameRunning.value && !isPaused.value;
-  });
-
-  late final canResumeGame = computed(() {
-    return isGameRunning.value && isPaused.value;
+  late final canNextStep = computed(() {
+    return isGameRunning.value &&
+           !_gameService.isGameEnded &&
+           !isExecutingStep.value;
   });
 
   StreamSubscription? _gameEventsSubscription;
@@ -57,12 +58,28 @@ class GameViewModel {
     _setupGameEventListeners();
 
     // 设置默认游戏配置
-    players.value = [];
     eventLog.value = [];
     gameStatus.value = '准备就绪';
 
     // 添加初始日志
     _addLog('游戏引擎初始化完成');
+
+    // 自动创建玩家
+    try {
+      final scenario = _configService.currentScenario;
+      if (scenario != null) {
+        final newPlayers = _configService.createPlayersForScenario(scenario).cast<Player>();
+        players.value = newPlayers;
+        _addLog('已创建 ${newPlayers.length} 名玩家');
+        _addLog('玩家列表: ${newPlayers.map((p) => p.formattedName).join(', ')}');
+      } else {
+        players.value = [];
+        _addLog('警告: 未选择游戏场景，无法创建玩家');
+      }
+    } catch (e) {
+      players.value = [];
+      _addLog('创建玩家失败: $e');
+    }
   }
 
   /// 开始游戏
@@ -76,69 +93,92 @@ class GameViewModel {
       // 初始化游戏
       await _gameService.initializeGame();
 
-      // 创建玩家
-      final scenario = _configService.currentScenario;
-      if (scenario == null) {
-        throw Exception('未选择游戏场景');
+      // 使用已创建的玩家
+      if (players.value.isEmpty) {
+        throw Exception('玩家列表为空，请先选择游戏场景');
       }
 
-      final newPlayers = _configService.createPlayersForScenario(scenario).cast<Player>();
-      _gameService.setPlayers(newPlayers);
-      players.value = newPlayers;
-
-      _addLog('创建了 ${newPlayers.length} 名玩家');
-      _addLog('玩家列表: ${newPlayers.map((p) => p.formattedName).join(', ')}');
+      _gameService.setPlayers(players.value);
+      _addLog('设置玩家列表: ${players.value.length} 名玩家');
 
       // 开始游戏
       await _gameService.startGame();
       isGameRunning.value = true;
-      gameStatus.value = '游戏进行中';
+      gameStatus.value = '等待下一步（点击"下一步"按钮推进游戏）';
 
-      _startGameLoop();
+      _addLog('游戏已启动，使用手动模式');
 
     } catch (e) {
       gameStatus.value = '错误: $e';
-      _addLog('游戏启动失败: $e');
+      _addLog('❌ 游戏启动失败: $e');
+      _showSnackBar('游戏启动失败: $e');
     }
   }
 
-  /// 暂停游戏
-  void pauseGame() {
-    if (!canPauseGame.value) return;
+  /// 执行下一步
+  Future<void> executeNextStep() async {
+    if (!canNextStep.value) return;
 
-    isPaused.value = true;
-    gameStatus.value = '游戏已暂停';
-    _addLog('游戏暂停');
-  }
+    try {
+      isExecutingStep.value = true;
+      gameStatus.value = '正在执行下一步...';
 
-  /// 恢复游戏
-  void resumeGame() {
-    if (!canResumeGame.value) return;
+      // 执行游戏的下一步
+      await _gameService.executeNextStep();
 
-    isPaused.value = false;
-    gameStatus.value = '游戏进行中';
-    _addLog('游戏恢复');
+      // 更新玩家状态
+      final currentPlayers = _gameService.getCurrentPlayers().cast<Player>();
+      players.value = currentPlayers;
+
+      // 更新天数
+      final currentState = _gameService.currentState;
+      if (currentState != null) {
+        currentDay.value = currentState.dayNumber;
+      }
+
+      // 检查游戏是否结束
+      if (_gameService.isGameEnded) {
+        gameStatus.value = '游戏已结束';
+      } else {
+        gameStatus.value = '等待下一步（点击"下一步"推进到下一个阶段）';
+      }
+
+    } catch (e) {
+      gameStatus.value = '错误: $e';
+      _addLog('❌ 执行步骤失败: $e');
+      _showSnackBar('执行步骤失败: $e');
+    } finally {
+      isExecutingStep.value = false;
+    }
   }
 
   /// 重置游戏
   Future<void> resetGame() async {
     isGameRunning.value = false;
-    isPaused.value = false;
+    isExecutingStep.value = false;
     currentDay.value = 0;
     currentPhase.value = '等待开始';
     eventLog.value = [];
     gameStatus.value = '准备就绪';
 
     await _gameService.resetGame();
-    players.value = [];
 
-    _addLog('游戏重置');
-  }
-
-  /// 设置游戏速度
-  void setGameSpeed(double speed) {
-    gameSpeed.value = speed;
-    _addLog('游戏速度设置为 ${speed.toStringAsFixed(1)}x');
+    // 重新创建玩家
+    try {
+      final scenario = _configService.currentScenario;
+      if (scenario != null) {
+        final newPlayers = _configService.createPlayersForScenario(scenario).cast<Player>();
+        players.value = newPlayers;
+        _addLog('游戏重置 - 重新创建了 ${newPlayers.length} 名玩家');
+      } else {
+        players.value = [];
+        _addLog('游戏重置 - 警告: 未选择游戏场景');
+      }
+    } catch (e) {
+      players.value = [];
+      _addLog('❌ 游戏重置失败: $e');
+      _showSnackBar('游戏重置失败: $e');
+    }
   }
 
   /// 设置玩家数量
@@ -164,57 +204,35 @@ class GameViewModel {
 
   /// 设置游戏事件监听器
   void _setupGameEventListeners() {
+    // 监听主要的游戏事件流 - 这是所有游戏事件的主要来源
+    _gameEventsSubscription = _gameService.gameEvents.listen((event) {
+      _addLog(event);
+    });
+
     _onGameStartSubscription = _gameService.gameStartStream.listen((_) {
       currentDay.value = 1;
       currentPhase.value = '白天';
       gameStatus.value = '游戏开始';
-      _addLog('🎮 游戏正式开始！');
     });
 
     _onPhaseChangeSubscription = _gameService.phaseChangeStream.listen((phase) {
       currentPhase.value = phase;
-      _addLog('🔄 阶段切换: $phase');
     });
 
     _onPlayerActionSubscription = _gameService.playerActionStream.listen((action) {
-      _addLog('👤 $action');
+      // 玩家动作已经通过 gameEvents 流记录，这里不需要重复添加
     });
 
     _onGameEndSubscription = _gameService.gameEndStream.listen((result) {
       isGameRunning.value = false;
       gameStatus.value = '游戏结束: $result';
-      _addLog('🏆 游戏结束! 获胜方: $result');
     });
 
     _onErrorSubscription = _gameService.errorStream.listen((error) {
       gameStatus.value = '错误: $error';
       _addLog('❌ 错误: $error');
+      _showSnackBar('错误: $error');
     });
-  }
-
-  /// 游戏循环
-  Future<void> _startGameLoop() async {
-    while (isGameRunning.value && !_gameService.isGameEnded) {
-      if (!isPaused.value) {
-        await _gameService.executeNextStep();
-
-        // 更新玩家状态
-        final currentPlayers = _gameService.getCurrentPlayers().cast<Player>();
-        players.value = currentPlayers;
-
-        // 更新天数
-        final currentState = _gameService.currentState;
-        if (currentState != null) {
-          currentDay.value = currentState.dayNumber;
-        }
-
-        // 根据游戏速度调整延迟
-        final delay = Duration(milliseconds: (1000 / gameSpeed.value).round());
-        await Future.delayed(delay);
-      } else {
-        await Future.delayed(Duration(milliseconds: 100));
-      }
-    }
   }
 
   /// 添加日志
@@ -228,6 +246,11 @@ class GameViewModel {
     }
   }
 
+  /// 显示SnackBar提示
+  void _showSnackBar(String message) {
+    _snackBarMessageController.add(message);
+  }
+
   /// 释放资源
   void dispose() {
     _gameEventsSubscription?.cancel();
@@ -236,15 +259,15 @@ class GameViewModel {
     _onPlayerActionSubscription?.cancel();
     _onGameEndSubscription?.cancel();
     _onErrorSubscription?.cancel();
+    _snackBarMessageController.close();
 
     isGameRunning.dispose();
+    isExecutingStep.dispose();
     currentDay.dispose();
     currentPhase.dispose();
     players.dispose();
     eventLog.dispose();
     gameStatus.dispose();
-    isPaused.dispose();
-    gameSpeed.dispose();
     selectedPlayerCount.dispose();
     selectedScenario.dispose();
     // Computed properties are automatically disposed with their dependencies
