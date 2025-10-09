@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
-import '../../core/state/game_state.dart';
-import '../../core/entities/player/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
 import 'logger.dart';
 
 /// Player-specific logger for debugging event visibility

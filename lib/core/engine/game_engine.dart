@@ -1,16 +1,16 @@
 import 'dart:async';
-import '../state/game_state.dart';
-import '../state/game_event.dart';
-import 'game_engine_callbacks.dart';
-import '../entities/player/player.dart';
-import '../entities/player/ai_player.dart';
-import '../entities/player/role.dart';
-import '../../services/llm/enhanced_prompts.dart';
-import '../../services/logging/logger.dart';
-import '../../services/config/config.dart';
-import '../rules/game_scenario.dart';
-import '../../shared/random_helper.dart';
-import '../../services/logging/player_logger.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/engine/game_engine_callbacks.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/entities/player/ai_player.dart';
+import 'package:werewolf_arena/core/entities/player/role.dart';
+import 'package:werewolf_arena/services/llm/enhanced_prompts.dart';
+import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/services/config/config.dart';
+import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/shared/random_helper.dart';
+import 'package:werewolf_arena/services/logging/player_logger.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {

@@ -70,7 +70,7 @@ class HomePage extends StatelessWidget {
         Text(
           '与AI玩家一起体验经典的狼人杀游戏',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -162,7 +162,7 @@ class HomePage extends StatelessWidget {
       child: Text(
         '版本 2.0.0 - Flutter架构',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onBackground.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
         ),
       ),
     );

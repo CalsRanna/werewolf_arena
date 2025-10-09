@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:path/path.dart' as path;
-import '../../core/rules/game_scenario.dart';
-import '../../core/rules/game_scenario_manager.dart';
+import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
 
 /// 游戏基础配置（只包含UI和日志设置）
 class GameConfig {

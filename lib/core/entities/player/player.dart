@@ -1,7 +1,7 @@
-import 'role.dart';
-import '../../state/game_state.dart';
-import '../../state/game_event.dart';
-import '../../../shared/random_helper.dart';
+import 'package:werewolf_arena/core/entities/player/role.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/shared/random_helper.dart';
 
 /// Player model configuration
 class PlayerModelConfig {

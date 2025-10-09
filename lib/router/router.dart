@@ -1,8 +1,4 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:werewolf_arena/page/bootstrap/bootstrap_page.dart';
-import 'package:werewolf_arena/page/home/home_page.dart';
-import 'package:werewolf_arena/page/game/game_page.dart';
-import 'package:werewolf_arena/page/settings/settings_page.dart';
 import 'router.gr.dart';
 
 @AutoRouterConfig()

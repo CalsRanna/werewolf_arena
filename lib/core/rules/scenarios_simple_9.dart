@@ -1,5 +1,5 @@
-import 'game_scenario.dart';
-import '../state/game_state.dart';
+import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 简单9人局场景
 /// 3狼3民3神配置，适合新手

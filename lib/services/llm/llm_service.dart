@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:openai_dart/openai_dart.dart';
-import '../../core/state/game_state.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 import 'json_cleaner.dart';
-import '../../core/entities/player/player.dart';
-import '../logging/logger.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/services/logging/logger.dart';
 
 /// LLM API retry configuration
 class RetryConfig {

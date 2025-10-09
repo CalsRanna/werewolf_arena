@@ -1,5 +1,5 @@
-import 'player.dart';
-import '../../state/game_state.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// AI性格状态 - 为AI玩家添加记忆和性格特征
 class AIPersonalityState {

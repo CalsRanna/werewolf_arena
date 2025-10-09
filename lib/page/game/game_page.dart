@@ -212,7 +212,7 @@ class _GamePageState extends State<GamePage> {
         return Card(
           color: player.isAlive
               ? Theme.of(context).colorScheme.surface
-              : Theme.of(context).colorScheme.error.withOpacity(0.2),
+              : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
           child: Padding(
             padding: EdgeInsets.all(8),
             child: Column(

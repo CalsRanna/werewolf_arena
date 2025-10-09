@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'player.dart';
-import '../../state/game_state.dart';
-import '../../state/game_event.dart';
-import '../../../services/llm/llm_service.dart';
-import '../../../services/llm/prompt_manager.dart';
-import '../../../shared/random_helper.dart';
-import '../../../services/logging/logger.dart';
-import 'ai_personality_state.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/services/llm/llm_service.dart';
+import 'package:werewolf_arena/services/llm/prompt_manager.dart';
+import 'package:werewolf_arena/shared/random_helper.dart';
+import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/entities/player/ai_personality_state.dart';
 
 /// AI personality traits
 class Personality {

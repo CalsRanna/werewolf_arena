@@ -1,9 +1,9 @@
-import '../entities/player/player.dart';
-import '../entities/player/role.dart';
-import '../../services/config/config.dart';
-import '../rules/game_scenario.dart';
-import '../rules/scenarios_simple_9.dart';
-import '../../services/logging/logger.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/entities/player/role.dart';
+import 'package:werewolf_arena/services/config/config.dart';
+import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/rules/scenarios_simple_9.dart';
+import 'package:werewolf_arena/services/logging/logger.dart';
 import 'game_event.dart';
 
 /// Game phases

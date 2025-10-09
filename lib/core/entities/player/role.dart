@@ -1,6 +1,6 @@
-import 'player.dart';
-import '../../state/game_state.dart';
-import '../../state/game_event.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/state/game_event.dart';
 
 /// Role types
 enum RoleType {

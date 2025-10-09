@@ -134,7 +134,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return ListTile(
       title: Text(title),
       subtitle: Text(subtitle),
-      trailing: Container(
+      trailing: SizedBox(
         width: 100,
         child: Text(
           value.toStringAsFixed(1),
