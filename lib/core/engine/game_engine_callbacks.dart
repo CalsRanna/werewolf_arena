@@ -1,5 +1,5 @@
 import '../state/game_state.dart';
-import '../../entities/player/player.dart';
+import '../entities/player/player.dart';
 import '../state/game_event.dart';
 
 /// 游戏事件回调接口

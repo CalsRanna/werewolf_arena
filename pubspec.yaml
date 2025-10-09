@@ -1,12 +1,16 @@
 name: werewolf_arena
-description: A Werewolf game with LLM players
-version: 1.0.0
+description: 狼人杀竞技场 - AI对战游戏
+version: 2.0.0
 repository: https://github.com/cals/werewolf_arena
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ^3.9.0
 
 dependencies:
+  flutter:
+    sdk: flutter
+
+  # 现有依赖（保持兼容）
   http: ^1.1.0
   json_annotation: ^4.8.1
   logger: ^2.6.2
@@ -16,9 +20,33 @@ dependencies:
   intl: ^0.19.0
   openai_dart: ^0.5.5
 
+  # Flutter核心依赖
+  cupertino_icons: ^1.0.2
+  auto_route: ^10.1.2
+  get_it: ^8.0.3
+  signals: ^6.0.2
+  google_fonts: ^4.0.3
+  cached_network_image: ^3.4.1
+  animated_text_kit: ^4.2.2
+  lottie: ^2.3.2
+  shared_preferences: ^2.2.0
+  window_manager: ^0.3.2
+  tray_manager: ^0.2.0
+
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # 代码生成
+  auto_route_generator: ^10.2.4
+  build_runner: ^2.4.15
+  json_serializable: ^6.7.1
+
+  # 现有开发依赖
   lints: ^6.0.0
   test: ^1.25.6
   mocktail: ^0.3.0
-  build_runner: ^2.4.6
-  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true

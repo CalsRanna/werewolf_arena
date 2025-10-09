@@ -11,7 +11,12 @@
       "WebSearch",
       "Read(//Users/cals/**)",
       "mcp__context7__get-library-docs",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter analyze:*)",
+      "Read(//tmp/flutter_reference/flutter_reference_app/**)",
+      "Bash(test:*)",
+      "Bash(flutter:*)"
     ],
     "deny": [],
     "ask": []

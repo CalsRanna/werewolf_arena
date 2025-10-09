@@ -1,5 +1,5 @@
 import 'game_state.dart';
-import '../../entities/player/player.dart';
+import '../entities/player/player.dart';
 
 /// 死亡原因枚举
 enum DeathCause {

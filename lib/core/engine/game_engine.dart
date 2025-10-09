@@ -2,15 +2,15 @@ import 'dart:async';
 import '../state/game_state.dart';
 import '../state/game_event.dart';
 import 'game_engine_callbacks.dart';
-import '../../entities/player/player.dart';
-import '../../entities/player/ai_player.dart';
-import '../../entities/player/role.dart';
-import '../../infrastructure/llm/enhanced_prompts.dart';
-import '../../infrastructure/logging/logger.dart';
-import '../../infrastructure/config/config.dart';
+import '../entities/player/player.dart';
+import '../entities/player/ai_player.dart';
+import '../entities/player/role.dart';
+import '../../services/llm/enhanced_prompts.dart';
+import '../../services/logging/logger.dart';
+import '../../services/config/config.dart';
 import '../rules/game_scenario.dart';
 import '../../shared/random_helper.dart';
-import '../../infrastructure/logging/player_logger.dart';
+import '../../services/logging/player_logger.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {

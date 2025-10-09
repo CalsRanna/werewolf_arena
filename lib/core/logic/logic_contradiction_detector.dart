@@ -1,7 +1,7 @@
 import '../state/game_state.dart';
 import '../state/game_event.dart';
-import '../../entities/player/player.dart';
-import '../../entities/player/role.dart';
+import '../entities/player/player.dart';
+import '../entities/player/role.dart';
 
 /// 逻辑矛盾检测器 - 为AI玩家提供常识判断支持
 class LogicContradictionDetector {

@@ -10,6 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **3. 游戏执行限制**：绝对不要尝试执行 `dart bin/werewolf_arena.dart` 来测试程序运行情况。该程序执行时间很长（6-10分钟），且会消耗大量 token。只使用静态分析、编译检查和单元测试来验证代码。
 
+**4. 导入路径规范**：永远使用完整的导入路径而不使用相对路径。例如使用 `import 'package:werewolf_arena/core/state/game_state.dart';` 而不是 `import '../state/game_state.dart';`。
+
 ## Project Overview
 
 Werewolf Arena is a command-line Werewolf (Mafia) game with AI players powered by LLMs. The game simulates classic Werewolf gameplay with different roles (werewolves, villagers, seer, witch, hunter, guard) where AI players make decisions during night and day phases.

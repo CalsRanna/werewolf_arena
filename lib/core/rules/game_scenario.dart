@@ -1,4 +1,4 @@
-import '../../entities/player/role.dart';
+import '../entities/player/role.dart';
 import '../state/game_state.dart';
 
 /// 游戏场景抽象类
