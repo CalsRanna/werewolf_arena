@@ -13,15 +13,15 @@ class ConfigService {
 
   /// 确保配置已初始化
   Future<void> ensureInitialized({
-    String? gameConfigPath,
-    String? llmConfigPath,
+    String? customConfigDir,
+    bool? forceConsoleMode,
   }) async {
     if (_isInitialized) return;
 
     _configManager = ConfigManager.instance;
     await _configManager!.initialize(
-      gameConfigPath: gameConfigPath,
-      llmConfigPath: llmConfigPath,
+      customConfigDir: customConfigDir,
+      forceConsoleMode: forceConsoleMode,
     );
 
     // 设置默认场景(如果还没有设置)

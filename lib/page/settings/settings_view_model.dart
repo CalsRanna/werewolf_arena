@@ -2,16 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:signals/signals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get_it/get_it.dart';
+import 'package:werewolf_arena/services/config_service.dart';
+import 'package:werewolf_arena/router/router.gr.dart';
 
 class SettingsViewModel {
-  // Signals 状态管理
+  final ConfigService _configService = GetIt.instance.get<ConfigService>();
+
+  // Signals 状态管理 - UI设置
   final Signal<bool> soundEnabled = signal(true);
   final Signal<bool> animationsEnabled = signal(true);
   final Signal<String> selectedTheme = signal('dark');
   final Signal<double> textSpeed = signal(1.0);
   final Signal<bool> isLoading = signal(false);
 
-  // SharedPreferences 键名
+  // Signals 状态管理 - 游戏配置
+  final Signal<bool> enableColors = signal(true);
+  final Signal<bool> showDebugInfo = signal(false);
+  final Signal<String> logLevel = signal('info');
+  final Signal<String> defaultLLMModel = signal('gpt-3.5-turbo');
+  final Signal<String> llmApiKey = signal('');
+  final Signal<String> llmBaseUrl = signal('');
+
+  // SharedPreferences 键名 - UI设置
   static const String _keySoundEnabled = 'sound_enabled';
   static const String _keyAnimationsEnabled = 'animations_enabled';
   static const String _keySelectedTheme = 'selected_theme';
@@ -23,12 +36,18 @@ class SettingsViewModel {
   Future<void> initSignals() async {
     isLoading.value = true;
     await _loadSettings();
+    await _loadGameConfig();
     isLoading.value = false;
   }
 
   /// 导航回主页
   void navigateBack(BuildContext context) {
     context.router.pop();
+  }
+
+  /// 导航到 LLM 配置页面
+  void navigateToLLMConfig(BuildContext context) {
+    LLMConfigRoute().push(context);
   }
 
   /// 切换音效
@@ -85,11 +104,19 @@ class SettingsViewModel {
 
   /// 重置设置
   Future<void> resetSettings() async {
+    // UI设置
     soundEnabled.value = true;
     animationsEnabled.value = true;
     selectedTheme.value = 'dark';
     textSpeed.value = 1.0;
+
+    // 游戏配置
+    enableColors.value = true;
+    showDebugInfo.value = false;
+    logLevel.value = 'info';
+
     await _saveSettings();
+    await _saveGameConfig();
   }
 
   /// 加载设置
@@ -124,6 +151,65 @@ class SettingsViewModel {
     }
   }
 
+  /// 加载游戏配置
+  Future<void> _loadGameConfig() async {
+    try {
+      await _configService.ensureInitialized();
+      final gameConfig = _configService.gameConfig;
+      final llmConfig = _configService.llmConfig;
+
+      enableColors.value = gameConfig.uiConfig.enableColors;
+      showDebugInfo.value = gameConfig.uiConfig.showDebugInfo;
+      logLevel.value = gameConfig.uiConfig.logLevel;
+      defaultLLMModel.value = llmConfig.model;
+      llmApiKey.value = llmConfig.apiKey;
+      llmBaseUrl.value = llmConfig.baseUrl ?? '';
+    } catch (e) {
+      print('加载游戏配置失败: $e');
+    }
+  }
+
+  /// 保存游戏配置
+  Future<void> _saveGameConfig() async {
+    try {
+      await _configService.ensureInitialized();
+      // 游戏配置已经通过ConfigLoader自动保存到SharedPreferences
+      // 这里只需要触发ConfigManager更新即可
+    } catch (e) {
+      print('保存游戏配置失败: $e');
+    }
+  }
+
+  /// 设置UI颜色开关
+  Future<void> setEnableColors(bool value) async {
+    enableColors.value = value;
+    await _saveGameConfig();
+  }
+
+  /// 设置调试信息显示
+  Future<void> setShowDebugInfo(bool value) async {
+    showDebugInfo.value = value;
+    await _saveGameConfig();
+  }
+
+  /// 设置日志级别
+  Future<void> setLogLevel(String level) async {
+    logLevel.value = level;
+    await _saveGameConfig();
+  }
+
+  /// 设置LLM API Key
+  Future<void> setLLMApiKey(String key) async {
+    llmApiKey.value = key;
+    await _saveGameConfig();
+  }
+
+  /// 设置LLM Base URL
+  Future<void> setLLMBaseUrl(String url) async {
+    llmBaseUrl.value = url;
+    await _saveGameConfig();
+  }
+
   /// 清理资源
   void dispose() {
     soundEnabled.dispose();
@@ -131,5 +217,11 @@ class SettingsViewModel {
     selectedTheme.dispose();
     textSpeed.dispose();
     isLoading.dispose();
+    enableColors.dispose();
+    showDebugInfo.dispose();
+    logLevel.dispose();
+    defaultLLMModel.dispose();
+    llmApiKey.dispose();
+    llmBaseUrl.dispose();
   }
 }

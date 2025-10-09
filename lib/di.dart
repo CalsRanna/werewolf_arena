@@ -3,6 +3,7 @@ import 'package:werewolf_arena/page/bootstrap/bootstrap_view_model.dart';
 import 'package:werewolf_arena/page/home/home_view_model.dart';
 import 'package:werewolf_arena/page/game/game_view_model.dart';
 import 'package:werewolf_arena/page/settings/settings_view_model.dart';
+import 'package:werewolf_arena/page/settings/llm_config_view_model.dart';
 import 'package:werewolf_arena/services/config_service.dart';
 import 'package:werewolf_arena/services/game_service.dart';
 
@@ -18,6 +19,9 @@ class DI {
     GetIt.instance.registerFactory<GameViewModel>(() => GameViewModel());
     GetIt.instance.registerFactory<SettingsViewModel>(
       () => SettingsViewModel(),
+    );
+    GetIt.instance.registerFactory<LLMConfigViewModel>(
+      () => LLMConfigViewModel(),
     );
   }
 }

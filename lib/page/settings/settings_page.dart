@@ -33,16 +33,28 @@ class _SettingsPageState extends State<SettingsPage> {
         final theme = viewModel.selectedTheme.value;
         final speed = viewModel.textSpeed.value;
 
+        // 游戏配置
+        final enableColors = viewModel.enableColors.value;
+        final showDebugInfo = viewModel.showDebugInfo.value;
+        final logLevel = viewModel.logLevel.value;
+        final llmApiKey = viewModel.llmApiKey.value;
+
         if (isLoading) {
           return Center(child: CircularProgressIndicator());
         }
 
-        return _buildSettingsContent(soundOn, animationsOn, theme, speed);
+        return _buildSettingsContent(
+          soundOn, animationsOn, theme, speed,
+          enableColors, showDebugInfo, logLevel, llmApiKey,
+        );
       }),
     );
   }
 
-  Widget _buildSettingsContent(bool soundOn, bool animationsOn, String theme, double speed) {
+  Widget _buildSettingsContent(
+    bool soundOn, bool animationsOn, String theme, double speed,
+    bool enableColors, bool showDebugInfo, String logLevel, String llmApiKey,
+  ) {
     return ListView(
       padding: EdgeInsets.all(16),
       children: [
@@ -73,6 +85,38 @@ class _SettingsPageState extends State<SettingsPage> {
         // 外观设置
         _buildSection('外观设置', [
           _buildThemeTile(theme),
+        ]),
+
+        SizedBox(height: 24),
+
+        // 高级设置
+        _buildSection('高级设置', [
+          _buildSwitchTile(
+            'UI颜色',
+            '启用控制台颜色输出',
+            enableColors,
+            (value) => viewModel.setEnableColors(value),
+          ),
+          _buildSwitchTile(
+            '调试信息',
+            '显示详细调试信息',
+            showDebugInfo,
+            (value) => viewModel.setShowDebugInfo(value),
+          ),
+          _buildLogLevelTile(logLevel),
+        ]),
+
+        SizedBox(height: 24),
+
+        // LLM配置
+        _buildSection('AI配置', [
+          ListTile(
+            leading: Icon(Icons.psychology),
+            title: Text('LLM 模型配置'),
+            subtitle: Text('配置 AI 玩家使用的语言模型'),
+            trailing: Icon(Icons.chevron_right),
+            onTap: () => viewModel.navigateToLLMConfig(context),
+          ),
         ]),
 
         SizedBox(height: 24),
@@ -184,6 +228,27 @@ class _SettingsPageState extends State<SettingsPage> {
         onChanged: (value) {
           if (value != null) {
             viewModel.setTheme(value);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildLogLevelTile(String logLevel) {
+    return ListTile(
+      title: Text('日志级别'),
+      subtitle: Text('设置日志记录详细程度'),
+      trailing: DropdownButton<String>(
+        value: logLevel,
+        items: [
+          DropdownMenuItem(value: 'debug', child: Text('调试')),
+          DropdownMenuItem(value: 'info', child: Text('信息')),
+          DropdownMenuItem(value: 'warning', child: Text('警告')),
+          DropdownMenuItem(value: 'error', child: Text('错误')),
+        ],
+        onChanged: (value) {
+          if (value != null) {
+            viewModel.setLogLevel(value);
           }
         },
       ),

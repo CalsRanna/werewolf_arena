@@ -44,14 +44,21 @@ class ConsoleAdapter {
       // 1. 加载配置
       _console.printLine('📝 正在加载配置...');
       _configService = ConfigService();
-      await _configService.ensureInitialized();
 
       final configPath = argResults['config'] as String?;
       if (configPath != null) {
         _console.printLine('   使用自定义配置: $configPath');
-        // TODO: 加载自定义配置文件
+        // 使用自定义配置目录（从配置文件路径提取目录）
+        final configDir = configPath.contains('/')
+            ? configPath.substring(0, configPath.lastIndexOf('/'))
+            : null;
+        await _configService.ensureInitialized(
+          customConfigDir: configDir,
+          forceConsoleMode: true,
+        );
       } else {
-        _console.printLine('   使用默认配置');
+        _console.printLine('   从二进制所在目录加载配置');
+        await _configService.ensureInitialized(forceConsoleMode: true);
       }
 
       // 2. 初始化游戏引擎

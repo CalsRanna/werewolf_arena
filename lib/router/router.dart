@@ -10,6 +10,7 @@ class AppRouter extends RootStackRouter {
       AutoRoute(page: HomeRoute.page),
       AutoRoute(page: GameRoute.page),
       AutoRoute(page: SettingsRoute.page),
+      AutoRoute(page: LLMConfigRoute.page),
     ];
   }
 }

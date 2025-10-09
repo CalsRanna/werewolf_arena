@@ -13,6 +13,13 @@ class HomeViewModel {
   final Signal<int> availableScenarioCount = signal(0);
   final Signal<bool> isLoading = signal(false);
 
+  // 计算属性 - 是否可以开始游戏
+  late final canStartGame = computed(() {
+    return currentScenarioName.value.isNotEmpty &&
+           currentScenarioName.value != '未知' &&
+           currentScenarioName.value != '未设置场景';
+  });
+
   /// 初始化
   Future<void> initSignals() async {
     isLoading.value = true;
@@ -32,6 +39,11 @@ class HomeViewModel {
 
   /// 开始新游戏
   void startNewGame(BuildContext context) {
+    // 检查是否可以开始游戏
+    if (!canStartGame.value) {
+      _showNoScenarioDialog(context);
+      return;
+    }
     navigateToGame(context);
   }
 
@@ -129,6 +141,30 @@ class HomeViewModel {
       currentScenarioName.value = '未知';
       availableScenarioCount.value = 0;
     }
+  }
+
+  /// 显示未选择场景的对话框
+  void _showNoScenarioDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('无法开始游戏'),
+        content: Text('请先选择一个游戏场景。\n\n点击"当前场景"卡片中的"切换"按钮选择场景。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('知道了'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              showScenarioSelection(context);
+            },
+            child: Text('选择场景'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 清理资源

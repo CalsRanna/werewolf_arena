@@ -40,6 +40,7 @@ class _HomePageState extends State<HomePage> {
         final isLoading = viewModel.isLoading.value;
         final scenarioName = viewModel.currentScenarioName.value;
         final scenarioCount = viewModel.availableScenarioCount.value;
+        final canStart = viewModel.canStartGame.value;
 
         if (isLoading) {
           return Center(child: CircularProgressIndicator());
@@ -61,7 +62,7 @@ class _HomePageState extends State<HomePage> {
                 SizedBox(height: Responsive.responsiveValue(context, mobile: 16.0, tablet: 20.0, desktop: 24.0)),
 
                 // 主要操作按钮
-                _buildMainActions(context, viewModel),
+                _buildMainActions(context, viewModel, canStart),
                 SizedBox(height: Responsive.responsiveValue(context, mobile: 20.0, tablet: 28.0, desktop: 32.0)),
 
                 // 其他功能
@@ -154,7 +155,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildMainActions(BuildContext context, HomeViewModel viewModel) {
+  Widget _buildMainActions(BuildContext context, HomeViewModel viewModel, bool canStart) {
     final buttonHeight = Responsive.responsiveValue(context, mobile: 52.0, tablet: 54.0, desktop: 56.0);
     final buttonFontSize = Responsive.getResponsiveFontSize(context, mobile: 16.0, tablet: 17.0, desktop: 18.0);
 
@@ -164,7 +165,7 @@ class _HomePageState extends State<HomePage> {
           width: double.infinity,
           height: buttonHeight,
           child: ElevatedButton.icon(
-            onPressed: () => viewModel.startNewGame(context),
+            onPressed: canStart ? () => viewModel.startNewGame(context) : null,
             icon: Icon(Icons.play_arrow),
             label: Text(
               '开始新游戏',

@@ -1,8 +1,8 @@
 import 'dart:io' if (dart.library.html) 'package:werewolf_arena/services/config/platform_io_stub.dart';
 import 'package:yaml/yaml.dart';
-import 'package:path/path.dart' as path;
 import 'package:werewolf_arena/core/rules/game_scenario.dart';
 import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
+import 'package:werewolf_arena/services/config/config_loader.dart';
 
 /// 游戏基础配置（只包含UI和日志设置）
 class GameConfig {
@@ -491,6 +491,7 @@ class ConfigManager {
   late final LLMConfig llmConfig;
   late final ScenarioManager scenarioManager;
   GameScenario? currentScenario;
+  ConfigLoader? _configLoader;
 
   ConfigManager._();
 
@@ -502,30 +503,38 @@ class ConfigManager {
 
   /// 初始化配置系统
   Future<void> initialize({
-    String? gameConfigPath,
-    String? llmConfigPath,
+    String? customConfigDir,
+    bool? forceConsoleMode,
   }) async {
-    try {
-      // 尝试从文件加载（桌面平台）
-      final configDir = path.join(Directory.current.path, 'config');
+    // 创建适合当前平台的配置加载器
+    _configLoader = ConfigLoaderFactory.create(
+      customConfigDir: customConfigDir,
+      forceConsole: forceConsoleMode,
+    );
 
-      // 加载游戏配置
-      gameConfig = GameConfig.loadFromFile(
-          gameConfigPath ?? path.join(configDir, 'game_config.yaml'));
-
-      // 加载LLM配置
-      llmConfig = LLMConfig.loadFromFile(
-          llmConfigPath ?? path.join(configDir, 'llm_config.yaml'));
-    } catch (e) {
-      // Web 平台或文件不存在，使用默认配置
-      print('无法从文件加载配置，使用默认配置: $e');
-      gameConfig = GameConfig.defaults();
-      llmConfig = LLMConfig.defaults();
-    }
+    // 加载配置
+    gameConfig = await _configLoader!.loadGameConfig();
+    llmConfig = await _configLoader!.loadLLMConfig();
 
     // 初始化场景管理器
     scenarioManager = ScenarioManager();
     scenarioManager.initialize();
+  }
+
+  /// 保存游戏配置（仅GUI端有效）
+  Future<void> saveGameConfig(GameConfig config) async {
+    if (_configLoader != null) {
+      await _configLoader!.saveGameConfig(config);
+      gameConfig = config;
+    }
+  }
+
+  /// 保存LLM配置（仅GUI端有效）
+  Future<void> saveLLMConfig(LLMConfig config) async {
+    if (_configLoader != null) {
+      await _configLoader!.saveLLMConfig(config);
+      llmConfig = config;
+    }
   }
 
   /// 设置当前场景

@@ -5,6 +5,7 @@ import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/services/game_service.dart';
 import 'package:werewolf_arena/services/config_service.dart';
 import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/router/router.gr.dart';
 
 class GameViewModel {
   final GameService _gameService = GetIt.instance.get<GameService>();
@@ -158,7 +159,7 @@ class GameViewModel {
 
   /// 导航到设置页面
   void navigateSettingsPage(BuildContext context) {
-    // TODO: 实现设置页面导航
+    SettingsRoute().push(context);
   }
 
   /// 设置游戏事件监听器
