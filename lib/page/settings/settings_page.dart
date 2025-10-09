@@ -26,12 +26,23 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       body: Watch((context) {
-        return _buildSettingsContent();
+        // 响应式获取 signals 的值
+        final isLoading = viewModel.isLoading.value;
+        final soundOn = viewModel.soundEnabled.value;
+        final animationsOn = viewModel.animationsEnabled.value;
+        final theme = viewModel.selectedTheme.value;
+        final speed = viewModel.textSpeed.value;
+
+        if (isLoading) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        return _buildSettingsContent(soundOn, animationsOn, theme, speed);
       }),
     );
   }
 
-  Widget _buildSettingsContent() {
+  Widget _buildSettingsContent(bool soundOn, bool animationsOn, String theme, double speed) {
     return ListView(
       padding: EdgeInsets.all(16),
       children: [
@@ -40,19 +51,19 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSwitchTile(
             '音效',
             '启用游戏音效',
-            viewModel.soundEnabled,
+            soundOn,
             (value) => viewModel.toggleSound(value),
           ),
           _buildSwitchTile(
             '动画',
             '启用界面动画',
-            viewModel.animationsEnabled,
+            animationsOn,
             (value) => viewModel.toggleAnimations(value),
           ),
           _buildSliderTile(
             '文字速度',
             '调整界面文字显示速度',
-            viewModel.textSpeed,
+            speed,
             (value) => viewModel.setTextSpeed(value),
           ),
         ]),
@@ -61,7 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
         // 外观设置
         _buildSection('外观设置', [
-          _buildThemeTile(),
+          _buildThemeTile(theme),
         ]),
 
         SizedBox(height: 24),
@@ -131,25 +142,40 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSliderTile(String title, String subtitle, double value, Function(double) onChanged) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: SizedBox(
-        width: 100,
-        child: Text(
-          value.toStringAsFixed(1),
-          textAlign: TextAlign.right,
+    return Column(
+      children: [
+        ListTile(
+          title: Text(title),
+          subtitle: Text(subtitle),
+          trailing: SizedBox(
+            width: 100,
+            child: Text(
+              value.toStringAsFixed(1),
+              textAlign: TextAlign.right,
+            ),
+          ),
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Slider(
+            value: value,
+            min: 0.5,
+            max: 2.0,
+            divisions: 15,
+            label: value.toStringAsFixed(1),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildThemeTile() {
+  Widget _buildThemeTile(String theme) {
     return ListTile(
       title: Text('主题'),
       subtitle: Text('选择应用主题'),
       trailing: DropdownButton<String>(
-        value: viewModel.selectedTheme,
+        value: theme,
         items: [
           DropdownMenuItem(value: 'light', child: Text('浅色')),
           DropdownMenuItem(value: 'dark', child: Text('深色')),

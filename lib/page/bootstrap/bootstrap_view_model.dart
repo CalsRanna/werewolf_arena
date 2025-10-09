@@ -1,17 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:signals/signals.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
+import 'package:werewolf_arena/services/config_service.dart';
+import 'package:werewolf_arena/services/game_service.dart';
 
 class BootstrapViewModel {
-  bool _isInitialized = false;
+  // 依赖注入的服务
+  final ConfigService _configService = GetIt.instance.get<ConfigService>();
+  final GameService _gameService = GetIt.instance.get<GameService>();
 
-  /// 初始化信号
+  // Signals 状态管理
+  final Signal<bool> isInitialized = signal(false);
+  final Signal<String> initializationMessage = signal('正在初始化游戏引擎...');
+  final Signal<double> initializationProgress = signal(0.0);
+  final Signal<String?> errorMessage = signal(null);
+
+  /// 初始化应用
   Future<void> initSignals() async {
-    if (_isInitialized) return;
+    if (isInitialized.value) return;
 
-    // 模拟初始化过程
-    await Future.delayed(Duration(seconds: 2));
+    try {
+      // 步骤 1: 初始化配置服务
+      initializationMessage.value = '正在加载配置...';
+      initializationProgress.value = 0.2;
+      await _configService.ensureInitialized();
+      await Future.delayed(Duration(milliseconds: 300));
 
-    _isInitialized = true;
+      // 步骤 2: 初始化游戏服务
+      initializationMessage.value = '正在初始化游戏引擎...';
+      initializationProgress.value = 0.5;
+      await _gameService.initialize();
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // 步骤 3: 预加载场景
+      initializationMessage.value = '正在加载游戏场景...';
+      initializationProgress.value = 0.8;
+      final scenarios = _configService.availableScenarios;
+      if (scenarios.isNotEmpty) {
+        await _configService.setScenario(scenarios.first.id);
+      }
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // 完成初始化
+      initializationMessage.value = '初始化完成！';
+      initializationProgress.value = 1.0;
+      await Future.delayed(Duration(milliseconds: 500));
+
+      isInitialized.value = true;
+    } catch (e, stackTrace) {
+      errorMessage.value = '初始化失败: $e';
+      // 记录错误日志
+      print('Bootstrap initialization error: $e');
+      print('Stack trace: $stackTrace');
+
+      // 即使失败也标记为已初始化，让用户可以进入应用尝试手动修复
+      isInitialized.value = true;
+    }
   }
 
   /// 导航到主页
@@ -19,6 +64,19 @@ class BootstrapViewModel {
     HomeRoute().push(context);
   }
 
-  /// 是否已初始化
-  bool get isInitialized => _isInitialized;
+  /// 重试初始化
+  Future<void> retry() async {
+    isInitialized.value = false;
+    errorMessage.value = null;
+    initializationProgress.value = 0.0;
+    await initSignals();
+  }
+
+  /// 清理资源
+  void dispose() {
+    isInitialized.dispose();
+    initializationMessage.dispose();
+    initializationProgress.dispose();
+    errorMessage.dispose();
+  }
 }

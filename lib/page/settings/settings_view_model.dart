@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:signals/signals.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsViewModel {
-  // 设置状态
-  bool _soundEnabled = true;
-  bool _animationsEnabled = true;
-  String _selectedTheme = 'dark';
-  double _textSpeed = 1.0;
+  // Signals 状态管理
+  final Signal<bool> soundEnabled = signal(true);
+  final Signal<bool> animationsEnabled = signal(true);
+  final Signal<String> selectedTheme = signal('dark');
+  final Signal<double> textSpeed = signal(1.0);
+  final Signal<bool> isLoading = signal(false);
+
+  // SharedPreferences 键名
+  static const String _keySoundEnabled = 'sound_enabled';
+  static const String _keyAnimationsEnabled = 'animations_enabled';
+  static const String _keySelectedTheme = 'selected_theme';
+  static const String _keyTextSpeed = 'text_speed';
+
+  SharedPreferences? _prefs;
 
   /// 初始化设置
   Future<void> initSignals() async {
-    // TODO: 从shared_preferences加载设置
-    _loadSettings();
+    isLoading.value = true;
+    await _loadSettings();
+    isLoading.value = false;
   }
 
   /// 导航回主页
@@ -20,27 +32,27 @@ class SettingsViewModel {
   }
 
   /// 切换音效
-  void toggleSound(bool value) {
-    _soundEnabled = value;
-    _saveSettings();
+  Future<void> toggleSound(bool value) async {
+    soundEnabled.value = value;
+    await _saveSettings();
   }
 
   /// 切换动画
-  void toggleAnimations(bool value) {
-    _animationsEnabled = value;
-    _saveSettings();
+  Future<void> toggleAnimations(bool value) async {
+    animationsEnabled.value = value;
+    await _saveSettings();
   }
 
   /// 设置主题
-  void setTheme(String theme) {
-    _selectedTheme = theme;
-    _saveSettings();
+  Future<void> setTheme(String theme) async {
+    selectedTheme.value = theme;
+    await _saveSettings();
   }
 
   /// 设置文字速度
-  void setTextSpeed(double speed) {
-    _textSpeed = speed;
-    _saveSettings();
+  Future<void> setTextSpeed(double speed) async {
+    textSpeed.value = speed;
+    await _saveSettings();
   }
 
   /// 显示关于对话框
@@ -72,36 +84,52 @@ class SettingsViewModel {
   }
 
   /// 重置设置
-  void resetSettings() {
-    _soundEnabled = true;
-    _animationsEnabled = true;
-    _selectedTheme = 'dark';
-    _textSpeed = 1.0;
-    _saveSettings();
+  Future<void> resetSettings() async {
+    soundEnabled.value = true;
+    animationsEnabled.value = true;
+    selectedTheme.value = 'dark';
+    textSpeed.value = 1.0;
+    await _saveSettings();
   }
 
-  // Getters
-  bool get soundEnabled => _soundEnabled;
-  bool get animationsEnabled => _animationsEnabled;
-  String get selectedTheme => _selectedTheme;
-  double get textSpeed => _textSpeed;
-
   /// 加载设置
-  void _loadSettings() {
-    // TODO: 从shared_preferences加载
-    // _soundEnabled = prefs.getBool('sound_enabled') ?? true;
-    // _animationsEnabled = prefs.getBool('animations_enabled') ?? true;
-    // _selectedTheme = prefs.getString('selected_theme') ?? 'dark';
-    // _textSpeed = prefs.getDouble('text_speed') ?? 1.0;
+  Future<void> _loadSettings() async {
+    try {
+      _prefs = await SharedPreferences.getInstance();
+
+      // 从 SharedPreferences 加载设置
+      soundEnabled.value = _prefs?.getBool(_keySoundEnabled) ?? true;
+      animationsEnabled.value = _prefs?.getBool(_keyAnimationsEnabled) ?? true;
+      selectedTheme.value = _prefs?.getString(_keySelectedTheme) ?? 'dark';
+      textSpeed.value = _prefs?.getDouble(_keyTextSpeed) ?? 1.0;
+    } catch (e) {
+      print('加载设置失败: $e');
+      // 使用默认值
+    }
   }
 
   /// 保存设置
-  void _saveSettings() {
-    // TODO: 保存到shared_preferences
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.setBool('sound_enabled', _soundEnabled);
-    // await prefs.setBool('animations_enabled', _animationsEnabled);
-    // await prefs.setString('selected_theme', _selectedTheme);
-    // await prefs.setDouble('text_speed', _textSpeed);
+  Future<void> _saveSettings() async {
+    try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+
+      await _prefs!.setBool(_keySoundEnabled, soundEnabled.value);
+      await _prefs!.setBool(_keyAnimationsEnabled, animationsEnabled.value);
+      await _prefs!.setString(_keySelectedTheme, selectedTheme.value);
+      await _prefs!.setDouble(_keyTextSpeed, textSpeed.value);
+    } catch (e) {
+      print('保存设置失败: $e');
+    }
+  }
+
+  /// 清理资源
+  void dispose() {
+    soundEnabled.dispose();
+    animationsEnabled.dispose();
+    selectedTheme.dispose();
+    textSpeed.dispose();
+    isLoading.dispose();
   }
 }

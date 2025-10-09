@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'package:werewolf_arena/services/config/platform_io_stub.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 
@@ -201,11 +201,18 @@ class LoggerUtil {
     final fileOutputs = <LogCategory, BufferedFileOutput>{};
 
     if (enableFile) {
-      for (final category in LogCategory.values) {
-        final filePath = path.join(_gameSessionDir!, category.fileName);
-        final output = BufferedFileOutput(filePath: filePath);
-        await output.init();
-        fileOutputs[category] = output;
+      try {
+        // 尝试创建文件输出（仅桌面平台支持）
+        for (final category in LogCategory.values) {
+          final filePath = path.join(_gameSessionDir!, category.fileName);
+          final output = BufferedFileOutput(filePath: filePath);
+          await output.init();
+          fileOutputs[category] = output;
+        }
+      } catch (e) {
+        // Web 平台不支持文件操作，跳过
+        print('文件日志不可用（Web 平台），仅使用控制台日志');
+        enableFile = false;
       }
     }
 
@@ -335,7 +342,13 @@ class _ConsoleOutput extends BufferedFileOutput {
   @override
   void output(OutputEvent event) {
     for (var line in event.lines) {
-      stdout.writeln(line);
+      // Web 平台使用 print，桌面平台使用 stdout
+      try {
+        stdout.writeln(line);
+      } catch (e) {
+        // Fallback to print for Web
+        print(line);
+      }
     }
   }
 

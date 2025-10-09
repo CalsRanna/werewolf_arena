@@ -1,16 +1,28 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/page/home/home_view_model.dart';
 
 @RoutePage()
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final viewModel = GetIt.instance.get<HomeViewModel>();
+  State<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends State<HomePage> {
+  final HomeViewModel viewModel = GetIt.instance.get<HomeViewModel>();
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel.initSignals();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('狼人杀竞技场'),
@@ -23,30 +35,44 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 欢迎区域
-              _buildWelcomeSection(context),
-              const SizedBox(height: 32),
+      body: Watch((context) {
+        final isLoading = viewModel.isLoading.value;
+        final scenarioName = viewModel.currentScenarioName.value;
+        final scenarioCount = viewModel.availableScenarioCount.value;
 
-              // 主要操作按钮
-              _buildMainActions(context, viewModel),
-              const SizedBox(height: 32),
+        if (isLoading) {
+          return Center(child: CircularProgressIndicator());
+        }
 
-              // 其他功能
-              _buildOtherFeatures(viewModel),
-              const Spacer(),
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 欢迎区域
+                _buildWelcomeSection(context),
+                const SizedBox(height: 24),
 
-              // 底部信息
-              _buildFooter(context),
-            ],
+                // 当前场景信息
+                _buildScenarioInfo(context, scenarioName, scenarioCount),
+                const SizedBox(height: 24),
+
+                // 主要操作按钮
+                _buildMainActions(context, viewModel),
+                const SizedBox(height: 32),
+
+                // 其他功能
+                _buildOtherFeatures(viewModel),
+                const Spacer(),
+
+                // 底部信息
+                _buildFooter(context),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -74,6 +100,51 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildScenarioInfo(BuildContext context, String scenarioName, int scenarioCount) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '当前场景',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => viewModel.showScenarioSelection(context),
+                  icon: Icon(Icons.edit, size: 16),
+                  label: Text('切换'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              scenarioName.isNotEmpty ? scenarioName : '未选择',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '可用场景: $scenarioCount 个',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

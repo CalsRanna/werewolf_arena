@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'package:werewolf_arena/services/config/platform_io_stub.dart';
 import 'package:yaml/yaml.dart';
 import 'package:path/path.dart' as path;
 import 'package:werewolf_arena/core/rules/game_scenario.dart';
@@ -40,6 +40,22 @@ class GameConfig {
       uiConfig: UIConfig._fromYaml(uiConfig),
       loggingConfig: LoggingConfig._fromYaml(loggingConfig),
       developmentConfig: DevelopmentConfig._fromYaml(developmentConfig),
+    );
+  }
+
+  /// 从 YamlMap 创建配置（用于 Web 平台）
+  factory GameConfig.fromYamlMap(YamlMap yaml) {
+    return GameConfig._fromYaml(yaml);
+  }
+
+  /// 创建默认配置（用于 Web 平台）
+  factory GameConfig.defaults() {
+    return GameConfig._fromYaml(
+      YamlMap.wrap({
+        'ui': _getDefaultUIConfig(),
+        'logging': _getDefaultLoggingConfig(),
+        'development': _getDefaultDevelopmentConfig(),
+      }),
     );
   }
 
@@ -147,17 +163,54 @@ class LLMConfig {
       }
     }
 
+    // 安全获取 API key，避免在 Web 平台访问 Platform.environment
+    String apiKey = defaultLLMConfig['api_key'] ?? '';
+    if (apiKey.isEmpty) {
+      try {
+        apiKey = Platform.environment['OPENAI_API_KEY'] ?? '';
+      } catch (e) {
+        // Web 平台不支持 Platform.environment，使用空字符串
+        apiKey = '';
+      }
+    }
+
     return LLMConfig(
       model: defaultLLMConfig['model'] ?? 'gpt-3.5-turbo',
-      apiKey: defaultLLMConfig['api_key'] ??
-          Platform.environment['OPENAI_API_KEY'] ??
-          '',
+      apiKey: apiKey,
       baseUrl: defaultLLMConfig['base_url'],
       timeoutSeconds: defaultLLMConfig['timeout_seconds'] ?? 30,
       maxRetries: defaultLLMConfig['max_retries'] ?? 3,
       prompts: PromptSettings._fromYaml(promptsYaml),
       llmSettings: Map<String, dynamic>.from(llmSettingsYaml),
       playerModels: playerModels,
+    );
+  }
+
+  /// 从 YamlMap 创建配置（用于 Web 平台）
+  factory LLMConfig.fromYamlMap(YamlMap yaml) {
+    return LLMConfig._fromYaml(yaml);
+  }
+
+  /// 创建默认配置（用于 Web 平台）
+  factory LLMConfig.defaults() {
+    return LLMConfig._fromYaml(
+      YamlMap.wrap({
+        'default_llm': {
+          'model': 'gpt-3.5-turbo',
+          'api_key': '',
+          'base_url': null,
+          'timeout_seconds': 30,
+          'max_retries': 3,
+        },
+        'prompts': {
+          'enable_context': true,
+          'strategy_hints': true,
+          'personality_traits': true,
+          'base_system_prompt': '',
+        },
+        'llm_settings': {},
+        'player_models': {},
+      }),
     );
   }
 
@@ -452,15 +505,23 @@ class ConfigManager {
     String? gameConfigPath,
     String? llmConfigPath,
   }) async {
-    final configDir = path.join(Directory.current.path, 'config');
+    try {
+      // 尝试从文件加载（桌面平台）
+      final configDir = path.join(Directory.current.path, 'config');
 
-    // 加载游戏配置
-    gameConfig = GameConfig.loadFromFile(
-        gameConfigPath ?? path.join(configDir, 'game_config.yaml'));
+      // 加载游戏配置
+      gameConfig = GameConfig.loadFromFile(
+          gameConfigPath ?? path.join(configDir, 'game_config.yaml'));
 
-    // 加载LLM配置
-    llmConfig = LLMConfig.loadFromFile(
-        llmConfigPath ?? path.join(configDir, 'llm_config.yaml'));
+      // 加载LLM配置
+      llmConfig = LLMConfig.loadFromFile(
+          llmConfigPath ?? path.join(configDir, 'llm_config.yaml'));
+    } catch (e) {
+      // Web 平台或文件不存在，使用默认配置
+      print('无法从文件加载配置，使用默认配置: $e');
+      gameConfig = GameConfig.defaults();
+      llmConfig = LLMConfig.defaults();
+    }
 
     // 初始化场景管理器
     scenarioManager = ScenarioManager();
