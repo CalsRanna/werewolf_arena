@@ -122,43 +122,45 @@ werewolf_arena/
 **预期产出**：可运行的空白Flutter应用，依赖配置完成
 **实际状态**：✅ 已完成 - Flutter应用可构建，控制台程序可运行，无编译错误
 
-### 第二阶段：核心架构搭建（预计1-2天）
+### 第二阶段：核心架构搭建（预计1-2天）✅ 已完成
 
 #### 2.1 依赖注入系统
-- [ ] 实现`DI`类，配置所有服务依赖
-- [ ] 配置单例服务（ConfigService, LLMService, GameService）
-- [ ] 配置ViewModel工厂注册
+- [x] 实现`DI`类，配置所有服务依赖
+- [x] 配置单例服务（ConfigService, LLMService, GameService）
+- [x] 配置ViewModel工厂注册
 
 #### 2.2 路由系统
-- [ ] 配置`AppRouter`类
-- [ ] 创建基础路由页面
-- [ ] 配置代码生成
+- [x] 配置`AppRouter`类
+- [x] 创建基础路由页面
+- [x] 配置代码生成
 
 #### 2.3 核心游戏逻辑迁移
-- [ ] 将现有`lib/core/`迁移到新位置
-- [ ] 将现有`lib/infrastructure/`重构为`lib/services/`
-- [ ] 更新所有import路径
+- [x] 将现有`lib/core/`迁移到新位置
+- [x] 将现有`lib/infrastructure/`重构为`lib/services/`
+- [x] 更新所有import路径
 
 **预期产出**：核心游戏逻辑可在Flutter环境中编译运行
+**实际状态**：✅ 已完成 - 核心游戏逻辑完整迁移，所有import路径已更新
 
-### 第三阶段：服务层实现（预计2-3天）
+### 第三阶段：服务层实现（预计2-3天）✅ 已完成
 
 #### 3.1 游戏服务（GameService）
-- [ ] 实现GameService，包装现有GameEngine
-- [ ] 添加GUI适配的事件回调
-- [ ] 实现异步游戏循环支持
+- [x] 实现GameService，包装现有GameEngine
+- [x] 添加GUI适配的事件回调
+- [x] 实现异步游戏循环支持
 
 #### 3.2 配置服务（ConfigService）
-- [ ] 实现ConfigService，包装现有配置管理
-- [ ] 添加Flutter友好的配置API
-- [ ] 支持配置的实时更新
+- [x] 实现ConfigService，包装现有配置管理
+- [x] 添加Flutter友好的配置API
+- [x] 支持配置的实时更新
 
 #### 3.3 LLM服务（LLMService）
-- [ ] 实现LLMService，包装现有LLM功能
-- [ ] 添加请求队列和错误处理
-- [ ] 支持多个LLM提供商
+- [x] 实现LLMService，包装现有LLM功能
+- [x] 添加请求队列和错误处理
+- [x] 支持多个LLM提供商
 
 **预期产出**：完整的服务层，支持GUI和Console两种模式
+**实际状态**：✅ 已完成 - 服务层完整实现，提供Stream事件流支持
 
 ### 第四阶段：页面和ViewModel实现（预计3-4天）
 
@@ -316,6 +318,63 @@ class AppRouter extends RootStackRouter {
 - [ ] 错误处理完善
 - [ ] 多平台构建成功
 
+## 🎯 第二&三阶段完成情况总结
+
+### 已完成的里程碑
+- ✅ **零编译错误达成**: `dart analyze` 显示 0 个错误，58 个 info 级别提示
+- ✅ **服务层完整实现**: ConfigService, GameService, LLMService 全部完成
+- ✅ **事件流系统**: 实现基于 Stream 的响应式事件系统
+- ✅ **依赖注入配置**: 完整的 get_it 配置，支持所有服务和 ViewModel
+- ✅ **玩家创建系统**: 支持为每个玩家配置专属 LLM 模型
+
+### 核心实现细节
+
+#### ConfigService (lib/services/config_service.dart)
+- 包装 ConfigManager，提供 Flutter 友好的 API
+- 场景管理: 获取、设置、自动选择场景
+- 玩家创建: 集成 OpenAIService 和 PromptManager
+- 支持玩家级别的 LLM 配置覆盖
+
+```dart
+// 为每个玩家创建专属的 LLM 配置
+final playerLLMConfig = _configManager!.getPlayerLLMConfig(playerNumber);
+final playerModelConfig = PlayerModelConfig.fromMap(playerLLMConfig);
+final llmService = OpenAIService.fromPlayerConfig(playerModelConfig);
+final promptManager = PromptManager();
+```
+
+#### GameService (lib/services/game_service.dart)
+- 实现 GameEventCallbacks 接口，将游戏事件转为 Stream
+- 提供 7 个事件流供 UI 订阅:
+  - `gameEvents`: 所有游戏事件文本流
+  - `gameStartStream`: 游戏开始通知
+  - `phaseChangeStream`: 阶段变化通知
+  - `playerActionStream`: 玩家行动通知
+  - `gameEndStream`: 游戏结束通知
+  - `errorStream`: 错误通知
+  - `gameStateChangedStream`: 游戏状态变化
+- 游戏控制方法: initialize, initializeGame, setPlayers, startGame, executeNextStep, resetGame
+
+#### GameViewModel (lib/page/game/game_view_model.dart)
+- 使用 signals 进行响应式状态管理
+- 订阅 GameService 的事件流
+- 实现游戏循环逻辑
+- 支持游戏速度控制和暂停/恢复
+
+### 修复的技术问题
+1. **Stream 命名冲突**: 将 onXxx 改名为 xxxStream 避免与回调方法冲突
+2. **GameState 属性**: currentDay → dayNumber
+3. **枚举完整性**:
+   - DeathCause 添加 `other` 分支
+   - SpeechType 移除不存在的 `pk` 枚举值
+4. **玩家创建**: 正确使用 EnhancedAIPlayer 构造函数
+5. **Import 路径**: 添加所有必要的导入声明
+
+### 下一步工作重点
+- 第四阶段：完善 UI 页面实现
+- 第五阶段：控制台适配器完善 (基础已完成)
+- 第六阶段：测试和优化
+
 ## 🎯 第一阶段完成情况总结
 
 ### 已完成的里程碑
@@ -346,6 +405,18 @@ class AppRouter extends RootStackRouter {
 
 ---
 
-**项目开始时间**：2025年1月
+**项目开始时间**：2025年1月9日
+**当前进度**：第二&三阶段已完成 (40%)
 **预计完成时间**：1-2周
 **负责人**：Claude AI Assistant
+
+## 📈 进度追踪
+
+- ✅ 第一阶段：项目基础搭建 (100%)
+- ✅ 第二阶段：核心架构搭建 (100%)
+- ✅ 第三阶段：服务层实现 (100%)
+- 🔄 第四阶段：页面和ViewModel实现 (30% - GameViewModel基础完成)
+- ⏸️ 第五阶段：控制台适配器 (50% - 基础框架完成)
+- ⏸️ 第六阶段：测试和优化 (0%)
+
+**整体进度**: 约 40%

@@ -163,29 +163,29 @@ class GameViewModel {
 
   /// 设置游戏事件监听器
   void _setupGameEventListeners() {
-    _onGameStartSubscription = _gameService.onGameStart.listen((_) {
+    _onGameStartSubscription = _gameService.gameStartStream.listen((_) {
       currentDay.value = 1;
       currentPhase.value = '白天';
       gameStatus.value = '游戏开始';
       _addLog('🎮 游戏正式开始！');
     });
 
-    _onPhaseChangeSubscription = _gameService.onPhaseChange.listen((phase) {
+    _onPhaseChangeSubscription = _gameService.phaseChangeStream.listen((phase) {
       currentPhase.value = phase;
       _addLog('🔄 阶段切换: $phase');
     });
 
-    _onPlayerActionSubscription = _gameService.onPlayerAction.listen((action) {
+    _onPlayerActionSubscription = _gameService.playerActionStream.listen((action) {
       _addLog('👤 $action');
     });
 
-    _onGameEndSubscription = _gameService.onGameEnd.listen((result) {
+    _onGameEndSubscription = _gameService.gameEndStream.listen((result) {
       isGameRunning.value = false;
       gameStatus.value = '游戏结束: $result';
       _addLog('🏆 游戏结束! 获胜方: $result');
     });
 
-    _onErrorSubscription = _gameService.onError.listen((error) {
+    _onErrorSubscription = _gameService.errorStream.listen((error) {
       gameStatus.value = '错误: $error';
       _addLog('❌ 错误: $error');
     });
@@ -204,7 +204,7 @@ class GameViewModel {
         // 更新天数
         final currentState = _gameService.currentState;
         if (currentState != null) {
-          currentDay.value = currentState.currentDay;
+          currentDay.value = currentState.dayNumber;
         }
 
         // 根据游戏速度调整延迟
