@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/page/game/game_view_model.dart';
+import 'package:werewolf_arena/util/responsive.dart';
 
 @RoutePage()
 class GamePage extends StatefulWidget {
@@ -12,8 +13,23 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
+class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin {
   final GameViewModel viewModel = GetIt.instance.get<GameViewModel>();
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    viewModel.initSignals();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +43,16 @@ class _GamePageState extends State<GamePage> {
             tooltip: '设置',
           ),
         ],
+        bottom: Responsive.isMobile(context)
+            ? TabBar(
+                controller: _tabController,
+                tabs: [
+                  Tab(icon: Icon(Icons.control_camera), text: '控制'),
+                  Tab(icon: Icon(Icons.people), text: '玩家'),
+                  Tab(icon: Icon(Icons.history), text: '日志'),
+                ],
+              )
+            : null,
       ),
       body: Watch((context) {
         return _buildGameContent();
@@ -35,165 +61,313 @@ class _GamePageState extends State<GamePage> {
   }
 
   Widget _buildGameContent() {
-    final isRunning = viewModel.isGameRunning.value;
-    final isPaused = viewModel.isPaused.value;
+    // 根据屏幕尺寸选择不同的布局
+    return ResponsiveBuilder(
+      mobile: _buildMobileLayout(),
+      tablet: _buildTabletLayout(),
+      desktop: _buildDesktopLayout(),
+    );
+  }
 
+  // 桌面布局: 三栏 (控制面板 + 游戏区 + 日志)
+  Widget _buildDesktopLayout() {
     return Row(
       children: [
         // 左侧控制面板
-        Container(
+        SizedBox(
           width: 280,
-          child: Card(
-            margin: EdgeInsets.all(16),
-            elevation: 4,
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.control_camera, color: Theme.of(context).colorScheme.primary),
-                      SizedBox(width: 8),
-                      Text(
-                        '游戏控制',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Divider(height: 24),
-
-                  // 游戏状态显示
-                  _buildGameStatus(),
-
-                  SizedBox(height: 24),
-
-                  // 控制按钮
-                  _buildControlButtons(),
-
-                  SizedBox(height: 24),
-
-                  // 游戏速度控制
-                  _buildSpeedControl(),
-
-                  Spacer(),
-
-                  // 底部提示
-                  if (!isRunning)
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '点击开始游戏按钮启动AI对战',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
+          child: _buildControlPanel(),
         ),
 
         // 中间游戏区域
         Expanded(
           flex: 2,
-          child: Card(
-            margin: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            elevation: 4,
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.people, color: Theme.of(context).colorScheme.primary),
-                          SizedBox(width: 8),
-                          Text(
-                            viewModel.formattedTime.value,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (isPaused)
-                        Chip(
-                          avatar: Icon(Icons.pause_circle, size: 16),
-                          label: Text('已暂停'),
-                          backgroundColor: Colors.orange.withValues(alpha: 0.2),
-                        ),
-                    ],
-                  ),
-                  Divider(height: 24),
-
-                  // 玩家列表
-                  Expanded(
-                    child: _buildPlayersGrid(),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          child: _buildGameArea(),
         ),
 
         // 右侧事件日志
-        Container(
+        SizedBox(
           width: 320,
+          child: _buildEventLogPanel(),
+        ),
+      ],
+    );
+  }
+
+  // 平板布局: 游戏区在上方,底部用Tab切换控制和日志
+  Widget _buildTabletLayout() {
+    return Column(
+      children: [
+        // 上方游戏区域
+        Expanded(
+          flex: 2,
+          child: _buildGameArea(),
+        ),
+
+        // 下方Tab区域
+        SizedBox(
+          height: 320,
           child: Card(
-            margin: EdgeInsets.all(16),
+            margin: EdgeInsets.all(12),
             elevation: 4,
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Column(
+              children: [
+                TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    Tab(icon: Icon(Icons.control_camera, size: 20), text: '控制'),
+                    Tab(icon: Icon(Icons.history, size: 20), text: '日志'),
+                    Tab(icon: Icon(Icons.info, size: 20), text: '状态'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
                     children: [
-                      Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
-                      SizedBox(width: 8),
-                      Text(
-                        '事件日志',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      _buildControlContent(),
+                      _buildEventLogContent(),
+                      _buildGameStatusContent(),
                     ],
                   ),
-                  Divider(height: 24),
-
-                  Expanded(
-                    child: _buildEventLog(),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  // 手机布局: 使用Tab切换所有视图
+  Widget _buildMobileLayout() {
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        _buildControlPanel(),
+        _buildGameArea(),
+        _buildEventLogPanel(),
+      ],
+    );
+  }
+
+  // 控制面板
+  Widget _buildControlPanel() {
+    final isRunning = viewModel.isGameRunning.value;
+
+    return Card(
+      margin: Responsive.getResponsiveCardMargin(context),
+      elevation: 4,
+      child: Padding(
+        padding: Responsive.getResponsivePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.control_camera, color: Theme.of(context).colorScheme.primary),
+                SizedBox(width: 8),
+                Text(
+                  '游戏控制',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 24),
+
+            // 游戏状态显示
+            _buildGameStatus(),
+
+            SizedBox(height: 24),
+
+            // 控制按钮
+            _buildControlButtons(),
+
+            SizedBox(height: 24),
+
+            // 游戏速度控制
+            _buildSpeedControl(),
+
+            Spacer(),
+
+            // 底部提示
+            if (!isRunning)
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '点击开始游戏按钮启动AI对战',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 游戏区域
+  Widget _buildGameArea() {
+    final isPaused = viewModel.isPaused.value;
+
+    return Card(
+      margin: Responsive.getResponsiveCardMargin(context),
+      elevation: 4,
+      child: Padding(
+        padding: Responsive.getResponsivePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.people, color: Theme.of(context).colorScheme.primary),
+                    SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        viewModel.formattedTime.value,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                if (isPaused)
+                  Chip(
+                    avatar: Icon(Icons.pause_circle, size: 16),
+                    label: Text('已暂停'),
+                    backgroundColor: Colors.orange.withValues(alpha: 0.2),
+                  ),
+              ],
+            ),
+            Divider(height: 24),
+
+            // 玩家列表
+            Expanded(
+              child: _buildPlayersGrid(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 事件日志面板
+  Widget _buildEventLogPanel() {
+    return Card(
+      margin: Responsive.getResponsiveCardMargin(context),
+      elevation: 4,
+      child: Padding(
+        padding: Responsive.getResponsivePadding(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
+                SizedBox(width: 8),
+                Text(
+                  '事件日志',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 24),
+
+            Expanded(
+              child: _buildEventLog(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 控制内容(用于Tab)
+  Widget _buildControlContent() {
+    final isRunning = viewModel.isGameRunning.value;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildGameStatus(),
+          SizedBox(height: 16),
+          _buildControlButtons(),
+          SizedBox(height: 16),
+          _buildSpeedControl(),
+          if (!isRunning) ...[
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '点击开始游戏按钮启动AI对战',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 事件日志内容(用于Tab)
+  Widget _buildEventLogContent() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: _buildEventLog(),
+    );
+  }
+
+  // 游戏状态内容(用于Tab)
+  Widget _buildGameStatusContent() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: _buildGameStatus(),
     );
   }
 
@@ -379,10 +553,30 @@ class _GamePageState extends State<GamePage> {
 
     return GridView.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        childAspectRatio: 1.6,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisCount: Responsive.getGridCrossAxisCount(
+          context,
+          mobile: 2,
+          tablet: 3,
+          desktop: 4,
+        ),
+        childAspectRatio: Responsive.getGridChildAspectRatio(
+          context,
+          mobile: 1.2,
+          tablet: 1.4,
+          desktop: 1.6,
+        ),
+        crossAxisSpacing: Responsive.responsiveValue(
+          context,
+          mobile: 8.0,
+          tablet: 10.0,
+          desktop: 12.0,
+        ),
+        mainAxisSpacing: Responsive.responsiveValue(
+          context,
+          mobile: 8.0,
+          tablet: 10.0,
+          desktop: 12.0,
+        ),
       ),
       itemCount: players.length,
       itemBuilder: (context, index) {
@@ -392,7 +586,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _buildPlayerCard(player) {
+  Widget _buildPlayerCard(dynamic player) {
     final isAlive = player.isAlive;
 
     return Card(
@@ -546,17 +740,5 @@ class _GamePageState extends State<GamePage> {
         },
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    viewModel.initSignals();
-  }
-
-  @override
-  void dispose() {
-    viewModel.dispose();
-    super.dispose();
   }
 }

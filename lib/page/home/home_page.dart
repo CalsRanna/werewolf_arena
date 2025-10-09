@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/page/home/home_view_model.dart';
+import 'package:werewolf_arena/util/responsive.dart';
 
 @RoutePage()
 class HomePage extends StatefulWidget {
@@ -45,22 +46,23 @@ class _HomePageState extends State<HomePage> {
         }
 
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+          child: ResponsiveWrapper(
+            applyCenterConstraint: true,
+            applyPadding: true,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // 欢迎区域
                 _buildWelcomeSection(context),
-                const SizedBox(height: 24),
+                SizedBox(height: Responsive.responsiveValue(context, mobile: 16.0, tablet: 20.0, desktop: 24.0)),
 
                 // 当前场景信息
                 _buildScenarioInfo(context, scenarioName, scenarioCount),
-                const SizedBox(height: 24),
+                SizedBox(height: Responsive.responsiveValue(context, mobile: 16.0, tablet: 20.0, desktop: 24.0)),
 
                 // 主要操作按钮
                 _buildMainActions(context, viewModel),
-                const SizedBox(height: 32),
+                SizedBox(height: Responsive.responsiveValue(context, mobile: 20.0, tablet: 28.0, desktop: 32.0)),
 
                 // 其他功能
                 _buildOtherFeatures(viewModel),
@@ -77,26 +79,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildWelcomeSection(BuildContext context) {
+    final iconSize = Responsive.getResponsiveIconSize(context, mobile: 40.0, tablet: 44.0, desktop: 48.0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
           Icons.casino,
-          size: 48,
+          size: iconSize,
           color: Theme.of(context).colorScheme.primary,
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: Responsive.responsiveValue(context, mobile: 12.0, desktop: 16.0)),
         Text(
           '欢迎来到狼人杀竞技场',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
+            fontSize: Responsive.getResponsiveFontSize(context, mobile: 24.0, tablet: 28.0, desktop: 32.0),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: Responsive.responsiveValue(context, mobile: 6.0, desktop: 8.0)),
         Text(
           '与AI玩家一起体验经典的狼人杀游戏',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            fontSize: Responsive.getResponsiveFontSize(context, mobile: 14.0, tablet: 15.0, desktop: 16.0),
           ),
         ),
       ],
@@ -149,17 +155,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMainActions(BuildContext context, HomeViewModel viewModel) {
+    final buttonHeight = Responsive.responsiveValue(context, mobile: 52.0, tablet: 54.0, desktop: 56.0);
+    final buttonFontSize = Responsive.getResponsiveFontSize(context, mobile: 16.0, tablet: 17.0, desktop: 18.0);
+
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: buttonHeight,
           child: ElevatedButton.icon(
             onPressed: () => viewModel.startNewGame(context),
             icon: Icon(Icons.play_arrow),
             label: Text(
               '开始新游戏',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: buttonFontSize, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
@@ -168,16 +177,16 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: Responsive.responsiveValue(context, mobile: 10.0, desktop: 12.0)),
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: buttonHeight,
           child: OutlinedButton.icon(
             onPressed: () => viewModel.showGameRules(context),
             icon: Icon(Icons.help_outline),
             label: Text(
               '游戏规则',
-              style: TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: buttonFontSize - 2),
             ),
             style: OutlinedButton.styleFrom(
               shape: RoundedRectangleBorder(
