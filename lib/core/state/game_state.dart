@@ -1,5 +1,4 @@
 import 'package:werewolf_arena/core/domain/entities/player.dart';
-import 'package:werewolf_arena/core/domain/entities/role.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart';

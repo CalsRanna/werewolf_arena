@@ -6,7 +6,6 @@ import 'package:werewolf_arena/core/state/game_state.dart';
 import 'json_cleaner.dart';
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 
 /// LLM API retry configuration

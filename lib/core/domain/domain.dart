@@ -3,9 +3,9 @@
 /// 包含所有领域模型: 实体、值对象、枚举
 
 // 实体 - 隐藏重复定义的类型,使用value_objects和enums中的定义
-export 'entities/player.dart' hide PlayerModelConfig, PlayerType;
+export 'entities/player.dart';
 export 'entities/ai_player.dart';
-export 'entities/role.dart' hide RoleType, RoleAlignment;
+export 'entities/role.dart';
 
 // 值对象
 export 'value_objects/game_phase.dart';

@@ -1,7 +1,6 @@
 import 'package:werewolf_arena/core/engine/game_observer.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/domain/entities/player.dart';
-import 'package:werewolf_arena/core/events/events.dart';
 import 'console_output.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
