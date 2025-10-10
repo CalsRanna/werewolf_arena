@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/player/player.dart';
 import 'logger.dart';
 
 /// Player-specific logger for debugging event visibility
@@ -25,7 +25,12 @@ class PlayerLogger {
   /// Get the player logs directory path
   Future<String> _getPlayerLogsDir() async {
     // 在 Flutter 环境下，使用应用文档目录
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+    if (!kIsWeb &&
+        (Platform.isAndroid ||
+            Platform.isIOS ||
+            Platform.isMacOS ||
+            Platform.isWindows ||
+            Platform.isLinux)) {
       _appDocDir ??= (await getApplicationDocumentsDirectory()).path;
       return path.join(_appDocDir!, _playerLogsDirName);
     }
@@ -80,25 +85,27 @@ class PlayerLogger {
 
   /// 异步创建玩家日志（不阻塞主流程）
   void _createPlayerLogAsync(Player player, GameState state) {
-    _getPlayerLogsDir().then((logDirPath) {
-      final fileName = 'player_${player.name}.log';
-      final fullPath = path.join(logDirPath, fileName);
-      final logFile = File(fullPath);
-      final sink = logFile.openWrite(mode: FileMode.write);
+    _getPlayerLogsDir()
+        .then((logDirPath) {
+          final fileName = 'player_${player.name}.log';
+          final fullPath = path.join(logDirPath, fileName);
+          final logFile = File(fullPath);
+          final sink = logFile.openWrite(mode: FileMode.write);
 
-      // Write all visible events
-      final visibleEvents = state.getEventsForPlayer(player);
-      for (int i = 0; i < visibleEvents.length; i++) {
-        final event = visibleEvents[i];
-        sink.writeln('⏺ ${event.toJson()}\n');
-      }
+          // Write all visible events
+          final visibleEvents = state.getEventsForPlayer(player);
+          for (int i = 0; i < visibleEvents.length; i++) {
+            final event = visibleEvents[i];
+            sink.writeln('⏺ ${event.toJson()}\n');
+          }
 
-      sink.flush().then((_) => sink.close());
-    }).catchError((e) {
-      if (kDebugMode) {
-        print('Failed to create log for player ${player.name}: $e');
-      }
-    });
+          sink.flush().then((_) => sink.close());
+        })
+        .catchError((e) {
+          if (kDebugMode) {
+            print('Failed to create log for player ${player.name}: $e');
+          }
+        });
   }
 
   /// Update events for all players (useful for debugging)

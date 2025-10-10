@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:werewolf_arena/core/engine/game_observer.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
+import 'package:werewolf_arena/core/player/player.dart';
 
 /// 基于 Stream 的游戏观察者
 ///

@@ -1,8 +1,8 @@
 import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/engine/game_scenario.dart';
 import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/entities/player/ai_player.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/player/ai_player.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
 import 'package:werewolf_arena/services/llm/prompt_manager.dart';
 
@@ -20,7 +20,11 @@ class ConfigService {
 
     // 设置默认场景(如果还没有设置)
     if (_gameParameters!.currentScenario == null) {
-      final availableScenarios = _gameParameters!.scenarioManager.scenarios.values.toList();
+      final availableScenarios = _gameParameters!
+          .scenarioManager
+          .scenarios
+          .values
+          .toList();
       if (availableScenarios.isNotEmpty) {
         _gameParameters!.setCurrentScenario(availableScenarios.first.id);
       }
@@ -75,7 +79,7 @@ class ConfigService {
 
     final players = <Player>[];
     final roleIds = scenario.getExpandedRoles();
-    roleIds.shuffle();  // 随机打乱角色顺序
+    roleIds.shuffle(); // 随机打乱角色顺序
 
     for (int i = 0; i < roleIds.length; i++) {
       final playerNumber = i + 1;

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:werewolf_arena/core/engine/game_engine.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/interfaces/game_parameters.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_parameters.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/services/stream_game_observer.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
@@ -20,12 +20,18 @@ class GameService {
   bool _isExecutingStep = false;
 
   // 公开的事件流（委托给内部观察者）
-  Stream<String> get gameEvents => _observer?.gameEvents ?? const Stream.empty();
-  Stream<void> get gameStartStream => _observer?.gameStartStream ?? const Stream.empty();
-  Stream<String> get phaseChangeStream => _observer?.phaseChangeStream ?? const Stream.empty();
-  Stream<String> get playerActionStream => _observer?.playerActionStream ?? const Stream.empty();
-  Stream<String> get gameEndStream => _observer?.gameEndStream ?? const Stream.empty();
-  Stream<String> get errorStream => _observer?.errorStream ?? const Stream.empty();
+  Stream<String> get gameEvents =>
+      _observer?.gameEvents ?? const Stream.empty();
+  Stream<void> get gameStartStream =>
+      _observer?.gameStartStream ?? const Stream.empty();
+  Stream<String> get phaseChangeStream =>
+      _observer?.phaseChangeStream ?? const Stream.empty();
+  Stream<String> get playerActionStream =>
+      _observer?.playerActionStream ?? const Stream.empty();
+  Stream<String> get gameEndStream =>
+      _observer?.gameEndStream ?? const Stream.empty();
+  Stream<String> get errorStream =>
+      _observer?.errorStream ?? const Stream.empty();
   Stream<GameState> get gameStateChangedStream =>
       _observer?.gameStateChangedStream ?? const Stream.empty();
 

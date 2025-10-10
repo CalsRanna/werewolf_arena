@@ -4,7 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/services/game_service.dart';
 import 'package:werewolf_arena/services/config_service.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/player/player.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 
 class GameViewModel {
@@ -23,7 +23,8 @@ class GameViewModel {
   final Signal<String> selectedScenario = signal('标准场景');
 
   // SnackBar提示用的StreamController
-  final StreamController<String> _snackBarMessageController = StreamController.broadcast();
+  final StreamController<String> _snackBarMessageController =
+      StreamController.broadcast();
   Stream<String> get snackBarMessages => _snackBarMessageController.stream;
 
   // 计算属性
@@ -41,8 +42,8 @@ class GameViewModel {
 
   late final canNextStep = computed(() {
     return isGameRunning.value &&
-           !_gameService.isGameEnded &&
-           !isExecutingStep.value;
+        !_gameService.isGameEnded &&
+        !isExecutingStep.value;
   });
 
   StreamSubscription? _gameEventsSubscription;
@@ -68,7 +69,9 @@ class GameViewModel {
     try {
       final scenario = _configService.currentScenario;
       if (scenario != null) {
-        final newPlayers = _configService.createPlayersForScenario(scenario).cast<Player>();
+        final newPlayers = _configService
+            .createPlayersForScenario(scenario)
+            .cast<Player>();
         players.value = newPlayers;
         _addLog('已创建 ${newPlayers.length} 名玩家');
         _addLog('玩家列表: ${newPlayers.map((p) => p.formattedName).join(', ')}');
@@ -107,7 +110,6 @@ class GameViewModel {
       gameStatus.value = '等待下一步（点击"下一步"按钮推进游戏）';
 
       _addLog('游戏已启动，使用手动模式');
-
     } catch (e) {
       gameStatus.value = '错误: $e';
       _addLog('❌ 游戏启动失败: $e');
@@ -142,7 +144,6 @@ class GameViewModel {
       } else {
         gameStatus.value = '等待下一步（点击"下一步"推进到下一个阶段）';
       }
-
     } catch (e) {
       gameStatus.value = '错误: $e';
       _addLog('❌ 执行步骤失败: $e');
@@ -167,7 +168,9 @@ class GameViewModel {
     try {
       final scenario = _configService.currentScenario;
       if (scenario != null) {
-        final newPlayers = _configService.createPlayersForScenario(scenario).cast<Player>();
+        final newPlayers = _configService
+            .createPlayersForScenario(scenario)
+            .cast<Player>();
         players.value = newPlayers;
         _addLog('游戏重置 - 重新创建了 ${newPlayers.length} 名玩家');
       } else {
@@ -219,7 +222,9 @@ class GameViewModel {
       currentPhase.value = phase;
     });
 
-    _onPlayerActionSubscription = _gameService.playerActionStream.listen((action) {
+    _onPlayerActionSubscription = _gameService.playerActionStream.listen((
+      action,
+    ) {
       // 玩家动作已经通过 gameEvents 流记录，这里不需要重复添加
     });
 

@@ -1,8 +1,9 @@
-import 'dart:io' if (dart.library.html) 'package:werewolf_arena/services/config/platform_io_stub.dart';
+import 'dart:io'
+    if (dart.library.html) 'package:werewolf_arena/services/config/platform_io_stub.dart';
 import 'package:yaml/yaml.dart';
-import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/engine/game_scenario.dart';
 import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
-import 'package:werewolf_arena/core/interfaces/game_parameters.dart';
+import 'package:werewolf_arena/core/engine/game_parameters.dart';
 import 'package:werewolf_arena/services/config/preference_loader.dart';
 
 /// 应用统一配置
@@ -71,7 +72,8 @@ class AppConfig {
     }
 
     // 解析日志配置
-    final loggingYaml = yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig());
+    final loggingYaml =
+        yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig());
 
     return AppConfig(
       defaultModel: defaultLLM['model'] ?? 'gpt-3.5-turbo',
@@ -132,7 +134,8 @@ class AppConfig {
 
   /// 从 JSON 反序列化（用于 SharedPreferences）
   static AppConfig fromJson(Map<String, dynamic> json) {
-    final playerModelsJson = json['playerModels'] as Map<String, dynamic>? ?? {};
+    final playerModelsJson =
+        json['playerModels'] as Map<String, dynamic>? ?? {};
     final playerModels = playerModelsJson.map(
       (key, value) => MapEntry(
         key,
@@ -184,11 +187,7 @@ class PlayerLLMConfig {
   final String apiKey;
   final String? baseUrl;
 
-  PlayerLLMConfig({
-    required this.model,
-    required this.apiKey,
-    this.baseUrl,
-  });
+  PlayerLLMConfig({required this.model, required this.apiKey, this.baseUrl});
 
   factory PlayerLLMConfig._fromYaml(YamlMap yaml) {
     return PlayerLLMConfig(
@@ -199,11 +198,7 @@ class PlayerLLMConfig {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'model': model,
-      'apiKey': apiKey,
-      'baseUrl': baseUrl,
-    };
+    return {'model': model, 'apiKey': apiKey, 'baseUrl': baseUrl};
   }
 
   static PlayerLLMConfig fromJson(Map<String, dynamic> json) {

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
 import 'json_cleaner.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/player/player.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
 
 /// LLM API retry configuration
@@ -95,11 +95,7 @@ class OpenAIService {
     OpenAIClient? client,
     this.baseUrl = 'https://api.openai.com/v1',
     this.retryConfig = const RetryConfig(),
-  }) : _client = client ??
-            OpenAIClient(
-              apiKey: apiKey,
-              baseUrl: baseUrl,
-            );
+  }) : _client = client ?? OpenAIClient(apiKey: apiKey, baseUrl: baseUrl);
 
   final String apiKey;
   final String model;
@@ -138,8 +134,9 @@ class OpenAIService {
           overrideApiKey: overrideApiKey,
         );
 
-        final responseTimeMs =
-            DateTime.now().difference(startTime).inMilliseconds;
+        final responseTimeMs = DateTime.now()
+            .difference(startTime)
+            .inMilliseconds;
 
         // 如果重试过，记录成功日志
         if (attempt > 1) {
@@ -161,18 +158,20 @@ class OpenAIService {
         if (attempt == retryConfig.maxAttempts) {
           // 最后一次尝试失败，记录错误日志
           LoggerUtil.instance.e(
-              'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException',
-              null,
-              null,
-              LogCategory.llmApi);
+            'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException',
+            null,
+            null,
+            LogCategory.llmApi,
+          );
           break;
         }
 
         // 记录重试日志
         final delay = _calculateBackoffDelay(attempt);
         LoggerUtil.instance.w(
-            'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e',
-            LogCategory.llmApi);
+          'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e',
+          LogCategory.llmApi,
+        );
 
         // 计算退避延迟时间
         await Future.delayed(delay);
@@ -193,8 +192,11 @@ class OpenAIService {
     final multiplier = math.pow(retryConfig.backoffMultiplier, attempt - 1);
     final delay = retryConfig.initialDelay * multiplier;
     return Duration(
-        milliseconds:
-            delay.inMilliseconds.clamp(0, retryConfig.maxDelay.inMilliseconds));
+      milliseconds: delay.inMilliseconds.clamp(
+        0,
+        retryConfig.maxDelay.inMilliseconds,
+      ),
+    );
   }
 
   Future<LLMResponse> generateAction({
@@ -230,7 +232,8 @@ class OpenAIService {
     final gameContext = _buildContext(player, state);
 
     // 修改 prompt 要求返回 JSON 格式
-    final jsonPrompt = '''
+    final jsonPrompt =
+        '''
 $prompt
 
 请返回 JSON 格式的回复：
@@ -301,20 +304,11 @@ $context
 
     if (userPrompt.isEmpty) {
       // 如果userPrompt为空,将systemPrompt作为用户消息
-      messages.add({
-        'role': 'user',
-        'content': systemPrompt,
-      });
+      messages.add({'role': 'user', 'content': systemPrompt});
     } else {
       // 正常情况：system + user消息
-      messages.add({
-        'role': 'system',
-        'content': systemPrompt,
-      });
-      messages.add({
-        'role': 'user',
-        'content': userPrompt,
-      });
+      messages.add({'role': 'system', 'content': systemPrompt});
+      messages.add({'role': 'user', 'content': userPrompt});
     }
 
     try {
@@ -325,16 +319,19 @@ $context
             return ChatCompletionMessage.system(content: msg['content'] ?? '');
           } else {
             return ChatCompletionMessage.user(
-                content: ChatCompletionUserMessageContent.string(
-                    msg['content'] ?? ''));
+              content: ChatCompletionUserMessageContent.string(
+                msg['content'] ?? '',
+              ),
+            );
           }
         }).toList(),
       );
 
       // 调试信息：输出请求详情
       LoggerUtil.instance.d(
-          'API Request - Model: $effectiveModel, Messages: ${messages.length}',
-          LogCategory.llmApi);
+        'API Request - Model: $effectiveModel, Messages: ${messages.length}',
+        LogCategory.llmApi,
+      );
 
       final response = await client.createChatCompletion(request: request);
 
@@ -488,7 +485,8 @@ Your role: ${player.role.name}
   }) async {
     final context = _buildContext(player, state);
 
-    final fullPrompt = '''
+    final fullPrompt =
+        '''
 $context
 
 $prompt
@@ -536,7 +534,8 @@ ${options.map((opt) => '- $opt').join('\n')}
   }) async {
     final context = _buildContext(player, state);
 
-    final fullPrompt = '''
+    final fullPrompt =
+        '''
 $context
 
 $prompt

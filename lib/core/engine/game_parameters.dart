@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/engine/game_scenario.dart';
 import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 

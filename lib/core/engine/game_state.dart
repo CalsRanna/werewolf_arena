@@ -1,7 +1,7 @@
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/entities/player/role.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/player/role.dart';
 import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/engine/game_scenario.dart';
 import 'package:werewolf_arena/core/rules/scenarios_simple_9.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
 import 'game_event.dart';
@@ -32,7 +32,7 @@ enum GameStatus {
   waiting, // Waiting to start
   playing, // In game
   paused, // Paused
-  ended; // Ended
+  ended, // Ended
 }
 
 /// Game event types
@@ -78,7 +78,6 @@ abstract class GameEvent {
     this.visibleToRole,
   }) : timestamp = DateTime.now();
 
-  
   /// 执行事件逻辑
   void execute(GameState state);
 
@@ -156,9 +155,9 @@ class GameState {
     this.dayNumber = 0,
     List<GameEvent>? eventHistory,
     Map<String, dynamic>? metadata,
-  })  : eventHistory = eventHistory ?? [],
-        metadata = metadata ?? {},
-        startTime = DateTime.now();
+  }) : eventHistory = eventHistory ?? [],
+       metadata = metadata ?? {},
+       startTime = DateTime.now();
 
   // Getters
   bool get isGameOver => status == GameStatus.ended;
@@ -198,16 +197,15 @@ class GameState {
   }) {
     final cutoffTime = DateTime.now().subtract(timeWindow);
     return eventHistory
-        .where((event) =>
-            event.timestamp.isAfter(cutoffTime) && event.isVisibleTo(player))
+        .where(
+          (event) =>
+              event.timestamp.isAfter(cutoffTime) && event.isVisibleTo(player),
+        )
         .toList();
   }
 
   /// Get events of a specific type visible to a player
-  List<GameEvent> getEventsByType(
-    Player player,
-    GameEventType type,
-  ) {
+  List<GameEvent> getEventsByType(Player player, GameEventType type) {
     return eventHistory
         .where((event) => event.type == type && event.isVisibleTo(player))
         .toList();
@@ -266,8 +264,9 @@ class GameState {
   bool checkGameEnd() {
     // Debug: 打印当前存活情况
     LoggerUtil.instance.d('游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys');
-    LoggerUtil.instance
-        .d('存活玩家详情: ${alivePlayers.map((p) => p.formattedName).join(', ')}');
+    LoggerUtil.instance.d(
+      '存活玩家详情: ${alivePlayers.map((p) => p.formattedName).join(', ')}',
+    );
 
     // 确保游戏有活跃玩家
     if (alivePlayers.length < 2) {
@@ -472,24 +471,26 @@ class GameState {
   factory GameState.fromJson(Map<String, dynamic> json) {
     final config = AppConfig.fromJson(json['config']);
     // 注意：场景不再从JSON反序列化，而是在游戏运行时设置
-    final players =
-        (json['players'] as List).map((p) => Player.fromJson(p)).toList();
+    final players = (json['players'] as List)
+        .map((p) => Player.fromJson(p))
+        .toList();
 
     // Skip event history deserialization for now - will implement event factory later
     final eventHistory = <GameEvent>[];
 
     return GameState(
-      gameId: json['gameId'],
-      config: config,
-      scenario: Simple9PlayersScenario(), // 临时使用默认场景
-      players: players,
-      currentPhase:
-          GamePhase.values.firstWhere((p) => p.name == json['currentPhase']),
-      status: GameStatus.values.firstWhere((s) => s.name == json['status']),
-      dayNumber: json['dayNumber'],
-      eventHistory: eventHistory,
-      metadata: Map<String, dynamic>.from(json['metadata']),
-    )
+        gameId: json['gameId'],
+        config: config,
+        scenario: Simple9PlayersScenario(), // 临时使用默认场景
+        players: players,
+        currentPhase: GamePhase.values.firstWhere(
+          (p) => p.name == json['currentPhase'],
+        ),
+        status: GameStatus.values.firstWhere((s) => s.name == json['status']),
+        dayNumber: json['dayNumber'],
+        eventHistory: eventHistory,
+        metadata: Map<String, dynamic>.from(json['metadata']),
+      )
       ..lastUpdateTime = json['lastUpdateTime'] != null
           ? DateTime.parse(json['lastUpdateTime'])
           : null

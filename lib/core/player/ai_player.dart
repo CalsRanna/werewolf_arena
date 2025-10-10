@@ -1,136 +1,19 @@
 import 'dart:async';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
 import 'package:werewolf_arena/services/llm/prompt_manager.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
-import 'package:werewolf_arena/core/entities/player/ai_personality_state.dart';
-
-/// AI personality traits
-class Personality {
-  final double aggressiveness; // Aggressiveness 0-1
-  final double logicThinking; // Logical thinking 0-1
-  final double cooperativeness; // Cooperativeness 0-1
-  final double honesty; // Honesty 0-1
-  final double expressiveness; // Expressiveness 0-1
-
-  Personality({
-    required this.aggressiveness,
-    required this.logicThinking,
-    required this.cooperativeness,
-    required this.honesty,
-    required this.expressiveness,
-  });
-
-  factory Personality.random() {
-    final random = RandomHelper();
-    return Personality(
-      aggressiveness: random.nextDouble(),
-      logicThinking: random.nextDouble(),
-      cooperativeness: random.nextDouble(),
-      honesty: random.nextDouble(),
-      expressiveness: random.nextDouble(),
-    );
-  }
-
-  factory Personality.forRole(String roleId) {
-    final random = RandomHelper();
-
-    switch (roleId) {
-      case 'werewolf':
-        return Personality(
-          aggressiveness: random.nextDoubleRange(0.4, 0.9), // 更大的变化范围
-          logicThinking: random.nextDoubleRange(0.3, 0.8), // 降低最低逻辑要求
-          cooperativeness: random.nextDoubleRange(0.6, 1.0),
-          honesty: random.nextDoubleRange(0.1, 0.4), // 允许更多样性
-          expressiveness: random.nextDoubleRange(0.3, 0.9), // 更大表达范围
-        );
-
-      case 'seer':
-        return Personality(
-          aggressiveness: random.nextDoubleRange(0.1, 0.6), // 可以更激进
-          logicThinking: random.nextDoubleRange(0.6, 0.9), // 允许非完美逻辑
-          cooperativeness: random.nextDoubleRange(0.5, 0.9),
-          honesty: random.nextDoubleRange(0.8, 1.0),
-          expressiveness: random.nextDoubleRange(0.2, 0.8), // 可以更沉静或激动
-        );
-
-      case 'witch':
-        return Personality(
-          aggressiveness: random.nextDoubleRange(0.2, 0.8), // 更大范围
-          logicThinking: random.nextDoubleRange(0.4, 0.8), // 允许直觉决策
-          cooperativeness: random.nextDoubleRange(0.4, 0.8),
-          honesty: random.nextDoubleRange(0.5, 0.9),
-          expressiveness: random.nextDoubleRange(0.3, 0.9),
-        );
-
-      case 'hunter':
-        return Personality(
-          aggressiveness: random.nextDoubleRange(0.4, 0.9), // 更大变化
-          logicThinking: random.nextDoubleRange(0.3, 0.7), // 降低逻辑要求
-          cooperativeness: random.nextDoubleRange(0.3, 0.7),
-          honesty: random.nextDoubleRange(0.7, 1.0),
-          expressiveness: random.nextDoubleRange(0.5, 1.0), // 可以非常情绪化
-        );
-
-      case 'guard':
-        return Personality(
-          aggressiveness: random.nextDoubleRange(0.1, 0.5), // 可以有攻击性
-          logicThinking: random.nextDoubleRange(0.4, 0.8), // 允许直觉守护
-          cooperativeness: random.nextDoubleRange(0.6, 1.0),
-          honesty: random.nextDoubleRange(0.7, 1.0),
-          expressiveness: random.nextDoubleRange(0.2, 0.7),
-        );
-
-      default: // villager
-        return Personality(
-          aggressiveness: random.nextDoubleRange(0.2, 0.8), // 更大范围
-          logicThinking: random.nextDoubleRange(0.2, 0.7), // 允许直觉判断
-          cooperativeness: random.nextDoubleRange(0.4, 0.8),
-          honesty: random.nextDoubleRange(0.5, 0.9),
-          expressiveness: random.nextDoubleRange(0.3, 0.9), // 可以很情绪化
-        );
-    }
-  }
-
-  String getPersonalityDescription() {
-    return '''
-Personality traits:
-- Aggressiveness: ${_getTraitDescription(aggressiveness)}
-- Logical thinking: ${_getTraitDescription(logicThinking)}
-- Cooperativeness: ${_getTraitDescription(cooperativeness)}
-- Honesty: ${_getTraitDescription(honesty)}
-- Expressiveness: ${_getTraitDescription(expressiveness)}
-''';
-  }
-
-  String _getTraitDescription(double value) {
-    if (value < 0.2) return 'very low';
-    if (value < 0.4) return 'low';
-    if (value < 0.6) return 'medium';
-    if (value < 0.8) return 'high';
-    return 'very high';
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'aggressiveness': aggressiveness,
-      'logicThinking': logicThinking,
-      'cooperativeness': cooperativeness,
-      'honesty': honesty,
-      'expressiveness': expressiveness,
-    };
-  }
-}
+import 'package:werewolf_arena/core/player/personality.dart';
 
 /// AI player implementation
 class EnhancedAIPlayer extends AIPlayer {
   final OpenAIService llmService;
   final PromptManager promptManager;
   final Personality personality;
-  late final AIPersonalityState personalityState; // 性格状态系统
+  late final Personality personalityState; // 性格状态系统
 
   DateTime? _lastActionTime;
 
@@ -142,8 +25,8 @@ class EnhancedAIPlayer extends AIPlayer {
     super.modelConfig,
     Personality? personality,
     RandomHelper? random,
-  })  : personality = personality ?? Personality.forRole(role.roleId),
-        super(random: random ?? RandomHelper()) {
+  }) : personality = personality ?? Personality.forRole(role.roleId),
+       super(random: random ?? RandomHelper()) {
     // 初始化性格状态
     _initializePersonalityState();
   }
@@ -153,20 +36,20 @@ class EnhancedAIPlayer extends AIPlayer {
     // 根据角色选择合适的性格类型
     switch (role.roleId) {
       case 'werewolf':
-        personalityState = AIPersonalityFactory.createAggressive();
+        personalityState = PersonalityFactory.createAggressive();
         break;
       case 'seer':
-        personalityState = AIPersonalityFactory.createLogical();
+        personalityState = PersonalityFactory.createLogical();
         break;
       case 'villager':
-        personalityState = AIPersonalityFactory.createFollower();
+        personalityState = PersonalityFactory.createFollower();
         break;
       case 'witch':
       case 'hunter':
-        personalityState = AIPersonalityFactory.createEmotional();
+        personalityState = PersonalityFactory.createEmotional();
         break;
       default:
-        personalityState = AIPersonalityFactory.createRandom();
+        personalityState = PersonalityFactory.createRandom();
     }
 
     // 用原始性格数值调整基础性格
@@ -216,8 +99,10 @@ class EnhancedAIPlayer extends AIPlayer {
 
         // Store reasoning and statement in game events, not private data
         // The AI's reasoning will be captured in the action event itself
-        LoggerUtil.instance
-            .d('Player action: $name chose target ${target.name}', LogCategory.aiDecision);
+        LoggerUtil.instance.d(
+          'Player action: $name chose target ${target.name}',
+          LogCategory.aiDecision,
+        );
         return target;
       }
 
@@ -231,8 +116,10 @@ class EnhancedAIPlayer extends AIPlayer {
 
   /// Choose vote target - 专门的投票逻辑
   @override
-  Future<Player?> chooseVoteTarget(GameState state,
-      {List<Player>? pkCandidates}) async {
+  Future<Player?> chooseVoteTarget(
+    GameState state, {
+    List<Player>? pkCandidates,
+  }) async {
     if (!isAlive) return null;
 
     _lastActionTime = DateTime.now();
@@ -265,13 +152,17 @@ class EnhancedAIPlayer extends AIPlayer {
           // PK投票阶段 - 必须投PK候选人
           if (!pkCandidates.contains(target)) {
             LoggerUtil.instance.w(
-                '$name tried to vote for ${target.name} who is not in PK candidates, choosing fallback');
+              '$name tried to vote for ${target.name} who is not in PK candidates, choosing fallback',
+            );
             return _chooseFallbackVoteTarget(state, pkCandidates: pkCandidates);
           }
         }
 
         // Store reasoning in action events, not private data
-        LoggerUtil.instance.d('$formattedName投票给${target.formattedName}', LogCategory.aiDecision);
+        LoggerUtil.instance.d(
+          '$formattedName投票给${target.formattedName}',
+          LogCategory.aiDecision,
+        );
         return target;
       }
 
@@ -284,24 +175,27 @@ class EnhancedAIPlayer extends AIPlayer {
   }
 
   /// Fallback vote target selection
-  Player? _chooseFallbackVoteTarget(GameState state,
-      {List<Player>? pkCandidates}) {
+  Player? _chooseFallbackVoteTarget(
+    GameState state, {
+    List<Player>? pkCandidates,
+  }) {
     List<Player> availableTargets;
 
     if (pkCandidates != null && pkCandidates.isNotEmpty) {
       // PK投票 - 只能从PK候选人中选择
-      availableTargets =
-          pkCandidates.where((p) => p.name != name).toList();
+      availableTargets = pkCandidates.where((p) => p.name != name).toList();
     } else {
       // 普通投票 - 从所有存活玩家中选择
-      availableTargets =
-          state.alivePlayers.where((p) => p.name != name).toList();
+      availableTargets = state.alivePlayers
+          .where((p) => p.name != name)
+          .toList();
     }
 
     // 如果是狼人，排除队友
     if (role.isWerewolf) {
-      availableTargets =
-          availableTargets.where((p) => !p.role.isWerewolf).toList();
+      availableTargets = availableTargets
+          .where((p) => !p.role.isWerewolf)
+          .toList();
     }
 
     if (availableTargets.isEmpty) return null;
@@ -310,8 +204,9 @@ class EnhancedAIPlayer extends AIPlayer {
 
   /// Fallback target selection
   Player? _chooseFallbackTarget(GameState state) {
-    final availableTargets =
-        state.alivePlayers.where((p) => p.name != name).toList();
+    final availableTargets = state.alivePlayers
+        .where((p) => p.name != name)
+        .toList();
 
     if (availableTargets.isEmpty) return null;
     return random.randomChoice(availableTargets);
@@ -353,7 +248,8 @@ class EnhancedAIPlayer extends AIPlayer {
 
       // LLM failed, return empty string
       LoggerUtil.instance.e(
-          'LLM statement generation failed for $name: invalid response - ${response.errors.join(', ')}');
+        'LLM statement generation failed for $name: invalid response - ${response.errors.join(', ')}',
+      );
       return '';
     } catch (e) {
       LoggerUtil.instance.e('AI statement generation error for $name: $e');
@@ -385,7 +281,11 @@ class EnhancedAIPlayer extends AIPlayer {
     for (final speech in recentSpeeches) {
       if (speech.speaker.name != name) {
         final isLogical = _isLogicalSpeech(speech.message);
-        personalityState.analyzeSpeech(speech.speaker.name, speech.message, isLogical);
+        personalityState.analyzeSpeech(
+          speech.speaker.name,
+          speech.message,
+          isLogical,
+        );
       }
     }
   }

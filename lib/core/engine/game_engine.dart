@@ -1,23 +1,26 @@
 import 'dart:async';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 import 'package:werewolf_arena/core/engine/game_observer.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/entities/player/ai_player.dart';
-import 'package:werewolf_arena/core/entities/player/role.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/player/ai_player.dart';
+import 'package:werewolf_arena/core/player/role.dart';
 import 'package:werewolf_arena/services/llm/enhanced_prompts.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
-import 'package:werewolf_arena/core/interfaces/game_parameters.dart';
+import 'package:werewolf_arena/core/engine/game_parameters.dart';
 import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/engine/game_scenario.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 import 'package:werewolf_arena/services/logging/player_logger.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {
-  GameEngine({required this.parameters, RandomHelper? random, GameObserver? observer})
-      : random = random ?? RandomHelper(),
-        _observer = observer;
+  GameEngine({
+    required this.parameters,
+    RandomHelper? random,
+    GameObserver? observer,
+  }) : random = random ?? RandomHelper(),
+       _observer = observer;
   final GameParameters parameters;
 
   /// 获取游戏配置
@@ -65,12 +68,21 @@ class GameEngine {
   }
 
   /// 通知观察者阶段转换
-  void _notifyPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
+  void _notifyPhaseChange(
+    GamePhase oldPhase,
+    GamePhase newPhase,
+    int dayNumber,
+  ) {
     _observer?.onPhaseChange(oldPhase, newPhase, dayNumber);
   }
 
   /// 通知观察者玩家行动
-  void _notifyPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details}) {
+  void _notifyPlayerAction(
+    Player player,
+    String actionType,
+    dynamic target, {
+    Map<String, dynamic>? details,
+  }) {
     _observer?.onPlayerAction(player, actionType, target, details: details);
   }
 
@@ -80,7 +92,11 @@ class GameEngine {
   }
 
   /// 通知观察者玩家发言
-  void _notifyPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
+  void _notifyPlayerSpeak(
+    Player player,
+    String message, {
+    SpeechType? speechType,
+  }) {
     _observer?.onPlayerSpeak(player, message, speechType: speechType);
   }
 
@@ -90,12 +106,20 @@ class GameEngine {
   }
 
   /// 通知观察者夜晚结果
-  void _notifyNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber) {
+  void _notifyNightResult(
+    List<Player> deaths,
+    bool isPeacefulNight,
+    int dayNumber,
+  ) {
     _observer?.onNightResult(deaths, isPeacefulNight, dayNumber);
   }
 
   /// 通知观察者系统消息
-  void _notifySystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
+  void _notifySystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  }) {
     _observer?.onSystemMessage(message, dayNumber: dayNumber, phase: phase);
   }
 
@@ -104,9 +128,12 @@ class GameEngine {
     _observer?.onErrorMessage(error, errorDetails: errorDetails);
   }
 
-
   /// 通知观察者投票结果
-  void _notifyVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates) {
+  void _notifyVoteResults(
+    Map<String, int> results,
+    Player? executed,
+    List<Player>? pkCandidates,
+  ) {
     _observer?.onVoteResults(results, executed, pkCandidates);
   }
 
@@ -227,7 +254,11 @@ class GameEngine {
 
     // 通知回调处理器阶段转换
     _notifyPhaseChange(GamePhase.day, GamePhase.night, state.dayNumber);
-    _notifySystemMessage('天黑请闭眼', dayNumber: state.dayNumber, phase: GamePhase.night);
+    _notifySystemMessage(
+      '天黑请闭眼',
+      dayNumber: state.dayNumber,
+      phase: GamePhase.night,
+    );
 
     // Clear night actions
     state.clearNightActions();
@@ -247,8 +278,10 @@ class GameEngine {
   }
 
   /// Get player action order based on last death/execution as starting point
-  List<Player> _getActionOrder(List<Player> players,
-      {bool shouldAnnounce = false}) {
+  List<Player> _getActionOrder(
+    List<Player> players, {
+    bool shouldAnnounce = false,
+  }) {
     if (players.isEmpty) return [];
 
     // Get all players sorted by their numbers for baseline ordering
@@ -277,21 +310,28 @@ class GameEngine {
       final randomIndex = aliveIndices[random.nextInt(aliveIndices.length)];
       final startingPlayer = allPlayersSorted[randomIndex];
 
-      _notifySystemMessage(
-        '法官随机选择 ${startingPlayer.name} 作为发言起始点',
-      );
+      _notifySystemMessage('法官随机选择 ${startingPlayer.name} 作为发言起始点');
 
-      return _reorderFromStartingPoint(allPlayersSorted, players, randomIndex,
-          shouldAnnounce: shouldAnnounce);
+      return _reorderFromStartingPoint(
+        allPlayersSorted,
+        players,
+        randomIndex,
+        shouldAnnounce: shouldAnnounce,
+      );
     }
 
     // Find the index of the last dead player in the sorted list
-    final deadPlayerIndex = allPlayersSorted
-        .indexWhere((p) => p.name == lastDeadPlayer.name);
+    final deadPlayerIndex = allPlayersSorted.indexWhere(
+      (p) => p.name == lastDeadPlayer.name,
+    );
     if (deadPlayerIndex == -1) {
       // Fallback to normal ordering if something goes wrong
-      return _reorderFromStartingPoint(allPlayersSorted, players, 0,
-          shouldAnnounce: shouldAnnounce);
+      return _reorderFromStartingPoint(
+        allPlayersSorted,
+        players,
+        0,
+        shouldAnnounce: shouldAnnounce,
+      );
     }
 
     // Determine starting point (next player after the dead one)
@@ -303,14 +343,21 @@ class GameEngine {
       final currentPlayer = allPlayersSorted[currentIndex];
       if (currentPlayer.isAlive) {
         return _reorderFromStartingPoint(
-            allPlayersSorted, players, currentIndex,
-            shouldAnnounce: shouldAnnounce);
+          allPlayersSorted,
+          players,
+          currentIndex,
+          shouldAnnounce: shouldAnnounce,
+        );
       }
     }
 
     // Should not reach here, but fallback just in case
-    return _reorderFromStartingPoint(allPlayersSorted, players, 0,
-        shouldAnnounce: shouldAnnounce);
+    return _reorderFromStartingPoint(
+      allPlayersSorted,
+      players,
+      0,
+      shouldAnnounce: shouldAnnounce,
+    );
   }
 
   /// Find the last player who died or was executed
@@ -333,9 +380,12 @@ class GameEngine {
   }
 
   /// Reorder players starting from a specific index
-  List<Player> _reorderFromStartingPoint(List<Player> allPlayersSorted,
-      List<Player> alivePlayers, int startingIndex,
-      {bool shouldAnnounce = false}) {
+  List<Player> _reorderFromStartingPoint(
+    List<Player> allPlayersSorted,
+    List<Player> alivePlayers,
+    int startingIndex, {
+    bool shouldAnnounce = false,
+  }) {
     final orderedPlayers = <Player>[];
     final alivePlayerNames = alivePlayers.map((p) => p.name).toSet();
 
@@ -345,7 +395,8 @@ class GameEngine {
     if (isReverse) {
       // Reverse order
       for (int i = 0; i < allPlayersSorted.length; i++) {
-        final currentIndex = (startingIndex - i + allPlayersSorted.length) %
+        final currentIndex =
+            (startingIndex - i + allPlayersSorted.length) %
             allPlayersSorted.length;
         final player = allPlayersSorted[currentIndex];
         if (alivePlayerNames.contains(player.name)) {
@@ -386,8 +437,9 @@ class GameEngine {
   /// Process werewolf actions - if multiple werewolves, they need to negotiate (public method)
   Future<void> processWerewolfActions() async {
     final state = _currentState!;
-    final werewolves =
-        state.alivePlayers.where((p) => p.role.isWerewolf).toList();
+    final werewolves = state.alivePlayers
+        .where((p) => p.role.isWerewolf)
+        .toList();
 
     if (werewolves.isEmpty) return;
 
@@ -411,11 +463,15 @@ class GameEngine {
               _notifyPlayerAction(werewolf, 'kill', target);
             } else {
               // 记录到调试日志，而不是控制台
-              LoggerUtil.instance.debug('Werewolf did not choose a valid kill target');
+              LoggerUtil.instance.debug(
+                'Werewolf did not choose a valid kill target',
+              );
             }
           } else {
             // 记录到调试日志，而不是控制台
-            LoggerUtil.instance.debug('Werewolf did not choose a valid kill target');
+            LoggerUtil.instance.debug(
+              'Werewolf did not choose a valid kill target',
+            );
           }
         } catch (e) {
           LoggerUtil.instance.e('Werewolf ${werewolf.name} action failed: $e');
@@ -444,8 +500,9 @@ class GameEngine {
 
       // Select victim with most votes
       if (victims.isNotEmpty) {
-        final victim =
-            victims.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+        final victim = victims.entries
+            .reduce((a, b) => a.value > b.value ? a : b)
+            .key;
         final firstWerewolf = werewolves.first;
         final event = firstWerewolf.createKillEvent(victim, state);
         if (event != null) {
@@ -462,7 +519,10 @@ class GameEngine {
 
   /// Process single werewolf's vote (used for simultaneous voting)
   Future<void> _processWerewolfVote(
-      AIPlayer werewolf, GameState state, Map<Player, int> victims) async {
+    AIPlayer werewolf,
+    GameState state,
+    Map<Player, int> victims,
+  ) async {
     try {
       // Update player event log before action
       PlayerLogger.instance.updatePlayerEvents(werewolf, state);
@@ -475,8 +535,9 @@ class GameEngine {
           .where((e) => e.dayNumber == state.dayNumber)
           .toList();
 
-      LoggerUtil.instance
-          .d('${werewolf.name} 可见的讨论事件数量: ${discussionEvents.length}');
+      LoggerUtil.instance.d(
+        '${werewolf.name} 可见的讨论事件数量: ${discussionEvents.length}',
+      );
       if (discussionEvents.isNotEmpty) {
         LoggerUtil.instance.d('讨论内容预览: ${discussionEvents.first.message}');
       }
@@ -534,22 +595,30 @@ class GameEngine {
 
           if (statement.isNotEmpty) {
             // 创建狼人讨论事件并执行
-            final event =
-                werewolf.createWerewolfDiscussionEvent(statement, state);
+            final event = werewolf.createWerewolfDiscussionEvent(
+              statement,
+              state,
+            );
             if (event != null) {
               werewolf.executeEvent(event, state);
-              _notifyPlayerSpeak(werewolf, statement, speechType: SpeechType.werewolfDiscussion);
+              _notifyPlayerSpeak(
+                werewolf,
+                statement,
+                speechType: SpeechType.werewolfDiscussion,
+              );
               discussionHistory.add('[${werewolf.name}]: $statement');
             } else {
               LoggerUtil.instance.debug(
-                  '${werewolf.name} cannot create werewolf discussion event');
+                '${werewolf.name} cannot create werewolf discussion event',
+              );
             }
           } else {
             LoggerUtil.instance.debug('${werewolf.formattedName}没有发言');
           }
         } catch (e) {
-          LoggerUtil.instance
-              .e('Werewolf ${werewolf.name} discussion failed: $e');
+          LoggerUtil.instance.e(
+            'Werewolf ${werewolf.name} discussion failed: $e',
+          );
           _notifyErrorMessage('${werewolf.formattedName}: 因技术问题无法发言');
         }
 
@@ -567,8 +636,9 @@ class GameEngine {
   /// Process guard actions - each guard acts in turn (public method)
   Future<void> processGuardActions() async {
     final state = _currentState!;
-    final guards =
-        state.alivePlayers.where((p) => p.role is GuardRole).toList();
+    final guards = state.alivePlayers
+        .where((p) => p.role is GuardRole)
+        .toList();
 
     if (guards.isEmpty) return;
 
@@ -593,10 +663,14 @@ class GameEngine {
               guard.executeEvent(event, state);
               _notifyPlayerAction(guard, 'protect', target);
             } else {
-              LoggerUtil.instance.debug('${guard.name} made no valid protection choice');
+              LoggerUtil.instance.debug(
+                '${guard.name} made no valid protection choice',
+              );
             }
           } else {
-            LoggerUtil.instance.debug('${guard.name} made no valid protection choice');
+            LoggerUtil.instance.debug(
+              '${guard.name} made no valid protection choice',
+            );
           }
         } catch (e) {
           LoggerUtil.instance.e('Guard ${guard.name} action failed: $e');
@@ -642,13 +716,21 @@ class GameEngine {
             final event = seer.createInvestigateEvent(target, state);
             if (event != null) {
               seer.executeEvent(event, state);
-              _notifyPlayerAction(seer, 'investigate', target,
-                details: {'result': target.role.name});
+              _notifyPlayerAction(
+                seer,
+                'investigate',
+                target,
+                details: {'result': target.role.name},
+              );
             } else {
-              LoggerUtil.instance.debug('${seer.name} made no valid investigation choice');
+              LoggerUtil.instance.debug(
+                '${seer.name} made no valid investigation choice',
+              );
             }
           } else {
-            LoggerUtil.instance.debug('${seer.name} made no valid investigation choice');
+            LoggerUtil.instance.debug(
+              '${seer.name} made no valid investigation choice',
+            );
           }
         } catch (e) {
           LoggerUtil.instance.e('${seer.name} action failed: $e');
@@ -668,8 +750,9 @@ class GameEngine {
   /// Process witch actions - each witch acts in turn (public method)
   Future<void> processWitchActions() async {
     final state = _currentState!;
-    final witches =
-        state.alivePlayers.where((p) => p.role is WitchRole).toList();
+    final witches = state.alivePlayers
+        .where((p) => p.role is WitchRole)
+        .toList();
 
     if (witches.isEmpty) return;
 
@@ -689,7 +772,9 @@ class GameEngine {
         // Step 1: Handle antidote decision
         if (witchRole.hasAntidote(state)) {
           if (state.tonightVictim != null) {
-            _notifySystemMessage('${state.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？');
+            _notifySystemMessage(
+              '${state.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？',
+            );
           } else {
             _notifySystemMessage('平安夜. 你有一瓶解药，你要使用吗？');
           }
@@ -703,8 +788,10 @@ class GameEngine {
             await witch.processInformation(state);
 
             // Ask witch specifically about antidote
-            final shouldUseAntidote =
-                await _askWitchAboutAntidote(witch, state);
+            final shouldUseAntidote = await _askWitchAboutAntidote(
+              witch,
+              state,
+            );
 
             if (shouldUseAntidote && state.tonightVictim != null) {
               final event = witch.createHealEvent(state.tonightVictim!, state);
@@ -716,8 +803,9 @@ class GameEngine {
               _notifySystemMessage('${witch.formattedName}选择不使用解药');
             }
           } catch (e) {
-            LoggerUtil.instance
-                .e('Witch ${witch.name} antidote decision failed: $e');
+            LoggerUtil.instance.e(
+              'Witch ${witch.name} antidote decision failed: $e',
+            );
             _notifyErrorMessage('女巫 ${witch.name} 解药决策失败: $e');
             _notifySystemMessage('${witch.formattedName}选择不使用解药');
           }
@@ -752,8 +840,9 @@ class GameEngine {
               _notifySystemMessage('${witch.formattedName}选择不使用毒药');
             }
           } catch (e) {
-            LoggerUtil.instance
-                .e('Witch ${witch.name} poison decision failed: $e');
+            LoggerUtil.instance.e(
+              'Witch ${witch.name} poison decision failed: $e',
+            );
             _notifyErrorMessage('女巫 ${witch.name} 毒药决策失败: $e');
             _notifySystemMessage('${witch.formattedName}选择不使用毒药');
           }
@@ -797,7 +886,11 @@ class GameEngine {
   Future<void> _processDayPhase() async {
     final state = _currentState!;
     _notifyPhaseChange(GamePhase.night, GamePhase.day, state.dayNumber);
-    _notifySystemMessage('天亮了', dayNumber: state.dayNumber, phase: GamePhase.day);
+    _notifySystemMessage(
+      '天亮了',
+      dayNumber: state.dayNumber,
+      phase: GamePhase.day,
+    );
 
     // Announce night results
     await _announceNightResults();
@@ -831,7 +924,11 @@ class GameEngine {
     state.addEvent(nightResultEvent);
 
     // 通知回调处理器夜晚结果
-    _notifyNightResult(deathEvents.map((e) => e.victim).toList(), isPeacefulNight, state.dayNumber);
+    _notifyNightResult(
+      deathEvents.map((e) => e.victim).toList(),
+      isPeacefulNight,
+      state.dayNumber,
+    );
 
     // Announce current alive players
     final alivePlayers = state.alivePlayers;
@@ -842,8 +939,9 @@ class GameEngine {
   Future<void> runDiscussionPhase() async {
     final state = _currentState!;
     final alivePlayers = _getActionOrder(
-        state.alivePlayers.where((p) => p.isAlive).toList(),
-        shouldAnnounce: true);
+      state.alivePlayers.where((p) => p.isAlive).toList(),
+      shouldAnnounce: true,
+    );
 
     // Collect speech history for this discussion round
     final discussionHistory = <String>[];
@@ -883,7 +981,9 @@ class GameEngine {
               // Add speech to discussion history
               discussionHistory.add('[${player.name}]: $statement');
             } else {
-              LoggerUtil.instance.debug('${player.name} cannot speak in current phase');
+              LoggerUtil.instance.debug(
+                '${player.name} cannot speak in current phase',
+              );
             }
           } else {
             LoggerUtil.instance.debug('${player.formattedName} did not speak');
@@ -903,7 +1003,11 @@ class GameEngine {
   Future<void> _processVotingPhase() async {
     final state = _currentState!;
     _notifyPhaseChange(GamePhase.day, GamePhase.voting, state.dayNumber);
-    _notifySystemMessage('现在开始投票', dayNumber: state.dayNumber, phase: GamePhase.voting);
+    _notifySystemMessage(
+      '现在开始投票',
+      dayNumber: state.dayNumber,
+      phase: GamePhase.voting,
+    );
 
     // Clear previous votes
     state.clearVotes();
@@ -947,33 +1051,47 @@ class GameEngine {
 
   /// Process single player's vote (used for simultaneous voting)
   Future<void> _processSingleVote(
-      AIPlayer voter, GameState state, List<Player>? pkCandidates) async {
+    AIPlayer voter,
+    GameState state,
+    List<Player>? pkCandidates,
+  ) async {
     try {
       // Update player event log before action
       PlayerLogger.instance.updatePlayerEvents(voter, state);
 
       // Each player makes their decision independently
       await voter.processInformation(state);
-      final target =
-          await voter.chooseVoteTarget(state, pkCandidates: pkCandidates);
+      final target = await voter.chooseVoteTarget(
+        state,
+        pkCandidates: pkCandidates,
+      );
 
       if (target != null && target.isAlive) {
         // 额外验证：如果是PK投票，确保目标在PK候选人中
         if (pkCandidates != null && !pkCandidates.contains(target)) {
           LoggerUtil.instance.w(
-              '${voter.formattedName}投票给${target.formattedName} who is not in PK candidates, vote ignored');
+            '${voter.formattedName}投票给${target.formattedName} who is not in PK candidates, vote ignored',
+          );
           return;
         }
 
         final event = voter.createVoteEvent(target, state);
         if (event != null) {
           voter.executeEvent(event, state);
-          _notifyVoteCast(voter, target, voteType: pkCandidates != null ? VoteType.pk : VoteType.normal);
+          _notifyVoteCast(
+            voter,
+            target,
+            voteType: pkCandidates != null ? VoteType.pk : VoteType.normal,
+          );
         } else {
-          LoggerUtil.instance.debug('${voter.formattedName} abstained or action invalid');
+          LoggerUtil.instance.debug(
+            '${voter.formattedName} abstained or action invalid',
+          );
         }
       } else {
-        LoggerUtil.instance.debug('${voter.formattedName} abstained or action invalid');
+        LoggerUtil.instance.debug(
+          '${voter.formattedName} abstained or action invalid',
+        );
       }
     } catch (e) {
       LoggerUtil.instance.e('Player ${voter.name} voting failed: $e');
@@ -991,7 +1109,11 @@ class GameEngine {
     final tiedPlayers = state.getTiedPlayers();
 
     // 通知回调处理器投票结果
-    _notifyVoteResults(voteResults, voteTarget, tiedPlayers.isNotEmpty ? tiedPlayers : null);
+    _notifyVoteResults(
+      voteResults,
+      voteTarget,
+      tiedPlayers.isNotEmpty ? tiedPlayers : null,
+    );
 
     if (voteTarget != null) {
       // 有明确的投票结果，先处理遗言，再执行出局
@@ -1048,10 +1170,13 @@ class GameEngine {
               _notifyPlayerSpeak(player, statement);
             } else {
               LoggerUtil.instance.debug(
-                  'Failed to create speak event for ${player.name} in PK phase');
+                'Failed to create speak event for ${player.name} in PK phase',
+              );
             }
           } else {
-            LoggerUtil.instance.debug('${player.name} generated empty PK statement');
+            LoggerUtil.instance.debug(
+              '${player.name} generated empty PK statement',
+            );
           }
         } catch (e, stackTrace) {
           LoggerUtil.instance.e('PK speech failed for ${player.name}: $e');
@@ -1082,8 +1207,9 @@ class GameEngine {
         ..sort((a, b) => b.value.compareTo(a.value));
       for (final entry in sortedResults) {
         final player = state.getPlayerByName(entry.key);
-        LoggerUtil.instance
-            .i('  ${player?.name ?? entry.key}: ${entry.value} votes');
+        LoggerUtil.instance.i(
+          '  ${player?.name ?? entry.key}: ${entry.value} votes',
+        );
       }
     } else {
       _notifySystemMessage('PK阶段没有投票');
@@ -1096,9 +1222,7 @@ class GameEngine {
       await _handleLastWords(pkTarget, 'pk');
 
       pkTarget.die(DeathCause.vote, state);
-      LoggerUtil.instance.i(
-        '[法官]: ${pkTarget.name} was executed by PK vote',
-      );
+      LoggerUtil.instance.i('[法官]: ${pkTarget.name} was executed by PK vote');
 
       // Handle hunter skill
       if (pkTarget.role is HunterRole && pkTarget.isDead) {
@@ -1108,7 +1232,8 @@ class GameEngine {
       _notifySystemMessage('PK投票仍然平票或无效，没有人出局');
       if (pkResults.isEmpty) {
         LoggerUtil.instance.w(
-            'Warning: No valid votes in PK phase, this may indicate an issue');
+          'Warning: No valid votes in PK phase, this may indicate an issue',
+        );
       }
     }
   }
@@ -1171,8 +1296,9 @@ class GameEngine {
           lastWords = '我没有什么要说的了。'; // Default fallback
         }
       } catch (e) {
-        LoggerUtil.instance
-            .e('Error generating last words for ${player.name}: $e');
+        LoggerUtil.instance.e(
+          'Error generating last words for ${player.name}: $e',
+        );
         _notifyErrorMessage('玩家 ${player.name} 遗言生成失败: $e');
         lastWords = '我没有什么要说的了。'; // Fallback on error
       }
@@ -1188,7 +1314,9 @@ class GameEngine {
       player.executeEvent(event, state);
       _notifyLastWords(player, lastWords);
     } else {
-      LoggerUtil.instance.debug('Failed to create last words event for ${player.name}');
+      LoggerUtil.instance.debug(
+        'Failed to create last words event for ${player.name}',
+      );
     }
   }
 
@@ -1201,10 +1329,9 @@ class GameEngine {
     LoggerUtil.instance.debug('Game continues running, error logged');
 
     // Notify listeners of the error but don't change game status
-    _eventController.add(SystemErrorEvent(
-      errorMessage: 'Game error occurred',
-      error: error,
-    ));
+    _eventController.add(
+      SystemErrorEvent(errorMessage: 'Game error occurred', error: error),
+    );
 
     // 通知回调处理器错误
     _notifyErrorMessage('Game error occurred', errorDetails: error);
@@ -1223,7 +1350,7 @@ class GameEngine {
     _notifyGameEnd(
       state.winner ?? 'unknown',
       state.dayNumber,
-      state.alivePlayers.length
+      state.alivePlayers.length,
     );
 
     _stateController.add(state);
@@ -1234,7 +1361,8 @@ class GameEngine {
   Future<bool> _askWitchAboutAntidote(AIPlayer witch, GameState state) async {
     try {
       // Create a specific prompt for antidote decision
-      final antidotePrompt = '''
+      final antidotePrompt =
+          '''
 你是一个女巫。今晚${state.tonightVictim?.formattedName ?? '没有玩家'}死亡。
 
 你现在需要决定是否使用你的解药：
@@ -1250,13 +1378,13 @@ ${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
 ''';
 
       // Get LLM decision for antidote
-      final response =
-          await (witch as EnhancedAIPlayer).llmService.generateSimpleDecision(
-                player: witch,
-                prompt: antidotePrompt,
-                options: ['使用解药', '不使用解药'],
-                state: state,
-              );
+      final response = await (witch as EnhancedAIPlayer).llmService
+          .generateSimpleDecision(
+            player: witch,
+            prompt: antidotePrompt,
+            options: ['使用解药', '不使用解药'],
+            state: state,
+          );
 
       return response == '使用解药';
     } catch (e) {
@@ -1270,7 +1398,8 @@ ${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
   Future<Player?> _askWitchAboutPoison(AIPlayer witch, GameState state) async {
     try {
       // Create a specific prompt for poison decision
-      final poisonPrompt = '''
+      final poisonPrompt =
+          '''
 你是一个女巫。你有一瓶毒药可以毒杀一名玩家。
 
 现在你需要决定是否使用毒药：
@@ -1288,12 +1417,12 @@ ${state.players.where((p) => p.isAlive).map((p) => '- ${p.name}').join('\n')}
 ''';
 
       // Get LLM decision for poison
-      final response =
-          await (witch as EnhancedAIPlayer).llmService.generatePoisonDecision(
-                player: witch,
-                prompt: poisonPrompt,
-                state: state,
-              );
+      final response = await (witch as EnhancedAIPlayer).llmService
+          .generatePoisonDecision(
+            player: witch,
+            prompt: poisonPrompt,
+            state: state,
+          );
 
       return response;
     } catch (e) {

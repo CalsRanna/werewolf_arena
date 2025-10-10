@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/core/rules/game_scenario.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_scenario.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
 
 /// 简单9人局场景
 /// 3狼3民3神配置，适合新手
@@ -73,22 +73,23 @@ class Simple9PlayersScenario extends GameScenario {
 
     // 好人胜利条件：所有狼人被淘汰
     if (aliveWerewolves == 0) {
-      return GameEndResult.ended(
-        winner: 'villager',
-        reason: '所有狼人已被淘汰，好人获胜！',
-      );
+      return GameEndResult.ended(winner: 'villager', reason: '所有狼人已被淘汰，好人获胜！');
     }
 
     return GameEndResult.continueGame();
   }
 
   @override
-  String? getNextActionRole(GameState gameState, List<String> completedActions) {
+  String? getNextActionRole(
+    GameState gameState,
+    List<String> completedActions,
+  ) {
     for (final role in nightActionPriority) {
       if (!completedActions.contains(role)) {
         // 检查是否还有该角色的存活玩家
-        final hasAlivePlayer = gameState.players.any((p) =>
-            p.isAlive && p.role.roleId == role);
+        final hasAlivePlayer = gameState.players.any(
+          (p) => p.isAlive && p.role.roleId == role,
+        );
 
         if (hasAlivePlayer) {
           return role;

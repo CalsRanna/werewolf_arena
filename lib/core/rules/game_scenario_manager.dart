@@ -1,4 +1,4 @@
-import 'game_scenario.dart';
+import '../engine/game_scenario.dart';
 import 'scenarios_standard_12.dart';
 import 'scenarios_simple_9.dart';
 
@@ -44,7 +44,7 @@ class ScenarioManager {
         .map((scenario) => scenario.playerCount)
         .toSet()
         .toList()
-        ..sort();
+      ..sort();
   }
 
   /// 获取场景列表摘要

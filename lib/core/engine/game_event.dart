@@ -1,14 +1,8 @@
 import 'game_state.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/player/player.dart';
 
 /// 死亡原因枚举
-enum DeathCause {
-  werewolfKill,
-  vote,
-  poison,
-  hunterShot,
-  other,
-}
+enum DeathCause { werewolfKill, vote, poison, hunterShot, other }
 
 /// 技能类型枚举
 enum SkillType {
@@ -21,17 +15,10 @@ enum SkillType {
 }
 
 /// 投票类型枚举
-enum VoteType {
-  normal,
-  pk,
-}
+enum VoteType { normal, pk }
 
 /// 发言类型枚举
-enum SpeechType {
-  normal,
-  lastWords,
-  werewolfDiscussion,
-}
+enum SpeechType { normal, lastWords, werewolfDiscussion }
 
 /// 玩家死亡事件 - 完全结构化
 class DeadEvent extends GameEvent {
@@ -48,14 +35,14 @@ class DeadEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'death_${victim.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.playerDeath,
-          initiator: victim,
-          target: killer,
-          visibility: EventVisibility.public,
-        );
-  
+         eventId:
+             'death_${victim.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.playerDeath,
+         initiator: victim,
+         target: killer,
+         visibility: EventVisibility.public,
+       );
+
   @override
   void execute(GameState state) {
     victim.isAlive = false;
@@ -86,14 +73,13 @@ class WerewolfKillEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'kill_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.skillUsed,
-          initiator: actor,
-          target: target,
-          visibility: EventVisibility.allWerewolves,
-        );
-  
+         eventId: 'kill_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.skillUsed,
+         initiator: actor,
+         target: target,
+         visibility: EventVisibility.allWerewolves,
+       );
+
   @override
   void execute(GameState state) {
     // Mark target for death (will be resolved at end of night)
@@ -113,15 +99,15 @@ class GuardProtectEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'protect_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.skillUsed,
-          initiator: actor,
-          target: target,
-          visibility: EventVisibility.playerSpecific,
-          visibleToPlayerNames: [actor.name],
-        );
-  
+         eventId:
+             'protect_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.skillUsed,
+         initiator: actor,
+         target: target,
+         visibility: EventVisibility.playerSpecific,
+         visibleToPlayerNames: [actor.name],
+       );
+
   @override
   void execute(GameState state) {
     state.setTonightProtected(target!);
@@ -142,15 +128,15 @@ class SeerInvestigateEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'investigate_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.skillUsed,
-          initiator: actor,
-          target: target,
-          visibility: EventVisibility.playerSpecific,
-          visibleToPlayerNames: [actor.name],
-        );
-  
+         eventId:
+             'investigate_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.skillUsed,
+         initiator: actor,
+         target: target,
+         visibility: EventVisibility.playerSpecific,
+         visibleToPlayerNames: [actor.name],
+       );
+
   @override
   void execute(GameState state) {
     // Investigation result is already stored in the event data
@@ -170,15 +156,14 @@ class WitchHealEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'heal_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.skillUsed,
-          initiator: actor,
-          target: target,
-          visibility: EventVisibility.playerSpecific,
-          visibleToPlayerNames: [actor.name],
-        );
-  
+         eventId: 'heal_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.skillUsed,
+         initiator: actor,
+         target: target,
+         visibility: EventVisibility.playerSpecific,
+         visibleToPlayerNames: [actor.name],
+       );
+
   @override
   void execute(GameState state) {
     state.cancelTonightKill();
@@ -197,15 +182,15 @@ class WitchPoisonEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'poison_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.skillUsed,
-          initiator: actor,
-          target: target,
-          visibility: EventVisibility.playerSpecific,
-          visibleToPlayerNames: [actor.name],
-        );
-  
+         eventId:
+             'poison_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.skillUsed,
+         initiator: actor,
+         target: target,
+         visibility: EventVisibility.playerSpecific,
+         visibleToPlayerNames: [actor.name],
+       );
+
   @override
   void execute(GameState state) {
     state.setTonightPoisoned(target!);
@@ -223,11 +208,10 @@ class JudgeAnnouncementEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'announcement_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.phaseChange, // 使用phaseChange类型作为公告
-          visibility: EventVisibility.public,
-        );
+         eventId: 'announcement_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.phaseChange, // 使用phaseChange类型作为公告
+         visibility: EventVisibility.public,
+       );
 
   @override
   void execute(GameState state) {
@@ -265,14 +249,13 @@ class VoteEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'vote_${voter.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.voteCast,
-          initiator: voter,
-          target: candidate,
-          visibility: EventVisibility.public,
-        );
-  
+         eventId: 'vote_${voter.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.voteCast,
+         initiator: voter,
+         target: candidate,
+         visibility: EventVisibility.public,
+       );
+
   @override
   void execute(GameState state) {
     state.addVote(voter, candidate);
@@ -306,14 +289,15 @@ class SpeakEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'speak_${speaker.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.playerAction,
-          initiator: speaker,
-          visibility: _getDefaultVisibility(speechType),
-          visibleToRole:
-              speechType == SpeechType.werewolfDiscussion ? 'werewolf' : null,
-        );
+         eventId:
+             'speak_${speaker.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.playerAction,
+         initiator: speaker,
+         visibility: _getDefaultVisibility(speechType),
+         visibleToRole: speechType == SpeechType.werewolfDiscussion
+             ? 'werewolf'
+             : null,
+       );
 
   static EventVisibility _getDefaultVisibility(SpeechType speechType) {
     switch (speechType) {
@@ -325,7 +309,6 @@ class SpeakEvent extends GameEvent {
     }
   }
 
-  
   @override
   void execute(GameState state) {
     // 发言事件不需要执行特殊逻辑，只是记录
@@ -351,9 +334,7 @@ class WerewolfDiscussionEvent extends SpeakEvent {
     required super.message,
     super.dayNumber,
     super.phase,
-  }) : super(
-          speechType: SpeechType.werewolfDiscussion,
-        );
+  }) : super(speechType: SpeechType.werewolfDiscussion);
 }
 
 /// 猎人开枪事件 - 公开可见
@@ -368,14 +349,14 @@ class HunterShootEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-          eventId:
-              'hunter_shoot_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.skillUsed,
-          initiator: actor,
-          target: target,
-          visibility: EventVisibility.public,
-        );
-  
+         eventId:
+             'hunter_shoot_${actor.name}_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.skillUsed,
+         initiator: actor,
+         target: target,
+         visibility: EventVisibility.public,
+       );
+
   @override
   void execute(GameState state) {
     // Create death event for the target
@@ -402,11 +383,11 @@ class PhaseChangeEvent extends GameEvent {
     required this.newPhase,
     required this.dayNumber,
   }) : super(
-          eventId: 'phase_change_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.phaseChange,
-          visibility: EventVisibility.public,
-        );
-  
+         eventId: 'phase_change_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.phaseChange,
+         visibility: EventVisibility.public,
+       );
+
   @override
   void execute(GameState state) {
     // 阶段转换由GameState处理
@@ -434,11 +415,11 @@ class NightResultEvent extends GameEvent {
     required this.isPeacefulNight,
     required this.dayNumber,
   }) : super(
-          eventId: 'night_result_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.dayBreak,
-          visibility: EventVisibility.public,
-        );
-  
+         eventId: 'night_result_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.dayBreak,
+         visibility: EventVisibility.public,
+       );
+
   @override
   void execute(GameState state) {
     // Night result announcement is handled by GameEngine
@@ -451,15 +432,13 @@ class GameStartEvent extends GameEvent {
   final int playerCount;
   final Map<String, int> roleDistribution;
 
-  GameStartEvent({
-    required this.playerCount,
-    required this.roleDistribution,
-  }) : super(
-          eventId: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.gameStart,
-          visibility: EventVisibility.public,
-        );
-  
+  GameStartEvent({required this.playerCount, required this.roleDistribution})
+    : super(
+        eventId: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
+        type: GameEventType.gameStart,
+        visibility: EventVisibility.public,
+      );
+
   @override
   void execute(GameState state) {
     // Game start logic is handled by GameState
@@ -473,9 +452,7 @@ class LastWordsEvent extends SpeakEvent {
     required super.message,
     super.dayNumber,
     super.phase,
-  }) : super(
-          speechType: SpeechType.lastWords,
-        );
+  }) : super(speechType: SpeechType.lastWords);
 }
 
 /// 游戏结束事件 - 公开可见
@@ -491,11 +468,11 @@ class GameEndEvent extends GameEvent {
     required this.finalPlayerCount,
     required this.gameStartTime,
   }) : super(
-          eventId: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.gameEnd,
-          visibility: EventVisibility.public,
-        );
-  
+         eventId: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.gameEnd,
+         visibility: EventVisibility.public,
+       );
+
   @override
   void execute(GameState state) {
     // Game end logic is handled by GameState
@@ -507,15 +484,13 @@ class SystemErrorEvent extends GameEvent {
   final String errorMessage;
   final dynamic error;
 
-  SystemErrorEvent({
-    required this.errorMessage,
-    required this.error,
-  }) : super(
-          eventId: 'error_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.playerAction,
-          visibility: EventVisibility.public,
-        );
-  
+  SystemErrorEvent({required this.errorMessage, required this.error})
+    : super(
+        eventId: 'error_${DateTime.now().millisecondsSinceEpoch}',
+        type: GameEventType.playerAction,
+        visibility: EventVisibility.public,
+      );
+
   @override
   void execute(GameState state) {
     // Error events don't modify game state
@@ -533,13 +508,11 @@ class SpeechOrderAnnouncementEvent extends GameEvent {
     required this.dayNumber,
     required this.direction,
   }) : super(
-          eventId:
-              'speech_order_${DateTime.now().millisecondsSinceEpoch}',
-          type: GameEventType.playerAction,
-          visibility: EventVisibility.public,
-        );
+         eventId: 'speech_order_${DateTime.now().millisecondsSinceEpoch}',
+         type: GameEventType.playerAction,
+         visibility: EventVisibility.public,
+       );
 
-  
   @override
   void execute(GameState state) {
     // 发言顺序公告不需要修改游戏状态

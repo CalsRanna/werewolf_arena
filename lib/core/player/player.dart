@@ -1,6 +1,6 @@
-import 'package:werewolf_arena/core/entities/player/role.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/player/role.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 
 /// Player model configuration
@@ -88,8 +88,8 @@ abstract class Player {
     this.isAlive = true,
     Map<String, dynamic>? privateData,
     List<GameEvent>? actionHistory,
-  })  : privateData = privateData ?? {},
-        actionHistory = actionHistory ?? [];
+  }) : privateData = privateData ?? {},
+       actionHistory = actionHistory ?? [];
 
   // Getters
   bool get isHuman => type == PlayerType.human;
@@ -265,7 +265,9 @@ abstract class Player {
 
   /// Create a werewolf discussion event (only for werewolves during night phase)
   WerewolfDiscussionEvent? createWerewolfDiscussionEvent(
-      String message, GameState state) {
+    String message,
+    GameState state,
+  ) {
     if (!isAlive || !role.isWerewolf || state.isDay) {
       return null;
     }
@@ -379,7 +381,8 @@ abstract class Player {
         );
       case PlayerType.ai:
         throw UnimplementedError(
-            'AI player deserialization must be implemented by concrete AI player classes');
+          'AI player deserialization must be implemented by concrete AI player classes',
+        );
     }
   }
 
@@ -402,13 +405,8 @@ abstract class Player {
 
 /// Human player
 class HumanPlayer extends Player {
-  HumanPlayer({
-    required super.name,
-    required super.role,
-    super.modelConfig,
-  }) : super(
-          type: PlayerType.human,
-        );
+  HumanPlayer({required super.name, required super.role, super.modelConfig})
+    : super(type: PlayerType.human);
 
   factory HumanPlayer._fromJson({
     required String name,
@@ -417,10 +415,7 @@ class HumanPlayer extends Player {
     required Map<String, dynamic> privateData,
     required List<GameEvent> actionHistory,
   }) {
-    return HumanPlayer(
-      name: name,
-      role: role,
-    )
+    return HumanPlayer(name: name, role: role)
       ..isAlive = isAlive
       ..privateData.addAll(privateData)
       ..actionHistory.addAll(actionHistory);
@@ -436,10 +431,8 @@ abstract class AIPlayer extends Player {
     required super.role,
     super.modelConfig,
     RandomHelper? random,
-  })  : random = random ?? RandomHelper(),
-        super(
-          type: PlayerType.ai,
-        );
+  }) : random = random ?? RandomHelper(),
+       super(type: PlayerType.ai);
 
   // AI-specific methods
   Future<String> generateStatement(GameState state, String context) async {
@@ -455,8 +448,10 @@ abstract class AIPlayer extends Player {
 
   // Abstract methods for choosing targets
   Future<Player?> chooseNightTarget(GameState state);
-  Future<Player?> chooseVoteTarget(GameState state,
-      {List<Player>? pkCandidates});
+  Future<Player?> chooseVoteTarget(
+    GameState state, {
+    List<Player>? pkCandidates,
+  });
 
   // AI reasoning process
   Future<void> processInformation(GameState state) async {
@@ -482,15 +477,23 @@ abstract class AIPlayer extends Player {
 
   List<Player> getMostSuspiciousPlayers(GameState state) {
     final aliveOthers = state.alivePlayers.where((p) => p != this).toList();
-    aliveOthers.sort((a, b) => evaluatePlayerTrustworthiness(a, state)
-        .compareTo(evaluatePlayerTrustworthiness(b, state)));
+    aliveOthers.sort(
+      (a, b) => evaluatePlayerTrustworthiness(
+        a,
+        state,
+      ).compareTo(evaluatePlayerTrustworthiness(b, state)),
+    );
     return aliveOthers;
   }
 
   List<Player> getMostTrustedPlayers(GameState state) {
     final aliveOthers = state.alivePlayers.where((p) => p != this).toList();
-    aliveOthers.sort((a, b) => evaluatePlayerTrustworthiness(b, state)
-        .compareTo(evaluatePlayerTrustworthiness(a, state)));
+    aliveOthers.sort(
+      (a, b) => evaluatePlayerTrustworthiness(
+        b,
+        state,
+      ).compareTo(evaluatePlayerTrustworthiness(a, state)),
+    );
     return aliveOthers;
   }
 
@@ -503,6 +506,7 @@ abstract class AIPlayer extends Player {
   }) {
     // Since AIPlayer is abstract, this will be overridden by concrete implementations
     throw UnimplementedError(
-        'AIPlayer.fromJson must be implemented by concrete subclasses');
+      'AIPlayer.fromJson must be implemented by concrete subclasses',
+    );
   }
 }

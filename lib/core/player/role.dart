@@ -1,19 +1,19 @@
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 
 /// Role types
 enum RoleType {
-  werewolf,  // Werewolf
-  villager,  // Villager
-  god,       // God role
+  werewolf, // Werewolf
+  villager, // Villager
+  god, // God role
 }
 
 /// Role alignments
 enum RoleAlignment {
-  good,      // Good side
-  evil,      // Werewolf side
-  neutral,   // Neutral side
+  good, // Good side
+  evil, // Werewolf side
+  neutral, // Neutral side
 }
 
 /// Skill class
@@ -36,7 +36,7 @@ abstract class Skill {
 
   bool canUse(Player player, GameState state) {
     return player.isAlive &&
-           (maxUses == -1 || player.getSkillUses(skillId) < maxUses);
+        (maxUses == -1 || player.getSkillUses(skillId) < maxUses);
   }
 
   void use(Player player, {Player? target, GameState? state}) {
@@ -44,7 +44,9 @@ abstract class Skill {
   }
 
   String getUsageInfo(Player player) {
-    final uses = maxUses == -1 ? 'Unlimited' : '${maxUses - player.getSkillUses(skillId)}/$maxUses';
+    final uses = maxUses == -1
+        ? 'Unlimited'
+        : '${maxUses - player.getSkillUses(skillId)}/$maxUses';
     return '$name: $uses';
   }
 }
@@ -123,29 +125,29 @@ Description: $description
 
 /// 村民角色
 class VillagerRole extends Role {
-  VillagerRole() : super(
-    roleId: 'villager',
-    name: '村民',
-    type: RoleType.villager,
-    alignment: RoleAlignment.good,
-    description: '普通村民，没有特殊技能，通过推理和投票找出狼人',
-    isUnique: false,
-  );
+  VillagerRole()
+    : super(
+        roleId: 'villager',
+        name: '村民',
+        type: RoleType.villager,
+        alignment: RoleAlignment.good,
+        description: '普通村民，没有特殊技能，通过推理和投票找出狼人',
+        isUnique: false,
+      );
 }
 
 /// 狼人角色
 class WerewolfRole extends Role {
-  WerewolfRole() : super(
-    roleId: 'werewolf',
-    name: '狼人',
-    type: RoleType.werewolf,
-    alignment: RoleAlignment.evil,
-    description: '每晚可以击杀一名玩家，狼人之间相互认识',
-    skills: [
-      KillSkill(),
-    ],
-    isUnique: false,
-  );
+  WerewolfRole()
+    : super(
+        roleId: 'werewolf',
+        name: '狼人',
+        type: RoleType.werewolf,
+        alignment: RoleAlignment.evil,
+        description: '每晚可以击杀一名玩家，狼人之间相互认识',
+        skills: [KillSkill()],
+        isUnique: false,
+      );
 
   @override
   String getNightActionDescription(GameState state) {
@@ -155,17 +157,16 @@ class WerewolfRole extends Role {
 
 /// 预言家角色
 class SeerRole extends Role {
-  SeerRole() : super(
-    roleId: 'seer',
-    name: '预言家',
-    type: RoleType.god,
-    alignment: RoleAlignment.good,
-    description: '每晚可以查验一名玩家的身份',
-    skills: [
-      InvestigateSkill(),
-    ],
-    isUnique: true,
-  );
+  SeerRole()
+    : super(
+        roleId: 'seer',
+        name: '预言家',
+        type: RoleType.god,
+        alignment: RoleAlignment.good,
+        description: '每晚可以查验一名玩家的身份',
+        skills: [InvestigateSkill()],
+        isUnique: true,
+      );
 
   @override
   String getNightActionDescription(GameState state) {
@@ -175,18 +176,16 @@ class SeerRole extends Role {
 
 /// 女巫角色
 class WitchRole extends Role {
-  WitchRole() : super(
-    roleId: 'witch',
-    name: '女巫',
-    type: RoleType.god,
-    alignment: RoleAlignment.good,
-    description: '拥有一瓶解药和一瓶毒药',
-    skills: [
-      HealSkill(),
-      PoisonSkill(),
-    ],
-    isUnique: true,
-  );
+  WitchRole()
+    : super(
+        roleId: 'witch',
+        name: '女巫',
+        type: RoleType.god,
+        alignment: RoleAlignment.good,
+        description: '拥有一瓶解药和一瓶毒药',
+        skills: [HealSkill(), PoisonSkill()],
+        isUnique: true,
+      );
 
   @override
   String getNightActionDescription(GameState state) {
@@ -198,15 +197,19 @@ class WitchRole extends Role {
 
   bool hasAntidote(GameState state) {
     // Check if antidote has been used by looking at heal events
-    final healEvents = state.eventHistory.whereType<WitchHealEvent>()
-        .where((e) => e.initiator?.role == this).toList();
+    final healEvents = state.eventHistory
+        .whereType<WitchHealEvent>()
+        .where((e) => e.initiator?.role == this)
+        .toList();
     return healEvents.isEmpty; // Has antidote if never used
   }
 
   bool hasPoison(GameState state) {
     // Check if poison has been used by looking at poison events
-    final poisonEvents = state.eventHistory.whereType<WitchPoisonEvent>()
-        .where((e) => e.initiator?.role == this).toList();
+    final poisonEvents = state.eventHistory
+        .whereType<WitchPoisonEvent>()
+        .where((e) => e.initiator?.role == this)
+        .toList();
     return poisonEvents.isEmpty; // Has poison if never used
   }
 
@@ -217,17 +220,16 @@ class WitchRole extends Role {
 
 /// 猎人角色
 class HunterRole extends Role {
-  HunterRole() : super(
-    roleId: 'hunter',
-    name: '猎人',
-    type: RoleType.god,
-    alignment: RoleAlignment.good,
-    description: '死亡时可以开枪带走一名玩家',
-    skills: [
-      HunterShootSkill(),
-    ],
-    isUnique: true,
-  );
+  HunterRole()
+    : super(
+        roleId: 'hunter',
+        name: '猎人',
+        type: RoleType.god,
+        alignment: RoleAlignment.good,
+        description: '死亡时可以开枪带走一名玩家',
+        skills: [HunterShootSkill()],
+        isUnique: true,
+      );
 
   @override
   String getNightActionDescription(GameState state) {
@@ -237,25 +239,27 @@ class HunterRole extends Role {
   bool canShoot(GameState state) {
     final player = state.players.firstWhere((p) => p.role == this);
     // Check if hunter has already shot by looking at shoot events
-    final shootEvents = state.eventHistory.whereType<HunterShootEvent>()
-        .where((e) => e.initiator?.role == this).toList();
-    return !player.isAlive && shootEvents.isEmpty; // Can shoot if dead and never shot
+    final shootEvents = state.eventHistory
+        .whereType<HunterShootEvent>()
+        .where((e) => e.initiator?.role == this)
+        .toList();
+    return !player.isAlive &&
+        shootEvents.isEmpty; // Can shoot if dead and never shot
   }
 }
 
 /// 守卫角色
 class GuardRole extends Role {
-  GuardRole() : super(
-    roleId: 'guard',
-    name: '守卫',
-    type: RoleType.god,
-    alignment: RoleAlignment.good,
-    description: '每晚可以守护一名玩家，但不能连续两晚守护同一人',
-    skills: [
-      ProtectSkill(),
-    ],
-    isUnique: true,
-  );
+  GuardRole()
+    : super(
+        roleId: 'guard',
+        name: '守卫',
+        type: RoleType.god,
+        alignment: RoleAlignment.good,
+        description: '每晚可以守护一名玩家，但不能连续两晚守护同一人',
+        skills: [ProtectSkill()],
+        isUnique: true,
+      );
 
   @override
   String getNightActionDescription(GameState state) {
@@ -292,63 +296,69 @@ class GuardRole extends Role {
 
 // Skill implementations
 class KillSkill extends Skill {
-  KillSkill() : super(
-    skillId: 'kill',
-    name: '击杀',
-    description: '击杀一名玩家',
-    maxUses: -1,
-    requiresTarget: true,
-  );
+  KillSkill()
+    : super(
+        skillId: 'kill',
+        name: '击杀',
+        description: '击杀一名玩家',
+        maxUses: -1,
+        requiresTarget: true,
+      );
 }
 
 class InvestigateSkill extends Skill {
-  InvestigateSkill() : super(
-    skillId: 'investigate',
-    name: '查验',
-    description: '查验一名玩家身份',
-    maxUses: -1,
-    requiresTarget: true,
-  );
+  InvestigateSkill()
+    : super(
+        skillId: 'investigate',
+        name: '查验',
+        description: '查验一名玩家身份',
+        maxUses: -1,
+        requiresTarget: true,
+      );
 }
 
 class HealSkill extends Skill {
-  HealSkill() : super(
-    skillId: 'heal',
-    name: '解药',
-    description: '救活今晚被击杀的玩家',
-    maxUses: 1,
-    requiresTarget: true,
-  );
+  HealSkill()
+    : super(
+        skillId: 'heal',
+        name: '解药',
+        description: '救活今晚被击杀的玩家',
+        maxUses: 1,
+        requiresTarget: true,
+      );
 }
 
 class PoisonSkill extends Skill {
-  PoisonSkill() : super(
-    skillId: 'poison',
-    name: '毒药',
-    description: '毒杀一名玩家',
-    maxUses: 1,
-    requiresTarget: true,
-  );
+  PoisonSkill()
+    : super(
+        skillId: 'poison',
+        name: '毒药',
+        description: '毒杀一名玩家',
+        maxUses: 1,
+        requiresTarget: true,
+      );
 }
 
 class HunterShootSkill extends Skill {
-  HunterShootSkill() : super(
-    skillId: 'hunter_shoot',
-    name: '开枪',
-    description: '死亡时开枪带走一名玩家',
-    maxUses: 1,
-    requiresTarget: true,
-  );
+  HunterShootSkill()
+    : super(
+        skillId: 'hunter_shoot',
+        name: '开枪',
+        description: '死亡时开枪带走一名玩家',
+        maxUses: 1,
+        requiresTarget: true,
+      );
 }
 
 class ProtectSkill extends Skill {
-  ProtectSkill() : super(
-    skillId: 'protect',
-    name: '守护',
-    description: '守护一名玩家免受狼人击杀',
-    maxUses: -1,
-    requiresTarget: true,
-  );
+  ProtectSkill()
+    : super(
+        skillId: 'protect',
+        name: '守护',
+        description: '守护一名玩家免受狼人击杀',
+        maxUses: -1,
+        requiresTarget: true,
+      );
 }
 
 // Factory for creating roles

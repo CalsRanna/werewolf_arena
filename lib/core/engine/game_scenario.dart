@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/core/entities/player/role.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/player/role.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
 
 /// 游戏场景抽象类
 /// 定义不同游戏板子的基础接口和行为
@@ -49,7 +49,10 @@ abstract class GameScenario {
 
   /// 验证角色分布是否有效
   bool isValidRoleDistribution() {
-    final totalRoles = roleDistribution.values.fold(0, (sum, count) => sum + count);
+    final totalRoles = roleDistribution.values.fold(
+      0,
+      (sum, count) => sum + count,
+    );
     return totalRoles == playerCount;
   }
 
@@ -109,24 +112,13 @@ class GameEndResult {
   final String? winner;
   final String? reason;
 
-  GameEndResult({
-    required this.isEnded,
-    this.winner,
-    this.reason,
-  });
+  GameEndResult({required this.isEnded, this.winner, this.reason});
 
   factory GameEndResult.continueGame() {
     return GameEndResult(isEnded: false);
   }
 
-  factory GameEndResult.ended({
-    required String winner,
-    String? reason,
-  }) {
-    return GameEndResult(
-      isEnded: true,
-      winner: winner,
-      reason: reason,
-    );
+  factory GameEndResult.ended({required String winner, String? reason}) {
+    return GameEndResult(isEnded: true, winner: winner, reason: reason);
   }
 }

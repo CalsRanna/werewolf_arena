@@ -1,12 +1,16 @@
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/entities/player/role.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/player/role.dart';
 
 /// 逻辑矛盾检测器 - 为AI玩家提供常识判断支持
 class LogicContradictionDetector {
   /// 检测发言中的逻辑矛盾并返回标签
-  static List<String> detectContradictions(String message, Player speaker, GameState state) {
+  static List<String> detectContradictions(
+    String message,
+    Player speaker,
+    GameState state,
+  ) {
     final tags = <String>[];
 
     // 1. 检测事实性矛盾
@@ -22,7 +26,11 @@ class LogicContradictionDetector {
   }
 
   /// 检测事实性矛盾
-  static List<String> _detectFactualContradictions(String message, Player speaker, GameState state) {
+  static List<String> _detectFactualContradictions(
+    String message,
+    Player speaker,
+    GameState state,
+  ) {
     final tags = <String>[];
     final lowerMessage = message.toLowerCase();
 
@@ -72,7 +80,10 @@ class LogicContradictionDetector {
   }
 
   /// 检测聊爆发言
-  static List<String> _detectSuspiciousStatements(String message, Role speakerRole) {
+  static List<String> _detectSuspiciousStatements(
+    String message,
+    Role speakerRole,
+  ) {
     final tags = <String>[];
     final lowerMessage = message.toLowerCase();
 
@@ -105,7 +116,11 @@ class LogicContradictionDetector {
   }
 
   /// 检测逻辑不一致
-  static List<String> _detectLogicalInconsistencies(String message, Player speaker, GameState state) {
+  static List<String> _detectLogicalInconsistencies(
+    String message,
+    Player speaker,
+    GameState state,
+  ) {
     final tags = <String>[];
     final lowerMessage = message.toLowerCase();
 
@@ -138,8 +153,7 @@ class LogicContradictionDetector {
           .toList();
 
       if (investigations.isEmpty && state.dayNumber > 1) {
-        if (lowerMessage.contains('我是预言家') ||
-            lowerMessage.contains('我查验了')) {
+        if (lowerMessage.contains('我是预言家') || lowerMessage.contains('我查验了')) {
           tags.add('⚠️身份可疑：自称预言家但一直没有查验结果？');
         }
       }
@@ -232,7 +246,9 @@ class LogicContradictionDetector {
           if (event.isPeacefulNight) {
             return '🌙 平安夜！无人死亡';
           } else {
-            final deaths = event.deathEvents.map((e) => e.victim.name).join(',');
+            final deaths = event.deathEvents
+                .map((e) => e.victim.name)
+                .join(',');
             return '天亮:$deaths死亡';
           }
         }

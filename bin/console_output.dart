@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 
 /// 游戏控制台显示工具类
 ///
@@ -100,7 +100,11 @@ class GameConsole {
   }
 
   /// 显示阶段转换信息
-  void displayPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
+  void displayPhaseChange(
+    GamePhase oldPhase,
+    GamePhase newPhase,
+    int dayNumber,
+  ) {
     String message;
     ConsoleColor color;
 
@@ -129,12 +133,20 @@ class GameConsole {
   }
 
   /// 显示系统消息(法官公告)
-  void displaySystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
+  void displaySystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  }) {
     printLine(_colorize('[法官]: ', ConsoleColor.cyan) + message);
   }
 
   /// 显示玩家发言
-  void displayPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
+  void displayPlayerSpeak(
+    Player player,
+    String message, {
+    SpeechType? speechType,
+  }) {
     String prefix = player.formattedName;
     String typeSuffix = '';
 
@@ -155,28 +167,39 @@ class GameConsole {
   }
 
   /// 显示玩家行动
-  void displayPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details}) {
+  void displayPlayerAction(
+    Player player,
+    String actionType,
+    dynamic target, {
+    Map<String, dynamic>? details,
+  }) {
     String actionMessage;
 
     switch (actionType.toLowerCase()) {
       case 'kill':
-        actionMessage = '${player.formattedName} 击杀了 ${target?.formattedName ?? '未知目标'}';
+        actionMessage =
+            '${player.formattedName} 击杀了 ${target?.formattedName ?? '未知目标'}';
         break;
       case 'protect':
-        actionMessage = '${player.formattedName} 守护了 ${target?.formattedName ?? '未知目标'}';
+        actionMessage =
+            '${player.formattedName} 守护了 ${target?.formattedName ?? '未知目标'}';
         break;
       case 'investigate':
         final result = details?['result'] ?? '未知';
-        actionMessage = '${player.formattedName} 查验了 ${target?.formattedName ?? '未知目标'},结果是: $result';
+        actionMessage =
+            '${player.formattedName} 查验了 ${target?.formattedName ?? '未知目标'},结果是: $result';
         break;
       case 'heal':
-        actionMessage = '${player.formattedName} 救活了 ${target?.formattedName ?? '未知目标'}';
+        actionMessage =
+            '${player.formattedName} 救活了 ${target?.formattedName ?? '未知目标'}';
         break;
       case 'poison':
-        actionMessage = '${player.formattedName} 毒杀了 ${target?.formattedName ?? '未知目标'}';
+        actionMessage =
+            '${player.formattedName} 毒杀了 ${target?.formattedName ?? '未知目标'}';
         break;
       case 'shoot':
-        actionMessage = '${player.formattedName} 开枪击杀了 ${target?.formattedName ?? '未知目标'}';
+        actionMessage =
+            '${player.formattedName} 开枪击杀了 ${target?.formattedName ?? '未知目标'}';
         break;
       default:
         actionMessage = '${player.formattedName} 执行了 $actionType 操作';
@@ -214,11 +237,18 @@ class GameConsole {
     }
 
     String killerText = killer != null ? ' by ${killer.formattedName}' : '';
-    printLine(_colorize('💀 ', causeColor) + '${player.formattedName} $causeText$killerText');
+    printLine(
+      _colorize('💀 ', causeColor) +
+          '${player.formattedName} $causeText$killerText',
+    );
   }
 
   /// 显示夜晚结果
-  void displayNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber) {
+  void displayNightResult(
+    List<Player> deaths,
+    bool isPeacefulNight,
+    int dayNumber,
+  ) {
     printLine();
     if (isPeacefulNight) {
       printLine(_colorize('🌙 昨晚是平安夜,没有人死亡', ConsoleColor.green));
@@ -232,7 +262,11 @@ class GameConsole {
   }
 
   /// 显示投票结果
-  void displayVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates) {
+  void displayVoteResults(
+    Map<String, int> results,
+    Player? executed,
+    List<Player>? pkCandidates,
+  ) {
     printLine(_colorize('📊 投票统计:', ConsoleColor.blue));
 
     if (results.isNotEmpty) {
@@ -247,7 +281,9 @@ class GameConsole {
     }
 
     if (executed != null) {
-      printLine(_colorize('✋ ${executed.formattedName} 被投票出局', ConsoleColor.yellow));
+      printLine(
+        _colorize('✋ ${executed.formattedName} 被投票出局', ConsoleColor.yellow),
+      );
     } else if (pkCandidates != null && pkCandidates.length > 1) {
       final names = pkCandidates.map((p) => p.formattedName).join(', ');
       printLine(_colorize('⚖️ $names 平票,进入PK阶段', ConsoleColor.yellow));
@@ -276,7 +312,12 @@ class GameConsole {
   }
 
   /// 显示游戏结束信息
-  void displayGameEnd(GameState state, String winner, int totalDays, int finalPlayerCount) {
+  void displayGameEnd(
+    GameState state,
+    String winner,
+    int totalDays,
+    int finalPlayerCount,
+  ) {
     printLine();
     printHeader('🎊 游戏结束', color: ConsoleColor.green);
 
@@ -288,7 +329,10 @@ class GameConsole {
     final duration = DateTime.now().difference(state.startTime);
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
-    printLine(_colorize('⏱️ 游戏时长: ', ConsoleColor.blue) + '$minutes分$seconds秒,共$totalDays天');
+    printLine(
+      _colorize('⏱️ 游戏时长: ', ConsoleColor.blue) +
+          '$minutes分$seconds秒,共$totalDays天',
+    );
 
     printLine();
 
@@ -302,7 +346,9 @@ class GameConsole {
     // 死亡玩家
     if (state.deadPlayers.isNotEmpty) {
       printLine();
-      printLine(_colorize('❌ 已出局: ', ConsoleColor.red) + '${state.deadPlayers.length}人');
+      printLine(
+        _colorize('❌ 已出局: ', ConsoleColor.red) + '${state.deadPlayers.length}人',
+      );
       for (final player in state.deadPlayers) {
         final camp = player.role.isWerewolf ? '狼人' : '好人';
         printLine('  ✗ ${player.name} - ${player.role.name} ($camp)');
@@ -316,7 +362,9 @@ class GameConsole {
 
     // 狼人阵营
     final werewolves = state.players.where((p) => p.role.isWerewolf).toList();
-    printLine(_colorize('  🐺 狼人阵营 (${werewolves.length}人):', ConsoleColor.red));
+    printLine(
+      _colorize('  🐺 狼人阵营 (${werewolves.length}人):', ConsoleColor.red),
+    );
     for (final wolf in werewolves) {
       final status = wolf.isAlive ? '存活' : '出局';
       printLine('     ${wolf.name} - ${wolf.role.name} [$status]');
@@ -367,14 +415,4 @@ class GameConsole {
 }
 
 /// 控制台颜色枚举
-enum ConsoleColor {
-  red,
-  green,
-  yellow,
-  blue,
-  magenta,
-  cyan,
-  white,
-  gray,
-  bold,
-}
+enum ConsoleColor { red, green, yellow, blue, magenta, cyan, white, gray, bold }

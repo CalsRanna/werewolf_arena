@@ -1,7 +1,7 @@
 import 'package:werewolf_arena/core/engine/game_observer.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 import 'console_output.dart';
 
 /// 控制台游戏观察者
@@ -12,12 +12,21 @@ class ConsoleGameObserver extends GameObserverAdapter {
   final GameConsole _console = GameConsole.instance;
 
   @override
-  void onGameStart(GameState state, int playerCount, Map<String, int> roleDistribution) {
+  void onGameStart(
+    GameState state,
+    int playerCount,
+    Map<String, int> roleDistribution,
+  ) {
     _console.displayGameStart(playerCount, roleDistribution);
   }
 
   @override
-  void onGameEnd(GameState state, String winner, int totalDays, int finalPlayerCount) {
+  void onGameEnd(
+    GameState state,
+    String winner,
+    int totalDays,
+    int finalPlayerCount,
+  ) {
     _console.displayGameEnd(state, winner, totalDays, finalPlayerCount);
   }
 
@@ -27,7 +36,12 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details}) {
+  void onPlayerAction(
+    Player player,
+    String actionType,
+    dynamic target, {
+    Map<String, dynamic>? details,
+  }) {
     _console.displayPlayerAction(player, actionType, target, details: details);
   }
 
@@ -54,7 +68,12 @@ class ConsoleGameObserver extends GameObserverAdapter {
           break;
       }
     }
-    _console.displayPlayerAction(voter, '投票', target, details: {'voteType': voteTypeText});
+    _console.displayPlayerAction(
+      voter,
+      '投票',
+      target,
+      details: {'voteType': voteTypeText},
+    );
   }
 
   @override
@@ -73,7 +92,11 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates) {
+  void onVoteResults(
+    Map<String, int> results,
+    Player? executed,
+    List<Player>? pkCandidates,
+  ) {
     _console.displayVoteResults(results, executed, pkCandidates);
   }
 

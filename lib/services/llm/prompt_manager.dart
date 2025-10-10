@@ -1,10 +1,10 @@
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 import 'package:werewolf_arena/core/logic/logic_contradiction_detector.dart';
 import 'enhanced_prompts.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/entities/player/role.dart';
-import 'package:werewolf_arena/core/entities/player/ai_player.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/player/role.dart';
+import 'package:werewolf_arena/core/player/personality.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 
 /// 提示词管理器
@@ -88,8 +88,10 @@ class PromptManager {
 
     final contextPrompt = _buildContextPrompt(player, state, knowledge);
     final personalityPrompt = _buildPersonalityPrompt(personality);
-    final conversationPrompt =
-        _buildConversationPromptFromEvents(player, state);
+    final conversationPrompt = _buildConversationPromptFromEvents(
+      player,
+      state,
+    );
 
     // 处理角色提示词中的占位符
     rolePrompt = _replaceRolePromptPlaceholders(rolePrompt, player, state);
@@ -98,18 +100,23 @@ class PromptManager {
     String werewolfDiscussionContext = '';
     if (player.role.isWerewolf && state.currentPhase == GamePhase.night) {
       final discussionEvents = state.eventHistory
-          .where((e) =>
-              e is WerewolfDiscussionEvent && e.dayNumber == state.dayNumber)
+          .where(
+            (e) =>
+                e is WerewolfDiscussionEvent && e.dayNumber == state.dayNumber,
+          )
           .cast<WerewolfDiscussionEvent>()
           .toList();
 
       if (discussionEvents.isNotEmpty) {
-        final discussions = discussionEvents.map((e) {
-          final speaker = e.initiator?.name ?? '??';
-          return '$speaker: ${e.message}';
-        }).join('\n');
+        final discussions = discussionEvents
+            .map((e) {
+              final speaker = e.initiator?.name ?? '??';
+              return '$speaker: ${e.message}';
+            })
+            .join('\n');
 
-        werewolfDiscussionContext = '''
+        werewolfDiscussionContext =
+            '''
 
 狼人讨论:
 $discussions
@@ -145,8 +152,10 @@ $conversationPrompt$werewolfDiscussionContext
     String rolePrompt = _rolePrompts[player.role.roleId] ?? '';
     final contextPrompt = _buildContextPrompt(player, state, knowledge);
     final personalityPrompt = _buildPersonalityPrompt(personality);
-    final conversationPrompt =
-        _buildConversationPromptFromEvents(player, state);
+    final conversationPrompt = _buildConversationPromptFromEvents(
+      player,
+      state,
+    );
 
     // 处理角色提示词中的占位符
     rolePrompt = _replaceRolePromptPlaceholders(rolePrompt, player, state);
@@ -187,8 +196,10 @@ ${pkReminder.isNotEmpty ? 'PK候选:${pkCandidates!.map((p) => p.name).join(',')
 
     final contextPrompt = _buildContextPrompt(player, state, {});
     final personalityPrompt = _buildPersonalityPrompt(personality);
-    final conversationPrompt =
-        _buildConversationPromptFromEvents(player, state);
+    final conversationPrompt = _buildConversationPromptFromEvents(
+      player,
+      state,
+    );
 
     // 处理角色提示词中的占位符
     rolePrompt = _replaceRolePromptPlaceholders(rolePrompt, player, state);
@@ -211,7 +222,10 @@ $conversationPrompt
   }
 
   String _buildContextPrompt(
-      Player player, GameState state, Map<String, dynamic> knowledge) {
+    Player player,
+    GameState state,
+    Map<String, dynamic> knowledge,
+  ) {
     // 精简游戏状态信息
     final alive = state.alivePlayers.map((p) => p.name).join(',');
     final dead = state.deadPlayers.map((p) => p.name).join(',');
@@ -223,9 +237,10 @@ $conversationPrompt
           .whereType<SeerInvestigateEvent>()
           .where((e) => e.initiator?.name == player.name)
           .map((e) {
-        final result = e.investigationResult == 'Werewolf' ? '狼' : '好人';
-        return '第${e.dayNumber}夜:${e.target!.name}=$result';
-      }).toList();
+            final result = e.investigationResult == 'Werewolf' ? '狼' : '好人';
+            return '第${e.dayNumber}夜:${e.target!.name}=$result';
+          })
+          .toList();
 
       if (investigations.isNotEmpty) {
         investigationInfo = '\n查验记录: ${investigations.join('; ')}';
@@ -258,8 +273,9 @@ D${state.dayNumber}|${state.currentPhase.name}|存活:$alive|死亡:${dead.isEmp
     // 设置当前游戏状态，用于逻辑矛盾检测
     _currentState = state;
 
-    final visibleEvents =
-        state.eventHistory.where((event) => event.isVisibleTo(player)).toList();
+    final visibleEvents = state.eventHistory
+        .where((event) => event.isVisibleTo(player))
+        .toList();
 
     if (visibleEvents.isEmpty) {
       return '【游戏事件】游戏刚开始';
@@ -269,8 +285,9 @@ D${state.dayNumber}|${state.currentPhase.name}|存活:$alive|死亡:${dead.isEmp
 
     // 检查最近是否有平安夜事件，并添加女巫救人信息
     String peacefulNightInfo = '';
-    final recentNightResults =
-        visibleEvents.whereType<NightResultEvent>().toList();
+    final recentNightResults = visibleEvents
+        .whereType<NightResultEvent>()
+        .toList();
 
     if (recentNightResults.isNotEmpty) {
       final latestNightResult = recentNightResults.last;
@@ -296,7 +313,10 @@ $formatted$peacefulNightInfo''';
   String _formatEvent(GameEvent event) {
     // 对于发言事件，使用逻辑矛盾检测器
     if (event is SpeakEvent && _currentState != null) {
-      return LogicContradictionDetector.formatEventWithTags(event, _currentState!);
+      return LogicContradictionDetector.formatEventWithTags(
+        event,
+        _currentState!,
+      );
     }
 
     // 其他事件使用原有逻辑
@@ -365,8 +385,9 @@ $formatted$peacefulNightInfo''';
           if (event.isPeacefulNight) {
             return '🌙 平安夜！无人死亡';
           } else {
-            final deaths =
-                event.deathEvents.map((e) => e.victim.name).join(',');
+            final deaths = event.deathEvents
+                .map((e) => e.victim.name)
+                .join(',');
             return '天亮:$deaths死亡';
           }
         }
@@ -398,7 +419,9 @@ $formatted$peacefulNightInfo''';
   }
 
   void loadCustomPrompts(
-      Map<String, String> rolePrompts, Map<String, String> systemPrompts) {
+    Map<String, String> rolePrompts,
+    Map<String, String> systemPrompts,
+  ) {
     rolePrompts.forEach((key, value) {
       _rolePrompts[key] = value;
     });
@@ -425,7 +448,10 @@ $formatted$peacefulNightInfo''';
 
   /// 替换角色提示词中的占位符
   String _replaceRolePromptPlaceholders(
-      String rolePrompt, Player player, GameState state) {
+    String rolePrompt,
+    Player player,
+    GameState state,
+  ) {
     String replacedPrompt = rolePrompt;
 
     if (player.role.roleId == 'werewolf') {
@@ -441,10 +467,7 @@ $formatted$peacefulNightInfo''';
           teammates.join(', '),
         );
       } else {
-        replacedPrompt = replacedPrompt.replaceAll(
-          '{teammates}',
-          '暂无队友',
-        );
+        replacedPrompt = replacedPrompt.replaceAll('{teammates}', '暂无队友');
       }
     } else if (player.role.roleId == 'seer') {
       // 替换预言家查验记录
@@ -481,7 +504,8 @@ $formatted$peacefulNightInfo''';
 
       String targetsInfo = '';
       if (availableTargets.isNotEmpty) {
-        targetsInfo = '可守护玩家: ${availableTargets.map((p) => p.name).join(', ')}';
+        targetsInfo =
+            '可守护玩家: ${availableTargets.map((p) => p.name).join(', ')}';
       } else {
         targetsInfo = '无可守护玩家';
       }

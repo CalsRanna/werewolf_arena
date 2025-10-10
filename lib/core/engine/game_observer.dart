@@ -1,6 +1,6 @@
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/entities/player/player.dart';
-import 'package:werewolf_arena/core/state/game_event.dart';
+import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/engine/game_event.dart';
 
 /// 游戏观察者接口
 ///
@@ -33,16 +33,30 @@ import 'package:werewolf_arena/core/state/game_event.dart';
 /// ```
 abstract class GameObserver {
   /// 游戏开始
-  void onGameStart(GameState state, int playerCount, Map<String, int> roleDistribution);
+  void onGameStart(
+    GameState state,
+    int playerCount,
+    Map<String, int> roleDistribution,
+  );
 
   /// 游戏结束
-  void onGameEnd(GameState state, String winner, int totalDays, int finalPlayerCount);
+  void onGameEnd(
+    GameState state,
+    String winner,
+    int totalDays,
+    int finalPlayerCount,
+  );
 
   /// 阶段转换
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber);
 
   /// 玩家行动
-  void onPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details});
+  void onPlayerAction(
+    Player player,
+    String actionType,
+    dynamic target, {
+    Map<String, dynamic>? details,
+  });
 
   /// 玩家死亡
   void onPlayerDeath(Player player, DeathCause cause, {Player? killer});
@@ -66,7 +80,11 @@ abstract class GameObserver {
   void onGameStateChanged(GameState state);
 
   /// 投票结果统计
-  void onVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates);
+  void onVoteResults(
+    Map<String, int> results,
+    Player? executed,
+    List<Player>? pkCandidates,
+  );
 
   /// 存活玩家公告
   void onAlivePlayersAnnouncement(List<Player> alivePlayers);
@@ -107,16 +125,30 @@ abstract class GameObserver {
 /// ```
 abstract class GameObserverAdapter implements GameObserver {
   @override
-  void onGameStart(GameState state, int playerCount, Map<String, int> roleDistribution) {}
+  void onGameStart(
+    GameState state,
+    int playerCount,
+    Map<String, int> roleDistribution,
+  ) {}
 
   @override
-  void onGameEnd(GameState state, String winner, int totalDays, int finalPlayerCount) {}
+  void onGameEnd(
+    GameState state,
+    String winner,
+    int totalDays,
+    int finalPlayerCount,
+  ) {}
 
   @override
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {}
 
   @override
-  void onPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details}) {}
+  void onPlayerAction(
+    Player player,
+    String actionType,
+    dynamic target, {
+    Map<String, dynamic>? details,
+  }) {}
 
   @override
   void onPlayerDeath(Player player, DeathCause cause, {Player? killer}) {}
@@ -128,7 +160,11 @@ abstract class GameObserverAdapter implements GameObserver {
   void onVoteCast(Player voter, Player target, {VoteType? voteType}) {}
 
   @override
-  void onNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber) {}
+  void onNightResult(
+    List<Player> deaths,
+    bool isPeacefulNight,
+    int dayNumber,
+  ) {}
 
   @override
   void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {}
@@ -140,7 +176,11 @@ abstract class GameObserverAdapter implements GameObserver {
   void onGameStateChanged(GameState state) {}
 
   @override
-  void onVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates) {}
+  void onVoteResults(
+    Map<String, int> results,
+    Player? executed,
+    List<Player>? pkCandidates,
+  ) {}
 
   @override
   void onAlivePlayersAnnouncement(List<Player> alivePlayers) {}
@@ -208,7 +248,11 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onGameStart(GameState state, int playerCount, Map<String, int> roleDistribution) {
+  void onGameStart(
+    GameState state,
+    int playerCount,
+    Map<String, int> roleDistribution,
+  ) {
     _notifyObservers(
       (observer) => observer.onGameStart(state, playerCount, roleDistribution),
       'onGameStart',
@@ -216,9 +260,15 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onGameEnd(GameState state, String winner, int totalDays, int finalPlayerCount) {
+  void onGameEnd(
+    GameState state,
+    String winner,
+    int totalDays,
+    int finalPlayerCount,
+  ) {
     _notifyObservers(
-      (observer) => observer.onGameEnd(state, winner, totalDays, finalPlayerCount),
+      (observer) =>
+          observer.onGameEnd(state, winner, totalDays, finalPlayerCount),
       'onGameEnd',
     );
   }
@@ -232,9 +282,15 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details}) {
+  void onPlayerAction(
+    Player player,
+    String actionType,
+    dynamic target, {
+    Map<String, dynamic>? details,
+  }) {
     _notifyObservers(
-      (observer) => observer.onPlayerAction(player, actionType, target, details: details),
+      (observer) =>
+          observer.onPlayerAction(player, actionType, target, details: details),
       'onPlayerAction',
     );
   }
@@ -250,7 +306,8 @@ class CompositeGameObserver implements GameObserver {
   @override
   void onPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
     _notifyObservers(
-      (observer) => observer.onPlayerSpeak(player, message, speechType: speechType),
+      (observer) =>
+          observer.onPlayerSpeak(player, message, speechType: speechType),
       'onPlayerSpeak',
     );
   }
@@ -274,7 +331,8 @@ class CompositeGameObserver implements GameObserver {
   @override
   void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
     _notifyObservers(
-      (observer) => observer.onSystemMessage(message, dayNumber: dayNumber, phase: phase),
+      (observer) =>
+          observer.onSystemMessage(message, dayNumber: dayNumber, phase: phase),
       'onSystemMessage',
     );
   }
@@ -296,7 +354,11 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates) {
+  void onVoteResults(
+    Map<String, int> results,
+    Player? executed,
+    List<Player>? pkCandidates,
+  ) {
     _notifyObservers(
       (observer) => observer.onVoteResults(results, executed, pkCandidates),
       'onVoteResults',
