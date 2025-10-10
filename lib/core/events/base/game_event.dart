@@ -33,6 +33,9 @@ abstract class GameEvent {
   /// 可见角色ID(当visibility为roleSpecific时使用)
   final String? visibleToRole;
 
+  /// 事件元数据
+  final Map<String, dynamic> metadata;
+
   GameEvent({
     required this.eventId,
     required this.type,
@@ -41,7 +44,9 @@ abstract class GameEvent {
     this.visibility = EventVisibility.public,
     this.visibleToPlayerNames = const [],
     this.visibleToRole,
-  }) : timestamp = DateTime.now();
+    Map<String, dynamic>? metadata,
+  }) : timestamp = DateTime.now(),
+       metadata = metadata ?? {};
 
   /// 执行事件逻辑
   ///
@@ -91,6 +96,7 @@ abstract class GameEvent {
       'visibility': visibility.name,
       'visibleToPlayerNames': visibleToPlayerNames,
       'visibleToRole': visibleToRole,
+      'metadata': metadata,
     };
   }
 }

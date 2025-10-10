@@ -17,13 +17,16 @@
 - 🎯 状态: 所有4个任务已完成
 - ✅ 成果: 处理器模式已实现，GameEngine已重构
 
-**⏸️ 阶段四: 新增服务和工具 (待开始)**
+**✅ 阶段四: 新增服务和工具 (已完成)**
+- 📅 完成日期: 2025-10-10
+- 🎯 状态: 所有4个任务已完成
+- ✅ 成果: 新增4个服务类，提供专门的游戏逻辑支持
 
 **⏸️ 阶段五: 导入语句修复和测试 (待开始)**
 
 **⏸️ 阶段六: 清理和文档更新 (待开始)**
 
-**📈 总体进度: 3/6 阶段已完成 (50%)**
+**📈 总体进度: 4/6 阶段已完成 (67%)**
 
 ---
 
@@ -282,37 +285,43 @@ lib/core/                          # 狼人杀游戏引擎核心
 
 ### 阶段四: 新增服务和工具
 
-#### Task 4.1: 创建玩家顺序服务
-- [ ] 创建 `services/player_order_service.dart`
-- [ ] 从 `GameEngine._getActionOrder()` 提取逻辑
-- [ ] 实现 `PlayerOrderService` 类
+#### Task 4.1: 创建玩家顺序服务 ✅
+- [x] 创建 `services/player_order_service.dart`
+- [x] 从 `GameEngine._getActionOrder()` 提取逻辑
+- [x] 实现 `PlayerOrderService` 类
   - `getActionOrder()`: 获取玩家行动顺序
   - `findLastDeadPlayer()`: 查找最后死亡的玩家
   - `reorderFromStartingPoint()`: 从起点重排序
 
-#### Task 4.2: 创建行动解析服务
-- [ ] 创建 `services/action_resolver_service.dart`
-- [ ] 从 `GameEngine.resolveNightActions()` 提取逻辑
-- [ ] 实现夜晚行动结算:
+#### Task 4.2: 创建行动解析服务 ✅
+- [x] 创建 `services/action_resolver_service.dart`
+- [x] 从 `GameEngine.resolveNightActions()` 提取逻辑
+- [x] 实现夜晚行动结算:
   - 处理击杀、保护、治疗、毒杀的优先级
   - 判断最终死亡结果
+  - 支持单一行动冲突解析
+  - 提供行动组合验证
 
-#### Task 4.3: 创建事件过滤服务
-- [ ] 创建 `services/event_filter_service.dart`
-- [ ] 实现 `EventFilterService` 类
+#### Task 4.3: 创建事件过滤服务 ✅
+- [x] 创建 `services/event_filter_service.dart`
+- [x] 实现 `EventFilterService` 类
   - `getEventsForPlayer()`: 获取玩家可见事件
   - `filterByVisibility()`: 按可见性过滤事件
   - `filterByPhase()`: 按阶段过滤事件
   - `filterByType()`: 按类型过滤事件
+  - 支持按时间窗口、事件类型、目标玩家等多种过滤方式
 
-#### Task 4.4: 创建行动验证器
-- [ ] 创建 `rules/action_validator.dart`
-- [ ] 实现 `ActionValidator` 类
-- [ ] 验证各种行动的合法性:
+#### Task 4.4: 创建行动验证器 ✅
+- [x] 创建 `rules/action_validator.dart`
+- [x] 实现 `ActionValidator` 类
+- [x] 验证各种行动的合法性:
+  - 玩家是否存活且可以行动
   - 守卫不能连续守同一人
   - 女巫的药是否已用
   - 猎人是否已开枪
-  - 玩家是否存活等
+  - 预言家查验规则
+  - 狼人击杀规则
+  - 投票规则验证
 
 ### 阶段五: 导入语句修复和测试
 
@@ -455,4 +464,14 @@ lib/core/                          # 狼人杀游戏引擎核心
 - 修复了所有编译错误，代码通过 `dart analyze` 检查
 - 架构更加模块化和可扩展
 
-**下一步**: 开始阶段四 - 新增服务和工具
+### 2025-10-10 (阶段四完成)
+✅ **阶段四: 新增服务和工具** - 已完成
+- 成功创建 `PlayerOrderService` 类，管理玩家行动顺序逻辑
+- 成功创建 `ActionResolverService` 类，处理夜晚行动结算和冲突解析
+- 成功创建 `EventFilterService` 类，提供完整的事件过滤和查询功能
+- 成功创建 `ActionValidator` 类，验证所有游戏行动的合法性
+- 为 `GameEvent` 添加了 `metadata` 字段支持扩展数据
+- 修复了所有静态分析错误，代码通过 `dart analyze` 检查
+- 新增的服务类提供了更细粒度的业务逻辑封装，提高了代码的可维护性和可测试性
+
+**下一步**: 开始阶段五 - 导入语句修复和测试
