@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/core/player/role.dart';
-import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 游戏场景抽象类
 /// 定义不同游戏板子的基础接口和行为

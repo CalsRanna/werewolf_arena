@@ -1,11 +1,14 @@
-import 'package:werewolf_arena/core/engine/game_state.dart';
-import 'package:werewolf_arena/core/engine/game_event.dart';
-import 'package:werewolf_arena/core/logic/logic_contradiction_detector.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/events/events.dart';
+import 'package:werewolf_arena/core/rules/logic_validator.dart';
 import 'enhanced_prompts.dart';
-import 'package:werewolf_arena/core/player/player.dart';
-import 'package:werewolf_arena/core/player/role.dart';
-import 'package:werewolf_arena/core/player/personality.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/value_objects/ai_personality.dart';
 import 'package:werewolf_arena/services/config/config.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 
 /// 提示词管理器
 class PromptManager {

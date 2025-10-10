@@ -1,6 +1,6 @@
-import '../engine/game_scenario.dart';
-import 'scenarios_standard_12.dart';
-import 'scenarios_simple_9.dart';
+import 'game_scenario.dart';
+import 'scenario_12_players.dart';
+import 'scenario_9_players.dart';
 
 /// 场景管理器
 /// 负责管理所有可用的游戏场景

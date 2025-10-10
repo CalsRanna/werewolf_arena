@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/engine/game_scenario.dart';
-import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
+import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
+import 'package:werewolf_arena/core/scenarios/scenario_registry.dart';
 import 'package:werewolf_arena/core/engine/game_parameters.dart';
 
 /// 控制台游戏参数实现（用于控制台应用）

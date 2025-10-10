@@ -1,129 +1,14 @@
-import 'package:werewolf_arena/core/player/player.dart';
-import 'package:werewolf_arena/core/player/role.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/role.dart';
 import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/engine/game_scenario.dart';
-import 'package:werewolf_arena/core/rules/scenarios_simple_9.dart';
+import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
+import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
-import 'game_event.dart';
-
-/// Game phases
-enum GamePhase {
-  night, // Night phase
-  day, // Day phase
-  voting, // Voting phase
-  ended; // Game ended
-
-  String get displayName {
-    switch (this) {
-      case GamePhase.night:
-        return 'Night';
-      case GamePhase.day:
-        return 'Day';
-      case GamePhase.voting:
-        return 'Voting';
-      case GamePhase.ended:
-        return 'Ended';
-    }
-  }
-}
-
-/// Game status
-enum GameStatus {
-  waiting, // Waiting to start
-  playing, // In game
-  paused, // Paused
-  ended, // Ended
-}
-
-/// Game event types
-enum GameEventType {
-  gameStart, // Game start
-  gameEnd, // Game end
-  phaseChange, // Phase change
-  playerDeath, // Player death
-  playerAction, // Player action
-  skillUsed, // Skill used
-  voteCast, // Vote cast
-  dayBreak, // Daybreak
-  nightFall, // Nightfall
-}
-
-/// Event visibility scope
-enum EventVisibility {
-  public, // All players can see
-  allWerewolves, // Only werewolves can see
-  roleSpecific, // Only specific role can see (e.g., seer's investigation)
-  playerSpecific, // Only specific player(s) can see
-  dead, // Only dead players can see
-}
-
-/// Base class for all structured game events
-abstract class GameEvent {
-  final String eventId;
-  final DateTime timestamp;
-  final GameEventType type;
-  final Player? initiator;
-  final Player? target;
-  final EventVisibility visibility;
-  final List<String> visibleToPlayerNames;
-  final String? visibleToRole;
-
-  GameEvent({
-    required this.eventId,
-    required this.type,
-    this.initiator,
-    this.target,
-    this.visibility = EventVisibility.public,
-    this.visibleToPlayerNames = const [],
-    this.visibleToRole,
-  }) : timestamp = DateTime.now();
-
-  /// 执行事件逻辑
-  void execute(GameState state);
-
-  /// Check if this event is visible to a specific player
-  bool isVisibleTo(dynamic player) {
-    // Extract player properties (support both Player and test objects)
-    final playerName = player.name as String;
-    final role = player.role as Role;
-    final isAlive = player.isAlive as bool;
-
-    switch (visibility) {
-      case EventVisibility.public:
-        return true;
-
-      case EventVisibility.allWerewolves:
-        return role.isWerewolf;
-
-      case EventVisibility.roleSpecific:
-        return visibleToRole != null && role.roleId == visibleToRole;
-
-      case EventVisibility.playerSpecific:
-        return visibleToPlayerNames.contains(playerName);
-
-      case EventVisibility.dead:
-        return !isAlive;
-    }
-  }
-
-  @override
-  String toString() {
-    return 'GameEvent($type: $eventId)';
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'eventId': eventId,
-      'timestamp': timestamp.toIso8601String(),
-      'type': type.name,
-      'initiator': initiator?.name,
-      'target': target?.name,
-      'visibility': visibility.name,
-      'visibleToPlayerNames': visibleToPlayerNames,
-      'visibleToRole': visibleToRole,
-    };
-  }
-}
+import 'package:werewolf_arena/core/events/events.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_status.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
+import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 
 /// Game state
 class GameState {

@@ -1,17 +1,23 @@
 import 'dart:async';
-import 'package:werewolf_arena/core/engine/game_state.dart';
-import 'package:werewolf_arena/core/engine/game_event.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/events/events.dart';
 import 'package:werewolf_arena/core/engine/game_observer.dart';
-import 'package:werewolf_arena/core/player/player.dart';
-import 'package:werewolf_arena/core/player/ai_player.dart';
-import 'package:werewolf_arena/core/player/role.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
+import 'package:werewolf_arena/core/domain/entities/role.dart';
 import 'package:werewolf_arena/services/llm/enhanced_prompts.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
 import 'package:werewolf_arena/core/engine/game_parameters.dart';
 import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/engine/game_scenario.dart';
+import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 import 'package:werewolf_arena/services/logging/player_logger.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_status.dart';
+import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
+import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {

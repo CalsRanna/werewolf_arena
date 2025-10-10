@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/core/player/player.dart';
-import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 
 /// AI性格状态 - 为AI玩家添加记忆和性格特征

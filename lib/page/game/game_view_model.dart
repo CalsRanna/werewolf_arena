@@ -4,7 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/services/game_service.dart';
 import 'package:werewolf_arena/services/config_service.dart';
-import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 
 class GameViewModel {

@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/core/engine/game_scenario.dart';
-import 'package:werewolf_arena/core/engine/game_state.dart';
+import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 标准12人局场景
 /// 4狼+4民+4神配置，无警长

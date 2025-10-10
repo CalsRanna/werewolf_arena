@@ -1,20 +1,8 @@
-import 'package:werewolf_arena/core/player/player.dart';
-import 'package:werewolf_arena/core/engine/game_state.dart';
-import 'package:werewolf_arena/core/engine/game_event.dart';
-
-/// Role types
-enum RoleType {
-  werewolf, // Werewolf
-  villager, // Villager
-  god, // God role
-}
-
-/// Role alignments
-enum RoleAlignment {
-  good, // Good side
-  evil, // Werewolf side
-  neutral, // Neutral side
-}
+import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/events/events.dart';
+import 'package:werewolf_arena/core/domain/enums/role_type.dart';
+import 'package:werewolf_arena/core/domain/enums/role_alignment.dart';
 
 /// Skill class
 abstract class Skill {

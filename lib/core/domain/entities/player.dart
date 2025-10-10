@@ -1,73 +1,11 @@
-import 'package:werewolf_arena/core/player/role.dart';
-import 'package:werewolf_arena/core/engine/game_state.dart';
-import 'package:werewolf_arena/core/engine/game_event.dart';
+import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/events/events.dart';
+import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
+import 'package:werewolf_arena/core/domain/enums/player_type.dart';
+import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
-
-/// Player model configuration
-class PlayerModelConfig {
-  final String model;
-  final String apiKey;
-  final String? baseUrl;
-  final int timeoutSeconds;
-  final int maxRetries;
-
-  const PlayerModelConfig({
-    required this.model,
-    required this.apiKey,
-    this.baseUrl,
-    this.timeoutSeconds = 30,
-    this.maxRetries = 3,
-  });
-
-  /// Create a copy with updated values
-  PlayerModelConfig copyWith({
-    String? model,
-    String? apiKey,
-    String? baseUrl,
-    int? timeoutSeconds,
-    int? maxRetries,
-  }) {
-    return PlayerModelConfig(
-      model: model ?? this.model,
-      apiKey: apiKey ?? this.apiKey,
-      baseUrl: baseUrl ?? this.baseUrl,
-      timeoutSeconds: timeoutSeconds ?? this.timeoutSeconds,
-      maxRetries: maxRetries ?? this.maxRetries,
-    );
-  }
-
-  /// Create from config map
-  factory PlayerModelConfig.fromMap(Map<String, dynamic> map) {
-    return PlayerModelConfig(
-      model: map['model'] ?? map['model'] ?? 'gpt-3.5-turbo',
-      apiKey: map['api_key'] ?? map['apiKey'] ?? '',
-      baseUrl: map['base_url'] ?? map['baseUrl'],
-      timeoutSeconds: map['timeout_seconds'] ?? map['timeoutSeconds'] ?? 30,
-      maxRetries: map['max_retries'] ?? map['maxRetries'] ?? 3,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'model': model,
-      'api_key': apiKey,
-      if (baseUrl != null) 'base_url': baseUrl,
-      'timeout_seconds': timeoutSeconds,
-      'max_retries': maxRetries,
-    };
-  }
-
-  @override
-  String toString() {
-    return 'PlayerModelConfig(model: $model)';
-  }
-}
-
-/// Player types
-enum PlayerType {
-  human, // Human player
-  ai, // AI player
-}
 
 /// Base player class
 abstract class Player {

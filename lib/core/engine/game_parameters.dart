@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/core/engine/game_scenario.dart';
-import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
+import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
+import 'package:werewolf_arena/core/scenarios/scenario_registry.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 
 /// 游戏参数接口

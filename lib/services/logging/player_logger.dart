@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:werewolf_arena/core/engine/game_state.dart';
-import 'package:werewolf_arena/core/player/player.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'logger.dart';
 
 /// Player-specific logger for debugging event visibility

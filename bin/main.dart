@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:args/args.dart';
+import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 import 'package:werewolf_arena/core/engine/game_engine.dart';
 import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/engine/game_scenario.dart';
-import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
-import 'package:werewolf_arena/core/player/player.dart';
-import 'package:werewolf_arena/core/player/ai_player.dart';
+import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
+import 'package:werewolf_arena/core/scenarios/scenario_registry.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
 import 'package:werewolf_arena/services/llm/prompt_manager.dart';
 import 'console_output.dart';
