@@ -41,7 +41,7 @@ class GameService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _configManager = ConfigManager.instance;
+    _configManager = GUIConfigManager.instance;
 
     // 创建观察者
     _observer = StreamGameObserver();

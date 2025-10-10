@@ -1,9 +1,17 @@
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/core/engine/game_engine.dart';
-import 'package:werewolf_arena/services/config_service.dart';
+import 'package:werewolf_arena/services/config/config.dart';
+import 'package:werewolf_arena/core/rules/game_scenario.dart';
+import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
+import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/entities/player/ai_player.dart';
+import 'package:werewolf_arena/services/llm/llm_service.dart';
+import 'package:werewolf_arena/services/llm/prompt_manager.dart';
 import 'console_output.dart';
 import 'console_observer.dart';
+import 'console_config.dart';
+import 'config_loader.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
 Future<void> main(List<String> arguments) async {
@@ -35,31 +43,50 @@ Future<void> main(List<String> arguments) async {
     console.initialize(useColors: true);
     console.printHeader('狼人杀竞技场 - 控制台模式', color: ConsoleColor.green);
 
+    // 0. 配置文件自检
+    console.printLine('🔍 检查配置文件...');
+    final configHelper = ConsoleConfigHelper();
+    final configDir = await configHelper.ensureConfigFiles();
+
+    if (configDir == null) {
+      console.displayError('配置文件初始化失败，程序退出');
+      exit(1);
+    }
+
     // 1. 加载配置
     console.printLine('📝 正在加载配置...');
-    final configService = ConfigService();
 
+    AppConfig appConfig;
+    String? configDirPath;
     final configPath = argResults['config'] as String?;
+
     if (configPath != null) {
       console.printLine('   使用自定义配置: $configPath');
       // 使用自定义配置目录（从配置文件路径提取目录）
-      final configDir = configPath.contains('/')
+      configDirPath = configPath.contains('/')
           ? configPath.substring(0, configPath.lastIndexOf('/'))
           : null;
-      await configService.ensureInitialized(
-        customConfigDir: configDir,
-        forceConsoleMode: true,
-      );
+      final loader = ConsoleConfigLoader(customConfigDir: configDirPath);
+      appConfig = await loader.loadConfig();
     } else {
-      console.printLine('   从二进制所在目录加载配置');
-      await configService.ensureInitialized(forceConsoleMode: true);
+      console.printLine('   从可执行文件目录加载配置: $configDir');
+      final loader = ConsoleConfigLoader(customConfigDir: configDir);
+      appConfig = await loader.loadConfig();
     }
+
+    // 初始化场景管理器
+    final scenarioManager = ScenarioManager();
+    scenarioManager.initialize();
 
     // 2. 初始化游戏引擎
     console.printLine('🎮 正在初始化游戏引擎...');
     final observer = ConsoleGameObserver();
+
+    // 创建一个简单的 ConfigManager 用于控制台模式
+    final simpleConfigManager = _ConsoleConfigManager(appConfig, scenarioManager);
+
     final gameEngine = GameEngine(
-      configManager: configService.configManager!,
+      configManager: simpleConfigManager,
       observer: observer,
     );
 
@@ -74,17 +101,30 @@ Future<void> main(List<String> arguments) async {
         console.displayError('无效的玩家数量: $playerCountStr');
         exit(1);
       }
-      await configService.autoSelectScenario(playerCount);
+      final scenarios = scenarioManager.getScenariosByPlayerCount(playerCount);
+      if (scenarios.isEmpty) {
+        console.displayError('没有找到适合 $playerCount 人的场景');
+        exit(1);
+      }
+      simpleConfigManager.setCurrentScenario(scenarios.first.id);
+    } else {
+      // 使用默认场景
+      final allScenarios = scenarioManager.scenarios.values.toList();
+      if (allScenarios.isEmpty) {
+        console.displayError('没有可用的游戏场景');
+        exit(1);
+      }
+      simpleConfigManager.setCurrentScenario(allScenarios.first.id);
     }
 
     // 使用当前场景创建玩家
-    final scenario = configService.currentScenario;
+    final scenario = simpleConfigManager.currentScenario;
     if (scenario == null) {
       console.displayError('无法获取游戏场景');
       exit(1);
     }
 
-    final players = configService.createPlayersForScenario(scenario);
+    final players = _createPlayersForScenario(scenario, appConfig);
     console.printLine('   创建了 ${players.length} 个玩家');
 
     // 设置玩家到游戏引擎
@@ -129,4 +169,85 @@ void _printHelp(ArgParser parser) {
   print('  dart run -- -p 8            # 指定8个玩家');
   print('  dart run -- -c config.yaml  # 使用自定义配置');
   print('  dart run -- -d              # 启用调试模式');
+}
+
+/// 控制台模式的简单 ConfigManager 实现
+class _ConsoleConfigManager implements ConfigManager {
+  @override
+  final AppConfig config;
+
+  @override
+  final ScenarioManager scenarioManager;
+
+  @override
+  GameScenario? currentScenario;
+
+  _ConsoleConfigManager(this.config, this.scenarioManager);
+
+  @override
+  void setCurrentScenario(String scenarioId) {
+    final scenario = scenarioManager.getScenario(scenarioId);
+    if (scenario == null) {
+      throw Exception('场景不存在: $scenarioId');
+    }
+    currentScenario = scenario;
+  }
+
+  @override
+  GameScenario? get scenario => currentScenario;
+
+  @override
+  List<GameScenario> getAvailableScenarios(int playerCount) {
+    return scenarioManager.getScenariosByPlayerCount(playerCount);
+  }
+
+  @override
+  Map<String, dynamic> getPlayerLLMConfig(int playerNumber) {
+    return config.getPlayerLLMConfig(playerNumber);
+  }
+
+  @override
+  Future<void> initialize() async {
+    // 控制台模式不需要初始化（已在构造函数中完成）
+  }
+
+  @override
+  Future<void> saveConfig(AppConfig newConfig) async {
+    // 控制台模式不支持保存配置
+    print('控制台模式不支持保存配置，请手动编辑 werewolf_config.yaml 文件');
+  }
+}
+
+/// 为场景创建玩家
+List<Player> _createPlayersForScenario(GameScenario scenario, AppConfig config) {
+  final players = <Player>[];
+  final roleIds = scenario.getExpandedRoles();
+  roleIds.shuffle();  // 随机打乱角色顺序
+
+  for (int i = 0; i < roleIds.length; i++) {
+    final playerNumber = i + 1;
+    final playerName = '${playerNumber}号玩家';
+    final roleId = roleIds[i];
+    final role = scenario.createRole(roleId);
+
+    // 获取玩家专属的LLM配置
+    final playerLLMConfig = config.getPlayerLLMConfig(playerNumber);
+    final playerModelConfig = PlayerModelConfig.fromMap(playerLLMConfig);
+
+    // 创建LLM服务和Prompt管理器
+    final llmService = OpenAIService.fromPlayerConfig(playerModelConfig);
+    final promptManager = PromptManager();
+
+    final player = EnhancedAIPlayer(
+      name: playerName,
+      role: role,
+      llmService: llmService,
+      promptManager: promptManager,
+      modelConfig: playerModelConfig,
+    );
+
+    players.add(player);
+  }
+
+  return players;
 }

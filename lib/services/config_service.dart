@@ -12,17 +12,11 @@ class ConfigService {
   ConfigManager? _configManager;
 
   /// 确保配置已初始化
-  Future<void> ensureInitialized({
-    String? customConfigDir,
-    bool? forceConsoleMode,
-  }) async {
+  Future<void> ensureInitialized() async {
     if (_isInitialized) return;
 
-    _configManager = ConfigManager.instance;
-    await _configManager!.initialize(
-      customConfigDir: customConfigDir,
-      forceConsoleMode: forceConsoleMode,
-    );
+    _configManager = GUIConfigManager.instance;
+    await _configManager!.initialize();
 
     // 设置默认场景(如果还没有设置)
     if (_configManager!.currentScenario == null) {
@@ -111,16 +105,10 @@ class ConfigService {
     return players;
   }
 
-  /// 获取游戏配置
-  GameConfig get gameConfig {
+  /// 获取应用配置
+  AppConfig get appConfig {
     _ensureInitialized();
-    return _configManager!.gameConfig;
-  }
-
-  /// 获取LLM配置
-  LLMConfig get llmConfig {
-    _ensureInitialized();
-    return _configManager!.llmConfig;
+    return _configManager!.config;
   }
 
   /// 获取场景管理器

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/page/settings/llm_config_view_model.dart';
+import 'package:werewolf_arena/services/config/config.dart';
 
 @RoutePage()
 class LLMConfigPage extends StatefulWidget {
@@ -151,92 +152,6 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
 
         SizedBox(height: 24),
 
-        // 提示词设置
-        _buildSection('提示词设置', [
-          Watch((context) {
-            return Column(
-              children: [
-                SwitchListTile(
-                  title: Text('启用上下文'),
-                  subtitle: Text('在提示词中包含游戏历史上下文'),
-                  value: viewModel.enableContext.value,
-                  onChanged: (value) => viewModel.enableContext.value = value,
-                ),
-                SwitchListTile(
-                  title: Text('策略提示'),
-                  subtitle: Text('提供策略建议和游戏技巧'),
-                  value: viewModel.strategyHints.value,
-                  onChanged: (value) => viewModel.strategyHints.value = value,
-                ),
-                SwitchListTile(
-                  title: Text('个性特征'),
-                  subtitle: Text('为AI玩家添加个性化特征'),
-                  value: viewModel.personalityTraits.value,
-                  onChanged: (value) => viewModel.personalityTraits.value = value,
-                ),
-                _buildTextField(
-                  '基础系统提示词',
-                  '自定义系统提示词模板',
-                  viewModel.baseSystemPrompt.value,
-                  (value) => viewModel.baseSystemPrompt.value = value,
-                  maxLines: 5,
-                ),
-              ],
-            );
-          }),
-        ]),
-
-        SizedBox(height: 24),
-
-        // 高级设置
-        _buildSection('高级设置', [
-          Watch((context) {
-            return Column(
-              children: [
-                _buildSliderTile(
-                  'Temperature',
-                  '控制输出的随机性',
-                  viewModel.temperature.value,
-                  0.0,
-                  2.0,
-                  (value) => viewModel.temperature.value = value,
-                ),
-                _buildNumberField(
-                  'Max Tokens',
-                  viewModel.maxTokens.value,
-                  (value) => viewModel.maxTokens.value = value,
-                ),
-                _buildSliderTile(
-                  'Top P',
-                  '核采样参数',
-                  viewModel.topP.value,
-                  0.0,
-                  1.0,
-                  (value) => viewModel.topP.value = value,
-                ),
-                _buildSliderTile(
-                  'Frequency Penalty',
-                  '降低重复内容的概率',
-                  viewModel.frequencyPenalty.value,
-                  -2.0,
-                  2.0,
-                  (value) => viewModel.frequencyPenalty.value = value,
-                ),
-                _buildSliderTile(
-                  'Presence Penalty',
-                  '鼓励讨论新话题',
-                  viewModel.presencePenalty.value,
-                  -2.0,
-                  2.0,
-                  (value) => viewModel.presencePenalty.value = value,
-                ),
-              ],
-            );
-          }),
-        ]),
-
-        SizedBox(height: 24),
-
         // 重置按钮
         OutlinedButton.icon(
           onPressed: () => _showResetDialog(),
@@ -324,44 +239,7 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
     );
   }
 
-  Widget _buildSliderTile(
-    String label,
-    String subtitle,
-    double value,
-    double min,
-    double max,
-    Function(double) onChanged,
-  ) {
-    return Column(
-      children: [
-        ListTile(
-          title: Text(label),
-          subtitle: Text(subtitle),
-          trailing: SizedBox(
-            width: 60,
-            child: Text(
-              value.toStringAsFixed(2),
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            divisions: ((max - min) * 20).toInt(),
-            label: value.toStringAsFixed(2),
-            onChanged: onChanged,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlayerConfigCard(String playerId, Map<String, dynamic> config) {
+  Widget _buildPlayerConfigCard(String playerId, PlayerLLMConfig config) {
     return Card(
       margin: EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -369,7 +247,7 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
           child: Text(playerId),
         ),
         title: Text('玩家 $playerId'),
-        subtitle: Text(config['model'] ?? '未设置模型'),
+        subtitle: Text(config.model.isEmpty ? '未设置模型' : config.model),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -413,7 +291,6 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
               if (playerId.isNotEmpty) {
                 viewModel.addPlayerConfig(playerId);
                 Navigator.pop(context);
-                _showEditPlayerConfigDialog(playerId, {});
               }
             },
             child: Text('添加'),
@@ -423,16 +300,10 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
     );
   }
 
-  void _showEditPlayerConfigDialog(String playerId, Map<String, dynamic> config) {
-    final modelController = TextEditingController(text: config['model'] ?? '');
-    final apiKeyController = TextEditingController(text: config['api_key'] ?? '');
-    final baseUrlController = TextEditingController(text: config['base_url'] ?? '');
-    final timeoutController = TextEditingController(
-      text: (config['timeout_seconds'] ?? 30).toString(),
-    );
-    final retriesController = TextEditingController(
-      text: (config['max_retries'] ?? 3).toString(),
-    );
+  void _showEditPlayerConfigDialog(String playerId, PlayerLLMConfig config) {
+    final modelController = TextEditingController(text: config.model);
+    final apiKeyController = TextEditingController(text: config.apiKey);
+    final baseUrlController = TextEditingController(text: config.baseUrl ?? '');
 
     showDialog(
       context: context,
@@ -466,22 +337,6 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
                   hintText: '留空使用默认配置',
                 ),
               ),
-              SizedBox(height: 16),
-              TextField(
-                controller: timeoutController,
-                decoration: InputDecoration(
-                  labelText: '超时时间(秒)',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: retriesController,
-                decoration: InputDecoration(
-                  labelText: '最大重试次数',
-                ),
-                keyboardType: TextInputType.number,
-              ),
             ],
           ),
         ),
@@ -492,13 +347,9 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
           ),
           TextButton(
             onPressed: () {
-              viewModel.updatePlayerConfig(playerId, {
-                'model': modelController.text.isEmpty ? null : modelController.text,
-                'api_key': apiKeyController.text.isEmpty ? null : apiKeyController.text,
-                'base_url': baseUrlController.text.isEmpty ? null : baseUrlController.text,
-                'timeout_seconds': int.tryParse(timeoutController.text) ?? 30,
-                'max_retries': int.tryParse(retriesController.text) ?? 3,
-              });
+              viewModel.updatePlayerConfig(playerId, 'model', modelController.text);
+              viewModel.updatePlayerConfig(playerId, 'apiKey', apiKeyController.text);
+              viewModel.updatePlayerConfig(playerId, 'baseUrl', baseUrlController.text);
               Navigator.pop(context);
             },
             child: Text('保存'),

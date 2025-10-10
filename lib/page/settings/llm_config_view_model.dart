@@ -15,21 +15,8 @@ class LLMConfigViewModel {
   final Signal<int> defaultTimeout = signal(30);
   final Signal<int> defaultMaxRetries = signal(3);
 
-  // 玩家专属配置
-  final Signal<Map<String, Map<String, dynamic>>> playerConfigs = signal({});
-
-  // 提示词设置
-  final Signal<bool> enableContext = signal(true);
-  final Signal<bool> strategyHints = signal(true);
-  final Signal<bool> personalityTraits = signal(true);
-  final Signal<String> baseSystemPrompt = signal('');
-
-  // LLM 高级设置
-  final Signal<double> temperature = signal(0.7);
-  final Signal<int> maxTokens = signal(1000);
-  final Signal<double> topP = signal(0.9);
-  final Signal<double> frequencyPenalty = signal(0.0);
-  final Signal<double> presencePenalty = signal(0.0);
+  // 玩家专属配置 (简化版：只有 model, apiKey, baseUrl)
+  final Signal<Map<String, PlayerLLMConfig>> playerConfigs = signal({});
 
   // UI 状态
   final Signal<bool> isLoading = signal(false);
@@ -51,38 +38,20 @@ class LLMConfigViewModel {
     try {
       isLoading.value = true;
 
-      // 构建 LLM 配置对象
-      final llmConfig = LLMConfig(
-        model: defaultModel.value,
-        apiKey: defaultApiKey.value,
-        baseUrl: defaultBaseUrl.value.isEmpty ? null : defaultBaseUrl.value,
+      // 构建新的 AppConfig
+      final currentConfig = _configService.appConfig;
+      final newConfig = AppConfig(
+        defaultModel: defaultModel.value,
+        defaultApiKey: defaultApiKey.value,
+        defaultBaseUrl: defaultBaseUrl.value.isEmpty ? null : defaultBaseUrl.value,
         timeoutSeconds: defaultTimeout.value,
         maxRetries: defaultMaxRetries.value,
-        prompts: PromptSettings(
-          enableContext: enableContext.value,
-          strategyHints: strategyHints.value,
-          personalityTraits: personalityTraits.value,
-          baseSystemPrompt: baseSystemPrompt.value,
-        ),
-        llmSettings: {
-          'temperature': temperature.value,
-          'max_tokens': maxTokens.value,
-          'top_p': topP.value,
-          'frequency_penalty': frequencyPenalty.value,
-          'presence_penalty': presencePenalty.value,
-        },
-        playerModels: Map<String, Map<String, dynamic>>.from(
-          playerConfigs.value.map((key, value) {
-            // 只保存非空字段
-            final filteredValue = Map<String, dynamic>.from(value)
-              ..removeWhere((k, v) => v == null || v == '');
-            return MapEntry(key, filteredValue);
-          }),
-        ),
+        playerModels: playerConfigs.value,
+        logging: currentConfig.logging,  // 保留现有日志配置
       );
 
       // 保存到配置管理器
-      await _configService.configManager!.saveLLMConfig(llmConfig);
+      await _configService.configManager!.saveConfig(newConfig);
 
       isLoading.value = false;
 
@@ -112,21 +81,50 @@ class LLMConfigViewModel {
 
   /// 添加玩家配置
   void addPlayerConfig(String playerId) {
-    final currentConfigs = Map<String, Map<String, dynamic>>.from(playerConfigs.value);
-    currentConfigs[playerId] = {};
+    final currentConfigs = Map<String, PlayerLLMConfig>.from(playerConfigs.value);
+    currentConfigs[playerId] = PlayerLLMConfig(
+      model: '',
+      apiKey: '',
+      baseUrl: null,
+    );
     playerConfigs.value = currentConfigs;
   }
 
   /// 更新玩家配置
-  void updatePlayerConfig(String playerId, Map<String, dynamic> config) {
-    final currentConfigs = Map<String, Map<String, dynamic>>.from(playerConfigs.value);
-    currentConfigs[playerId] = config;
+  void updatePlayerConfig(String playerId, String field, String value) {
+    final currentConfigs = Map<String, PlayerLLMConfig>.from(playerConfigs.value);
+    final existing = currentConfigs[playerId];
+    if (existing == null) return;
+
+    switch (field) {
+      case 'model':
+        currentConfigs[playerId] = PlayerLLMConfig(
+          model: value,
+          apiKey: existing.apiKey,
+          baseUrl: existing.baseUrl,
+        );
+        break;
+      case 'apiKey':
+        currentConfigs[playerId] = PlayerLLMConfig(
+          model: existing.model,
+          apiKey: value,
+          baseUrl: existing.baseUrl,
+        );
+        break;
+      case 'baseUrl':
+        currentConfigs[playerId] = PlayerLLMConfig(
+          model: existing.model,
+          apiKey: existing.apiKey,
+          baseUrl: value.isEmpty ? null : value,
+        );
+        break;
+    }
     playerConfigs.value = currentConfigs;
   }
 
   /// 删除玩家配置
   void removePlayerConfig(String playerId) {
-    final currentConfigs = Map<String, Map<String, dynamic>>.from(playerConfigs.value);
+    final currentConfigs = Map<String, PlayerLLMConfig>.from(playerConfigs.value);
     currentConfigs.remove(playerId);
     playerConfigs.value = currentConfigs;
   }
@@ -138,51 +136,24 @@ class LLMConfigViewModel {
     defaultBaseUrl.value = 'https://api.openai.com/v1';
     defaultTimeout.value = 30;
     defaultMaxRetries.value = 3;
-
     playerConfigs.value = {};
-
-    enableContext.value = true;
-    strategyHints.value = true;
-    personalityTraits.value = true;
-    baseSystemPrompt.value = '';
-
-    temperature.value = 0.7;
-    maxTokens.value = 1000;
-    topP.value = 0.9;
-    frequencyPenalty.value = 0.0;
-    presencePenalty.value = 0.0;
   }
 
   /// 加载配置
   Future<void> _loadConfig() async {
     try {
       await _configService.ensureInitialized();
-      final llmConfig = _configService.llmConfig;
+      final appConfig = _configService.appConfig;
 
       // 加载默认配置
-      defaultModel.value = llmConfig.model;
-      defaultApiKey.value = llmConfig.apiKey;
-      defaultBaseUrl.value = llmConfig.baseUrl ?? 'https://api.openai.com/v1';
-      defaultTimeout.value = llmConfig.timeoutSeconds;
-      defaultMaxRetries.value = llmConfig.maxRetries;
+      defaultModel.value = appConfig.defaultModel;
+      defaultApiKey.value = appConfig.defaultApiKey;
+      defaultBaseUrl.value = appConfig.defaultBaseUrl ?? 'https://api.openai.com/v1';
+      defaultTimeout.value = appConfig.timeoutSeconds;
+      defaultMaxRetries.value = appConfig.maxRetries;
 
       // 加载玩家配置
-      playerConfigs.value = Map<String, Map<String, dynamic>>.from(
-        llmConfig.playerModels,
-      );
-
-      // 加载提示词设置
-      enableContext.value = llmConfig.prompts.enableContext;
-      strategyHints.value = llmConfig.prompts.strategyHints;
-      personalityTraits.value = llmConfig.prompts.personalityTraits;
-      baseSystemPrompt.value = llmConfig.prompts.baseSystemPrompt;
-
-      // 加载高级设置
-      temperature.value = llmConfig.llmSettings['temperature'] ?? 0.7;
-      maxTokens.value = llmConfig.llmSettings['max_tokens'] ?? 1000;
-      topP.value = llmConfig.llmSettings['top_p'] ?? 0.9;
-      frequencyPenalty.value = llmConfig.llmSettings['frequency_penalty'] ?? 0.0;
-      presencePenalty.value = llmConfig.llmSettings['presence_penalty'] ?? 0.0;
+      playerConfigs.value = Map<String, PlayerLLMConfig>.from(appConfig.playerModels);
     } catch (e) {
       print('加载 LLM 配置失败: $e');
       // 使用默认值
@@ -197,15 +168,6 @@ class LLMConfigViewModel {
     defaultTimeout.dispose();
     defaultMaxRetries.dispose();
     playerConfigs.dispose();
-    enableContext.dispose();
-    strategyHints.dispose();
-    personalityTraits.dispose();
-    baseSystemPrompt.dispose();
-    temperature.dispose();
-    maxTokens.dispose();
-    topP.dispose();
-    frequencyPenalty.dispose();
-    presencePenalty.dispose();
     isLoading.dispose();
   }
 }

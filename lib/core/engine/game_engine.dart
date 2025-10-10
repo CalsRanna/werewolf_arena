@@ -20,7 +20,7 @@ class GameEngine {
   final ConfigManager configManager;
 
   /// 获取游戏配置
-  GameConfig get config => configManager.gameConfig;
+  AppConfig get config => configManager.config;
 
   /// 获取当前场景
   GameScenario get currentScenario => configManager.scenario!;

@@ -409,7 +409,7 @@ $formatted$peacefulNightInfo''';
 
   /// 生成当前场景的基础系统提示词
   String _generateBaseSystemPrompt() {
-    final configManager = ConfigManager.instance;
+    final configManager = GUIConfigManager.instance;
     final currentScenario = configManager.scenario;
 
     if (currentScenario == null) {

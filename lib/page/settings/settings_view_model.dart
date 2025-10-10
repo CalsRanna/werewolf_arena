@@ -16,9 +16,7 @@ class SettingsViewModel {
   final Signal<double> textSpeed = signal(1.0);
   final Signal<bool> isLoading = signal(false);
 
-  // Signals 状态管理 - 游戏配置
-  final Signal<bool> enableColors = signal(true);
-  final Signal<bool> showDebugInfo = signal(false);
+  // Signals 状态管理 - LLM 配置
   final Signal<String> logLevel = signal('info');
   final Signal<String> defaultLLMModel = signal('gpt-3.5-turbo');
   final Signal<String> llmApiKey = signal('');
@@ -110,13 +108,10 @@ class SettingsViewModel {
     selectedTheme.value = 'dark';
     textSpeed.value = 1.0;
 
-    // 游戏配置
-    enableColors.value = true;
-    showDebugInfo.value = false;
+    // LLM 配置
     logLevel.value = 'info';
 
     await _saveSettings();
-    await _saveGameConfig();
   }
 
   /// 加载设置
@@ -155,15 +150,12 @@ class SettingsViewModel {
   Future<void> _loadGameConfig() async {
     try {
       await _configService.ensureInitialized();
-      final gameConfig = _configService.gameConfig;
-      final llmConfig = _configService.llmConfig;
+      final appConfig = _configService.appConfig;
 
-      enableColors.value = gameConfig.uiConfig.enableColors;
-      showDebugInfo.value = gameConfig.uiConfig.showDebugInfo;
-      logLevel.value = gameConfig.uiConfig.logLevel;
-      defaultLLMModel.value = llmConfig.model;
-      llmApiKey.value = llmConfig.apiKey;
-      llmBaseUrl.value = llmConfig.baseUrl ?? '';
+      logLevel.value = appConfig.logging.level;
+      defaultLLMModel.value = appConfig.defaultModel;
+      llmApiKey.value = appConfig.defaultApiKey;
+      llmBaseUrl.value = appConfig.defaultBaseUrl ?? '';
     } catch (e) {
       print('加载游戏配置失败: $e');
     }
@@ -178,18 +170,6 @@ class SettingsViewModel {
     } catch (e) {
       print('保存游戏配置失败: $e');
     }
-  }
-
-  /// 设置UI颜色开关
-  Future<void> setEnableColors(bool value) async {
-    enableColors.value = value;
-    await _saveGameConfig();
-  }
-
-  /// 设置调试信息显示
-  Future<void> setShowDebugInfo(bool value) async {
-    showDebugInfo.value = value;
-    await _saveGameConfig();
   }
 
   /// 设置日志级别
@@ -217,8 +197,6 @@ class SettingsViewModel {
     selectedTheme.dispose();
     textSpeed.dispose();
     isLoading.dispose();
-    enableColors.dispose();
-    showDebugInfo.dispose();
     logLevel.dispose();
     defaultLLMModel.dispose();
     llmApiKey.dispose();

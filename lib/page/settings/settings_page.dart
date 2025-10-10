@@ -34,8 +34,6 @@ class _SettingsPageState extends State<SettingsPage> {
         final speed = viewModel.textSpeed.value;
 
         // 游戏配置
-        final enableColors = viewModel.enableColors.value;
-        final showDebugInfo = viewModel.showDebugInfo.value;
         final logLevel = viewModel.logLevel.value;
         final llmApiKey = viewModel.llmApiKey.value;
 
@@ -45,7 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
         return _buildSettingsContent(
           soundOn, animationsOn, theme, speed,
-          enableColors, showDebugInfo, logLevel, llmApiKey,
+          logLevel, llmApiKey,
         );
       }),
     );
@@ -53,7 +51,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSettingsContent(
     bool soundOn, bool animationsOn, String theme, double speed,
-    bool enableColors, bool showDebugInfo, String logLevel, String llmApiKey,
+    String logLevel, String llmApiKey,
   ) {
     return ListView(
       padding: EdgeInsets.all(16),
@@ -91,18 +89,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
         // 高级设置
         _buildSection('高级设置', [
-          _buildSwitchTile(
-            'UI颜色',
-            '启用控制台颜色输出',
-            enableColors,
-            (value) => viewModel.setEnableColors(value),
-          ),
-          _buildSwitchTile(
-            '调试信息',
-            '显示详细调试信息',
-            showDebugInfo,
-            (value) => viewModel.setShowDebugInfo(value),
-          ),
           _buildLogLevelTile(logLevel),
         ]),
 

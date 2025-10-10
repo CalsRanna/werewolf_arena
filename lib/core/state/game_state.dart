@@ -130,7 +130,7 @@ abstract class GameEvent {
 class GameState {
   final String gameId;
   final DateTime startTime;
-  final GameConfig config;
+  final AppConfig config;
   final GameScenario scenario;
 
   GamePhase currentPhase;
@@ -470,7 +470,7 @@ class GameState {
 
   // TODO: Implement proper event deserialization with event factory
   factory GameState.fromJson(Map<String, dynamic> json) {
-    final config = GameConfig.fromJson(json['config']);
+    final config = AppConfig.fromJson(json['config']);
     // 注意：场景不再从JSON反序列化，而是在游戏运行时设置
     final players =
         (json['players'] as List).map((p) => Player.fromJson(p)).toList();

@@ -2,77 +2,107 @@ import 'dart:io' if (dart.library.html) 'package:werewolf_arena/services/config/
 import 'package:yaml/yaml.dart';
 import 'package:werewolf_arena/core/rules/game_scenario.dart';
 import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
-import 'package:werewolf_arena/services/config/config_loader.dart';
+import 'package:werewolf_arena/services/config/preference_loader.dart';
 
-/// 游戏基础配置（只包含UI和日志设置）
-class GameConfig {
-  final UIConfig uiConfig;
-  final LoggingConfig loggingConfig;
-  final DevelopmentConfig developmentConfig;
+/// 应用统一配置
+class AppConfig {
+  // LLM 默认配置
+  final String defaultModel;
+  final String defaultApiKey;
+  final String? defaultBaseUrl;
+  final int timeoutSeconds;
+  final int maxRetries;
 
-  GameConfig({
-    required this.uiConfig,
-    required this.loggingConfig,
-    required this.developmentConfig,
+  // 玩家专属 LLM 配置
+  final Map<String, PlayerLLMConfig> playerModels;
+
+  // 日志配置
+  final LoggingConfig logging;
+
+  AppConfig({
+    required this.defaultModel,
+    required this.defaultApiKey,
+    this.defaultBaseUrl,
+    required this.timeoutSeconds,
+    required this.maxRetries,
+    required this.playerModels,
+    required this.logging,
   });
 
-  static GameConfig loadFromFile(String configPath) {
+  /// 从 YAML 文件加载配置
+  static AppConfig loadFromFile(String configPath) {
     final file = File(configPath);
     if (!file.existsSync()) {
-      throw Exception('游戏配置文件不存在: $configPath');
+      throw Exception('配置文件不存在: $configPath');
     }
 
     final yamlString = file.readAsStringSync();
     final yamlMap = loadYaml(yamlString) as YamlMap;
 
-    return GameConfig._fromYaml(yamlMap);
+    return AppConfig._fromYaml(yamlMap);
   }
 
-  factory GameConfig._fromYaml(YamlMap yaml) {
-    final uiConfig =
-        yaml['ui'] as YamlMap? ?? YamlMap.wrap(_getDefaultUIConfig());
-    final loggingConfig =
-        yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig());
-    final developmentConfig = yaml['development'] as YamlMap? ??
-        YamlMap.wrap(_getDefaultDevelopmentConfig());
+  /// 从 YamlMap 创建配置
+  factory AppConfig._fromYaml(YamlMap yaml) {
+    // 解析默认 LLM 配置
+    final defaultLLM = yaml['default_llm'] as YamlMap;
 
-    return GameConfig(
-      uiConfig: UIConfig._fromYaml(uiConfig),
-      loggingConfig: LoggingConfig._fromYaml(loggingConfig),
-      developmentConfig: DevelopmentConfig._fromYaml(developmentConfig),
+    // 安全获取 API key，避免在 Web 平台访问 Platform.environment
+    String apiKey = defaultLLM['api_key'] ?? '';
+    if (apiKey.isEmpty) {
+      try {
+        apiKey = Platform.environment['OPENAI_API_KEY'] ?? '';
+      } catch (e) {
+        // Web 平台不支持 Platform.environment，使用空字符串
+        apiKey = '';
+      }
+    }
+
+    // 解析玩家专属模型配置
+    final playerModels = <String, PlayerLLMConfig>{};
+    if (yaml['player_models'] != null) {
+      final playerModelsYaml = yaml['player_models'] as YamlMap;
+      for (final entry in playerModelsYaml.entries) {
+        final playerKey = entry.key as String;
+        final playerConfig = entry.value as YamlMap;
+        playerModels[playerKey] = PlayerLLMConfig._fromYaml(playerConfig);
+      }
+    }
+
+    // 解析日志配置
+    final loggingYaml = yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig());
+
+    return AppConfig(
+      defaultModel: defaultLLM['model'] ?? 'gpt-3.5-turbo',
+      defaultApiKey: apiKey,
+      defaultBaseUrl: defaultLLM['base_url'],
+      timeoutSeconds: defaultLLM['timeout_seconds'] ?? 30,
+      maxRetries: defaultLLM['max_retries'] ?? 3,
+      playerModels: playerModels,
+      logging: LoggingConfig._fromYaml(loggingYaml),
     );
   }
 
   /// 从 YamlMap 创建配置（用于 Web 平台）
-  factory GameConfig.fromYamlMap(YamlMap yaml) {
-    return GameConfig._fromYaml(yaml);
+  factory AppConfig.fromYamlMap(YamlMap yaml) {
+    return AppConfig._fromYaml(yaml);
   }
 
   /// 创建默认配置（用于 Web 平台）
-  factory GameConfig.defaults() {
-    return GameConfig._fromYaml(
+  factory AppConfig.defaults() {
+    return AppConfig._fromYaml(
       YamlMap.wrap({
-        'ui': _getDefaultUIConfig(),
+        'default_llm': {
+          'model': 'gpt-3.5-turbo',
+          'api_key': '',
+          'base_url': null,
+          'timeout_seconds': 30,
+          'max_retries': 3,
+        },
+        'player_models': {},
         'logging': _getDefaultLoggingConfig(),
-        'development': _getDefaultDevelopmentConfig(),
       }),
     );
-  }
-
-  static Map<String, dynamic> _getDefaultUIConfig() {
-    return {
-      'console_width': 80,
-      'enable_colors': true,
-      'enable_animations': true,
-      'show_debug_info': false,
-      'log_level': 'info',
-      'display': {
-        'show_player_status': true,
-        'show_game_state': true,
-        'show_action_history': true,
-        'show_statistics': true,
-      }
-    };
   }
 
   static Map<String, dynamic> _getDefaultLoggingConfig() {
@@ -84,133 +114,86 @@ class GameConfig {
     };
   }
 
-  static Map<String, dynamic> _getDefaultDevelopmentConfig() {
-    return {
-      'debug_mode': false,
-      'step_by_step': false,
-      'auto_start': true,
-      'fast_mode': false,
-      'testing': {
-        'enable_mock_llm': false,
-        'deterministic_random': false,
-        'save_game_states': false,
-      }
-    };
-  }
-
+  /// 序列化为 JSON（用于 SharedPreferences）
   Map<String, dynamic> toJson() {
     return {
-      'uiConfig': uiConfig.toJson(),
-      'loggingConfig': loggingConfig.toJson(),
-      'developmentConfig': developmentConfig.toJson(),
+      'defaultModel': defaultModel,
+      'defaultApiKey': defaultApiKey,
+      'defaultBaseUrl': defaultBaseUrl,
+      'timeoutSeconds': timeoutSeconds,
+      'maxRetries': maxRetries,
+      'playerModels': playerModels.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
+      'logging': logging.toJson(),
     };
   }
 
-  static GameConfig fromJson(Map<String, dynamic> json) {
-    return GameConfig(
-      uiConfig: UIConfig.fromJson(json['uiConfig']),
-      loggingConfig: LoggingConfig.fromJson(json['loggingConfig']),
-      developmentConfig: DevelopmentConfig.fromJson(json['developmentConfig']),
+  /// 从 JSON 反序列化（用于 SharedPreferences）
+  static AppConfig fromJson(Map<String, dynamic> json) {
+    final playerModelsJson = json['playerModels'] as Map<String, dynamic>? ?? {};
+    final playerModels = playerModelsJson.map(
+      (key, value) => MapEntry(
+        key,
+        PlayerLLMConfig.fromJson(value as Map<String, dynamic>),
+      ),
     );
+
+    return AppConfig(
+      defaultModel: json['defaultModel'],
+      defaultApiKey: json['defaultApiKey'],
+      defaultBaseUrl: json['defaultBaseUrl'],
+      timeoutSeconds: json['timeoutSeconds'],
+      maxRetries: json['maxRetries'],
+      playerModels: playerModels,
+      logging: LoggingConfig.fromJson(json['logging']),
+    );
+  }
+
+  /// 获取指定玩家的 LLM 配置
+  Map<String, dynamic> getPlayerLLMConfig(int playerNumber) {
+    final playerKey = playerNumber.toString();
+
+    // 如果有玩家专属配置，使用专属配置
+    if (playerModels.containsKey(playerKey)) {
+      final playerConfig = playerModels[playerKey]!;
+      return {
+        'model': playerConfig.model,
+        'api_key': playerConfig.apiKey,
+        'base_url': playerConfig.baseUrl,
+        'timeout_seconds': timeoutSeconds,
+        'max_retries': maxRetries,
+      };
+    }
+
+    // 否则使用默认配置
+    return {
+      'model': defaultModel,
+      'api_key': defaultApiKey,
+      'base_url': defaultBaseUrl,
+      'timeout_seconds': timeoutSeconds,
+      'max_retries': maxRetries,
+    };
   }
 }
 
-/// LLM配置（包含玩家模型配置）
-class LLMConfig {
+/// 玩家专属 LLM 配置
+class PlayerLLMConfig {
   final String model;
   final String apiKey;
   final String? baseUrl;
-  final int timeoutSeconds;
-  final int maxRetries;
-  final PromptSettings prompts;
-  final Map<String, dynamic> llmSettings;
-  final Map<String, Map<String, dynamic>> playerModels;
 
-  LLMConfig({
+  PlayerLLMConfig({
     required this.model,
     required this.apiKey,
     this.baseUrl,
-    required this.timeoutSeconds,
-    required this.maxRetries,
-    required this.prompts,
-    required this.llmSettings,
-    required this.playerModels,
   });
 
-  static LLMConfig loadFromFile(String configPath) {
-    final file = File(configPath);
-    if (!file.existsSync()) {
-      throw Exception('LLM配置文件不存在: $configPath');
-    }
-
-    final yamlString = file.readAsStringSync();
-    final yamlMap = loadYaml(yamlString) as YamlMap;
-
-    return LLMConfig._fromYaml(yamlMap);
-  }
-
-  factory LLMConfig._fromYaml(YamlMap yaml) {
-    final defaultLLMConfig = yaml['default_llm'] as YamlMap;
-    final promptsYaml = yaml['prompts'] as YamlMap;
-    final llmSettingsYaml = yaml['llm_settings'] as YamlMap? ?? {};
-
-    // 解析玩家模型配置
-    final playerModels = <String, Map<String, dynamic>>{};
-    if (yaml['player_models'] != null) {
-      final playerModelsYaml = yaml['player_models'] as YamlMap;
-      for (final entry in playerModelsYaml.entries) {
-        playerModels[entry.key] = Map<String, dynamic>.from(entry.value);
-      }
-    }
-
-    // 安全获取 API key，避免在 Web 平台访问 Platform.environment
-    String apiKey = defaultLLMConfig['api_key'] ?? '';
-    if (apiKey.isEmpty) {
-      try {
-        apiKey = Platform.environment['OPENAI_API_KEY'] ?? '';
-      } catch (e) {
-        // Web 平台不支持 Platform.environment，使用空字符串
-        apiKey = '';
-      }
-    }
-
-    return LLMConfig(
-      model: defaultLLMConfig['model'] ?? 'gpt-3.5-turbo',
-      apiKey: apiKey,
-      baseUrl: defaultLLMConfig['base_url'],
-      timeoutSeconds: defaultLLMConfig['timeout_seconds'] ?? 30,
-      maxRetries: defaultLLMConfig['max_retries'] ?? 3,
-      prompts: PromptSettings._fromYaml(promptsYaml),
-      llmSettings: Map<String, dynamic>.from(llmSettingsYaml),
-      playerModels: playerModels,
-    );
-  }
-
-  /// 从 YamlMap 创建配置（用于 Web 平台）
-  factory LLMConfig.fromYamlMap(YamlMap yaml) {
-    return LLMConfig._fromYaml(yaml);
-  }
-
-  /// 创建默认配置（用于 Web 平台）
-  factory LLMConfig.defaults() {
-    return LLMConfig._fromYaml(
-      YamlMap.wrap({
-        'default_llm': {
-          'model': 'gpt-3.5-turbo',
-          'api_key': '',
-          'base_url': null,
-          'timeout_seconds': 30,
-          'max_retries': 3,
-        },
-        'prompts': {
-          'enable_context': true,
-          'strategy_hints': true,
-          'personality_traits': true,
-          'base_system_prompt': '',
-        },
-        'llm_settings': {},
-        'player_models': {},
-      }),
+  factory PlayerLLMConfig._fromYaml(YamlMap yaml) {
+    return PlayerLLMConfig(
+      model: yaml['model'] ?? '',
+      apiKey: yaml['api_key'] ?? '',
+      baseUrl: yaml['base_url'],
     );
   }
 
@@ -219,174 +202,14 @@ class LLMConfig {
       'model': model,
       'apiKey': apiKey,
       'baseUrl': baseUrl,
-      'timeoutSeconds': timeoutSeconds,
-      'maxRetries': maxRetries,
-      'prompts': prompts.toJson(),
-      'llmSettings': llmSettings,
-      'playerModels': playerModels,
     };
   }
 
-  static LLMConfig fromJson(Map<String, dynamic> json) {
-    return LLMConfig(
+  static PlayerLLMConfig fromJson(Map<String, dynamic> json) {
+    return PlayerLLMConfig(
       model: json['model'],
       apiKey: json['apiKey'],
       baseUrl: json['baseUrl'],
-      timeoutSeconds: json['timeoutSeconds'],
-      maxRetries: json['maxRetries'],
-      prompts: PromptSettings.fromJson(json['prompts']),
-      llmSettings: Map<String, dynamic>.from(json['llmSettings']),
-      playerModels:
-          Map<String, Map<String, dynamic>>.from(json['playerModels']),
-    );
-  }
-}
-
-/// 提示词设置
-class PromptSettings {
-  final bool enableContext;
-  final bool strategyHints;
-  final bool personalityTraits;
-  final String baseSystemPrompt;
-
-  PromptSettings({
-    required this.enableContext,
-    required this.strategyHints,
-    required this.personalityTraits,
-    required this.baseSystemPrompt,
-  });
-
-  factory PromptSettings._fromYaml(YamlMap yaml) {
-    return PromptSettings(
-      enableContext: yaml['enable_context'] ?? true,
-      strategyHints: yaml['strategy_hints'] ?? true,
-      personalityTraits: yaml['personality_traits'] ?? true,
-      baseSystemPrompt: yaml['base_system_prompt'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'enableContext': enableContext,
-      'strategyHints': strategyHints,
-      'personalityTraits': personalityTraits,
-      'baseSystemPrompt': baseSystemPrompt,
-    };
-  }
-
-  static PromptSettings fromJson(Map<String, dynamic> json) {
-    return PromptSettings(
-      enableContext: json['enableContext'],
-      strategyHints: json['strategyHints'],
-      personalityTraits: json['personalityTraits'],
-      baseSystemPrompt: json['baseSystemPrompt'],
-    );
-  }
-}
-
-/// UI配置
-class UIConfig {
-  final int consoleWidth;
-  final bool enableColors;
-  final bool enableAnimations;
-  final bool showDebugInfo;
-  final String logLevel;
-  final DisplaySettings display;
-
-  UIConfig({
-    required this.consoleWidth,
-    required this.enableColors,
-    required this.enableAnimations,
-    required this.showDebugInfo,
-    required this.logLevel,
-    required this.display,
-  });
-
-  factory UIConfig._fromYaml(YamlMap yaml) {
-    final displayYaml = yaml['display'] as YamlMap?;
-
-    return UIConfig(
-      consoleWidth: yaml['console_width'] ?? 80,
-      enableColors: yaml['enable_colors'] ?? true,
-      enableAnimations: yaml['enable_animations'] ?? true,
-      showDebugInfo: yaml['show_debug_info'] ?? false,
-      logLevel: yaml['log_level'] ?? 'info',
-      display: displayYaml != null
-          ? DisplaySettings._fromYaml(displayYaml)
-          : DisplaySettings.defaults(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'consoleWidth': consoleWidth,
-      'enableColors': enableColors,
-      'enableAnimations': enableAnimations,
-      'showDebugInfo': showDebugInfo,
-      'logLevel': logLevel,
-      'display': display.toJson(),
-    };
-  }
-
-  static UIConfig fromJson(Map<String, dynamic> json) {
-    return UIConfig(
-      consoleWidth: json['consoleWidth'],
-      enableColors: json['enableColors'],
-      enableAnimations: json['enableAnimations'],
-      showDebugInfo: json['showDebugInfo'],
-      logLevel: json['logLevel'],
-      display: DisplaySettings.fromJson(json['display']),
-    );
-  }
-}
-
-/// 显示设置
-class DisplaySettings {
-  final bool showPlayerStatus;
-  final bool showGameState;
-  final bool showActionHistory;
-  final bool showStatistics;
-
-  DisplaySettings({
-    required this.showPlayerStatus,
-    required this.showGameState,
-    required this.showActionHistory,
-    required this.showStatistics,
-  });
-
-  factory DisplaySettings._fromYaml(YamlMap yaml) {
-    return DisplaySettings(
-      showPlayerStatus: yaml['show_player_status'] ?? true,
-      showGameState: yaml['show_game_state'] ?? true,
-      showActionHistory: yaml['show_action_history'] ?? true,
-      showStatistics: yaml['show_statistics'] ?? true,
-    );
-  }
-
-  static DisplaySettings defaults() {
-    return DisplaySettings(
-      showPlayerStatus: true,
-      showGameState: true,
-      showActionHistory: true,
-      showStatistics: true,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'showPlayerStatus': showPlayerStatus,
-      'showGameState': showGameState,
-      'showActionHistory': showActionHistory,
-      'showStatistics': showStatistics,
-    };
-  }
-
-  static DisplaySettings fromJson(Map<String, dynamic> json) {
-    return DisplaySettings(
-      showPlayerStatus: json['showPlayerStatus'],
-      showGameState: json['showGameState'],
-      showActionHistory: json['showActionHistory'],
-      showStatistics: json['showStatistics'],
     );
   }
 }
@@ -396,14 +219,12 @@ class LoggingConfig {
   final String level;
   final bool enableConsole;
   final bool enableFile;
-  final int maxLogSizeMb;
   final int maxLogFiles;
 
   LoggingConfig({
     required this.level,
     required this.enableConsole,
     required this.enableFile,
-    required this.maxLogSizeMb,
     required this.maxLogFiles,
   });
 
@@ -412,7 +233,6 @@ class LoggingConfig {
       level: yaml['level'] ?? 'info',
       enableConsole: yaml['enable_console'] ?? true,
       enableFile: yaml['enable_file'] ?? true,
-      maxLogSizeMb: 10,
       maxLogFiles: yaml['backup_count'] ?? 5,
     );
   }
@@ -422,7 +242,6 @@ class LoggingConfig {
       'level': level,
       'enableConsole': enableConsole,
       'enableFile': enableFile,
-      'maxLogSizeMb': maxLogSizeMb,
       'maxLogFiles': maxLogFiles,
     };
   }
@@ -432,112 +251,72 @@ class LoggingConfig {
       level: json['level'],
       enableConsole: json['enableConsole'],
       enableFile: json['enableFile'],
-      maxLogSizeMb: json['maxLogSizeMb'],
       maxLogFiles: json['maxLogFiles'],
     );
   }
 }
 
-/// 开发配置
-class DevelopmentConfig {
-  final bool enableDebugMode;
-  final bool enableTestMode;
-  final bool mockLlmResponses;
-  final bool saveGameStates;
-  final int autoSaveInterval;
+/// 配置管理器接口（抽象基类）
+abstract class ConfigManager {
+  AppConfig get config;
+  ScenarioManager get scenarioManager;
+  GameScenario? get currentScenario;
+  set currentScenario(GameScenario? value);
 
-  DevelopmentConfig({
-    required this.enableDebugMode,
-    required this.enableTestMode,
-    required this.mockLlmResponses,
-    required this.saveGameStates,
-    required this.autoSaveInterval,
-  });
-
-  factory DevelopmentConfig._fromYaml(YamlMap yaml) {
-    return DevelopmentConfig(
-      enableDebugMode: yaml['debug_mode'] ?? false,
-      enableTestMode: false,
-      mockLlmResponses: yaml['testing']?['enable_mock_llm'] ?? false,
-      saveGameStates: yaml['testing']?['save_game_states'] ?? false,
-      autoSaveInterval: 60,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'enableDebugMode': enableDebugMode,
-      'enableTestMode': enableTestMode,
-      'mockLlmResponses': mockLlmResponses,
-      'saveGameStates': saveGameStates,
-      'autoSaveInterval': autoSaveInterval,
-    };
-  }
-
-  static DevelopmentConfig fromJson(Map<String, dynamic> json) {
-    return DevelopmentConfig(
-      enableDebugMode: json['enableDebugMode'],
-      enableTestMode: json['enableTestMode'],
-      mockLlmResponses: json['mockLlmResponses'],
-      saveGameStates: json['saveGameStates'],
-      autoSaveInterval: json['autoSaveInterval'],
-    );
-  }
+  void setCurrentScenario(String scenarioId);
+  GameScenario? get scenario;
+  List<GameScenario> getAvailableScenarios(int playerCount);
+  Map<String, dynamic> getPlayerLLMConfig(int playerNumber);
+  Future<void> initialize();
+  Future<void> saveConfig(AppConfig newConfig);
 }
 
-/// 新的配置管理器
-class ConfigManager {
-  late final GameConfig gameConfig;
-  late final LLMConfig llmConfig;
+/// 配置管理器（用于 GUI 应用）
+class GUIConfigManager implements ConfigManager {
+  @override
+  late AppConfig config;
+
+  @override
   late final ScenarioManager scenarioManager;
+
+  @override
   GameScenario? currentScenario;
-  ConfigLoader? _configLoader;
 
-  ConfigManager._();
+  PreferenceConfigLoader? _configLoader;
 
-  static ConfigManager? _instance;
-  static ConfigManager get instance {
-    _instance ??= ConfigManager._();
+  GUIConfigManager._();
+
+  static GUIConfigManager? _instance;
+  static GUIConfigManager get instance {
+    _instance ??= GUIConfigManager._();
     return _instance!;
   }
 
-  /// 初始化配置系统
-  Future<void> initialize({
-    String? customConfigDir,
-    bool? forceConsoleMode,
-  }) async {
-    // 创建适合当前平台的配置加载器
-    _configLoader = ConfigLoaderFactory.create(
-      customConfigDir: customConfigDir,
-      forceConsole: forceConsoleMode,
-    );
+  /// 初始化配置系统（GUI 应用使用 SharedPreferences）
+  @override
+  Future<void> initialize() async {
+    // GUI 应用始终使用 SharedPreferences
+    _configLoader = PreferenceConfigLoader();
 
     // 加载配置
-    gameConfig = await _configLoader!.loadGameConfig();
-    llmConfig = await _configLoader!.loadLLMConfig();
+    config = await _configLoader!.loadConfig();
 
     // 初始化场景管理器
     scenarioManager = ScenarioManager();
     scenarioManager.initialize();
   }
 
-  /// 保存游戏配置（仅GUI端有效）
-  Future<void> saveGameConfig(GameConfig config) async {
+  /// 保存配置（GUI 端）
+  @override
+  Future<void> saveConfig(AppConfig newConfig) async {
     if (_configLoader != null) {
-      await _configLoader!.saveGameConfig(config);
-      gameConfig = config;
-    }
-  }
-
-  /// 保存LLM配置（仅GUI端有效）
-  Future<void> saveLLMConfig(LLMConfig config) async {
-    if (_configLoader != null) {
-      await _configLoader!.saveLLMConfig(config);
-      llmConfig = config;
+      await _configLoader!.saveConfig(newConfig);
+      config = newConfig;
     }
   }
 
   /// 设置当前场景
+  @override
   void setCurrentScenario(String scenarioId) {
     final scenario = scenarioManager.getScenario(scenarioId);
     if (scenario == null) {
@@ -547,30 +326,18 @@ class ConfigManager {
   }
 
   /// 获取当前场景
+  @override
   GameScenario? get scenario => currentScenario;
 
   /// 获取适合指定玩家数量的场景
+  @override
   List<GameScenario> getAvailableScenarios(int playerCount) {
     return scenarioManager.getScenariosByPlayerCount(playerCount);
   }
 
-  /// 为指定玩家获取LLM配置
+  /// 为指定玩家获取 LLM 配置
+  @override
   Map<String, dynamic> getPlayerLLMConfig(int playerNumber) {
-    // 使用默认配置
-    Map<String, dynamic> config = {
-      'model': llmConfig.model,
-      'api_key': llmConfig.apiKey,
-      'base_url': llmConfig.baseUrl,
-      'timeout_seconds': llmConfig.timeoutSeconds,
-      'max_retries': llmConfig.maxRetries,
-    };
-
-    // 应用玩家特定配置
-    String playerKey = playerNumber.toString();
-    if (llmConfig.playerModels.containsKey(playerKey)) {
-      config.addAll(llmConfig.playerModels[playerKey]!);
-    }
-
-    return config;
+    return config.getPlayerLLMConfig(playerNumber);
   }
 }
