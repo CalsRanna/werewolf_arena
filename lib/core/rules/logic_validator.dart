@@ -9,8 +9,8 @@ import 'package:werewolf_arena/core/domain/entities/role.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 
-/// 逻辑矛盾检测器 - 为AI玩家提供常识判断支持
-class LogicContradictionDetector {
+/// 逻辑验证器 - 为AI玩家提供常识判断支持
+class LogicValidator {
   /// 检测发言中的逻辑矛盾并返回标签
   static List<String> detectContradictions(
     String message,

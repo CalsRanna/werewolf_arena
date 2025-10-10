@@ -320,7 +320,7 @@ $formatted$peacefulNightInfo''';
   String _formatEvent(GameEvent event) {
     // 对于发言事件，使用逻辑矛盾检测器
     if (event is SpeakEvent && _currentState != null) {
-      return LogicContradictionDetector.formatEventWithTags(
+      return LogicValidator.formatEventWithTags(
         event,
         _currentState!,
       );

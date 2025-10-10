@@ -368,7 +368,7 @@ class GameState {
     return GameState(
         gameId: json['gameId'],
         config: config,
-        scenario: Simple9PlayersScenario(), // 临时使用默认场景
+        scenario: Standard9PlayersScenario(), // 临时使用默认场景
         players: players,
         currentPhase: GamePhase.values.firstWhere(
           (p) => p.name == json['currentPhase'],

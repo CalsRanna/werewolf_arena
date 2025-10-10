@@ -22,7 +22,7 @@ class ConfigService {
     // 设置默认场景(如果还没有设置)
     if (_gameParameters!.currentScenario == null) {
       final availableScenarios = _gameParameters!
-          .scenarioManager
+          .scenarioRegistry
           .scenarios
           .values
           .toList();
@@ -65,7 +65,7 @@ class ConfigService {
   /// 获取所有可用的场景
   List<GameScenario> get availableScenarios {
     _ensureInitialized();
-    return _gameParameters!.scenarioManager.scenarios.values.toList();
+    return _gameParameters!.scenarioRegistry.scenarios.values.toList();
   }
 
   /// 获取指定玩家数量的可用场景
@@ -116,10 +116,10 @@ class ConfigService {
     return _gameParameters!.config;
   }
 
-  /// 获取场景管理器
-  ScenarioManager get scenarioManager {
+  /// 获取场景注册表
+  ScenarioRegistry get scenarioRegistry {
     _ensureInitialized();
-    return _gameParameters!.scenarioManager;
+    return _gameParameters!.scenarioRegistry;
   }
 
   /// 获取游戏参数实例

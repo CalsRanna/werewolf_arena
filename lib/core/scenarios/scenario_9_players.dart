@@ -1,14 +1,14 @@
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 
-/// 简单9人局场景
+/// 标准9人局场景
 /// 3狼3民3神配置，适合新手
-class Simple9PlayersScenario extends GameScenario {
+class Standard9PlayersScenario extends GameScenario {
   @override
-  String get id => 'simple_9_players';
+  String get id => 'standard_9_players';
 
   @override
-  String get name => '简单9人局';
+  String get name => '标准9人局';
 
   @override
   String get description => '3狼3民3神配置，规则简单，适合新手练习';

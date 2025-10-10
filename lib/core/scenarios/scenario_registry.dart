@@ -2,12 +2,12 @@ import 'game_scenario.dart';
 import 'scenario_12_players.dart';
 import 'scenario_9_players.dart';
 
-/// 场景管理器
+/// 场景注册表
 /// 负责管理所有可用的游戏场景
-class ScenarioManager {
-  static final ScenarioManager _instance = ScenarioManager._internal();
-  factory ScenarioManager() => _instance;
-  ScenarioManager._internal();
+class ScenarioRegistry {
+  static final ScenarioRegistry _instance = ScenarioRegistry._internal();
+  factory ScenarioRegistry() => _instance;
+  ScenarioRegistry._internal();
 
   final Map<String, GameScenario> _scenarios = {};
 
@@ -15,7 +15,7 @@ class ScenarioManager {
   void initialize() {
     // 注册内置场景
     registerScenario(Standard12PlayersScenario());
-    registerScenario(Simple9PlayersScenario());
+    registerScenario(Standard9PlayersScenario());
   }
 
   /// 获取所有已注册的场景

@@ -266,7 +266,7 @@ class FlutterGameParameters implements GameParameters {
   late AppConfig config;
 
   @override
-  late final ScenarioManager scenarioManager;
+  late final ScenarioRegistry scenarioRegistry;
 
   @override
   GameScenario? currentScenario;
@@ -290,9 +290,9 @@ class FlutterGameParameters implements GameParameters {
     // 加载配置
     config = await _configLoader!.loadConfig();
 
-    // 初始化场景管理器
-    scenarioManager = ScenarioManager();
-    scenarioManager.initialize();
+    // 初始化场景注册表
+    scenarioRegistry = ScenarioRegistry();
+    scenarioRegistry.initialize();
   }
 
   /// 保存配置（GUI 端）
@@ -307,7 +307,7 @@ class FlutterGameParameters implements GameParameters {
   /// 设置当前场景
   @override
   void setCurrentScenario(String scenarioId) {
-    final scenario = scenarioManager.getScenario(scenarioId);
+    final scenario = scenarioRegistry.getScenario(scenarioId);
     if (scenario == null) {
       throw Exception('场景不存在: $scenarioId');
     }
@@ -321,7 +321,7 @@ class FlutterGameParameters implements GameParameters {
   /// 获取适合指定玩家数量的场景
   @override
   List<GameScenario> getAvailableScenarios(int playerCount) {
-    return scenarioManager.getScenariosByPlayerCount(playerCount);
+    return scenarioRegistry.getScenariosByPlayerCount(playerCount);
   }
 
   /// 为指定玩家获取 LLM 配置

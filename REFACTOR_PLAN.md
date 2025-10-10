@@ -1,5 +1,26 @@
 # 狼人杀游戏引擎重构计划
 
+## 📊 当前进度状态
+
+**✅ 阶段一: 准备工作和文件拆分 (已完成)**
+- 📅 完成日期: 2025-10-10
+- 🎯 状态: 所有6个任务已完成
+- ✅ 成果: DDD目录结构已建立，文件拆分完成
+
+**⏳ 阶段二: 状态管理重构 (待开始)**
+- 🎯 状态: 准备就绪，可以开始执行
+- 📋 任务: 3个子任务待完成
+
+**⏸️ 阶段三: 引擎核心重构 (待开始)**
+
+**⏸️ 阶段四: 新增服务和工具 (待开始)**
+
+**⏸️ 阶段五: 导入语句修复和测试 (待开始)**
+
+**⏸️ 阶段六: 清理和文档更新 (待开始)**
+
+---
+
 ## 📋 重构目标
 
 将当前混乱的 `lib/core/` 目录重构为清晰的领域驱动设计(DDD)架构,提高代码的可维护性、可测试性和可扩展性。
@@ -88,82 +109,82 @@ lib/core/                          # 狼人杀游戏引擎核心
 
 ### 阶段一: 准备工作和文件拆分 (基础重构)
 
-#### Task 1.1: 创建新目录结构
-- [ ] 创建 `lib/core/domain/entities/` 目录
-- [ ] 创建 `lib/core/domain/value_objects/` 目录
-- [ ] 创建 `lib/core/domain/enums/` 目录
-- [ ] 创建 `lib/core/events/base/` 目录
-- [ ] 创建 `lib/core/state/` 目录
-- [ ] 创建 `lib/core/engine/processors/` 目录
-- [ ] 创建 `lib/core/scenarios/` 目录
-- [ ] 创建 `lib/core/rules/` 目录
-- [ ] 创建 `lib/core/services/` 目录
+#### Task 1.1: 创建新目录结构 ✅
+- [x] 创建 `lib/core/domain/entities/` 目录
+- [x] 创建 `lib/core/domain/value_objects/` 目录
+- [x] 创建 `lib/core/domain/enums/` 目录
+- [x] 创建 `lib/core/events/base/` 目录
+- [x] 创建 `lib/core/state/` 目录
+- [x] 创建 `lib/core/engine/processors/` 目录
+- [x] 创建 `lib/core/scenarios/` 目录
+- [x] 创建 `lib/core/rules/` 目录
+- [x] 创建 `lib/core/services/` 目录
 
-#### Task 1.2: 拆分枚举类型到独立文件
-- [ ] 从 `game_state.dart` 提取 `GamePhase` 到 `domain/value_objects/game_phase.dart`
-- [ ] 从 `game_state.dart` 提取 `GameStatus` 到 `domain/value_objects/game_status.dart`
-- [ ] 从 `game_state.dart` 提取 `EventVisibility` 到 `domain/value_objects/event_visibility.dart`
-- [ ] 从 `game_state.dart` 提取 `GameEventType` 到 `domain/value_objects/game_event_type.dart`
-- [ ] 从 `game_event.dart` 提取 `DeathCause` 到 `domain/value_objects/death_cause.dart`
-- [ ] 从 `game_event.dart` 提取 `SkillType` 到 `domain/value_objects/skill_type.dart`
-- [ ] 从 `game_event.dart` 提取 `VoteType` 到 `domain/value_objects/vote_type.dart`
-- [ ] 从 `game_event.dart` 提取 `SpeechType` 到 `domain/value_objects/speech_type.dart`
-- [ ] 从 `role.dart` 提取 `RoleType` 到 `domain/enums/role_type.dart`
-- [ ] 从 `role.dart` 提取 `RoleAlignment` 到 `domain/enums/role_alignment.dart`
-- [ ] 从 `player.dart` 提取 `PlayerType` 到 `domain/enums/player_type.dart`
-- [ ] 从 `player.dart` 提取 `PlayerModelConfig` 到 `domain/value_objects/player_model_config.dart`
+#### Task 1.2: 拆分枚举类型到独立文件 ✅
+- [x] 从 `game_state.dart` 提取 `GamePhase` 到 `domain/value_objects/game_phase.dart`
+- [x] 从 `game_state.dart` 提取 `GameStatus` 到 `domain/value_objects/game_status.dart`
+- [x] 从 `game_state.dart` 提取 `EventVisibility` 到 `domain/value_objects/event_visibility.dart`
+- [x] 从 `game_state.dart` 提取 `GameEventType` 到 `domain/value_objects/game_event_type.dart`
+- [x] 从 `game_event.dart` 提取 `DeathCause` 到 `domain/value_objects/death_cause.dart`
+- [x] 从 `game_event.dart` 提取 `SkillType` 到 `domain/value_objects/skill_type.dart`
+- [x] 从 `game_event.dart` 提取 `VoteType` 到 `domain/value_objects/vote_type.dart`
+- [x] 从 `game_event.dart` 提取 `SpeechType` 到 `domain/value_objects/speech_type.dart`
+- [x] 从 `role.dart` 提取 `RoleType` 到 `domain/enums/role_type.dart`
+- [x] 从 `role.dart` 提取 `RoleAlignment` 到 `domain/enums/role_alignment.dart`
+- [x] 从 `player.dart` 提取 `PlayerType` 到 `domain/enums/player_type.dart`
+- [x] 从 `player.dart` 提取 `PlayerModelConfig` 到 `domain/value_objects/player_model_config.dart`
 
-#### Task 1.3: 拆分事件类到独立文件
-- [ ] 创建 `events/base/game_event.dart`,移动 `GameEvent` 基类
-- [ ] 创建 `events/player_events.dart`,移动:
+#### Task 1.3: 拆分事件类到独立文件 ✅
+- [x] 创建 `events/base/game_event.dart`,移动 `GameEvent` 基类
+- [x] 创建 `events/player_events.dart`,移动:
   - `DeadEvent`
   - `SpeakEvent`
   - `VoteEvent`
   - `LastWordsEvent`
   - `WerewolfDiscussionEvent`
-- [ ] 创建 `events/skill_events.dart`,移动:
+- [x] 创建 `events/skill_events.dart`,移动:
   - `WerewolfKillEvent`
   - `GuardProtectEvent`
   - `SeerInvestigateEvent`
   - `WitchHealEvent`
   - `WitchPoisonEvent`
   - `HunterShootEvent`
-- [ ] 创建 `events/phase_events.dart`,移动:
+- [x] 创建 `events/phase_events.dart`,移动:
   - `PhaseChangeEvent`
   - `NightResultEvent`
   - `SpeechOrderAnnouncementEvent`
-- [ ] 创建 `events/system_events.dart`,移动:
+- [x] 创建 `events/system_events.dart`,移动:
   - `GameStartEvent`
   - `GameEndEvent`
   - `SystemErrorEvent`
   - `JudgeAnnouncementEvent`
-- [ ] 更新所有事件类的导入语句
-- [ ] 删除原 `core/engine/game_event.dart` (内容已全部迁移)
+- [x] 更新所有事件类的导入语句
+- [x] 删除原 `core/engine/game_event.dart` (内容已全部迁移)
 
-#### Task 1.4: 移动玩家相关文件
-- [ ] 移动 `core/player/player.dart` 到 `core/domain/entities/player.dart`
-- [ ] 移动 `core/player/ai_player.dart` 到 `core/domain/entities/ai_player.dart`
-- [ ] 移动 `core/player/role.dart` 到 `core/domain/entities/role.dart`
-- [ ] 移动 `core/player/personality.dart` 到 `core/domain/value_objects/ai_personality.dart`
-- [ ] 更新所有引用这些文件的导入语句
-- [ ] 删除空的 `core/player/` 目录
+#### Task 1.4: 移动玩家相关文件 ✅
+- [x] 移动 `core/player/player.dart` 到 `core/domain/entities/player.dart`
+- [x] 移动 `core/player/ai_player.dart` 到 `core/domain/entities/ai_player.dart`
+- [x] 移动 `core/player/role.dart` 到 `core/domain/entities/role.dart`
+- [x] 移动 `core/player/personality.dart` 到 `core/domain/value_objects/ai_personality.dart`
+- [x] 更新所有引用这些文件的导入语句
+- [x] 删除空的 `core/player/` 目录
 
-#### Task 1.5: 重组场景相关文件
-- [ ] 移动 `core/engine/game_scenario.dart` 到 `core/scenarios/game_scenario.dart`
-- [ ] 移动 `core/rules/scenarios_simple_9.dart` 到 `core/scenarios/scenario_9_players.dart`
-- [ ] 重命名类 `Simple9PlayersScenario` 为 `Standard9PlayersScenario`
-- [ ] 移动 `core/rules/scenarios_standard_12.dart` 到 `core/scenarios/scenario_12_players.dart`
-- [ ] 重命名类 `Standard12PlayersScenario` 为 `Standard12PlayersScenario`
-- [ ] 移动 `core/rules/game_scenario_manager.dart` 到 `core/scenarios/scenario_registry.dart`
-- [ ] 重命名类 `GameScenarioManager` 为 `ScenarioRegistry`
-- [ ] 更新所有场景相关的导入语句
-- [ ] 删除空的 `core/rules/` 目录(暂时)
+#### Task 1.5: 重组场景相关文件 ✅
+- [x] 移动 `core/engine/game_scenario.dart` 到 `core/scenarios/game_scenario.dart`
+- [x] 移动 `core/rules/scenarios_simple_9.dart` 到 `core/scenarios/scenario_9_players.dart`
+- [x] 重命名类 `Simple9PlayersScenario` 为 `Standard9PlayersScenario`
+- [x] 移动 `core/rules/scenarios_standard_12.dart` 到 `core/scenarios/scenario_12_players.dart`
+- [x] 重命名类 `Standard12PlayersScenario` 为 `Standard12PlayersScenario`
+- [x] 移动 `core/rules/game_scenario_manager.dart` 到 `core/scenarios/scenario_registry.dart`
+- [x] 重命名类 `GameScenarioManager` 为 `ScenarioRegistry`
+- [x] 更新所有场景相关的导入语句
+- [x] 删除空的 `core/rules/` 目录(暂时)
 
-#### Task 1.6: 移动和重命名其他文件
-- [ ] 移动 `core/engine/game_parameters.dart` 到 `core/engine/game_parameters.dart` (保持不变)
-- [ ] 移动 `core/logic/logic_contradiction_detector.dart` 到 `core/rules/logic_validator.dart`
-- [ ] 重命名类 `LogicContradictionDetector` 为 `LogicValidator`
-- [ ] 更新所有相关导入语句
+#### Task 1.6: 移动和重命名其他文件 ✅
+- [x] 移动 `core/engine/game_parameters.dart` 到 `core/engine/game_parameters.dart` (保持不变)
+- [x] 移动 `core/logic/logic_contradiction_detector.dart` 到 `core/rules/logic_validator.dart`
+- [x] 重命名类 `LogicContradictionDetector` 为 `LogicValidator`
+- [x] 更新所有相关导入语句
 
 ### 阶段二: 状态管理重构
 
@@ -369,5 +390,20 @@ lib/core/                          # 狼人杀游戏引擎核心
 ---
 
 **重构开始日期**: 2025-10-10
+**阶段一完成日期**: 2025-10-10
 **预计完成日期**: 待定
 **负责人**: Claude Code
+
+## 📝 执行日志
+
+### 2025-10-10 (阶段一完成)
+✅ **阶段一: 准备工作和文件拆分** - 已完成
+- 成功建立DDD目录结构
+- 完成所有枚举类型拆分 (13个枚举)
+- 完成所有事件类拆分 (4个事件文件)
+- 完成玩家相关文件移动 (4个文件)
+- 完成场景相关文件重组和重命名
+- 完成其他文件移动和类重命名
+- 更新了所有相关的导入语句和引用
+
+**下一步**: 开始阶段二 - 状态管理重构

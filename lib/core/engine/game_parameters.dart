@@ -16,8 +16,8 @@ abstract class GameParameters {
   /// 获取应用配置
   AppConfig get config;
 
-  /// 获取场景管理器
-  ScenarioManager get scenarioManager;
+  /// 获取场景注册表
+  ScenarioRegistry get scenarioRegistry;
 
   /// 获取/设置当前场景
   GameScenario? get currentScenario;
