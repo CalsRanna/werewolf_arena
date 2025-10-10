@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/events/events.dart';
+import 'package:werewolf_arena/core/events/skill_events.dart';
 import 'package:werewolf_arena/core/domain/enums/role_type.dart';
 import 'package:werewolf_arena/core/domain/enums/role_alignment.dart';
 

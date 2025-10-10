@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/events/events.dart';
+import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
 import 'package:werewolf_arena/services/llm/prompt_manager.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';

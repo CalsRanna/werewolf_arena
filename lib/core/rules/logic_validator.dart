@@ -1,5 +1,9 @@
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/events/events.dart';
+import 'package:werewolf_arena/core/events/base/game_event.dart';
+import 'package:werewolf_arena/core/events/player_events.dart';
+import 'package:werewolf_arena/core/events/skill_events.dart';
+import 'package:werewolf_arena/core/events/phase_events.dart';
+import 'package:werewolf_arena/core/events/system_events.dart';
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/core/domain/entities/role.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
