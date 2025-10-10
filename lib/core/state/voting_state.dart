@@ -1,5 +1,28 @@
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 
+/// 投票状态管理类
+///
+/// 负责管理游戏投票阶段的各种状态，包括投票收集、结果统计、平票处理等。
+/// 这个类封装了投票相关的逻辑，使用组合模式与 GameState 配合使用。
+///
+/// 主要功能：
+/// - 收集和存储玩家的投票
+/// - 统计投票结果
+/// - 判断是否存在平票
+/// - 获取投票出局的玩家或平票玩家列表
+/// - 提供状态清理和序列化功能
+///
+/// 使用示例：
+/// ```dart
+/// final votingState = VotingState();
+/// votingState.addVote(voter1, target1);
+/// votingState.addVote(voter2, target1);
+///
+/// // 获取投票结果
+/// final results = votingState.getVoteResults();
+/// final eliminated = votingState.getVoteTarget(alivePlayers);
+/// final tiedPlayers = votingState.getTiedPlayers(alivePlayers);
+/// ```
 class VotingState {
   Map<String, String> votes;
 

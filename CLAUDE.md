@@ -74,26 +74,65 @@ dart run build_runner watch                  # 监听文件变化自动生成
 
 ```
 lib/
-├── core/                    # 核心游戏逻辑（与 UI 无关）
-│   ├── engine/             # 游戏引擎
-│   │   ├── game_engine.dart              # 主游戏引擎
-│   │   └── game_observer.dart            # 游戏观察者接口
+├── core/                    # 核心游戏逻辑（DDD架构，与 UI 无关）
+│   ├── domain/              # 领域模型层
+│   │   ├── entities/        # 实体
+│   │   │   ├── player.dart           # 玩家实体(基类 + HumanPlayer)
+│   │   │   ├── ai_player.dart        # AI玩家实体
+│   │   │   └── role.dart             # 角色实体及所有角色实现
+│   │   ├── value_objects/  # 值对象
+│   │   │   ├── game_phase.dart       # 游戏阶段枚举
+│   │   │   ├── game_status.dart      # 游戏状态枚举
+│   │   │   ├── death_cause.dart      # 死亡原因枚举
+│   │   │   ├── skill_type.dart       # 技能类型枚举
+│   │   │   ├── event_visibility.dart # 事件可见性枚举
+│   │   │   ├── game_event_type.dart  # 游戏事件类型枚举
+│   │   │   ├── vote_type.dart        # 投票类型枚举
+│   │   │   ├── speech_type.dart      # 发言类型枚举
+│   │   │   ├── player_model_config.dart # 玩家模型配置
+│   │   │   └── ai_personality.dart   # AI性格状态
+│   │   └── enums/           # 其他枚举类型
+│   │       ├── player_type.dart      # 玩家类型枚举
+│   │       ├── role_type.dart        # 角色类型枚举
+│   │       └── role_alignment.dart   # 角色阵营枚举
+│   ├── events/             # 事件系统(CQRS/Event Sourcing)
+│   │   ├── base/           # 事件基类
+│   │   │   └── game_event.dart      # 事件基类和GameEventType
+│   │   ├── player_events.dart        # 玩家相关事件
+│   │   ├── skill_events.dart         # 技能相关事件
+│   │   ├── phase_events.dart         # 阶段相关事件
+│   │   └── system_events.dart        # 系统事件
 │   ├── state/              # 状态管理
-│   │   ├── game_state.dart               # 游戏状态
-│   │   └── game_event.dart               # 事件系统
-│   ├── entities/           # 游戏实体
-│   │   └── player/                       # 玩家相关
-│   │       ├── player.dart               # 玩家基类
-│   │       ├── ai_player.dart            # AI 玩家
-│   │       ├── role.dart                 # 角色定义
-│   │       └── ai_personality_state.dart # AI 性格状态
-│   ├── rules/              # 游戏规则和场景
-│   │   ├── game_scenario.dart            # 场景接口
-│   │   ├── game_scenario_manager.dart    # 场景管理器
-│   │   ├── scenarios_simple_9.dart       # 9人局场景
-│   │   └── scenarios_standard_12.dart    # 12人局场景
-│   └── logic/              # 逻辑检测
-│       └── logic_contradiction_detector.dart
+│   │   ├── game_state.dart          # 游戏状态容器(简化后)
+│   │   ├── night_action_state.dart  # 夜晚行动状态
+│   │   └── voting_state.dart        # 投票状态
+│   ├── engine/             # 游戏引擎核心
+│   │   ├── game_engine.dart         # 主游戏引擎(流程编排,简化后)
+│   │   ├── game_observer.dart       # 游戏观察者接口
+│   │   ├── game_parameters.dart     # 游戏参数接口
+│   │   └── processors/              # 处理器模式
+│   │       ├── phase_processor.dart      # 阶段处理器接口
+│   │       ├── night_phase_processor.dart
+│   │       ├── day_phase_processor.dart
+│   │       ├── voting_phase_processor.dart
+│   │       ├── action_processor.dart     # 行动处理器接口
+│   │       ├── werewolf_action_processor.dart
+│   │       ├── guard_action_processor.dart
+│   │       ├── seer_action_processor.dart
+│   │       └── witch_action_processor.dart
+│   ├── scenarios/          # 游戏场景(重命名自rules)
+│   │   ├── game_scenario.dart        # 场景抽象接口
+│   │   ├── scenario_9_players.dart   # 9人局场景
+│   │   ├── scenario_12_players.dart  # 12人局场景
+│   │   └── scenario_registry.dart    # 场景注册表
+│   ├── rules/              # 游戏规则引擎(新建)
+│   │   ├── victory_conditions.dart  # 胜利条件判定
+│   │   ├── action_validator.dart    # 行动合法性验证
+│   │   └── logic_validator.dart     # 逻辑一致性验证
+│   └── services/           # 领域服务(新建)
+│       ├── player_order_service.dart     # 玩家顺序服务
+│       ├── action_resolver_service.dart  # 行动解析服务
+│       └── event_filter_service.dart     # 事件过滤服务
 ├── services/               # 服务层
 │   ├── game_service.dart                 # 游戏服务（Flutter 包装层）
 │   ├── config_service.dart               # 配置服务
@@ -135,15 +174,39 @@ config/
 
 ### Core Components
 
-**GameEngine (`lib/core/engine/game_engine.dart`)**：游戏引擎核心，管理完整的游戏流程。控制阶段转换（夜晚→白天→投票），协调所有玩家行动，处理角色技能执行顺序。通过观察者接口 `GameObserver` 与 UI 层解耦。
+**GameEngine (`lib/core/engine/game_engine.dart`)**：重构后的游戏引擎核心，采用处理器模式管理游戏流程。主要负责阶段转换协调和处理器调度，通过观察者接口 `GameObserver` 与 UI 层解耦。具体游戏逻辑委托给专门的处理器实现。
 
-**GameState (`lib/core/state/game_state.dart`)**：游戏状态容器，维护玩家列表、当前阶段、天数、事件历史等所有游戏数据。提供查询方法（如存活玩家、投票结果）和胜利条件检查（屠边规则）。使用 metadata 存储临时数据（如当晚的行动）。
+**事件系统 (`lib/core/events/`)**：完整的事件驱动架构实现，按类型分为四个文件：
+- `base/game_event.dart`：事件基类和核心类型定义
+- `player_events.dart`：玩家相关事件（死亡、发言、投票、遗言、狼人讨论）
+- `skill_events.dart`：技能相关事件（狼人击杀、守卫保护、预言家查验、女巫用药、猎人开枪）
+- `phase_events.dart`：阶段相关事件（阶段转换、夜晚结果、发言顺序）
+- `system_events.dart`：系统事件（游戏开始/结束、错误、法官宣布）
 
-**Event System (`lib/core/state/game_event.dart`)**：事件驱动架构的核心。所有游戏行为（发言、投票、技能使用）都表示为事件，每个事件都有可见性规则（`EventVisibility`）。玩家只能看到符合规则的事件，实现信息不对称。包括 `GameEvent` 基类和各种具体事件类型。
+**GameState (`lib/core/state/game_state.dart`)**：简化后的游戏状态容器，采用组合模式。将复杂的夜晚行动和投票逻辑委托给 `NightActionState` 和 `VotingState`，胜利条件判定委托给 `VictoryConditions` 类。
 
-**AI Players (`lib/core/entities/player/ai_player.dart`)**：AI 玩家实现，使用 LLM 进行决策。`EnhancedAIPlayer` 基于可见事件和角色身份生成行动。通过 `processInformation` 更新知识，`chooseNightTarget`/`chooseVoteTarget` 做出决策，`generateStatement` 生成发言。
+**处理器模式 (`lib/core/engine/processors/`)**：新的模块化架构，将游戏逻辑分解为独立的处理器：
+- **阶段处理器**：`NightPhaseProcessor`、`DayPhaseProcessor`、`VotingPhaseProcessor`
+- **行动处理器**：`WerewolfActionProcessor`、`GuardActionProcessor`、`SeerActionProcessor`、`WitchActionProcessor`
 
-**Role System (`lib/core/entities/player/role.dart`)**：角色体系定义。每个角色（狼人、预言家、女巫、猎人、守卫、平民）都有独特的能力和胜利条件。角色分为狼人阵营和好人阵营（神职+平民）。角色能力通过 `canUseSkill` 检查使用条件。
+**领域服务 (`lib/core/services/`)**：新抽取的业务逻辑服务：
+- `PlayerOrderService`：管理玩家行动顺序逻辑
+- `ActionResolverService`：处理夜晚行动结算和冲突解析
+- `EventFilterService`：提供事件过滤和查询功能
+
+**规则引擎 (`lib/core/rules/`)**：独立的游戏规则模块：
+- `VictoryConditions`：胜利条件判定逻辑
+- `ActionValidator`：行动合法性验证
+- `LogicValidator`：逻辑一致性检查
+
+**AI Players (`lib/core/domain/entities/ai_player.dart`)**：AI 玩家实现，使用 LLM 进行决策。基于可见事件和角色身份生成行动。通过 `processInformation` 更新知识，`chooseNightTarget`/`chooseVoteTarget` 做出决策，`generateStatement` 生成发言。
+
+**实体系统 (`lib/core/domain/entities/`)**：领域驱动的实体设计：
+- `Player`：玩家基类和人类玩家实现
+- `AIPlayer`：AI玩家实体，集成LLM决策能力
+- `Role`：角色实体及所有角色实现（狼人、预言家、女巫、猎人、守卫、平民）
+
+**值对象和枚举 (`lib/core/domain/value_objects/` 和 `lib/core/domain/enums/`)**：细粒度的值对象设计，包括游戏阶段、状态、事件类型、死亡原因等13个专用枚举/值对象。
 
 **LLM Integration (`lib/services/llm/llm_service.dart`)**：与大语言模型的集成层。支持 OpenAI API 调用，处理 JSON 响应解析和清理。`PromptManager` 管理提示词模板，`EnhancedPrompts` 提供场景特定的增强提示词。
 
@@ -157,7 +220,13 @@ config/
 
 ### Key Patterns
 
-**事件驱动架构**：所有游戏行为通过事件（`GameEvent`）表示，事件存储在历史记录中。每个事件都有可见性规则，确保玩家只能看到他们应该看到的信息（如狼人能看到狼人讨论，预言家能看到查验结果）。
+**领域驱动设计(DDD)**：采用DDD架构组织代码，按业务领域而非技术层次划分模块。包含领域实体、值对象、领域服务和应用服务，实现业务逻辑的清晰分层。
+
+**事件驱动架构**：所有游戏行为通过事件（`GameEvent`）表示，事件存储在历史记录中。每个事件都有可见性规则，确保玩家只能看到他们应该看到的信息（如狼人能看到狼人讨论，预言家能看到查验结果）。事件按类型分为四个专门的文件。
+
+**处理器模式**：将复杂的游戏逻辑分解为独立的处理器组件。每个阶段有对应的阶段处理器，每个角色技能有对应的行动处理器。支持灵活扩展新的游戏阶段和角色技能。
+
+**组合状态管理**：使用组合模式管理复杂的游戏状态。`GameState` 组合了 `NightActionState` 和 `VotingState`，分别管理夜晚行动和投票逻辑，实现职责分离。
 
 **阶段驱动流程**：游戏按固定阶段循环（夜晚 → 白天 → 投票 → 下一个夜晚）。每个阶段有特定的可执行行动：
 - 夜晚：按顺序执行角色技能（狼人击杀 → 守卫守护 → 预言家查验 → 女巫用药）
@@ -184,6 +253,78 @@ config/
 - **行动顺序**：控制玩家发言和行动的顺序模式
 
 配置通过 `GameParameters` 接口加载（`FlutterGameParameters` 用于 GUI，`ConsoleGameParameters` 用于控制台），支持运行时修改（Flutter GUI 提供设置页面）。
+
+### Development Guidelines
+
+#### 添加新角色
+要添加新的游戏角色，请按以下步骤操作：
+
+1. **在 `lib/core/domain/entities/role.dart` 中定义新角色类**：
+   ```dart
+   class NewRole extends Role {
+     // 实现角色特有的能力逻辑
+   }
+   ```
+
+2. **在 `lib/core/engine/processors/` 中创建对应的行动处理器**：
+   ```dart
+   class NewRoleActionProcessor extends ActionProcessor {
+     @override
+     Future<void> process(GameState state) async {
+       // 实现角色的夜晚行动逻辑
+     }
+   }
+   ```
+
+3. **在 `GameEngine` 中注册新的处理器**
+
+4. **在 `lib/core/events/skill_events.dart` 中添加相关事件类型**
+
+#### 添加新游戏场景
+要添加新的游戏场景配置：
+
+1. **在 `lib/core/scenarios/` 中创建新的场景文件**：
+   ```dart
+   class CustomScenario implements GameScenario {
+     // 实现场景配置逻辑
+   }
+   ```
+
+2. **在 `lib/core/scenarios/scenario_registry.dart` 中注册场景**
+
+#### 扩展事件系统
+要添加新的事件类型：
+
+1. **在对应的事件文件中添加新事件类**：
+   - 玩家相关事件：`player_events.dart`
+   - 技能相关事件：`skill_events.dart`
+   - 阶段相关事件：`phase_events.dart`
+   - 系统事件：`system_events.dart`
+
+2. **确保事件继承自 `GameEvent` 基类**
+
+3. **设置正确的 `EventVisibility` 规则**
+
+#### 使用领域服务
+重构后的架构提供了专门的领域服务：
+
+- **PlayerOrderService**：用于获取玩家行动顺序
+- **ActionResolverService**：用于处理复杂的行动冲突解析
+- **EventFilterService**：用于查询和过滤游戏事件
+
+这些服务可以在 `GameEngine`、处理器或其他服务中使用。
+
+#### 状态管理最佳实践
+- 使用 `NightActionState` 管理夜晚相关的临时状态
+- 使用 `VotingState` 管理投票相关的状态
+- 避免直接在 `GameState` 中添加新的状态字段
+- 优先考虑使用组合模式扩展状态管理
+
+#### 处理器开发指南
+- 每个处理器应该只负责一个特定的游戏阶段或角色行动
+- 处理器应该是无状态的，所有状态都应该存储在 GameState 中
+- 使用事件来通知处理结果，而不是直接返回值
+- 遵循单一职责原则，保持处理器的简洁性
 
 ### Game Flow
 

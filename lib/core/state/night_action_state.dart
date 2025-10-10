@@ -1,5 +1,26 @@
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 
+/// 夜晚行动状态管理类
+///
+/// 负责管理游戏夜晚阶段的各种行动状态，包括狼人击杀、守卫保护、女巫用药等。
+/// 这个类封装了夜晚行动的临时状态，使用组合模式与 GameState 配合使用。
+///
+/// 主要功能：
+/// - 追踪当晚的击杀目标
+/// - 追踪当晚的保护目标
+/// - 追踪当晚的毒杀目标
+/// - 管理击杀是否被取消的状态
+/// - 提供状态清理和序列化功能
+///
+/// 使用示例：
+/// ```dart
+/// final nightState = NightActionState();
+/// nightState.setTonightVictim(werewolfTarget);
+/// nightState.setTonightProtected(guardTarget);
+///
+/// // 夜晚结算后清理状态
+/// nightState.clearNightActions();
+/// ```
 class NightActionState {
   Player? tonightVictim;
   Player? tonightProtected;
