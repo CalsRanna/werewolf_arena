@@ -1,14 +1,14 @@
-import 'package:werewolf_arena/core/engine/game_engine_callbacks.dart';
+import 'package:werewolf_arena/core/engine/game_observer.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/entities/player/player.dart';
 import 'package:werewolf_arena/core/state/game_event.dart';
-import 'package:werewolf_arena/widget/console/game_console.dart';
+import 'console_output.dart';
 
-/// 控制台游戏事件回调处理器
+/// 控制台游戏观察者
 ///
-/// 实现 GameEventCallbacks 接口,将游戏事件转换为控制台输出
-/// 这是游戏引擎与控制台显示之间的桥梁
-class ConsoleCallbackHandler extends GameEventCallbacksAdapter {
+/// 实现 GameObserver 接口，将游戏事件转换为控制台输出。
+/// 这是游戏引擎与控制台显示之间的桥梁。
+class ConsoleGameObserver extends GameObserverAdapter {
   final GameConsole _console = GameConsole.instance;
 
   @override

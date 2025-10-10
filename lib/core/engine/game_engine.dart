@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/state/game_event.dart';
-import 'package:werewolf_arena/core/engine/game_engine_callbacks.dart';
+import 'package:werewolf_arena/core/engine/game_observer.dart';
 import 'package:werewolf_arena/core/entities/player/player.dart';
 import 'package:werewolf_arena/core/entities/player/ai_player.dart';
 import 'package:werewolf_arena/core/entities/player/role.dart';
@@ -14,9 +14,9 @@ import 'package:werewolf_arena/services/logging/player_logger.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {
-  GameEngine({required this.configManager, RandomHelper? random, GameEventCallbacks? callbacks})
+  GameEngine({required this.configManager, RandomHelper? random, GameObserver? observer})
       : random = random ?? RandomHelper(),
-        _callbacks = callbacks;
+        _observer = observer;
   final ConfigManager configManager;
 
   /// 获取游戏配置
@@ -28,7 +28,7 @@ class GameEngine {
 
   GameState? _currentState;
   GameStatus _status = GameStatus.waiting;
-  final GameEventCallbacks? _callbacks;
+  final GameObserver? _observer;
 
   // Event controllers
   final StreamController<GameEvent> _eventController =
@@ -47,76 +47,76 @@ class GameEngine {
   Stream<GameEvent> get eventStream => _eventController.stream;
   Stream<GameState> get stateStream => _stateController.stream;
 
-  /// 设置游戏事件回调处理器
-  void setCallbacks(GameEventCallbacks callbacks) {
-    // 注意：这里不允许替换已有的回调，因为通常我们会在构造函数中设置
-    // 如果需要动态替换，可以考虑使用 CompositeGameEventCallbacks
+  /// 设置游戏观察者
+  void setObserver(GameObserver observer) {
+    // 注意：这里不允许替换已有的观察者，因为通常我们会在构造函数中设置
+    // 如果需要动态替换，可以考虑使用 CompositeGameObserver
   }
 
-  /// 通知回调处理器游戏开始
+  /// 通知观察者游戏开始
   void _notifyGameStart(int playerCount, Map<String, int> roleDistribution) {
-    _callbacks?.onGameStart(_currentState!, playerCount, roleDistribution);
+    _observer?.onGameStart(_currentState!, playerCount, roleDistribution);
   }
 
-  /// 通知回调处理器游戏结束
+  /// 通知观察者游戏结束
   void _notifyGameEnd(String winner, int totalDays, int finalPlayerCount) {
-    _callbacks?.onGameEnd(_currentState!, winner, totalDays, finalPlayerCount);
+    _observer?.onGameEnd(_currentState!, winner, totalDays, finalPlayerCount);
   }
 
-  /// 通知回调处理器阶段转换
+  /// 通知观察者阶段转换
   void _notifyPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
-    _callbacks?.onPhaseChange(oldPhase, newPhase, dayNumber);
+    _observer?.onPhaseChange(oldPhase, newPhase, dayNumber);
   }
 
-  /// 通知回调处理器玩家行动
+  /// 通知观察者玩家行动
   void _notifyPlayerAction(Player player, String actionType, dynamic target, {Map<String, dynamic>? details}) {
-    _callbacks?.onPlayerAction(player, actionType, target, details: details);
+    _observer?.onPlayerAction(player, actionType, target, details: details);
   }
 
-  /// 通知回调处理器玩家死亡
+  /// 通知观察者玩家死亡
   void _notifyPlayerDeath(Player player, DeathCause cause, {Player? killer}) {
-    _callbacks?.onPlayerDeath(player, cause, killer: killer);
+    _observer?.onPlayerDeath(player, cause, killer: killer);
   }
 
-  /// 通知回调处理器玩家发言
+  /// 通知观察者玩家发言
   void _notifyPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
-    _callbacks?.onPlayerSpeak(player, message, speechType: speechType);
+    _observer?.onPlayerSpeak(player, message, speechType: speechType);
   }
 
-  /// 通知回调处理器投票
+  /// 通知观察者投票
   void _notifyVoteCast(Player voter, Player target, {VoteType? voteType}) {
-    _callbacks?.onVoteCast(voter, target, voteType: voteType);
+    _observer?.onVoteCast(voter, target, voteType: voteType);
   }
 
-  /// 通知回调处理器夜晚结果
+  /// 通知观察者夜晚结果
   void _notifyNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber) {
-    _callbacks?.onNightResult(deaths, isPeacefulNight, dayNumber);
+    _observer?.onNightResult(deaths, isPeacefulNight, dayNumber);
   }
 
-  /// 通知回调处理器系统消息
+  /// 通知观察者系统消息
   void _notifySystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
-    _callbacks?.onSystemMessage(message, dayNumber: dayNumber, phase: phase);
+    _observer?.onSystemMessage(message, dayNumber: dayNumber, phase: phase);
   }
 
-  /// 通知回调处理器错误消息
+  /// 通知观察者错误消息
   void _notifyErrorMessage(String error, {Object? errorDetails}) {
-    _callbacks?.onErrorMessage(error, errorDetails: errorDetails);
+    _observer?.onErrorMessage(error, errorDetails: errorDetails);
   }
 
-  
-  /// 通知回调处理器投票结果
+
+  /// 通知观察者投票结果
   void _notifyVoteResults(Map<String, int> results, Player? executed, List<Player>? pkCandidates) {
-    _callbacks?.onVoteResults(results, executed, pkCandidates);
+    _observer?.onVoteResults(results, executed, pkCandidates);
   }
 
-  /// 通知回调处理器存活玩家公告
+  /// 通知观察者存活玩家公告
   void _notifyAlivePlayersAnnouncement(List<Player> alivePlayers) {
-    _callbacks?.onAlivePlayersAnnouncement(alivePlayers);
+    _observer?.onAlivePlayersAnnouncement(alivePlayers);
   }
 
-  /// 通知回调处理器遗言
+  /// 通知观察者遗言
   void _notifyLastWords(Player player, String lastWords) {
-    _callbacks?.onLastWords(player, lastWords);
+    _observer?.onLastWords(player, lastWords);
   }
 
   /// Initialize game
