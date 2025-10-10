@@ -12,13 +12,18 @@
 - 🎯 状态: 所有3个子任务已完成
 - ✅ 成果: 状态管理类已创建，GameState已简化
 
-**⏸️ 阶段三: 引擎核心重构 (待开始)**
+**✅ 阶段三: 引擎核心重构 (已完成)**
+- 📅 完成日期: 2025-10-10
+- 🎯 状态: 所有4个任务已完成
+- ✅ 成果: 处理器模式已实现，GameEngine已重构
 
 **⏸️ 阶段四: 新增服务和工具 (待开始)**
 
 **⏸️ 阶段五: 导入语句修复和测试 (待开始)**
 
 **⏸️ 阶段六: 清理和文档更新 (待开始)**
+
+**📈 总体进度: 3/6 阶段已完成 (50%)**
 
 ---
 
@@ -189,76 +194,91 @@ lib/core/                          # 狼人杀游戏引擎核心
 
 ### 阶段二: 状态管理重构
 
-#### Task 2.1: 创建专门的状态管理类
-- [ ] 创建 `state/night_action_state.dart`
+#### Task 2.1: 创建专门的状态管理类 ✅
+- [x] 创建 `state/night_action_state.dart`
   - 定义 `NightActionState` 类
   - 从 `GameState` 迁移夜晚行动相关字段和方法:
     - `tonightVictim`, `tonightProtected`, `tonightPoisoned`, `killCancelled`
     - `setTonightVictim()`, `setTonightProtected()`, `setTonightPoisoned()`
     - `cancelTonightKill()`, `clearNightActions()`
-- [ ] 创建 `state/voting_state.dart`
+- [x] 创建 `state/voting_state.dart`
   - 定义 `VotingState` 类
   - 从 `GameState` 迁移投票相关字段和方法:
     - `votes`, `totalVotes`, `requiredVotes`
     - `addVote()`, `clearVotes()`, `getVoteResults()`
     - `getVoteTarget()`, `getTiedPlayers()`
 
-#### Task 2.2: 简化 GameState
-- [ ] 在 `GameState` 中添加 `NightActionState` 和 `VotingState` 实例
-- [ ] 移除已迁移到状态类的字段和方法
-- [ ] 添加委托方法或getter以保持向后兼容
-- [ ] 更新 `toJson()` 和 `fromJson()` 方法
-- [ ] 移动 `GameState` 到 `state/game_state.dart`
+#### Task 2.2: 简化 GameState ✅
+- [x] 在 `GameState` 中添加 `NightActionState` 和 `VotingState` 实例
+- [x] 移除已迁移到状态类的字段和方法
+- [x] 添加委托方法或getter以保持向后兼容
+- [x] 更新 `toJson()` 和 `fromJson()` 方法
+- [x] 移动 `GameState` 到 `state/game_state.dart`
 
-#### Task 2.3: 提取胜利条件判定逻辑
-- [ ] 创建 `rules/victory_conditions.dart`
-- [ ] 定义 `VictoryConditions` 类
-- [ ] 从 `GameState.checkGameEnd()` 提取胜利判定逻辑
-- [ ] 实现 `checkWerewolvesWin()`, `checkGoodGuysWin()` 等方法
-- [ ] 更新 `GameState.checkGameEnd()` 调用新的 `VictoryConditions`
+#### Task 2.3: 提取胜利条件判定逻辑 ✅
+- [x] 创建 `rules/victory_conditions.dart`
+- [x] 定义 `VictoryConditions` 类
+- [x] 从 `GameState.checkGameEnd()` 提取胜利判定逻辑
+- [x] 实现 `checkWerewolvesWin()`, `checkGoodGuysWin()` 等方法
+- [x] 更新 `GameState.checkGameEnd()` 调用新的 `VictoryConditions`
 
 ### 阶段三: 引擎核心重构
 
-#### Task 3.1: 创建处理器接口
-- [ ] 创建 `engine/processors/phase_processor.dart`
+#### Task 3.1: 创建处理器接口 ✅
+- [x] 创建 `engine/processors/phase_processor.dart`
   - 定义 `PhaseProcessor` 抽象类
   - 定义 `process(GameState state)` 方法
-- [ ] 创建 `engine/processors/action_processor.dart`
+  - 定义 `supportedPhase` getter
+- [x] 创建 `engine/processors/action_processor.dart`
   - 定义 `ActionProcessor` 抽象类
   - 定义 `process(GameState state)` 方法
 
-#### Task 3.2: 实现阶段处理器
-- [ ] 创建 `engine/processors/night_phase_processor.dart`
+#### Task 3.2: 实现阶段处理器 ✅
+- [x] 创建 `engine/processors/night_phase_processor.dart`
   - 从 `GameEngine._processNightPhase()` 提取逻辑
   - 实现夜晚阶段流程编排
   - 依赖行动处理器列表
-- [ ] 创建 `engine/processors/day_phase_processor.dart`
+  - 实现夜晚行动结算逻辑
+- [x] 创建 `engine/processors/day_phase_processor.dart`
   - 从 `GameEngine._processDayPhase()` 提取逻辑
   - 实现白天阶段流程(公布结果、讨论)
-- [ ] 创建 `engine/processors/voting_phase_processor.dart`
+  - 实现发言顺序管理
+- [x] 创建 `engine/processors/voting_phase_processor.dart`
   - 从 `GameEngine._processVotingPhase()` 提取逻辑
   - 实现投票阶段流程(收集投票、解析结果、PK)
+  - 实现猎人技能处理
+  - 实现遗言处理
 
-#### Task 3.3: 实现行动处理器
-- [ ] 创建 `engine/processors/werewolf_action_processor.dart`
+#### Task 3.3: 实现行动处理器 ✅
+- [x] 创建 `engine/processors/werewolf_action_processor.dart`
   - 从 `GameEngine.processWerewolfActions()` 提取逻辑
   - 处理狼人讨论和投票
-- [ ] 创建 `engine/processors/guard_action_processor.dart`
+  - 支持单狼人和多狼人模式
+  - 实现讨论上下文构建
+- [x] 创建 `engine/processors/guard_action_processor.dart`
   - 从 `GameEngine.processGuardActions()` 提取逻辑
   - 处理守卫守护行动
-- [ ] 创建 `engine/processors/seer_action_processor.dart`
+  - 实现连续守护验证
+  - 提供守护历史管理
+- [x] 创建 `engine/processors/seer_action_processor.dart`
   - 从 `GameEngine.processSeerActions()` 提取逻辑
   - 处理预言家查验行动
-- [ ] 创建 `engine/processors/witch_action_processor.dart`
+  - 实现查验历史管理
+  - 提供查验策略分析
+- [x] 创建 `engine/processors/witch_action_processor.dart`
   - 从 `GameEngine.processWitchActions()` 提取逻辑
   - 处理女巫解药和毒药行动
+  - 实现药水状态管理
+  - 提供策略分析功能
 
-#### Task 3.4: 重构 GameEngine
-- [ ] 在 `GameEngine` 中注入阶段处理器
-- [ ] 简化 `_processGamePhase()` 使用处理器模式
-- [ ] 移除已提取到处理器的方法
-- [ ] 保留核心编排逻辑和观察者通知
-- [ ] 保留错误处理和生命周期管理
+#### Task 3.4: 重构 GameEngine ✅
+- [x] 在 `GameEngine` 中注入阶段处理器
+- [x] 简化 `_processGamePhase()` 使用处理器模式
+- [x] 移除已提取到处理器的旧方法
+- [x] 保留核心编排逻辑和观察者通知
+- [x] 保留错误处理和生命周期管理
+- [x] 添加缺失的方法 `_endGame()`, `_handleGameError()`, `dispose()`
+- [x] 清理未使用的导入和方法
 
 ### 阶段四: 新增服务和工具
 
@@ -392,6 +412,8 @@ lib/core/                          # 狼人杀游戏引擎核心
 
 **重构开始日期**: 2025-10-10
 **阶段一完成日期**: 2025-10-10
+**阶段二完成日期**: 2025-10-10
+**阶段三完成日期**: 2025-10-10
 **预计完成日期**: 待定
 **负责人**: Claude Code
 
@@ -416,4 +438,21 @@ lib/core/                          # 狼人杀游戏引擎核心
 - 更新了所有相关的引用和导入语句
 - 代码通过了静态分析检查
 
-**下一步**: 开始阶段三 - 引擎核心重构
+### 2025-10-10 (阶段三完成)
+✅ **阶段三: 引擎核心重构** - 已完成
+- 成功实现处理器模式架构
+- 创建了 `PhaseProcessor` 和 `ActionProcessor` 接口
+- 实现了 3 个阶段处理器：
+  - `NightPhaseProcessor` - 夜晚阶段处理
+  - `DayPhaseProcessor` - 白天阶段处理
+  - `VotingPhaseProcessor` - 投票阶段处理
+- 实现了 4 个行动处理器：
+  - `WerewolfActionProcessor` - 狼人行动
+  - `GuardActionProcessor` - 守卫行动
+  - `SeerActionProcessor` - 预言家行动
+  - `WitchActionProcessor` - 女巫行动
+- 重构了 `GameEngine` 使用处理器模式
+- 修复了所有编译错误，代码通过 `dart analyze` 检查
+- 架构更加模块化和可扩展
+
+**下一步**: 开始阶段四 - 新增服务和工具
