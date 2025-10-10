@@ -77,15 +77,15 @@ Future<void> main(List<String> arguments) async {
     }
 
     // 初始化场景管理器
-    final scenarioManager = ScenarioManager();
-    scenarioManager.initialize();
+    final scenarioRegistry = ScenarioRegistry();
+    scenarioRegistry.initialize();
 
     // 2. 初始化游戏引擎
     console.printLine('🎮 正在初始化游戏引擎...');
     final observer = ConsoleGameObserver();
 
     // 创建控制台游戏参数
-    final gameParameters = ConsoleGameParameters(appConfig, scenarioManager);
+    final gameParameters = ConsoleGameParameters(appConfig, scenarioRegistry);
 
     final gameEngine = GameEngine(
       parameters: gameParameters,
@@ -103,7 +103,7 @@ Future<void> main(List<String> arguments) async {
         console.displayError('无效的玩家数量: $playerCountStr');
         exit(1);
       }
-      final scenarios = scenarioManager.getScenariosByPlayerCount(playerCount);
+      final scenarios = scenarioRegistry.getScenariosByPlayerCount(playerCount);
       if (scenarios.isEmpty) {
         console.displayError('没有找到适合 $playerCount 人的场景');
         exit(1);
@@ -111,7 +111,7 @@ Future<void> main(List<String> arguments) async {
       gameParameters.setCurrentScenario(scenarios.first.id);
     } else {
       // 使用默认场景
-      final allScenarios = scenarioManager.scenarios.values.toList();
+      final allScenarios = scenarioRegistry.scenarios.values.toList();
       if (allScenarios.isEmpty) {
         console.displayError('没有可用的游戏场景');
         exit(1);

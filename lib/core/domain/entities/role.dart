@@ -202,7 +202,7 @@ class WitchRole extends Role {
   }
 
   Player? getTonightVictim(GameState state) {
-    return state.tonightVictim;
+    return state.nightActions.tonightVictim;
   }
 }
 

@@ -270,7 +270,7 @@ class GameEngine {
     );
 
     // Clear night actions
-    state.clearNightActions();
+    state.nightActions.clearNightActions();
 
     // Process night actions in CORRECT ORDER - one role at a time
     await processWerewolfActions();
@@ -775,14 +775,14 @@ class GameEngine {
       if (witch is AIPlayer && witch.role is WitchRole && witch.isAlive) {
         final witchRole = witch.role as WitchRole;
 
-        // Tonight victim is available through state.tonightVictim
+        // Tonight victim is available through state.nightActions.tonightVictim
         // No need to set it in witch role anymore
 
         // Step 1: Handle antidote decision
         if (witchRole.hasAntidote(state)) {
-          if (state.tonightVictim != null) {
+          if (state.nightActions.tonightVictim != null) {
             _notifySystemMessage(
-              '${state.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？',
+              '${state.nightActions.tonightVictim!.name}死亡. 你有一瓶解药，你要用吗？',
             );
           } else {
             _notifySystemMessage('平安夜. 你有一瓶解药，你要使用吗？');
@@ -802,11 +802,11 @@ class GameEngine {
               state,
             );
 
-            if (shouldUseAntidote && state.tonightVictim != null) {
-              final event = witch.createHealEvent(state.tonightVictim!, state);
+            if (shouldUseAntidote && state.nightActions.tonightVictim != null) {
+              final event = witch.createHealEvent(state.nightActions.tonightVictim!, state);
               if (event != null) {
                 witch.executeEvent(event, state);
-                _notifyPlayerAction(witch, 'heal', state.tonightVictim!);
+                _notifyPlayerAction(witch, 'heal', state.nightActions.tonightVictim!);
               }
             } else {
               _notifySystemMessage('${witch.formattedName}选择不使用解药');
@@ -871,12 +871,12 @@ class GameEngine {
   Future<void> resolveNightActions() async {
     final state = _currentState!;
 
-    final Player? victim = state.tonightVictim;
-    final protected = state.tonightProtected;
-    final poisoned = state.tonightPoisoned;
+    final Player? victim = state.nightActions.tonightVictim;
+    final protected = state.nightActions.tonightProtected;
+    final poisoned = state.nightActions.tonightPoisoned;
 
     // Process kill (cancelled if protected or healed)
-    if (victim != null && !state.killCancelled && victim != protected) {
+    if (victim != null && !state.nightActions.killCancelled && victim != protected) {
       victim.die(DeathCause.werewolfKill, state);
       _notifyPlayerDeath(victim, DeathCause.werewolfKill);
     }
@@ -888,7 +888,7 @@ class GameEngine {
     }
 
     // Clear night action data
-    state.clearNightActions();
+    state.nightActions.clearNightActions();
   }
 
   /// Process day phase
@@ -1019,7 +1019,7 @@ class GameEngine {
     );
 
     // Clear previous votes
-    state.clearVotes();
+    state.votingState.clearVotes();
 
     // Collect votes
     await collectVotes();
@@ -1113,9 +1113,9 @@ class GameEngine {
     final state = _currentState!;
 
     // 显示投票统计
-    final voteResults = state.getVoteResults();
-    final voteTarget = state.getVoteTarget();
-    final tiedPlayers = state.getTiedPlayers();
+    final voteResults = state.votingState.getVoteResults();
+    final voteTarget = state.votingState.getVoteTarget(state.alivePlayers);
+    final tiedPlayers = state.votingState.getTiedPlayers(state.alivePlayers);
 
     // 通知回调处理器投票结果
     _notifyVoteResults(
@@ -1137,7 +1137,7 @@ class GameEngine {
       }
     } else {
       // 检查是否有平票
-      final tiedPlayers = state.getTiedPlayers();
+      final tiedPlayers = state.votingState.getTiedPlayers(state.alivePlayers);
       if (tiedPlayers.length > 1) {
         _notifySystemMessage(
           '${tiedPlayers.map((p) => p.formattedName).join(', ')}平票',
@@ -1150,7 +1150,7 @@ class GameEngine {
       }
     }
 
-    state.clearVotes();
+    state.votingState.clearVotes();
   }
 
   /// Handle PK (平票) phase - tied players speak, then others vote
@@ -1203,13 +1203,13 @@ class GameEngine {
     _notifySystemMessage('PK发言结束，其他玩家现在开始投票');
 
     // 其他玩家投票（不包括PK玩家自己）
-    state.clearVotes();
+    state.votingState.clearVotes();
 
     // 使用新的collectVotes方法，传入PK候选人列表
     await collectVotes(pkCandidates: tiedPlayers);
 
     // 统计PK投票结果
-    final pkResults = state.getVoteResults();
+    final pkResults = state.votingState.getVoteResults();
     if (pkResults.isNotEmpty) {
       _notifySystemMessage('PK投票结果：');
       final sortedResults = pkResults.entries.toList()
@@ -1225,7 +1225,7 @@ class GameEngine {
     }
 
     // 得出PK结果
-    final pkTarget = state.getVoteTarget();
+    final pkTarget = state.votingState.getVoteTarget(state.alivePlayers);
     if (pkTarget != null && tiedPlayers.contains(pkTarget)) {
       // PK阶段被淘汰的玩家先留遗言
       await _handleLastWords(pkTarget, 'pk');
@@ -1372,7 +1372,7 @@ class GameEngine {
       // Create a specific prompt for antidote decision
       final antidotePrompt =
           '''
-你是一个女巫。今晚${state.tonightVictim?.formattedName ?? '没有玩家'}死亡。
+你是一个女巫。今晚${state.nightActions.tonightVictim?.formattedName ?? '没有玩家'}死亡。
 
 你现在需要决定是否使用你的解药：
 - 如果使用解药，可以救活今晚死亡的玩家
@@ -1383,8 +1383,7 @@ class GameEngine {
 - "使用解药" - 救活今晚死亡的玩家
 - "不使用解药" - 保留解药到后续夜晚
 
-${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
-''';
+${state.nightActions.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}''';
 
       // Get LLM decision for antidote
       final response = await (witch as EnhancedAIPlayer).llmService
@@ -1422,8 +1421,7 @@ ${state.tonightVictim == null ? '今晚是平安夜，没有人死亡。' : ''}
 2. 如果选择使用，指定要毒杀的玩家编号
 
 当前存活的玩家：
-${state.players.where((p) => p.isAlive).map((p) => '- ${p.name}').join('\n')}
-''';
+${state.players.where((p) => p.isAlive).map((p) => '- ${p.name}').join('\n')}''';
 
       // Get LLM decision for poison
       final response = await (witch as EnhancedAIPlayer).llmService

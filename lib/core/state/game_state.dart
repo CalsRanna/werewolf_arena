@@ -11,6 +11,9 @@ import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_status.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
+import 'package:werewolf_arena/core/state/night_action_state.dart';
+import 'package:werewolf_arena/core/state/voting_state.dart';
+import 'package:werewolf_arena/core/rules/victory_conditions.dart';
 
 /// Game state
 class GameState {
@@ -29,8 +32,10 @@ class GameState {
 
   DateTime? lastUpdateTime;
   String? winner;
-  Player? tonightVictim;
-  Player? tonightProtected;
+
+  // New state objects
+  final NightActionState nightActions;
+  final VotingState votingState;
 
   GameState({
     required this.gameId,
@@ -42,9 +47,13 @@ class GameState {
     this.dayNumber = 0,
     List<GameEvent>? eventHistory,
     Map<String, dynamic>? metadata,
+    NightActionState? nightActions,
+    VotingState? votingState,
   }) : eventHistory = eventHistory ?? [],
+       startTime = DateTime.now(),
        metadata = metadata ?? {},
-       startTime = DateTime.now();
+       nightActions = nightActions ?? NightActionState(),
+       votingState = votingState ?? VotingState();
 
   // Getters
   bool get isGameOver => status == GameStatus.ended;
@@ -147,51 +156,25 @@ class GameState {
     addEvent(event);
   }
 
-  /// Check if game should end (屠边规则)
+  /// Check if game should end
   bool checkGameEnd() {
-    // Debug: 打印当前存活情况
     LoggerUtil.instance.d('游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys');
     LoggerUtil.instance.d(
       '存活玩家详情: ${alivePlayers.map((p) => p.formattedName).join(', ')}',
     );
 
-    // 确保游戏有活跃玩家
     if (alivePlayers.length < 2) {
       LoggerUtil.instance.w('游戏异常：存活玩家少于2人');
-      winner = 'Game Error';
       endGame('Game Error');
       return true;
     }
 
-    // 好人胜利：所有狼人死亡
-    if (aliveWerewolves == 0) {
-      winner = 'Good';
-      endGame('Good');
-      LoggerUtil.instance.i('好人阵营获胜！所有狼人已出局\n');
+    final victoryChecker = VictoryConditions(this);
+    final winner = victoryChecker.check();
+
+    if (winner != null) {
+      endGame(winner);
       return true;
-    }
-
-    // 狼人胜利条件：屠神（所有神职死亡且有平民）
-    final aliveGods = gods.where((p) => p.isAlive).length;
-    if (aliveGods == 0 && gods.isNotEmpty && aliveVillagers > 0) {
-      // 只有平民和狼人存活，且狼人数量足够
-      if (aliveWerewolves >= aliveVillagers) {
-        winner = 'Werewolves';
-        endGame('Werewolves');
-        LoggerUtil.instance.i('狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）\n');
-        return true;
-      }
-    }
-
-    // 狼人胜利条件：屠民（所有平民死亡且有神职）
-    if (aliveVillagers == 0 && villagers.isNotEmpty && aliveGods > 0) {
-      // 只有神职和狼人存活，且狼人数量足够
-      if (aliveWerewolves >= aliveGods) {
-        winner = 'Werewolves';
-        endGame('Werewolves');
-        LoggerUtil.instance.i('狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）\n');
-        return true;
-      }
     }
 
     LoggerUtil.instance.d('游戏继续，未达到结束条件');
@@ -219,124 +202,6 @@ class GameState {
     return distribution;
   }
 
-  void setTonightVictim(Player? victim) {
-    tonightVictim = victim;
-    setMetadata('tonight_victim', victim?.name);
-  }
-
-  void setTonightProtected(Player? protected) {
-    tonightProtected = protected;
-    setMetadata('tonight_protected', protected?.name);
-  }
-
-  // Night action management methods
-  Player? get tonightPoisoned {
-    final poisonedId = getMetadata<String>('tonight_poisoned');
-    return poisonedId != null ? getPlayerByName(poisonedId) : null;
-  }
-
-  bool get killCancelled => getMetadata('kill_cancelled') ?? false;
-
-  void setTonightPoisoned(Player? poisoned) {
-    setMetadata('tonight_poisoned', poisoned?.name);
-  }
-
-  void cancelTonightKill() {
-    setMetadata('kill_cancelled', true);
-  }
-
-  void clearNightActions() {
-    removeMetadata('tonight_victim');
-    removeMetadata('tonight_protected');
-    removeMetadata('tonight_poisoned');
-    removeMetadata('kill_cancelled');
-  }
-
-  // Voting management methods
-  Map<String, String> get votes => getMetadata('votes') ?? {};
-  int get totalVotes => votes.length;
-  int get requiredVotes => (alivePlayers.length / 2).ceil();
-
-  void addVote(Player voter, Player target) {
-    final currentVotes = votes;
-    currentVotes[voter.name] = target.name;
-    setMetadata('votes', currentVotes);
-  }
-
-  void clearVotes() {
-    removeMetadata('votes');
-  }
-
-  Map<String, int> getVoteResults() {
-    final results = <String, int>{};
-    for (final vote in votes.values) {
-      results[vote] = (results[vote] ?? 0) + 1;
-    }
-    return results;
-  }
-
-  /// Get vote target - returns the player with most votes
-  /// If there's a tie, returns null (indicating need for PK)
-  Player? getVoteTarget() {
-    final results = getVoteResults();
-    if (results.isEmpty) return null;
-
-    int maxVotes = 0;
-    List<String> tiedPlayers = [];
-
-    for (final entry in results.entries) {
-      if (entry.value > maxVotes) {
-        maxVotes = entry.value;
-        tiedPlayers = [entry.key];
-      } else if (entry.value == maxVotes) {
-        tiedPlayers.add(entry.key);
-      }
-    }
-
-    // 如果有平票且票数相同的人超过1个,返回null表示需要PK
-    if (tiedPlayers.length > 1) {
-      return null;
-    }
-
-    // 得票最多的玩家出局
-    if (tiedPlayers.isNotEmpty && maxVotes > 0) {
-      return getPlayerByName(tiedPlayers.first);
-    }
-    return null;
-  }
-
-  /// Get tied players for PK
-  List<Player> getTiedPlayers() {
-    final results = getVoteResults();
-    if (results.isEmpty) return [];
-
-    int maxVotes = 0;
-    List<String> tiedPlayerNames = [];
-
-    for (final entry in results.entries) {
-      if (entry.value > maxVotes) {
-        maxVotes = entry.value;
-        tiedPlayerNames = [entry.key];
-      } else if (entry.value == maxVotes) {
-        tiedPlayerNames.add(entry.key);
-      }
-    }
-
-    // 只有当有2个或以上玩家平票时才返回
-    if (tiedPlayerNames.length > 1) {
-      return tiedPlayerNames
-          .map((name) => getPlayerByName(name))
-          .whereType<Player>()
-          .toList();
-    }
-    return [];
-  }
-
-  // Metadata helper methods
-  T? getMetadata<T>(String key) => metadata[key] as T?;
-  void setMetadata<T>(String key, T value) => metadata[key] = value;
-  void removeMetadata(String key) => metadata.remove(key);
-
   Map<String, dynamic> toJson() {
     return {
       'gameId': gameId,
@@ -351,33 +216,34 @@ class GameState {
       'metadata': metadata,
       'lastUpdateTime': lastUpdateTime?.toIso8601String(),
       'winner': winner,
+      'nightActions': nightActions.toJson(),
+      'votingState': votingState.toJson(),
     };
   }
 
-  // TODO: Implement proper event deserialization with event factory
   factory GameState.fromJson(Map<String, dynamic> json) {
     final config = AppConfig.fromJson(json['config']);
-    // 注意：场景不再从JSON反序列化，而是在游戏运行时设置
     final players = (json['players'] as List)
         .map((p) => Player.fromJson(p))
         .toList();
 
-    // Skip event history deserialization for now - will implement event factory later
     final eventHistory = <GameEvent>[];
 
     return GameState(
-        gameId: json['gameId'],
-        config: config,
-        scenario: Standard9PlayersScenario(), // 临时使用默认场景
-        players: players,
-        currentPhase: GamePhase.values.firstWhere(
-          (p) => p.name == json['currentPhase'],
-        ),
-        status: GameStatus.values.firstWhere((s) => s.name == json['status']),
-        dayNumber: json['dayNumber'],
-        eventHistory: eventHistory,
-        metadata: Map<String, dynamic>.from(json['metadata']),
-      )
+      gameId: json['gameId'],
+      config: config,
+      scenario: Standard9PlayersScenario(), // Placeholder
+      players: players,
+      currentPhase: GamePhase.values.firstWhere(
+        (p) => p.name == json['currentPhase'],
+      ),
+      status: GameStatus.values.firstWhere((s) => s.name == json['status']),
+      dayNumber: json['dayNumber'],
+      eventHistory: eventHistory,
+      metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
+      nightActions: NightActionState.fromJson(json['nightActions'] ?? {}, players),
+      votingState: VotingState.fromJson(json['votingState'] ?? {}),
+    )
       ..lastUpdateTime = json['lastUpdateTime'] != null
           ? DateTime.parse(json['lastUpdateTime'])
           : null

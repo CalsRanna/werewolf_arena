@@ -18,12 +18,12 @@ class ConsoleGameParameters implements GameParameters {
   final AppConfig config;
 
   @override
-  final ScenarioManager scenarioManager;
+  final ScenarioRegistry scenarioRegistry;
 
   @override
   GameScenario? currentScenario;
 
-  ConsoleGameParameters(this.config, this.scenarioManager);
+  ConsoleGameParameters(this.config, this.scenarioRegistry);
 
   /// 初始化参数系统（控制台模式已在构造函数中完成）
   @override
@@ -40,7 +40,7 @@ class ConsoleGameParameters implements GameParameters {
   /// 设置当前场景
   @override
   void setCurrentScenario(String scenarioId) {
-    final scenario = scenarioManager.getScenario(scenarioId);
+    final scenario = scenarioRegistry.getScenario(scenarioId);
     if (scenario == null) {
       throw Exception('场景不存在: $scenarioId');
     }
@@ -54,7 +54,7 @@ class ConsoleGameParameters implements GameParameters {
   /// 获取适合指定玩家数量的场景
   @override
   List<GameScenario> getAvailableScenarios(int playerCount) {
-    return scenarioManager.getScenariosByPlayerCount(playerCount);
+    return scenarioRegistry.getScenariosByPlayerCount(playerCount);
   }
 
   /// 为指定玩家获取 LLM 配置
