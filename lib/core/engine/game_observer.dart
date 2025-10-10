@@ -27,7 +27,7 @@ import 'package:werewolf_arena/core/state/game_event.dart';
 ///
 /// // 2. 使用观察者
 /// final engine = GameEngine(
-///   configManager: configManager,
+///   parameters: myGameParameters,
 ///   observer: MyGameObserver(),
 /// );
 /// ```
@@ -101,7 +101,7 @@ abstract class GameObserver {
 /// }
 ///
 /// final engine = GameEngine(
-///   configManager: configManager,
+///   parameters: myGameParameters,
 ///   observer: DeathTracker(),
 /// );
 /// ```
@@ -169,7 +169,7 @@ abstract class GameObserverAdapter implements GameObserver {
 ///
 /// // 传递给游戏引擎
 /// final engine = GameEngine(
-///   configManager: configManager,
+///   parameters: myGameParameters,
 ///   observer: composite,
 /// );
 ///

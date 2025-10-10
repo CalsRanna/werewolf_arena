@@ -12,6 +12,7 @@ import 'console_output.dart';
 import 'console_observer.dart';
 import 'console_config.dart';
 import 'config_loader.dart';
+import 'console_game_parameters.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
 Future<void> main(List<String> arguments) async {
@@ -82,11 +83,11 @@ Future<void> main(List<String> arguments) async {
     console.printLine('🎮 正在初始化游戏引擎...');
     final observer = ConsoleGameObserver();
 
-    // 创建一个简单的 ConfigManager 用于控制台模式
-    final simpleConfigManager = _ConsoleConfigManager(appConfig, scenarioManager);
+    // 创建控制台游戏参数
+    final gameParameters = ConsoleGameParameters(appConfig, scenarioManager);
 
     final gameEngine = GameEngine(
-      configManager: simpleConfigManager,
+      parameters: gameParameters,
       observer: observer,
     );
 
@@ -106,7 +107,7 @@ Future<void> main(List<String> arguments) async {
         console.displayError('没有找到适合 $playerCount 人的场景');
         exit(1);
       }
-      simpleConfigManager.setCurrentScenario(scenarios.first.id);
+      gameParameters.setCurrentScenario(scenarios.first.id);
     } else {
       // 使用默认场景
       final allScenarios = scenarioManager.scenarios.values.toList();
@@ -114,11 +115,11 @@ Future<void> main(List<String> arguments) async {
         console.displayError('没有可用的游戏场景');
         exit(1);
       }
-      simpleConfigManager.setCurrentScenario(allScenarios.first.id);
+      gameParameters.setCurrentScenario(allScenarios.first.id);
     }
 
     // 使用当前场景创建玩家
-    final scenario = simpleConfigManager.currentScenario;
+    final scenario = gameParameters.currentScenario;
     if (scenario == null) {
       console.displayError('无法获取游戏场景');
       exit(1);
@@ -169,53 +170,6 @@ void _printHelp(ArgParser parser) {
   print('  dart run -- -p 8            # 指定8个玩家');
   print('  dart run -- -c config.yaml  # 使用自定义配置');
   print('  dart run -- -d              # 启用调试模式');
-}
-
-/// 控制台模式的简单 ConfigManager 实现
-class _ConsoleConfigManager implements ConfigManager {
-  @override
-  final AppConfig config;
-
-  @override
-  final ScenarioManager scenarioManager;
-
-  @override
-  GameScenario? currentScenario;
-
-  _ConsoleConfigManager(this.config, this.scenarioManager);
-
-  @override
-  void setCurrentScenario(String scenarioId) {
-    final scenario = scenarioManager.getScenario(scenarioId);
-    if (scenario == null) {
-      throw Exception('场景不存在: $scenarioId');
-    }
-    currentScenario = scenario;
-  }
-
-  @override
-  GameScenario? get scenario => currentScenario;
-
-  @override
-  List<GameScenario> getAvailableScenarios(int playerCount) {
-    return scenarioManager.getScenariosByPlayerCount(playerCount);
-  }
-
-  @override
-  Map<String, dynamic> getPlayerLLMConfig(int playerNumber) {
-    return config.getPlayerLLMConfig(playerNumber);
-  }
-
-  @override
-  Future<void> initialize() async {
-    // 控制台模式不需要初始化（已在构造函数中完成）
-  }
-
-  @override
-  Future<void> saveConfig(AppConfig newConfig) async {
-    // 控制台模式不支持保存配置
-    print('控制台模式不支持保存配置，请手动编辑 werewolf_config.yaml 文件');
-  }
 }
 
 /// 为场景创建玩家

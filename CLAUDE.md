@@ -183,7 +183,7 @@ config/
 - **游戏场景**：选择使用哪个预定义场景（9人局、12人局等）
 - **行动顺序**：控制玩家发言和行动的顺序模式
 
-配置通过 `ConfigManager` 单例加载，支持运行时修改（Flutter GUI 提供设置页面）。
+配置通过 `GameParameters` 接口加载（`FlutterGameParameters` 用于 GUI，`ConsoleGameParameters` 用于控制台），支持运行时修改（Flutter GUI 提供设置页面）。
 
 ### Game Flow
 

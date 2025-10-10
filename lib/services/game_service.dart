@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:werewolf_arena/core/engine/game_engine.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/entities/player/player.dart';
+import 'package:werewolf_arena/core/interfaces/game_parameters.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/services/stream_game_observer.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
@@ -14,7 +15,7 @@ import 'package:werewolf_arena/shared/random_helper.dart';
 class GameService {
   bool _isInitialized = false;
   GameEngine? _gameEngine;
-  ConfigManager? _configManager;
+  GameParameters? _gameParameters;
   StreamGameObserver? _observer;
   bool _isExecutingStep = false;
 
@@ -41,14 +42,14 @@ class GameService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _configManager = GUIConfigManager.instance;
+    _gameParameters = FlutterGameParameters.instance;
 
     // 创建观察者
     _observer = StreamGameObserver();
 
     // 创建游戏引擎并设置观察者
     _gameEngine = GameEngine(
-      configManager: _configManager!,
+      parameters: _gameParameters!,
       random: RandomHelper(),
       observer: _observer,
     );
@@ -114,7 +115,7 @@ class GameService {
 
     // 创建新引擎
     _gameEngine = GameEngine(
-      configManager: _configManager!,
+      parameters: _gameParameters!,
       random: RandomHelper(),
       observer: _observer,
     );

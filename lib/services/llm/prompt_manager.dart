@@ -409,8 +409,8 @@ $formatted$peacefulNightInfo''';
 
   /// 生成当前场景的基础系统提示词
   String _generateBaseSystemPrompt() {
-    final configManager = GUIConfigManager.instance;
-    final currentScenario = configManager.scenario;
+    final gameParameters = FlutterGameParameters.instance;
+    final currentScenario = gameParameters.scenario;
 
     if (currentScenario == null) {
       // 如果没有设置场景，使用默认基础提示词

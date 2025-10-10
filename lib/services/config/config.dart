@@ -2,6 +2,7 @@ import 'dart:io' if (dart.library.html) 'package:werewolf_arena/services/config/
 import 'package:yaml/yaml.dart';
 import 'package:werewolf_arena/core/rules/game_scenario.dart';
 import 'package:werewolf_arena/core/rules/game_scenario_manager.dart';
+import 'package:werewolf_arena/core/interfaces/game_parameters.dart';
 import 'package:werewolf_arena/services/config/preference_loader.dart';
 
 /// 应用统一配置
@@ -256,23 +257,16 @@ class LoggingConfig {
   }
 }
 
-/// 配置管理器接口（抽象基类）
-abstract class ConfigManager {
-  AppConfig get config;
-  ScenarioManager get scenarioManager;
-  GameScenario? get currentScenario;
-  set currentScenario(GameScenario? value);
-
-  void setCurrentScenario(String scenarioId);
-  GameScenario? get scenario;
-  List<GameScenario> getAvailableScenarios(int playerCount);
-  Map<String, dynamic> getPlayerLLMConfig(int playerNumber);
-  Future<void> initialize();
-  Future<void> saveConfig(AppConfig newConfig);
-}
-
-/// 配置管理器（用于 GUI 应用）
-class GUIConfigManager implements ConfigManager {
+/// Flutter 游戏参数实现（用于 GUI 应用）
+///
+/// 使用 SharedPreferences 进行配置持久化，适用于 Flutter 跨平台应用。
+///
+/// 使用方式：
+/// ```dart
+/// final parameters = FlutterGameParameters.instance;
+/// await parameters.initialize();
+/// ```
+class FlutterGameParameters implements GameParameters {
   @override
   late AppConfig config;
 
@@ -284,11 +278,11 @@ class GUIConfigManager implements ConfigManager {
 
   PreferenceConfigLoader? _configLoader;
 
-  GUIConfigManager._();
+  FlutterGameParameters._();
 
-  static GUIConfigManager? _instance;
-  static GUIConfigManager get instance {
-    _instance ??= GUIConfigManager._();
+  static FlutterGameParameters? _instance;
+  static FlutterGameParameters get instance {
+    _instance ??= FlutterGameParameters._();
     return _instance!;
   }
 

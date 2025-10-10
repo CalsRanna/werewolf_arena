@@ -9,20 +9,20 @@ import 'package:werewolf_arena/services/llm/prompt_manager.dart';
 /// 配置服务 - Flutter友好的包装层
 class ConfigService {
   bool _isInitialized = false;
-  ConfigManager? _configManager;
+  FlutterGameParameters? _gameParameters;
 
   /// 确保配置已初始化
   Future<void> ensureInitialized() async {
     if (_isInitialized) return;
 
-    _configManager = GUIConfigManager.instance;
-    await _configManager!.initialize();
+    _gameParameters = FlutterGameParameters.instance;
+    await _gameParameters!.initialize();
 
     // 设置默认场景(如果还没有设置)
-    if (_configManager!.currentScenario == null) {
-      final availableScenarios = _configManager!.scenarioManager.scenarios.values.toList();
+    if (_gameParameters!.currentScenario == null) {
+      final availableScenarios = _gameParameters!.scenarioManager.scenarios.values.toList();
       if (availableScenarios.isNotEmpty) {
-        _configManager!.setCurrentScenario(availableScenarios.first.id);
+        _gameParameters!.setCurrentScenario(availableScenarios.first.id);
       }
     }
 
@@ -32,41 +32,41 @@ class ConfigService {
   /// 获取当前场景名称
   String get currentScenarioName {
     _ensureInitialized();
-    return _configManager!.currentScenario?.name ?? '未设置场景';
+    return _gameParameters!.currentScenario?.name ?? '未设置场景';
   }
 
   /// 获取当前场景
   GameScenario? get currentScenario {
     _ensureInitialized();
-    return _configManager!.currentScenario;
+    return _gameParameters!.currentScenario;
   }
 
   /// 设置场景
   Future<void> setScenario(String scenarioId) async {
     await ensureInitialized();
-    _configManager!.setCurrentScenario(scenarioId);
+    _gameParameters!.setCurrentScenario(scenarioId);
   }
 
   /// 自动选择场景
   Future<void> autoSelectScenario(int playerCount) async {
     await ensureInitialized();
-    final scenarios = _configManager!.getAvailableScenarios(playerCount);
+    final scenarios = _gameParameters!.getAvailableScenarios(playerCount);
     if (scenarios.isEmpty) {
       throw Exception('没有找到适合 $playerCount 人的场景');
     }
-    _configManager!.setCurrentScenario(scenarios.first.id);
+    _gameParameters!.setCurrentScenario(scenarios.first.id);
   }
 
   /// 获取所有可用的场景
   List<GameScenario> get availableScenarios {
     _ensureInitialized();
-    return _configManager!.scenarioManager.scenarios.values.toList();
+    return _gameParameters!.scenarioManager.scenarios.values.toList();
   }
 
   /// 获取指定玩家数量的可用场景
   List<GameScenario> getAvailableScenarios(int playerCount) {
     _ensureInitialized();
-    return _configManager!.getAvailableScenarios(playerCount);
+    return _gameParameters!.getAvailableScenarios(playerCount);
   }
 
   /// 为场景创建玩家
@@ -84,7 +84,7 @@ class ConfigService {
       final role = scenario.createRole(roleId);
 
       // 获取玩家专属的LLM配置
-      final playerLLMConfig = _configManager!.getPlayerLLMConfig(playerNumber);
+      final playerLLMConfig = _gameParameters!.getPlayerLLMConfig(playerNumber);
       final playerModelConfig = PlayerModelConfig.fromMap(playerLLMConfig);
 
       // 创建LLM服务和Prompt管理器
@@ -108,23 +108,23 @@ class ConfigService {
   /// 获取应用配置
   AppConfig get appConfig {
     _ensureInitialized();
-    return _configManager!.config;
+    return _gameParameters!.config;
   }
 
   /// 获取场景管理器
   ScenarioManager get scenarioManager {
     _ensureInitialized();
-    return _configManager!.scenarioManager;
+    return _gameParameters!.scenarioManager;
   }
 
-  /// 获取ConfigManager实例
-  ConfigManager? get configManager {
-    return _configManager;
+  /// 获取游戏参数实例
+  FlutterGameParameters? get gameParameters {
+    return _gameParameters;
   }
 
   /// 确保已初始化
   void _ensureInitialized() {
-    if (!_isInitialized || _configManager == null) {
+    if (!_isInitialized || _gameParameters == null) {
       throw StateError('ConfigService未初始化,请先调用ensureInitialized()');
     }
   }

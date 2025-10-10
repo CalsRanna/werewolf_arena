@@ -50,8 +50,8 @@ class LLMConfigViewModel {
         logging: currentConfig.logging,  // 保留现有日志配置
       );
 
-      // 保存到配置管理器
-      await _configService.configManager!.saveConfig(newConfig);
+      // 保存到游戏参数
+      await _configService.gameParameters!.saveConfig(newConfig);
 
       isLoading.value = false;
 

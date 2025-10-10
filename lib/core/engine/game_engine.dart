@@ -7,6 +7,7 @@ import 'package:werewolf_arena/core/entities/player/ai_player.dart';
 import 'package:werewolf_arena/core/entities/player/role.dart';
 import 'package:werewolf_arena/services/llm/enhanced_prompts.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/interfaces/game_parameters.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/core/rules/game_scenario.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
@@ -14,16 +15,16 @@ import 'package:werewolf_arena/services/logging/player_logger.dart';
 
 /// Game engine - manages the entire game flow
 class GameEngine {
-  GameEngine({required this.configManager, RandomHelper? random, GameObserver? observer})
+  GameEngine({required this.parameters, RandomHelper? random, GameObserver? observer})
       : random = random ?? RandomHelper(),
         _observer = observer;
-  final ConfigManager configManager;
+  final GameParameters parameters;
 
   /// 获取游戏配置
-  AppConfig get config => configManager.config;
+  AppConfig get config => parameters.config;
 
   /// 获取当前场景
-  GameScenario get currentScenario => configManager.scenario!;
+  GameScenario get currentScenario => parameters.scenario!;
   final RandomHelper random;
 
   GameState? _currentState;
