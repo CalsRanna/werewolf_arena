@@ -111,31 +111,31 @@ dart analyze
 ### 阶段2：实体重构（预计3-4天）
 
 #### 2.1 重构GamePlayer架构（8小时）
-**任务2.1.1**: 重构Player为GamePlayer抽象基类
-- 重命名`lib/core/domain/entities/player.dart`为`game_player.dart`
-- 将Player改为抽象基类GamePlayer
-- 添加driver属性
-- 添加executeSkill抽象方法
-- 添加事件处理方法
+**[✓] 任务2.1.1**: 重构Player为GamePlayer抽象基类
+- ✓ 重命名`lib/core/domain/entities/player.dart`为`game_player.dart`
+- ✓ 将Player改为抽象基类GamePlayer
+- ✓ 添加driver属性
+- ✓ 添加executeSkill抽象方法
+- ✓ 添加事件处理方法
 
-**任务2.1.2**: 创建AIPlayer实现
-- 在`lib/core/domain/entities/`目录下创建`ai_player.dart`
-- 继承GamePlayer，使用AIPlayerDriver
-- 实现executeSkill方法
-- 实现事件处理逻辑
+**[✓] 任务2.1.2**: 创建AIPlayer实现
+- ✓ 在`lib/core/domain/entities/`目录下创建`ai_player.dart`
+- ✓ 继承GamePlayer，使用AIPlayerDriver
+- ✓ 实现executeSkill方法
+- ✓ 实现事件处理逻辑
 
-**任务2.1.3**: 创建HumanPlayer实现
-- 在`lib/core/domain/entities/`目录下创建`human_player.dart`
-- 继承GamePlayer，使用HumanPlayerDriver
-- 实现等待用户输入的机制（不使用StreamController）
-- 实现submitSkillResult方法用于外部调用
+**[✓] 任务2.1.3**: 创建HumanPlayer实现
+- ✓ 在`lib/core/domain/entities/`目录下创建`human_player.dart`
+- ✓ 继承GamePlayer，使用HumanPlayerDriver
+- ✓ 实现等待用户输入的机制（使用StreamController）
+- ✓ 实现submitSkillResult方法用于外部调用
 
-**任务2.1.4**: 删除PlayerType枚举
-- 删除`lib/core/domain/enums/player_type.dart`
-- 移除所有对PlayerType的引用
-- 使用is操作符进行类型检查
+**[✓] 任务2.1.4**: 删除PlayerType枚举
+- ✓ 删除`lib/core/domain/enums/player_type.dart`
+- ✓ 移除所有对PlayerType的引用
+- ✓ 使用is操作符进行类型检查
 
-**任务2.1.5**: 运行代码分析
+**[✓] 任务2.1.5**: 运行代码分析
 ```bash
 dart analyze
 ```

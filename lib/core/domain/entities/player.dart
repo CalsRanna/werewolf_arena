@@ -5,7 +5,6 @@ import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/core/events/skill_events.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
-import 'package:werewolf_arena/core/domain/enums/player_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 
@@ -13,9 +12,8 @@ import 'package:werewolf_arena/shared/random_helper.dart';
 abstract class Player {
   final String name;
   final Role role;
-  final PlayerType type;
   final PlayerModelConfig? modelConfig;
-
+  
   bool isAlive;
   final Map<String, dynamic> privateData;
   final List<GameEvent> actionHistory;
@@ -23,7 +21,6 @@ abstract class Player {
   Player({
     required this.name,
     required this.role,
-    required this.type,
     this.modelConfig,
     this.isAlive = true,
     Map<String, dynamic>? privateData,
@@ -32,8 +29,6 @@ abstract class Player {
        actionHistory = actionHistory ?? [];
 
   // Getters
-  bool get isHuman => type == PlayerType.human;
-  bool get isAI => type == PlayerType.ai;
   bool get isDead => !isAlive;
 
   // Role-based getters
@@ -298,7 +293,7 @@ abstract class Player {
     return {
       'name': name,
       'role': role.toJson(),
-      'type': type.name,
+      'type': runtimeType.toString().toLowerCase().contains('human') ? 'human' : 'ai',
       'isAlive': isAlive,
       'privateData': Map<String, dynamic>.from(privateData),
       'actionHistory': actionHistory.map((e) => e.toJson()).toList(),
@@ -307,10 +302,10 @@ abstract class Player {
 
   factory Player.fromJson(Map<String, dynamic> json) {
     final role = RoleFactory.createRole(json['role']['roleId']);
-    final type = PlayerType.values.firstWhere((t) => t.name == json['type']);
+    final typeString = json['type'] as String;
 
-    switch (type) {
-      case PlayerType.human:
+    switch (typeString) {
+      case 'human':
         return HumanPlayer._fromJson(
           name: json['name'],
           role: role,
@@ -319,10 +314,12 @@ abstract class Player {
           // TODO: Implement proper event deserialization with event factory
           actionHistory: <GameEvent>[],
         );
-      case PlayerType.ai:
+      case 'ai':
         throw UnimplementedError(
           'AI player deserialization must be implemented by concrete AI player classes',
         );
+      default:
+        throw ArgumentError('Unknown player type: $typeString');
     }
   }
 
@@ -345,8 +342,7 @@ abstract class Player {
 
 /// Human player
 class HumanPlayer extends Player {
-  HumanPlayer({required super.name, required super.role, super.modelConfig})
-    : super(type: PlayerType.human);
+  HumanPlayer({required super.name, required super.role, super.modelConfig});
 
   factory HumanPlayer._fromJson({
     required String name,
@@ -371,8 +367,7 @@ abstract class AIPlayer extends Player {
     required super.role,
     super.modelConfig,
     RandomHelper? random,
-  }) : random = random ?? RandomHelper(),
-       super(type: PlayerType.ai);
+  }) : random = random ?? RandomHelper();
 
   // AI-specific methods
   Future<String> generateStatement(GameState state, String context) async {

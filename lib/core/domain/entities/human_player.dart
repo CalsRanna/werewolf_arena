@@ -1,22 +1,21 @@
+import 'dart:async';
 import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/domain/entities/role.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/events/base/game_event.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/core/drivers/player_driver.dart';
-import 'package:werewolf_arena/core/drivers/ai_player_driver.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
+import 'package:werewolf_arena/core/drivers/human_player_driver.dart';
 import 'package:werewolf_arena/core/skills/game_skill.dart';
 import 'package:werewolf_arena/core/skills/skill_result.dart';
 
-/// AI玩家实现
+/// 人类玩家实现
 /// 
-/// 使用AIPlayerDriver进行AI决策的玩家实现
-class AIPlayer extends GamePlayer {
+/// 使用HumanPlayerDriver等待人类输入的玩家实现
+class HumanPlayer extends GamePlayer {
   @override
-  final PlayerDriver driver;
+  final PlayerDriver driver = HumanPlayerDriver();
   
   final String _id;
   final String _name;
@@ -49,17 +48,35 @@ class AIPlayer extends GamePlayer {
   @override
   final List<GameEvent> actionHistory = [];
   
-  AIPlayer({
+  // StreamController用于外部UI提交技能结果
+  final StreamController<SkillResult> _actionController = StreamController<SkillResult>.broadcast();
+  
+  HumanPlayer({
     required String id,
     required String name,
     required int index,
     required Role role,
-    required PlayerIntelligence intelligence,
   }) : _id = id,
        _name = name,
        _index = index,
-       _role = role,
-       driver = AIPlayerDriver(intelligence: intelligence);
+       _role = role;
+  
+  /// 提供给外部UI调用的方法，用于提交技能执行结果
+  void submitSkillResult(SkillResult result) {
+    if (!_actionController.isClosed) {
+      _actionController.add(result);
+    }
+  }
+  
+  /// 取消当前等待的技能输入
+  void cancelSkillInput() {
+    if (!_actionController.isClosed) {
+      _actionController.add(SkillResult.failure(
+        caster: this,
+        metadata: {'reason': 'Cancelled by user'},
+      ));
+    }
+  }
   
   @override
   Future<SkillResult> executeSkill(GameSkill skill, GameState state) async {
@@ -71,7 +88,7 @@ class AIPlayer extends GamePlayer {
     }
     
     try {
-      // 使用Driver生成技能响应
+      // 使用Driver处理技能响应（通常是等待人类输入）
       final response = await driver.generateSkillResponse(
         player: this,
         state: state,
@@ -97,8 +114,8 @@ class AIPlayer extends GamePlayer {
   
   @override
   void onGameEvent(GameEvent event) {
-    // AI处理游戏事件，更新知识库
-    _updateKnowledgeFromEvent(event);
+    // 人类玩家处理游戏事件，通常用于UI更新
+    // 可以在这里触发UI更新事件
   }
   
   @override
@@ -208,11 +225,11 @@ class AIPlayer extends GamePlayer {
   
   @override
   String getStatus() {
-    return '$name (${isAlive ? 'Alive' : 'Dead'}) - ${role.name} [AI]';
+    return '$name (${isAlive ? 'Alive' : 'Dead'}) - ${role.name} [Human]';
   }
   
   @override
-  String get formattedName => '[${name.padLeft(5)}|${role.name.padLeft(4)}|AI]';
+  String get formattedName => '[${name.padLeft(5)}|${role.name.padLeft(4)}|Human]';
   
   @override
   void die(DeathCause cause, GameState state) {
@@ -228,7 +245,7 @@ class AIPlayer extends GamePlayer {
       'name': name,
       'index': index,
       'role': role.toJson(),
-      'type': 'ai',
+      'type': 'human',
       'isAlive': isAlive,
       'isProtected': isProtected,
       'isSilenced': isSilenced,
@@ -239,40 +256,26 @@ class AIPlayer extends GamePlayer {
   
   /// 获取技能的期望格式
   String _getExpectedFormat(GameSkill skill) {
-    // 根据技能类型返回不同的JSON格式要求
+    // 为人类玩家提供技能输入格式指导
     if (skill.skillId.contains('kill') || skill.skillId.contains('attack')) {
-      return '{"action": "kill", "target": "玩家名字", "reasoning": "选择理由"}';
+      return '选择要击杀的目标玩家';
     } else if (skill.skillId.contains('protect') || skill.skillId.contains('guard')) {
-      return '{"action": "protect", "target": "玩家名字", "reasoning": "选择理由"}';
+      return '选择要保护的目标玩家';
     } else if (skill.skillId.contains('investigate') || skill.skillId.contains('check')) {
-      return '{"action": "investigate", "target": "玩家名字", "reasoning": "选择理由"}';
+      return '选择要查验的目标玩家';
     } else if (skill.skillId.contains('vote')) {
-      return '{"action": "vote", "target": "玩家名字", "reasoning": "选择理由"}';
+      return '选择要投票的目标玩家';
     } else if (skill.skillId.contains('speak')) {
-      return '{"action": "speak", "message": "发言内容", "reasoning": "发言策略"}';
+      return '输入你的发言内容';
     } else {
-      return '{"action": "generic", "target": "玩家名字或null", "message": "附加信息", "reasoning": "选择理由"}';
+      return '选择目标或输入内容';
     }
   }
   
-  /// 从事件更新知识库
-  void _updateKnowledgeFromEvent(GameEvent event) {
-    // 更新AI的知识基于收到的事件
-    addKnowledge('last_event_type', event.type);
-    addKnowledge('event_count', (getKnowledge<int>('event_count') ?? 0) + 1);
-    
-    // 根据事件类型更新特定知识
-    switch (event.type) {
-      case GameEventType.playerDeath:
-        final deadPlayerCount = getKnowledge<int>('dead_player_count') ?? 0;
-        addKnowledge('dead_player_count', deadPlayerCount + 1);
-        break;
-      case GameEventType.phaseChange:
-        addKnowledge('last_phase_change', event.type);
-        break;
-      default:
-        // 记录其他类型事件的发生
-        break;
+  /// 释放资源
+  void dispose() {
+    if (!_actionController.isClosed) {
+      _actionController.close();
     }
   }
 }
