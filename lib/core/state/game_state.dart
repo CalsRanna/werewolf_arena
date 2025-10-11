@@ -247,7 +247,7 @@ class GameState {
       eventHistory: eventHistory,
       metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
       nightActions: NightActionState.fromJson(json['nightActions'] ?? {}, players),
-      votingState: VotingState.fromJson(json['votingState'] ?? {}),
+      votingState: VotingState.fromJson(json['votingState'] ?? {}, players),
     )
       ..lastUpdateTime = json['lastUpdateTime'] != null
           ? DateTime.parse(json['lastUpdateTime'])

@@ -72,14 +72,7 @@ class GameEngine {
   /// 初始化阶段处理器
   static Map<GamePhase, PhaseProcessor> _initializePhaseProcessors() {
     return {
-      GamePhase.night: NightPhaseProcessor(
-        actionProcessors: [
-          WerewolfActionProcessor(),
-          GuardActionProcessor(),
-          SeerActionProcessor(),
-          WitchActionProcessor(),
-        ],
-      ),
+      GamePhase.night: NightPhaseProcessor(),
       GamePhase.day: DayPhaseProcessor(),
       GamePhase.voting: VotingPhaseProcessor(),
     };

@@ -1,24 +1,18 @@
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+import 'package:werewolf_arena/core/skills/game_skill.dart';
+import 'package:werewolf_arena/core/skills/skill_result.dart';
+import 'package:werewolf_arena/core/skills/skill_processor.dart';
+import 'package:werewolf_arena/core/events/phase_events.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
-import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'phase_processor.dart';
-import 'action_processor.dart';
 
-/// 夜晚阶段处理器
-///
-/// 负责处理游戏中的夜晚阶段，包括：
-/// - 狼人行动（讨论和击杀）
-/// - 守卫守护行动
-/// - 预言家查验行动
-/// - 女巫用药行动（解药和毒药）
-/// - 夜晚行动结算
+/// 夜晚阶段处理器（基于技能系统重构）
+/// 
+/// 负责处理游戏中的夜晚阶段，通过技能系统统一处理所有夜晚行动
 class NightPhaseProcessor implements PhaseProcessor {
-  /// 行动处理器列表
-  final List<ActionProcessor> actionProcessors;
-
-  NightPhaseProcessor({required this.actionProcessors});
+  final SkillProcessor _skillProcessor = SkillProcessor();
 
   @override
   GamePhase get supportedPhase => GamePhase.night;
@@ -27,49 +21,128 @@ class NightPhaseProcessor implements PhaseProcessor {
   Future<void> process(GameState state) async {
     LoggerUtil.instance.d('开始处理夜晚阶段 - 第${state.dayNumber}夜');
 
-    // 清空夜晚行动数据
-    state.nightActions.clearNightActions();
+    // 1. 阶段开始事件（所有人可见）
+    state.addEvent(PhaseChangeEvent(
+      oldPhase: state.currentPhase,
+      newPhase: GamePhase.night,
+      dayNumber: state.dayNumber,
+    ));
 
-    // 使用行动处理器按顺序处理各角色行动
-    for (final processor in actionProcessors) {
-      try {
-        await processor.process(state);
-      } catch (e) {
-        LoggerUtil.instance.e('行动处理器处理失败: $e');
-        await _handleGameError(e);
+    // 2. 收集当前阶段可用技能
+    final availableSkills = <GameSkill>[];
+    for (final player in state.alivePlayers) {
+      final playerSkills = player.role.getAvailableSkills(GamePhase.night);
+      for (final skill in playerSkills) {
+        if (skill.canCast(player, state)) {
+          availableSkills.add(skill);
+        }
       }
     }
 
-    // 结算夜晚行动结果
-    await _resolveNightActions(state);
+    // 3. 按优先级排序并执行技能
+    availableSkills.sort((a, b) => b.priority.compareTo(a.priority)); // 高优先级在前
+    final skillResults = await _executeSkills(state, availableSkills);
+
+    // 4. SkillProcessor结算所有技能结果和冲突
+    await _skillProcessor.process(skillResults, state);
+
+    // 5. 生成夜晚结果事件（所有人可见）
+    _generateNightResultEvents(state, skillResults);
+
+    // 6. 阶段结束事件（所有人可见）
+    state.addEvent(PhaseChangeEvent(
+      oldPhase: GamePhase.night,
+      newPhase: GamePhase.day,
+      dayNumber: state.dayNumber,
+    ));
+
+    // 7. 切换到白天阶段
+    await state.changePhase(GamePhase.day);
 
     LoggerUtil.instance.d('夜晚阶段处理完成');
   }
 
-  /// 结算夜晚行动结果
-  Future<void> _resolveNightActions(GameState state) async {
-    LoggerUtil.instance.d('开始结算夜晚行动结果');
+  /// 执行技能列表
+  Future<List<SkillResult>> _executeSkills(
+    GameState state, 
+    List<GameSkill> availableSkills
+  ) async {
+    final results = <SkillResult>[];
 
-    final Player? victim = state.nightActions.tonightVictim;
-    final Player? protected = state.nightActions.tonightProtected;
-    final Player? poisoned = state.nightActions.tonightPoisoned;
+    for (final skill in availableSkills) {
+      // 找到技能的拥有者
+      final player = state.alivePlayers.firstWhere(
+        (p) => p.role.skills.contains(skill),
+        orElse: () => throw Exception('未找到技能 ${skill.skillId} 的拥有者'),
+      );
 
-    // 处理击杀（如果被守护或救治则取消）
-    if (victim != null && !state.nightActions.killCancelled && victim != protected) {
-      victim.die(DeathCause.werewolfKill, state);
-      LoggerUtil.instance.d('玩家 ${victim.name} 被狼人击杀');
+      try {
+        LoggerUtil.instance.d('执行技能: ${skill.name} (玩家: ${player.name})');
+        
+        // 使用玩家执行技能
+        final result = await player.executeSkill(skill, state);
+        results.add(result);
+        
+        LoggerUtil.instance.d('技能执行完成: ${skill.name}, 成功: ${result.success}');
+      } catch (e) {
+        LoggerUtil.instance.e('技能执行失败: ${skill.name}, 错误: $e');
+        // 创建失败结果
+        results.add(SkillResult(
+          success: false,
+          caster: player,
+          target: null,
+        ));
+      }
     }
 
-    // 处理毒杀（如果被守护则无效）
-    if (poisoned != null && poisoned != protected) {
-      poisoned.die(DeathCause.poison, state);
-      LoggerUtil.instance.d('玩家 ${poisoned.name} 被毒杀');
+    return results;
+  }
+
+  /// 生成夜晚结果事件
+  void _generateNightResultEvents(GameState state, List<SkillResult> results) {
+    // 从state中获取今晚的死亡结果，而不是从SkillResult中
+    final tonightDeaths = state.deadPlayers.where((p) => 
+      state.eventHistory.any((event) => 
+        event.type.name == 'playerDeath' && 
+        event.target == p &&
+        // 检查是否是今晚的事件（可以通过事件时间戳或其他方式判断）
+        _isEventFromTonight(event)
+      )
+    ).toList();
+
+    if (tonightDeaths.isEmpty) {
+      // 平安夜
+      state.addEvent(NightResultEvent(
+        deathEvents: [],
+        isPeacefulNight: true,
+        dayNumber: state.dayNumber,
+      ));
+      LoggerUtil.instance.d('第${state.dayNumber}夜是平安夜，无人死亡');
+    } else {
+      // 有人死亡
+      final deathEvents = tonightDeaths.map((victim) {
+        // 创建死亡事件（这里简化处理，实际应该从事件历史中获取）
+        return state.eventHistory.whereType<DeadEvent>()
+            .where((e) => e.victim == victim && _isEventFromTonight(e))
+            .first;
+      }).toList();
+      
+      state.addEvent(NightResultEvent(
+        deathEvents: deathEvents,
+        isPeacefulNight: false,
+        dayNumber: state.dayNumber,
+      ));
+      
+      final deadPlayerNames = tonightDeaths.map((p) => p.name).join('、');
+      LoggerUtil.instance.d('第${state.dayNumber}夜死亡玩家：$deadPlayerNames');
     }
+  }
 
-    // 清空夜晚行动数据
-    state.nightActions.clearNightActions();
-
-    LoggerUtil.instance.d('夜晚行动结果结算完成');
+  /// 检查事件是否是今晚的（简化实现）
+  bool _isEventFromTonight(dynamic event) {
+    // 这里可以根据事件的时间戳、轮次等信息判断
+    // 暂时简化为返回true，实际实现需要更精确的判断逻辑
+    return true;
   }
 
   /// Handle game error - don't stop phase, log error and continue

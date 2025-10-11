@@ -25,4 +25,16 @@ enum GamePhase {
         return 'Ended';
     }
   }
+  
+  /// 是否为夜晚阶段
+  bool get isNight => this == GamePhase.night;
+  
+  /// 是否为白天阶段（包括投票阶段）
+  bool get isDay => this == GamePhase.day || this == GamePhase.voting;
+  
+  /// 是否为投票阶段
+  bool get isVoting => this == GamePhase.voting;
+  
+  /// 是否游戏结束
+  bool get isEnded => this == GamePhase.ended;
 }

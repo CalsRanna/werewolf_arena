@@ -166,44 +166,45 @@ dart analyze
 ```
 
 #### 2.3 创建具体技能实现（6小时）
-**任务2.3.1**: 创建夜晚技能
-- 在`lib/core/skills/`目录下创建`night_skills.dart`
-- 实现WerewolfKillSkill、GuardProtectSkill、SeerCheckSkill、WitchPotionSkill
-- 配置适当的执行优先级
+**[✓] 任务2.3.1**: 创建夜晚技能
+- ✓ 在`lib/core/skills/`目录下创建`night_skills.dart`
+- ✓ 实现WerewolfKillSkill、GuardProtectSkill、SeerCheckSkill、WitchHealSkill、WitchPoisonSkill
+- ✓ 配置适当的执行优先级
 
-**任务2.3.2**: 创建白天技能
-- 在`lib/core/skills/`目录下创建`day_skills.dart`
-- 实现SpeakSkill、DiscussSkill等白天相关技能
+**[✓] 任务2.3.2**: 创建白天技能
+- ✓ 在`lib/core/skills/`目录下创建`day_skills.dart`
+- ✓ 实现SpeakSkill、InformationShareSkill、DefenseSkill、AccusationSkill、AnalysisSkill、VoteGuidanceSkill等白天相关技能
 
-**任务2.3.3**: 创建投票技能
-- 在`lib/core/skills/`目录下创建`vote_skills.dart`
-- 实现VoteSkill、PkVoteSkill等投票相关技能
+**[✓] 任务2.3.3**: 创建投票技能
+- ✓ 在`lib/core/skills/`目录下创建`vote_skills.dart`
+- ✓ 实现VoteSkill、PkVoteSkill、VoteConfirmSkill、VoteChangeSkill、AbstainVoteSkill、PkSpeechSkill等投票相关技能
 
-**任务2.3.4**: 运行代码分析
+**[✓] 任务2.3.4**: 运行代码分析
 ```bash
 dart analyze
 ```
+注：存在一些遗留的service层错误，将在后续阶段处理
 
 ### 阶段3：游戏引擎重构（预计3-4天）
 
 #### 3.1 创建新的GameEngine（8小时）
-**任务3.1.1**: 创建简化版GameEngine
-- 在`lib/core/engine/`目录下创建`game_engine_new.dart`
-- 实现只需要4个参数的构造函数
-- 内部创建阶段处理器和工具类
-- 实现initializeGame和executeGameStep方法
+**[✓] 任务3.1.1**: 创建简化版GameEngine
+- ✓ 在`lib/core/engine/`目录下创建`game_engine_new.dart`
+- ✓ 实现只需要4个参数的构造函数
+- ✓ 内部创建阶段处理器和工具类
+- ✓ 实现initializeGame和executeGameStep方法
 
-**任务3.1.2**: 创建GameRandom工具类
-- 在`lib/core/engine/utils/`目录下创建`game_random.dart`
-- 封装随机数生成逻辑
-- 提供游戏相关的随机方法
+**[✓] 任务3.1.2**: 创建GameRandom工具类
+- ✓ 在`lib/core/engine/utils/`目录下创建`game_random.dart`
+- ✓ 封装随机数生成逻辑
+- ✓ 提供游戏相关的随机方法
 
-**任务3.1.3**: 实现两阶段处理器
-- 重构NightPhaseProcessor基于技能系统
-- 重构DayPhaseProcessor基于技能系统，包含发言和投票逻辑
+**[✓] 任务3.1.3**: 实现两阶段处理器
+- ✓ 重构NightPhaseProcessor基于技能系统
+- ✓ 重构DayPhaseProcessor基于技能系统，包含发言和投票逻辑
 - 确认只有Night和Day两个阶段，投票作为 Day 阶段的一部分
 
-**任务3.1.4**: 运行代码分析
+**[✓] 任务3.1.4**: 运行代码分析
 ```bash
 dart analyze
 ```

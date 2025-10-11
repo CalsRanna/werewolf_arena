@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/core/engine/game_engine.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 // import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/player.dart' hide AIPlayer;
 import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
 import 'package:werewolf_arena/services/llm/prompt_manager.dart';
@@ -200,12 +201,17 @@ List<Player> _createPlayersForScenario(
     final llmService = OpenAIService.fromPlayerConfig(playerModelConfig);
     final promptManager = PromptManager();
 
-    final player = EnhancedAIPlayer(
+    // 创建AI玩家实例
+    final player = AIPlayer(
+      id: playerName,
       name: playerName,
+      index: i,
       role: role,
-      llmService: llmService,
-      promptManager: promptManager,
-      modelConfig: playerModelConfig,
+      intelligence: PlayerIntelligence(
+        baseUrl: playerModelConfig.baseUrl ?? 'https://api.openai.com',
+        apiKey: playerModelConfig.apiKey,
+        modelId: playerModelConfig.model,
+      ),
     );
 
     players.add(player);
