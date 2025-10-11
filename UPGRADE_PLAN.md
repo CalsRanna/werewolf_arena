@@ -20,19 +20,19 @@
 ### 阶段1：基础设施和核心接口定义（预计2-3天）
 
 #### 1.1 创建新的配置系统（4小时）
-**任务1.1.1**: 创建GameConfig类
-- 在`lib/core/domain/value_objects/`目录下创建`game_config.dart`
-- 实现GameConfig类，包含playerIntelligences和maxRetries
-- 实现PlayerIntelligence类，包含baseUrl、apiKey、modelId
-- 创建`game_engine_status.dart`，定义引擎状态枚举（waiting, playing, ended）
-- 添加copyWith方法用于创建配置副本
+**[✓] 任务1.1.1**: 创建GameConfig类
+- ✓ 在`lib/core/domain/value_objects/`目录下创建`game_config.dart`
+- ✓ 实现GameConfig类，包含playerIntelligences和maxRetries
+- ✓ 实现PlayerIntelligence类，包含baseUrl、apiKey、modelId
+- ✓ 创建`game_engine_status.dart`，定义引擎状态枚举（waiting, playing, ended）
+- ✓ 添加copyWith方法用于创建配置副本
 
-**任务1.1.2**: 创建配置加载工具
-- 在`lib/core/domain/value_objects/`目录下创建`config_loader.dart`
-- 实现从YAML配置文件转换为GameConfig的逻辑
-- 实现配置验证逻辑
+**[✓] 任务1.1.2**: 创建配置加载工具
+- ✓ 在`lib/core/domain/value_objects/`目录下创建`config_loader.dart`
+- ✓ 实现从YAML配置文件转换为GameConfig的逻辑
+- ✓ 实现配置验证逻辑
 
-**任务1.1.3**: 运行代码分析
+**[✓] 任务1.1.3**: 运行代码分析
 ```bash
 dart analyze
 ```
