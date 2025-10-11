@@ -30,8 +30,9 @@ class ConfigLoader {
 
       final file = File(actualConfigPath);
       if (!file.existsSync()) {
-        print('配置文件不存在: $actualConfigPath，使用默认配置');
-        return _createDefaultGameConfig();
+        print('配置文件不存在: $actualConfigPath');
+        await _createDefaultConfigFile(actualConfigPath);
+        print('已自动创建默认配置文件: $actualConfigPath');
       }
 
       final yamlString = file.readAsStringSync();
@@ -179,6 +180,27 @@ class ConfigLoader {
   static Future<GameConfig> loadDefaultConfig() async {
     final loader = ConfigLoader();
     return await loader.loadGameConfig(); // 不传路径即为默认配置
+  }
+
+  /// 创建默认配置文件
+  ///
+  /// 当配置文件不存在时，自动创建包含示例配置的YAML文件
+  Future<void> _createDefaultConfigFile(String configPath) async {
+    try {
+      final file = File(configPath);
+      
+      // 确保父目录存在
+      await file.parent.create(recursive: true);
+      
+      // 生成默认配置内容
+      final defaultContent = generateSampleConfigYaml();
+      
+      // 写入文件
+      await file.writeAsString(defaultContent);
+    } catch (e) {
+      print('创建默认配置文件失败: $e');
+      // 如果创建失败，继续使用内存中的默认配置
+    }
   }
 
   /// 创建示例配置文件内容

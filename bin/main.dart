@@ -112,10 +112,20 @@ Future<void> main(List<String> arguments) async {
     console.printSeparator('=', 60);
     console.printLine();
 
-    // 5. 开始游戏循环
+    // 5. 初始化游戏引擎
+    console.printLine('🔧 初始化游戏引擎...');
+    try {
+      await gameEngine.initializeGame();
+      console.printLine('   ✅ 游戏引擎初始化成功');
+    } catch (e) {
+      console.displayError('游戏引擎初始化失败: $e');
+      exit(1);
+    }
+
+    // 6. 开始游戏循环
     console.printLine('🚀 开始游戏...\n');
 
-    // 游戏引擎已经在GameAssembler中初始化，直接开始执行
+    // 现在开始执行游戏步骤
     while (!gameEngine.isGameEnded) {
       try {
         await gameEngine.executeGameStep();
@@ -128,7 +138,7 @@ Future<void> main(List<String> arguments) async {
       }
     }
 
-    // 6. 游戏结束
+    // 7. 游戏结束
     console.printLine();
     console.printSeparator('=', 60);
     console.printLine('✅ 游戏已结束');

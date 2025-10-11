@@ -1,6 +1,7 @@
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'console_output.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
@@ -123,6 +124,58 @@ class ConsoleGameObserver extends GameObserverAdapter {
   @override
   void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers) {
     _console.displayAliveGamePlayers(aliveGamePlayers);
+  }
+
+  @override
+  void onGameStateChanged(GameState state) {
+    // 显示当前游戏状态摘要
+    _console.printLine('📊 游戏状态更新:');
+    _console.printLine('   阶段: ${_getPhaseDisplayName(state.currentPhase)}');
+    _console.printLine('   第${state.dayNumber}天');
+    _console.printLine('   存活玩家: ${state.alivePlayers.length}人');
+    _console.printLine();
+  }
+
+  @override
+  void onGameLog(GameLogEvent logEvent) {
+    // 根据日志级别显示不同颜色
+    switch (logEvent.level) {
+      case GameLogLevel.error:
+        _console.displayError('🔴 ${logEvent.message}');
+        break;
+      case GameLogLevel.warning:
+        _console.printLine('🟡 ${logEvent.message}');
+        break;
+      case GameLogLevel.info:
+        _console.printLine('ℹ️ ${logEvent.message}');
+        break;
+      case GameLogLevel.debug:
+        // 只在调试模式下显示debug日志
+        if (_isDebugMode()) {
+          _console.printLine('🔍 [DEBUG] ${logEvent.message}');
+        }
+        break;
+    }
+  }
+
+  /// 获取阶段显示名称
+  String _getPhaseDisplayName(GamePhase phase) {
+    switch (phase) {
+      case GamePhase.night:
+        return '🌙 夜晚';
+      case GamePhase.day:
+        return '☀️ 白天';
+      case GamePhase.voting:
+        return '🗳️ 投票';
+      case GamePhase.ended:
+        return '🏁 游戏结束';
+    }
+  }
+
+  /// 检查是否为调试模式
+  bool _isDebugMode() {
+    // 可以通过环境变量或其他方式配置
+    return const bool.fromEnvironment('DEBUG', defaultValue: false);
   }
 
   @override

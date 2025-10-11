@@ -197,7 +197,7 @@ class DayPhaseProcessor implements PhaseProcessor {
     final voteResults = <SkillResult>[];
     for (final skill in voteSkills) {
       final player = state.alivePlayers.firstWhere(
-        (p) => p.role.skills.contains(skill),
+        (p) => p.role.skills.any((s) => s.skillId == skill.skillId),
         orElse: () => throw Exception('未找到技能 ${skill.skillId} 的拥有者'),
       );
 

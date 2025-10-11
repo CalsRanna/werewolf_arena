@@ -78,9 +78,9 @@ class NightPhaseProcessor implements PhaseProcessor {
     final results = <SkillResult>[];
 
     for (final skill in availableSkills) {
-      // 找到技能的拥有者
+      // 找到技能的拥有者 - 使用技能ID而不是对象引用进行匹配
       final player = state.alivePlayers.firstWhere(
-        (p) => p.role.skills.contains(skill),
+        (p) => p.role.skills.any((s) => s.skillId == skill.skillId),
         orElse: () => throw Exception('未找到技能 ${skill.skillId} 的拥有者'),
       );
 

@@ -62,8 +62,13 @@ class GameEngine {
       _currentState!.startGame();
       _status = GameEngineStatus.playing; // 设置为进行中状态
 
-      // 通知状态更新（暂时注释掉，因为接口不匹配）
-      // _observer?.onStateChange(_currentState!);
+      // 通知游戏开始
+      _observer?.onGameStart(
+        _currentState!,
+        players.length,
+        _getRoleDistribution(),
+      );
+      _observer?.onGameStateChanged(_currentState!);
 
       GameEngineLogger.instance.info(
         GameLogCategory.engine,
@@ -94,8 +99,8 @@ class GameEngine {
 
     _status = GameEngineStatus.playing;
 
-    // 通知状态更新（暂时注释掉，因为接口不匹配）
-    // _observer?.onStateChange(_currentState!);
+    // 通知状态更新
+    _observer?.onGameStateChanged(_currentState!);
 
     GameEngineLogger.instance.info(GameLogCategory.engine, '游戏开始');
   }
@@ -122,8 +127,8 @@ class GameEngine {
       // 执行阶段处理
       await processor.process(_currentState!);
 
-      // 通知状态更新（暂时注释掉，因为接口不匹配）
-      // _observer?.onStateChange(_currentState!);
+      // 通知状态更新
+      _observer?.onGameStateChanged(_currentState!);
 
       // 检查游戏结束
       if (_currentState!.checkGameEnd()) {
@@ -152,14 +157,29 @@ class GameEngine {
     _status = GameEngineStatus.ended;
     state.endGame(state.winner ?? 'unknown');
 
-    // 通知状态更新（暂时注释掉，因为接口不匹配）
-    // _observer?.onStateChange(state);
+    // 通知游戏结束
+    _observer?.onGameEnd(
+      state,
+      state.winner ?? '未知',
+      state.dayNumber,
+      state.alivePlayers.length,
+    );
 
     GameEngineLogger.instance.info(
       GameLogCategory.engine,
       '游戏结束',
       metadata: {'winner': state.winner ?? 'unknown'},
     );
+  }
+
+  /// 获取角色分布统计
+  Map<String, int> _getRoleDistribution() {
+    final distribution = <String, int>{};
+    for (final player in players) {
+      final roleName = player.role.name;
+      distribution[roleName] = (distribution[roleName] ?? 0) + 1;
+    }
+    return distribution;
   }
 
   /// 处理游戏错误
