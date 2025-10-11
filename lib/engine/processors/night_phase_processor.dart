@@ -6,7 +6,6 @@ import 'package:werewolf_arena/engine/skills/skill_processor.dart';
 import 'package:werewolf_arena/engine/events/phase_events.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
-import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'phase_processor.dart';
 
 /// 夜晚阶段处理器（基于技能系统重构）
@@ -20,10 +19,7 @@ class NightPhaseProcessor implements PhaseProcessor {
 
   @override
   Future<void> process(GameState state) async {
-    GameEngineLogger.instance.info(
-      GameLogCategory.phase,
-      '开始处理夜晚阶段 - 第${state.dayNumber}夜',
-    );
+    GameEngineLogger.instance.i('开始处理夜晚阶段 - 第${state.dayNumber}夜');
 
     // 1. 阶段开始事件（所有人可见）
     state.addEvent(
@@ -67,7 +63,7 @@ class NightPhaseProcessor implements PhaseProcessor {
     // 7. 切换到白天阶段
     await state.changePhase(GamePhase.day);
 
-    GameEngineLogger.instance.info(GameLogCategory.phase, '夜晚阶段处理完成');
+    GameEngineLogger.instance.i('夜晚阶段处理完成');
   }
 
   /// 执行技能列表
@@ -85,27 +81,17 @@ class NightPhaseProcessor implements PhaseProcessor {
       );
 
       try {
-        GameEngineLogger.instance.debug(
-          GameLogCategory.skill,
-          '执行技能: ${skill.name} (玩家: ${player.name})',
-          metadata: {'skill': skill.skillId, 'player': player.name},
-        );
+        GameEngineLogger.instance.d('执行技能: ${skill.name} (玩家: ${player.name})');
 
         // 使用玩家执行技能
         final result = await player.executeSkill(skill, state);
         results.add(result);
 
-        GameEngineLogger.instance.debug(
-          GameLogCategory.skill,
+        GameEngineLogger.instance.d(
           '技能执行完成: ${skill.name}, 成功: ${result.success}',
-          metadata: {'skill': skill.skillId, 'success': result.success},
         );
       } catch (e) {
-        GameEngineLogger.instance.error(
-          GameLogCategory.skill,
-          '技能执行失败: ${skill.name}, 错误: $e',
-          metadata: {'skill': skill.skillId, 'error': e},
-        );
+        GameEngineLogger.instance.e('技能执行失败: ${skill.name}, 错误: $e');
         // 创建失败结果
         results.add(SkillResult(success: false, caster: player, target: null));
       }
@@ -138,11 +124,7 @@ class NightPhaseProcessor implements PhaseProcessor {
           dayNumber: state.dayNumber,
         ),
       );
-      GameEngineLogger.instance.info(
-        GameLogCategory.phase,
-        '第${state.dayNumber}夜是平安夜，无人死亡',
-        metadata: {'dayNumber': state.dayNumber, 'nightResult': 'peaceful'},
-      );
+      GameEngineLogger.instance.i('第${state.dayNumber}夜是平安夜，无人死亡');
     } else {
       // 有人死亡
       final deathEvents = tonightDeaths.map((victim) {
@@ -163,11 +145,7 @@ class NightPhaseProcessor implements PhaseProcessor {
       );
 
       final deadPlayerNames = tonightDeaths.map((p) => p.name).join('、');
-      GameEngineLogger.instance.info(
-        GameLogCategory.phase,
-        '第${state.dayNumber}夜死亡玩家：$deadPlayerNames',
-        metadata: {'dayNumber': state.dayNumber, 'deaths': deadPlayerNames},
-      );
+      GameEngineLogger.instance.i('第${state.dayNumber}夜死亡玩家：$deadPlayerNames');
     }
   }
 

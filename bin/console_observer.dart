@@ -136,28 +136,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
     _console.printLine();
   }
 
-  @override
-  void onGameLog(GameLogEvent logEvent) {
-    // 根据日志级别显示不同颜色
-    switch (logEvent.level) {
-      case GameLogLevel.error:
-        _console.displayError('🔴 ${logEvent.message}');
-        break;
-      case GameLogLevel.warning:
-        _console.printLine('🟡 ${logEvent.message}');
-        break;
-      case GameLogLevel.info:
-        _console.printLine('ℹ️ ${logEvent.message}');
-        break;
-      case GameLogLevel.debug:
-        // 只在调试模式下显示debug日志
-        if (_isDebugMode()) {
-          _console.printLine('🔍 [DEBUG] ${logEvent.message}');
-        }
-        break;
-    }
-  }
-
   /// 获取阶段显示名称
   String _getPhaseDisplayName(GamePhase phase) {
     switch (phase) {
@@ -170,12 +148,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
       case GamePhase.ended:
         return '🏁 游戏结束';
     }
-  }
-
-  /// 检查是否为调试模式
-  bool _isDebugMode() {
-    // 可以通过环境变量或其他方式配置
-    return const bool.fromEnvironment('DEBUG', defaultValue: false);
   }
 
   @override

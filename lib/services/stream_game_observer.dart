@@ -87,7 +87,7 @@ class StreamGameObserver implements GameObserver {
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
     final phaseStr = _getPhaseString(newPhase);
     _gameEventController.add(
-      '阶段变更: ${_getPhaseString(oldPhase)} -> $phaseStr (第${dayNumber}天)',
+      '阶段变更: ${_getPhaseString(oldPhase)} -> $phaseStr (第$dayNumber天)',
     );
     _onPhaseChangeController.add(phaseStr);
   }
@@ -217,14 +217,6 @@ class StreamGameObserver implements GameObserver {
     _onGameStateChangedController.add(state);
   }
 
-  @override
-  void onGameLog(GameLogEvent logEvent) {
-    // 将游戏日志事件转换为普通消息事件
-    final prefix = '[${logEvent.level.name.toUpperCase()}]';
-    final category = '[${logEvent.category.name}]';
-    _gameEventController.add('$prefix$category ${logEvent.message}');
-  }
-
   // ============ 辅助方法 ============
 
   String _getPhaseString(GamePhase phase) {
@@ -276,4 +268,7 @@ class StreamGameObserver implements GameObserver {
     _onErrorController.close();
     _onGameStateChangedController.close();
   }
+
+  @override
+  void onGameLog(GameLogEvent logEvent) {}
 }

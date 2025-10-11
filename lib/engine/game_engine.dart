@@ -10,7 +10,6 @@ import 'package:werewolf_arena/engine/processors/night_phase_processor.dart';
 import 'package:werewolf_arena/engine/processors/day_phase_processor.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
-import 'package:werewolf_arena/engine/events/game_log_event.dart';
 
 /// 简化版游戏引擎 - 只需要4个参数的构造函数，内部创建阶段处理器和工具类
 class GameEngine {
@@ -70,17 +69,9 @@ class GameEngine {
       );
       _observer?.onGameStateChanged(_currentState!);
 
-      GameEngineLogger.instance.info(
-        GameLogCategory.engine,
-        '游戏初始化完成',
-        metadata: {'playerCount': players.length, 'scenario': scenario.id},
-      );
+      GameEngineLogger.instance.i('游戏初始化完成');
     } catch (e) {
-      GameEngineLogger.instance.error(
-        GameLogCategory.engine,
-        '游戏初始化失败: $e',
-        metadata: {'error': e},
-      );
+      GameEngineLogger.instance.e('游戏初始化失败: $e');
       await _handleGameError(e);
       rethrow;
     }
@@ -93,7 +84,7 @@ class GameEngine {
     }
 
     if (isGameRunning) {
-      GameEngineLogger.instance.debug(GameLogCategory.engine, '游戏已在运行中');
+      GameEngineLogger.instance.d('游戏已在运行中');
       return;
     }
 
@@ -102,7 +93,7 @@ class GameEngine {
     // 通知状态更新
     _observer?.onGameStateChanged(_currentState!);
 
-    GameEngineLogger.instance.info(GameLogCategory.engine, '游戏开始');
+    GameEngineLogger.instance.i('游戏开始');
   }
 
   /// 执行游戏步骤
@@ -138,11 +129,7 @@ class GameEngine {
 
       return true; // 还有下一步可执行
     } catch (e) {
-      GameEngineLogger.instance.error(
-        GameLogCategory.engine,
-        '游戏步骤执行错误: $e',
-        metadata: {'error': e},
-      );
+      GameEngineLogger.instance.e('游戏步骤执行错误: $e');
       await _handleGameError(e);
       return false; // 出错时停止执行
     }
@@ -165,11 +152,7 @@ class GameEngine {
       state.alivePlayers.length,
     );
 
-    GameEngineLogger.instance.info(
-      GameLogCategory.engine,
-      '游戏结束',
-      metadata: {'winner': state.winner ?? 'unknown'},
-    );
+    GameEngineLogger.instance.i('游戏结束');
   }
 
   /// 获取角色分布统计
@@ -184,14 +167,10 @@ class GameEngine {
 
   /// 处理游戏错误
   Future<void> _handleGameError(dynamic error) async {
-    GameEngineLogger.instance.error(
-      GameLogCategory.engine,
-      '游戏错误: $error',
-      metadata: {'error': error},
-    );
+    GameEngineLogger.instance.e('游戏错误: $error');
 
     // 不停止游戏，只记录错误并继续
-    GameEngineLogger.instance.debug(GameLogCategory.engine, '游戏继续运行，错误已记录');
+    GameEngineLogger.instance.d('游戏继续运行，错误已记录');
 
     // 通知观察者错误
     _observer?.onErrorMessage.call('游戏发生错误', errorDetails: error);
@@ -199,6 +178,6 @@ class GameEngine {
 
   /// 清理资源
   void dispose() {
-    GameEngineLogger.instance.debug(GameLogCategory.engine, '游戏引擎资源清理完成');
+    GameEngineLogger.instance.d('游戏引擎资源清理完成');
   }
 }

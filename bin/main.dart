@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/engine/game_assembler.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/services/game_log_observer.dart';
 import 'console_output.dart';
 import 'console_observer.dart';
 
@@ -67,7 +69,9 @@ Future<void> main(List<String> arguments) async {
 
     // 2. 创建游戏观察者
     console.printLine('👁️ 创建游戏观察者...');
-    final observer = ConsoleGameObserver();
+    final observer = CompositeGameObserver();
+    observer.addObserver(ConsoleGameObserver());
+    observer.addObserver(GameLogObserver());
 
     // 3. 使用GameAssembler创建游戏引擎
     console.printLine('🎮 正在组装游戏引擎...');

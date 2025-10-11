@@ -11,7 +11,6 @@ import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/rules/victory_conditions.dart';
-import 'package:werewolf_arena/engine/events/game_log_event.dart';
 
 /// 简化后的游戏状态类 - 专注于纯游戏逻辑状态
 ///
@@ -214,22 +213,10 @@ class GameState {
 
   /// Check if game should end
   bool checkGameEnd() {
-    logger.debug(
-      GameLogCategory.state,
-      '游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys',
-      metadata: {
-        'aliveWerewolves': aliveWerewolves,
-        'aliveGoodGuys': aliveGoodGuys,
-        'alivePlayers': alivePlayers.map((p) => p.formattedName).toList(),
-      },
-    );
+    logger.d('游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys');
 
     if (alivePlayers.length < 2) {
-      logger.warning(
-        GameLogCategory.state,
-        '游戏异常：存活玩家少于2人',
-        metadata: {'alivePlayerCount': alivePlayers.length},
-      );
+      logger.w('游戏异常：存活玩家少于2人');
       endGame('Game Error');
       return true;
     }
@@ -242,7 +229,7 @@ class GameState {
       return true;
     }
 
-    logger.debug(GameLogCategory.state, '游戏继续，未达到结束条件');
+    logger.d('游戏继续，未达到结束条件');
     return false;
   }
 
