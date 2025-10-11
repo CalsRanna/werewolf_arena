@@ -5,6 +5,7 @@ import 'package:werewolf_arena/core/skills/game_skill.dart';
 import 'package:werewolf_arena/core/skills/skill_result.dart';
 import 'package:werewolf_arena/core/skills/skill_processor.dart';
 import 'package:werewolf_arena/core/events/phase_events.dart';
+import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
 import 'phase_processor.dart';
 
@@ -122,9 +123,10 @@ class NightPhaseProcessor implements PhaseProcessor {
       // 有人死亡
       final deathEvents = tonightDeaths.map((victim) {
         // 创建死亡事件（这里简化处理，实际应该从事件历史中获取）
-        return state.eventHistory.whereType<DeadEvent>()
+        final deadEvent = state.eventHistory.whereType<DeadEvent>()
             .where((e) => e.victim == victim && _isEventFromTonight(e))
-            .first;
+            .firstOrNull;
+        return deadEvent!; // 如果找不到事件则抛出错误
       }).toList();
       
       state.addEvent(NightResultEvent(

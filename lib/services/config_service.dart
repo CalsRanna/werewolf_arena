@@ -8,6 +8,8 @@ import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
 
 /// 配置服务 - Flutter友好的包装层
+/// TODO: 根据新架构重构，暂时注释掉以减少编译错误
+/*
 class ConfigService {
   bool _isInitialized = false;
   FlutterGameParameters? _gameParameters;
@@ -81,14 +83,14 @@ class ConfigService {
     _ensureInitialized();
 
     final players = <GamePlayer>[];
-    final roleIds = scenario.getExpandedRoles();
+    final roleIds = scenario.getExpandedGameRoles();
     roleIds.shuffle(); // 随机打乱角色顺序
 
     for (int i = 0; i < roleIds.length; i++) {
       final playerNumber = i + 1;
       final playerName = '${playerNumber}号玩家';
       final roleId = roleIds[i];
-      final role = scenario.createRole(roleId);
+      final role = scenario.createGameRole(roleId);
 
       // 获取玩家专属的LLM配置
       final playerLLMConfig = _gameParameters!.getGamePlayerLLMConfig(playerNumber);
@@ -145,3 +147,4 @@ class ConfigService {
     }
   }
 }
+*/

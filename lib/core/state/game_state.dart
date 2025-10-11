@@ -147,6 +147,13 @@ class GameState {
   }
 
   /// Get recent events visible to a specific player
+  /// Get events visible to a specific player
+  List<GameEvent> getEventsForGamePlayer(GamePlayer player) {
+    return eventHistory
+        .where((event) => event.isVisibleTo(player))
+        .toList();
+  }
+
   List<GameEvent> getRecentEventsForPlayer(
     GamePlayer player, {
     Duration timeWindow = const Duration(minutes: 5),
