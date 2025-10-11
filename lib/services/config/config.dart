@@ -2,7 +2,7 @@ import 'dart:io'
     if (dart.library.html) 'package:werewolf_arena/services/config/platform_io_stub.dart';
 import 'package:yaml/yaml.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_registry.dart';
+// import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
 import 'package:werewolf_arena/core/engine/game_parameters.dart';
 import 'package:werewolf_arena/services/config/preference_loader.dart';
 
@@ -266,7 +266,7 @@ class FlutterGameParameters implements GameParameters {
   late AppConfig config;
 
   @override
-  late final ScenarioRegistry scenarioRegistry;
+  // late final ScenarioRegistry scenarioRegistry; // 已删除
 
   @override
   GameScenario? currentScenario;
@@ -291,8 +291,8 @@ class FlutterGameParameters implements GameParameters {
     config = await _configLoader!.loadConfig();
 
     // 初始化场景注册表
-    scenarioRegistry = ScenarioRegistry();
-    scenarioRegistry.initialize();
+    // scenarioRegistry = ScenarioRegistry(); // 已删除
+    // scenarioRegistry.initialize(); // 已删除
   }
 
   /// 保存配置（GUI 端）
@@ -307,11 +307,12 @@ class FlutterGameParameters implements GameParameters {
   /// 设置当前场景
   @override
   void setCurrentScenario(String scenarioId) {
-    final scenario = scenarioRegistry.getScenario(scenarioId);
-    if (scenario == null) {
-      throw Exception('场景不存在: $scenarioId');
-    }
-    currentScenario = scenario;
+    // final scenario = scenarioRegistry.getScenario(scenarioId); // 已删除
+    // if (scenario == null) {
+    //   throw Exception('场景不存在: $scenarioId');
+    // }
+    // currentScenario = scenario;
+    throw UnimplementedError('setCurrentScenario 将在阶段4删除，请使用GameAssembler');
   }
 
   /// 获取当前场景
@@ -321,7 +322,8 @@ class FlutterGameParameters implements GameParameters {
   /// 获取适合指定玩家数量的场景
   @override
   List<GameScenario> getAvailableScenarios(int playerCount) {
-    return scenarioRegistry.getScenariosByPlayerCount(playerCount);
+    // return scenarioRegistry.getScenariosByPlayerCount(playerCount); // 已删除
+    throw UnimplementedError('getAvailableScenarios 将在阶段4删除，请使用GameAssembler');
   }
 
   /// 为指定玩家获取 LLM 配置

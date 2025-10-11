@@ -38,21 +38,24 @@ dart analyze
 ```
 
 #### 1.2 重构GameScenario接口（4小时）
-**任务1.2.1**: 简化GameScenario接口
-- 移除initialize、getNextActionRole等方法
-- 添加rule字段用于用户界面展示
-- 添加getExpandedRoles方法用于角色列表获取
+**[✓] 任务1.2.1**: 简化GameScenario接口
+- ✓ 移除initialize、getNextActionRole等方法
+- ✓ 添加rule字段用于用户界面展示
+- ✓ 添加getExpandedRoles方法用于角色列表获取
+- ✓ 创建VictoryResult类替代GameEndResult
 
-**任务1.2.2**: 更新现有场景实现
-- 更新scenario_9_players.dart实现新接口
-- 更新scenario_12_players.dart实现新接口
-- 确保所有场景都有完整的rule描述
+**[✓] 任务1.2.2**: 更新现有场景实现
+- ✓ 更新scenario_9_players.dart实现新接口
+- ✓ 更新scenario_12_players.dart实现新接口
+- ✓ 确保所有场景都有完整的rule描述
+- ✓ 更新RoleType枚举，添加具体角色类型
 
-**任务1.2.3**: 删除ScenarioRegistry
-- 删除scenario_registry.dart文件
-- 移除所有对ScenarioRegistry的引用
+**[✓] 任务1.2.3**: 删除ScenarioRegistry
+- ✓ 删除scenario_registry.dart文件
+- ✓ 移除所有对ScenarioRegistry的引用
+- ✓ 暂时注释掉相关功能，等待阶段4重构
 
-**任务1.2.4**: 运行代码分析
+**[✓] 任务1.2.4**: 运行代码分析
 ```bash
 dart analyze
 ```

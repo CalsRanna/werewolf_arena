@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_registry.dart';
+// import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
 import 'package:werewolf_arena/services/config/config.dart';
 
 /// 游戏参数接口
@@ -17,7 +17,7 @@ abstract class GameParameters {
   AppConfig get config;
 
   /// 获取场景注册表
-  ScenarioRegistry get scenarioRegistry;
+  // ScenarioRegistry get scenarioRegistry; // 已删除，将在阶段4删除整个GameParameters接口
 
   /// 获取/设置当前场景
   GameScenario? get currentScenario;

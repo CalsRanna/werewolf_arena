@@ -62,7 +62,7 @@ abstract class Role {
   // Getters
   bool get isWerewolf => type == RoleType.werewolf;
   bool get isVillager => type == RoleType.villager;
-  bool get isGod => type == RoleType.god;
+  bool get isGod => type == RoleType.seer || type == RoleType.witch || type == RoleType.guard || type == RoleType.hunter;
   bool get isGood => alignment == RoleAlignment.good;
   bool get isEvil => alignment == RoleAlignment.evil;
 
@@ -149,7 +149,7 @@ class SeerRole extends Role {
     : super(
         roleId: 'seer',
         name: '预言家',
-        type: RoleType.god,
+        type: RoleType.seer,
         alignment: RoleAlignment.good,
         description: '每晚可以查验一名玩家的身份',
         skills: [InvestigateSkill()],
@@ -168,7 +168,7 @@ class WitchRole extends Role {
     : super(
         roleId: 'witch',
         name: '女巫',
-        type: RoleType.god,
+        type: RoleType.witch,
         alignment: RoleAlignment.good,
         description: '拥有一瓶解药和一瓶毒药',
         skills: [HealSkill(), PoisonSkill()],
@@ -212,7 +212,7 @@ class HunterRole extends Role {
     : super(
         roleId: 'hunter',
         name: '猎人',
-        type: RoleType.god,
+        type: RoleType.hunter,
         alignment: RoleAlignment.good,
         description: '死亡时可以开枪带走一名玩家',
         skills: [HunterShootSkill()],
@@ -242,7 +242,7 @@ class GuardRole extends Role {
     : super(
         roleId: 'guard',
         name: '守卫',
-        type: RoleType.god,
+        type: RoleType.guard,
         alignment: RoleAlignment.good,
         description: '每晚可以守护一名玩家，但不能连续两晚守护同一人',
         skills: [ProtectSkill()],

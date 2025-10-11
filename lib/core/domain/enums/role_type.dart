@@ -6,6 +6,15 @@ enum RoleType {
   /// 平民
   villager,
 
-  /// 神职
-  god,
+  /// 预言家
+  seer,
+
+  /// 女巫
+  witch,
+
+  /// 守卫
+  guard,
+
+  /// 猎人
+  hunter,
 }

@@ -1,110 +1,109 @@
+import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/enums/role_type.dart';
+import 'package:werewolf_arena/core/domain/value_objects/victory_result.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 标准9人局场景
-/// 3狼3民3神配置，适合新手
-class Standard9PlayersScenario extends GameScenario {
+/// 2狼3民+预言家+女巫+守卫+猎人配置
+class Scenario9Players extends GameScenario {
   @override
   String get id => 'standard_9_players';
-
+  
   @override
   String get name => '标准9人局';
-
+  
   @override
-  String get description => '3狼3民3神配置，规则简单，适合新手练习';
-
+  String get description => '经典狼人杀9人局配置';
+  
   @override
   int get playerCount => 9;
+  
+  @override
+  String get rule => '''
+标准狼人杀游戏规则：
+
+游戏目标：
+- 好人阵营：消灭所有狼人
+- 狼人阵营：狼人数量≥好人数量
+
+游戏流程：
+1. 夜晚阶段：狼人击杀、守卫守护、预言家查验、女巫用药
+2. 白天阶段：公布结果、玩家发言讨论
+3. 投票阶段：投票出局玩家，若平票则PK
+
+角色能力：
+- 狼人：夜晚可以击杀一名玩家
+- 村民：无特殊能力
+- 预言家：夜晚可以查验一名玩家身份
+- 女巫：拥有一瓶解药和一瓶毒药
+- 守卫：夜晚可以守护一名玩家（不能连续守护同一人）
+- 猎人：被投票出局或被狼人击杀时可以开枪带走一名玩家
+
+特殊规则：
+- 女巫的解药和毒药不能在同一晚使用
+- 守卫不能连续两晚守护同一玩家
+- 猎人只有在被投票出局或被狼人击杀时才能开枪
+- 平票时进入PK环节，平票玩家发言后重新投票
+''';
 
   @override
-  String get difficulty => 'easy';
-
-  @override
-  List<String> get tags => ['新手', '简单', '教学'];
-
-  @override
-  Map<String, int> get roleDistribution => {
-    'werewolf': 3,
-    'villager': 3,
-    'seer': 1,
-    'witch': 1,
-    'hunter': 1,
+  Map<RoleType, int> get roleDistribution => {
+    RoleType.werewolf: 2,
+    RoleType.villager: 3,
+    RoleType.seer: 1,
+    RoleType.witch: 1,
+    RoleType.guard: 1,
+    RoleType.hunter: 1,
   };
 
   @override
-  String get rulesDescription => '''
-- 配置：3狼+3民+预言家+女巫+猎人
-- 预言家每晚查验一人（好人/狼人）
-- 女巫有解药毒药各一瓶，同夜不能同用
-- 猎人死亡可开枪（被毒除外）
-- 胜利：好人出清狼/狼人数≥好人数''';
-
-  @override
-  List<String> get nightActionPriority => [
-    'werewolf',
-    'seer',
-    'witch',
-    // hunter 只在死亡时触发
-  ];
-
-  @override
-  void initialize(GameState gameState) {
-    // 简单局初始化，可以给新手一些提示
-    gameState.metadata['is新手模式'] = true;
+  List<RoleType> getExpandedRoles() {
+    final roles = <RoleType>[];
+    roleDistribution.forEach((role, count) {
+      for (int i = 0; i < count; i++) {
+        roles.add(role);
+      }
+    });
+    return roles;
   }
 
   @override
-  GameEndResult checkGameEnd(GameState gameState) {
-    final aliveWerewolves = gameState.players
+  Role createRole(RoleType roleType) {
+    switch (roleType) {
+      case RoleType.werewolf:
+        return WerewolfRole();
+      case RoleType.villager:
+        return VillagerRole();
+      case RoleType.seer:
+        return SeerRole();
+      case RoleType.witch:
+        return WitchRole();
+      case RoleType.guard:
+        return GuardRole();
+      case RoleType.hunter:
+        return HunterRole();
+    }
+  }
+
+  @override
+  VictoryResult checkVictoryCondition(GameState state) {
+    final aliveWerewolves = state.players
         .where((p) => p.isAlive && p.role.isWerewolf)
         .length;
-
-    final aliveVillagers = gameState.players
-        .where((p) => p.isAlive && p.role.isVillager)
+    
+    final aliveGoodGuys = state.players
+        .where((p) => p.isAlive && !p.role.isWerewolf)
         .length;
-
-    // 狼人胜利条件：狼人数量 >= 好人数量
-    if (aliveWerewolves >= aliveVillagers) {
-      return GameEndResult.ended(
-        winner: 'werewolf',
-        reason: '狼人数量已经不少于好人数量，狼人获胜！',
-      );
-    }
-
-    // 好人胜利条件：所有狼人被淘汰
+    
     if (aliveWerewolves == 0) {
-      return GameEndResult.ended(winner: 'villager', reason: '所有狼人已被淘汰，好人获胜！');
+      return VictoryResult.goodWins('所有狼人已被消灭');
     }
-
-    return GameEndResult.continueGame();
-  }
-
-  @override
-  String? getNextActionRole(
-    GameState gameState,
-    List<String> completedActions,
-  ) {
-    for (final role in nightActionPriority) {
-      if (!completedActions.contains(role)) {
-        // 检查是否还有该角色的存活玩家
-        final hasAlivePlayer = gameState.players.any(
-          (p) => p.isAlive && p.role.roleId == role,
-        );
-
-        if (hasAlivePlayer) {
-          return role;
-        }
-      }
+    
+    if (aliveWerewolves >= aliveGoodGuys) {
+      return VictoryResult.evilWins('狼人数量≥好人数量');
     }
-    return null;
-  }
-
-  @override
-  void handlePhaseEnd(GameState gameState) {
-    // 简单局可以在阶段结束时给出一些提示
-    if (gameState.isDay && gameState.dayNumber == 1) {
-      // 第一天白天可以给一些新手提示
-      gameState.metadata['day1提示'] = '记住要仔细观察每个人的发言，找出逻辑漏洞';
-    }
+    
+    return VictoryResult.gameContinues();
   }
 }

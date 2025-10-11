@@ -1,7 +1,7 @@
 import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_registry.dart';
+// import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
@@ -21,14 +21,15 @@ class ConfigService {
 
     // 设置默认场景(如果还没有设置)
     if (_gameParameters!.currentScenario == null) {
-      final availableScenarios = _gameParameters!
-          .scenarioRegistry
-          .scenarios
-          .values
-          .toList();
-      if (availableScenarios.isNotEmpty) {
-        _gameParameters!.setCurrentScenario(availableScenarios.first.id);
-      }
+      // final availableScenarios = _gameParameters!
+      //     .scenarioRegistry
+      //     .scenarios
+      //     .values
+      //     .toList(); // 已删除
+      // if (availableScenarios.isNotEmpty) {
+      //   _gameParameters!.setCurrentScenario(availableScenarios.first.id);
+      // }
+      // 暂时跳过场景设置，等待阶段4重构
     }
 
     _isInitialized = true;
@@ -65,7 +66,8 @@ class ConfigService {
   /// 获取所有可用的场景
   List<GameScenario> get availableScenarios {
     _ensureInitialized();
-    return _gameParameters!.scenarioRegistry.scenarios.values.toList();
+    // return _gameParameters!.scenarioRegistry.scenarios.values.toList(); // 已删除
+    throw UnimplementedError('availableScenarios 将在阶段4重构时恢复');
   }
 
   /// 获取指定玩家数量的可用场景
@@ -117,9 +119,14 @@ class ConfigService {
   }
 
   /// 获取场景注册表
-  ScenarioRegistry get scenarioRegistry {
-    _ensureInitialized();
-    return _gameParameters!.scenarioRegistry;
+  // ScenarioRegistry get scenarioRegistry { // 已删除
+  //   _ensureInitialized();
+  //   return _gameParameters!.scenarioRegistry;
+  // }
+  
+  @Deprecated('scenarioRegistry将在阶段4删除')
+  dynamic get scenarioRegistry {
+    throw UnimplementedError('scenarioRegistry已删除，将在阶段4重构时使用新架构');
   }
 
   /// 获取游戏参数实例

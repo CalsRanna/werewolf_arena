@@ -1,7 +1,7 @@
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart';
+import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart'; // 重新导入新的场景类
 import 'package:werewolf_arena/services/logging/logger.dart';
 import 'package:werewolf_arena/core/events/base/game_event.dart';
 import 'package:werewolf_arena/core/events/player_events.dart';
@@ -207,7 +207,12 @@ class GameState {
       'gameId': gameId,
       'startTime': startTime.toIso8601String(),
       'config': config.toJson(),
-      'scenario': scenario.toJson(),
+      'scenario': {
+        'id': scenario.id,
+        'name': scenario.name,
+        'description': scenario.description,
+        'playerCount': scenario.playerCount,
+      },
       'currentPhase': currentPhase.name,
       'status': status.name,
       'dayNumber': dayNumber,
@@ -232,7 +237,7 @@ class GameState {
     return GameState(
       gameId: json['gameId'],
       config: config,
-      scenario: Standard9PlayersScenario(), // Placeholder
+      scenario: Scenario9Players(), // Placeholder - 使用新的场景类
       players: players,
       currentPhase: GamePhase.values.firstWhere(
         (p) => p.name == json['currentPhase'],

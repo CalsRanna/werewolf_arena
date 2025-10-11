@@ -4,7 +4,7 @@ import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dar
 import 'package:werewolf_arena/core/engine/game_engine.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_registry.dart';
+// import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
@@ -77,15 +77,15 @@ Future<void> main(List<String> arguments) async {
     }
 
     // 初始化场景管理器
-    final scenarioRegistry = ScenarioRegistry();
-    scenarioRegistry.initialize();
+    // final scenarioRegistry = ScenarioRegistry(); // 已删除
+    // scenarioRegistry.initialize(); // 已删除
 
     // 2. 初始化游戏引擎
     console.printLine('🎮 正在初始化游戏引擎...');
     final observer = ConsoleGameObserver();
 
     // 创建控制台游戏参数
-    final gameParameters = ConsoleGameParameters(appConfig, scenarioRegistry);
+    final gameParameters = ConsoleGameParameters(appConfig);
 
     final gameEngine = GameEngine(
       parameters: gameParameters,
@@ -97,26 +97,31 @@ Future<void> main(List<String> arguments) async {
     final playerCountStr = argResults['players'] as String?;
 
     // 选择合适的场景
+    // 暂时添加导入以便编译通过
     if (playerCountStr != null) {
-      final playerCount = int.tryParse(playerCountStr);
-      if (playerCount == null) {
-        console.displayError('无效的玩家数量: $playerCountStr');
-        exit(1);
-      }
-      final scenarios = scenarioRegistry.getScenariosByPlayerCount(playerCount);
-      if (scenarios.isEmpty) {
-        console.displayError('没有找到适合 $playerCount 人的场景');
-        exit(1);
-      }
-      gameParameters.setCurrentScenario(scenarios.first.id);
+      // final playerCount = int.tryParse(playerCountStr);
+      // if (playerCount == null) {
+      //   console.displayError('无效的玩家数量: $playerCountStr');
+      //   exit(1);
+      // }
+      // final scenarios = scenarioRegistry.getScenariosByPlayerCount(playerCount); // 已删除
+      // if (scenarios.isEmpty) {
+      //   console.displayError('没有找到适合 $playerCount 人的场景');
+      //   exit(1);
+      // }
+      // gameParameters.setCurrentScenario(scenarios.first.id);
+      console.displayError('指定玩家数量功能将在阶段4重构时恢复');
+      exit(1);
     } else {
-      // 使用默认场景
-      final allScenarios = scenarioRegistry.scenarios.values.toList();
-      if (allScenarios.isEmpty) {
-        console.displayError('没有可用的游戏场景');
-        exit(1);
-      }
-      gameParameters.setCurrentScenario(allScenarios.first.id);
+      // 使用默认场景 - 暂时硬编码为9人局
+      // final allScenarios = scenarioRegistry.scenarios.values.toList(); // 已删除
+      // if (allScenarios.isEmpty) {
+      //   console.displayError('没有可用的游戏场景');
+      //   exit(1);
+      // }
+      // gameParameters.setCurrentScenario(allScenarios.first.id);
+      console.displayError('场景选择功能将在阶段4重构时恢复');
+      exit(1);
     }
 
     // 使用当前场景创建玩家

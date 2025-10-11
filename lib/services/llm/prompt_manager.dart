@@ -448,7 +448,7 @@ $formatted$peacefulNightInfo''';
     }
 
     final template = _systemPrompts['base_template'] ?? '';
-    final scenarioRules = currentScenario.rulesDescription;
+    final scenarioRules = currentScenario.rule;
 
     return template.replaceAll('{scenario_rules}', scenarioRules);
   }
