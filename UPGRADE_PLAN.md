@@ -12,7 +12,8 @@
 - 重构GamePlayer为多态架构（AIPlayer和HumanPlayer）
 - 统一技能系统，消除概念碎片化
 - 每个玩家拥有独立的PlayerDriver
-- 简化游戏引擎内部结构
+- 简化为两阶段游戏流程（Night和Day）
+- GameStatus重命名为GameEngineStatus，由引擎管理
 
 ## 详细升级计划
 
@@ -20,13 +21,14 @@
 
 #### 1.1 创建新的配置系统（4小时）
 **任务1.1.1**: 创建GameConfig类
-- 在`lib/core/config/`目录下创建`game_config.dart`
+- 在`lib/core/domain/value_objects/`目录下创建`game_config.dart`
 - 实现GameConfig类，包含playerIntelligences和maxRetries
 - 实现PlayerIntelligence类，包含baseUrl、apiKey、modelId
+- 创建`game_engine_status.dart`，定义引擎状态枚举（waiting, playing, ended）
 - 添加copyWith方法用于创建配置副本
 
 **任务1.1.2**: 创建配置加载工具
-- 在`lib/core/config/`目录下创建`config_loader.dart`
+- 在`lib/core/domain/value_objects/`目录下创建`config_loader.dart`
 - 实现从YAML配置文件转换为GameConfig的逻辑
 - 实现配置验证逻辑
 
@@ -118,7 +120,7 @@ dart analyze
 **任务2.1.3**: 创建HumanPlayer实现
 - 在`lib/core/domain/entities/`目录下创建`human_player.dart`
 - 继承GamePlayer，使用HumanPlayerDriver
-- 实现StreamController用于接收UI输入
+- 实现等待用户输入的机制（不使用StreamController）
 - 实现submitSkillResult方法用于外部调用
 
 **任务2.1.4**: 删除PlayerType枚举
@@ -188,10 +190,10 @@ dart analyze
 - 封装随机数生成逻辑
 - 提供游戏相关的随机方法
 
-**任务3.1.3**: 实现阶段处理器
+**任务3.1.3**: 实现两阶段处理器
 - 重构NightPhaseProcessor基于技能系统
-- 重构DayPhaseProcessor基于技能系统
-- 删除VotingPhaseProcessor，合并到DayPhaseProcessor
+- 重构DayPhaseProcessor基于技能系统，包含发言和投票逻辑
+- 确认只有Night和Day两个阶段，投票作为 Day 阶段的一部分
 
 **任务3.1.4**: 运行代码分析
 ```bash
@@ -201,6 +203,7 @@ dart analyze
 #### 3.2 重构GameState（6小时）
 **任务3.2.1**: 简化GameState
 - 移除对NightActionState和VotingState的依赖
+- 移除GameState中的status字段，由GameEngine使用GameEngineStatus管理
 - 直接管理游戏状态
 - 添加技能效果管理方法
 
@@ -260,8 +263,9 @@ dart analyze
 - 删除所有Action相关的类和接口
 - 移除所有对Action的引用
 
-**任务4.2.2**: 重命名LLMService为PlayerDriver
-- 更新所有引用
+**任务4.2.2**: 重命名LLMService为PlayerDriver和GameStatus为GameEngineStatus
+- 更新所有对LLMService的引用为PlayerDriver
+- 更新所有对GameStatus的引用为GameEngineStatus
 - 确保功能保持一致
 
 **任务4.2.3**: 删除StreamController相关代码
@@ -394,11 +398,6 @@ flutter test
 
 ## 风险缓解措施
 
-### 兼容性风险
-- **风险**: 现有的游戏服务需要适配
-- **缓解**: 提供适配器层，逐步迁移
-- **检查点**: 每个阶段结束后运行现有测试
-
 ### 功能风险
 - **风险**: 可能丢失某些功能
 - **缓解**: 仔细分析现有功能，确保必要功能不丢失
@@ -417,9 +416,10 @@ flutter test
 - 代码符合项目编码规范
 
 ### 功能标准
-- 所有现有功能正常工作
+- 所有新架构功能正常工作
 - 新架构支持所有游戏场景
 - AI玩家决策质量不下降
+- 两阶段游戏流程运行正常（Night/Day）
 
 ### 性能标准
 - 游戏运行性能不低于现有版本

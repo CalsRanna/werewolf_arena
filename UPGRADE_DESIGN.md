@@ -5,9 +5,9 @@
 - **日期**: 2025-10-10
 - **目标**: 重构游戏引擎，实现真正的职责分离和自洽运行
 
-## 1. 升级背景
+## 1. 当前架构问题分析
 
-### 当前架构问题
+### 1.1 GameParameters接口职责混乱
 当前的 `GameParameters` 接口存在严重的职责混乱问题：
 
 ```dart
@@ -29,14 +29,19 @@ abstract class GameParameters {
 - **概念混淆**: GameParameters 名字暗示参数容器，实际是"万能管理器"
 - **测试困难**: 需要模拟大量不相关的方法
 
-### 设计理念转变
+### 1.2 设计理念转变
 **新的设计理念**:
 - **游戏引擎是纯粹的游戏逻辑执行器**
 - **获得必要信息后，能够自洽地运转游戏**
 - **通过Observer模式与外界交互**
 - **不关心配置如何加载、场景如何选择、玩家如何创建**
 
-## 2. 核心架构重构
+### 1.3 游戏阶段简化
+将原来的三阶段（夜晚→白天→投票）简化为两阶段：
+- **Night阶段**: 夜晚行动（狼人击杀、守卫保护、预言家查验、女巫用药）
+- **Day阶段**: 白天讨论 + 投票出局（合并原来的白天和投票阶段）
+
+## 2. 解决方案设计
 
 ### 2.1 游戏引擎接口简化
 
@@ -59,7 +64,7 @@ class GameEngine {
   
   // === 核心状态 ===
   GameState? _currentState;
-  GameStatus _status = GameStatus.waiting;
+  GameEngineStatus _status = GameEngineStatus.waiting;  // 引擎状态，与GameState分离
   
   // === 阶段处理器 ===
   final NightPhaseProcessor _nightProcessor;
@@ -606,22 +611,28 @@ class WerewolfGameRole implements GameRole {
 }
 ```
 
-### 2.3 游戏引擎的内部组件
+### 2.4 删除和重构的组件
 
-#### 2.3.1 核心状态管理
-- **GameState** - 游戏整体状态，包含玩家、事件历史等
-- **GameStatus** - 游戏状态（等待、进行中、已结束）
+#### 2.4.1 核心状态管理重构
+**职责分离原则**：
+- **GameState** - 纯游戏逻辑状态，包含玩家、事件历史、游戏阶段等
+- **GameEngine._status** - 引擎生命周期状态（等待、运行中、已结束），使用GameEngineStatus枚举
 
-#### 2.3.2 阶段处理器
+**设计优势**：
+- **职责明确**：GameEngine管理引擎生命周期，GameState管理游戏逻辑
+- **简化GameState**：让GameState专注于纯游戏逻辑，不包含引擎控制信息
+- **状态一致性**：只有一个状态管理器，避免重复状态不一致问题
+
+#### 2.4.2 阶段处理器
 - **NightPhaseProcessor** - 夜晚阶段处理器
 - **DayPhaseProcessor** - 白天阶段处理器（包含发言和投票）
 
-#### 2.3.3 工具类
+#### 2.4.3 工具类
 - **GameRandom** - 随机数生成工具
 
-### 2.4 技能系统架构
+### 2.5 技能系统架构
 
-#### 2.4.1 技能抽象接口
+#### 2.5.1 技能抽象接口
 **设计理念**: 将所有游戏行为统一为技能系统，包括夜晚行动、白天发言、投票等
 
 ```dart
@@ -654,7 +665,7 @@ class SkillResult {
 }
 ```
 
-#### 2.4.2 具体技能实现示例
+#### 2.5.2 具体技能实现示例
 ```dart
 // 狼人击杀技能
 class WerewolfKillSkill extends GameSkill {
@@ -798,7 +809,7 @@ class GuardProtectSkill extends GameSkill {
 }
 ```
 
-#### 2.4.3 技能处理器
+#### 2.5.3 技能处理器
 ```dart
 class SkillProcessor {
   // 处理技能结果和冲突
@@ -820,7 +831,7 @@ class SkillProcessor {
 }
 ```
 
-#### 2.4.4 阶段处理器重构
+#### 2.5.4 阶段处理器重构
 ```dart
 class NightPhaseProcessor implements PhaseProcessor {
   final SkillProcessor _skillProcessor = SkillProcessor();
@@ -910,7 +921,7 @@ class NightPhaseProcessor implements PhaseProcessor {
 }
 ```
 
-#### 2.4.5 技能系统设计优势
+#### 2.5.5 技能系统设计优势
 
 1. **概念统一**: 所有游戏行为都是技能，消除概念碎片化
 2. **职责分离**: 
@@ -932,44 +943,37 @@ class NightPhaseProcessor implements PhaseProcessor {
 12. **优先级控制**: 通过priority属性明确技能执行顺序
 13. **冲突处理**: 统一的冲突解决机制
 
-### 2.5 删除的类
+### 2.6 类的删除和重构
 
-#### 删除的类:
-- **`GameParameters`** - 职责混乱的接口
-- **`ScenarioRegistry`** - 游戏引擎不关心场景管理
-- **`PlayerType`** - 不再需要，通过类的继承关系体现玩家类型
-- **外部服务类** - action_resolver_service、event_filter_service、player_order_service
-- **`LLMClient`** - 不需要的抽象，直接使用用户现有的OpenAIService
-- **Action相关类** - 被技能系统取代
-- **NightActionState** - 夜晚行动被技能系统取代
-- **VotingState** - 投票被VoteSkill技能取代
-- **VotingPhaseProcessor** - 投票合并到白天阶段
-- **PlayerStateManager** - 玩家状态由GamePlayer自己管理
-- **ActionValidator** - 被技能系统的canCast方法取代
-- **StreamController** - 过度设计的事件流机制，GameObserver足够
-- **SkillContext** - GameState已包含所有必要信息
-- **SkillEffect** - 技能效果可以直接应用，无需额外抽象层
-- **SkillResult.metadata** - 过度设计，结果应只包含核心信息
+#### 2.6.1 删除的类
+- **VotingState** - 删除，投票逻辑合并到Day阶段
+- **VotingPhaseProcessor** - 删除，只有Day和Night两个阶段，投票合并到DayPhaseProcessor
+- **ActionValidator** - 删除，被技能系统的canCast方法取代
+- **StreamController** - 删除，过度设计的事件流机制，GameObserver足够
+- **SkillContext** - 删除，GameState已包含所有必要信息
+- **GameState.status字段** - 删除，引擎状态由GameEngine自己管理，使用GameEngineStatus
 
-#### 重命名的类:
-- **`Player`** → **`GamePlayer`** - 统一命名规范，改为抽象基类
-- **`Role`** → **`GameRole`** - 统一命名规范，整合Prompt系统和技能系统
-- **`LLMService`** → **`PlayerDriver`** - 更好地反映其作为AI玩家驱动器的本质
+#### 2.6.2 重命名的类
+- **Player** → **GamePlayer** - 统一命名规范，改为抽象基类
+- **Role** → **GameRole** - 统一命名规范，整合Prompt系统和技能系统
+- **LLMService** → **PlayerDriver** - 更好地反映其作为AI玩家驱动器的本质
+- **GameStatus** → **GameEngineStatus** - 明确表示这是引擎状态而非游戏状态
 
-#### PlayerDriver架构简化:
+**PlayerDriver架构简化**:
 - **原设计**: 一个PlayerDriver管理多个玩家的OpenAIService实例
 - **新设计**: 每个GamePlayer拥有自己的PlayerDriver实例
 - **优势**: 配置完全独立，职责更明确，每个Driver只负责一个玩家
 
-#### 重构的类:
-- **`GamePlayer`** - 从接口改为抽象基类，新增AIPlayer和HumanPlayer实现
-- **`GameScenario`** - 专注于规则定义，添加用户友好的rule字段
-- **`GameEngine`** - 大幅简化，只保留核心状态和3个阶段处理器
-- **`GameRole`** - 整合Prompt系统和技能列表，成为完整的角色实体
+#### 2.6.3 重构的类
+- **GamePlayer** - 从接口改为抽象基类，新增AIPlayer和HumanPlayer实现
+- **GameScenario** - 专注于规则定义，添加用户友好的rule字段
+- **GameEngine** - 大幅简化，只保留核心状态和2个阶段处理器（Night/Day），新增_status字段管理引擎状态
+- **GameRole** - 整合Prompt系统和技能列表，成为完整的角色实体
+- **GameState** - 简化设计，移除status字段，专注于纯游戏逻辑状态
 - **阶段处理器** - 重构为基于技能系统的处理器，移除Map管理
 - **SkillResult** - 简化设计，只包含核心信息：success、caster、target
 
-## 3. 游戏流程重构
+## 3. 实施计划
 
 ### 3.1 外部组装器模式
 
@@ -1019,7 +1023,7 @@ class GameEngine {
     
     // 初始化游戏
     _currentState!.startGame();
-    _status = GameStatus.waiting;
+    _status = GameEngineStatus.waiting;
     
     // 通知状态更新
     _observer?.onStateChange(_currentState!);
@@ -1053,10 +1057,10 @@ class GameEngine {
   
   // === 状态查询 ===
   GameState? get currentState => _currentState;
-  GameStatus get status => _status;
+  GameEngineStatus get status => _status;
   bool get hasGameStarted => _currentState != null;
-  bool get isGameRunning => hasGameStarted && _status == GameStatus.playing;
-  bool get isGameEnded => hasGameStarted && _status == GameStatus.ended;
+  bool get isGameRunning => hasGameStarted && _status == GameEngineStatus.playing;
+  bool get isGameEnded => hasGameStarted && _status == GameEngineStatus.ended;
 }
 ```
 
@@ -1175,9 +1179,43 @@ class HumanPlayerDriver implements PlayerDriver {
 - **职责明确**: 每个Driver只负责驱动一个玩家
 - **扩展性好**: 新增玩家类型只需实现对应的Driver
 
-## 4. 目录结构调整
+## 4. 实施步骤
 
-### 4.1 保留的核心模块
+### 阶段1：核心接口重构
+1. 定义新的 `GameConfig` 类
+2. 定义 `PlayerIntelligence` 类
+3. 简化 `GameScenario` 接口
+4. 重构 `GamePlayer` 为抽象基类，创建 `AIPlayer` 和 `HumanPlayer` 实现
+5. 重命名 `Role` 为 `GameRole`，整合Prompt系统和技能系统
+6. 创建新的 `GameEngine` 实现
+
+### 阶段2：技能系统实现
+1. 设计技能系统架构（GameSkill、SkillResult等）
+2. 实现夜晚技能（狼人击杀、守卫保护、预言家查验、女巫用药）
+3. 实现白天技能（发言、投票）
+4. 实现技能处理器和阶段处理器
+
+### 阶段3：删除旧架构
+1. 删除 `GameParameters` 接口
+2. 删除 `ScenarioRegistry` 类
+3. 删除 `PlayerType` 枚举
+4. 删除不必要的服务类
+5. 删除Action相关类（被技能系统取代）
+6. 重命名 `LLMService` 为 `PlayerDriver`
+
+### 阶段4：外部适配器重构
+1. 创建 `GameAssembler` 类
+2. 重构Flutter适配器
+3. 重构Console适配器
+
+### 阶段5：测试和验证
+1. 编写单元测试
+2. 集成测试验证
+3. 性能测试验证
+
+## 5. 目录结构调整
+
+### 5.1 保留的核心模块
 
 ```
 lib/core/
@@ -1213,7 +1251,7 @@ lib/core/
 └── rules/                     # 规则引擎（保留）
 ```
 
-### 4.2 删除的模块
+### 5.2 删除的模块
 
 ```
 lib/core/
@@ -1230,9 +1268,9 @@ lib/core/
     └── voting_state.dart
 ```
 
-## 5. 迁移指南
+## 6. 迁移示例
 
-### 5.1 游戏引擎使用变化
+### 6.1 游戏引擎使用变化
 
 **重构前**:
 ```dart
@@ -1266,7 +1304,7 @@ while (!engine.isGameEnded) {
 }
 ```
 
-### 5.2 配置系统变化
+### 6.2 配置系统变化
 
 **重构前**:
 ```dart
@@ -1289,7 +1327,7 @@ class GameConfig {
 }
 ```
 
-### 5.3 场景系统变化
+### 6.3 场景系统变化
 
 **重构前**:
 ```dart
@@ -1305,15 +1343,15 @@ final scenario = registry.getScenario('9_players');
 final scenario = Scenario9Players();
 ```
 
-## 6. 优势总结
+## 7. 架构优势总结
 
-### 6.1 职责清晰
+### 7.1 职责清晰
 - **GameEngine**: 纯粹的游戏逻辑执行器
 - **GameConfig**: 最小化的游戏配置
 - **GameScenario**: 游戏规则定义
 - **Player**: 游戏参与者抽象
 
-### 6.2 易于测试
+### 7.2 易于测试
 ```dart
 // 可以轻松测试任何游戏场景
 test('9人局游戏测试', () async {
@@ -1361,72 +1399,28 @@ test('9人局游戏测试', () async {
 });
 ```
 
-### 6.3 易于扩展
+### 7.3 易于扩展
 - 新增游戏场景：直接实现 `GameScenario` 接口
 - 新增玩家类型：直接继承 `GamePlayer` 类
 - 新增游戏规则：在 `GameScenario` 中定义
 - 新增AI模型：在 `GameConfig.playerIntelligences` 中添加配置
 
-### 6.4 完全解耦
+### 7.4 完全解耦
 - 游戏引擎不关心外部系统
 - 可以在Console、Flutter、Web等任何环境中运行
 - 通过Observer模式与外界交互
 
-### 6.5 架构简洁性
+### 7.5 架构简洁性
 - **GameEngine** 只需要4个外部输入，内部结构极其简单
 - **技能系统** 统一了所有游戏行为，消除概念碎片化
 - **每个GamePlayer有自己的PlayerDriver**，配置完全独立
 - **移除了所有过度设计的组件**：StreamController、各种Manager、复杂的状态类
 - **游戏流程通过简单的switch语句选择处理器**，避免不必要的Map管理
 
-## 7. 实施计划
 
-### 阶段1：核心接口重构
-1. 定义新的 `GameConfig` 类
-2. 定义 `PlayerIntelligence` 类
-3. 简化 `GameScenario` 接口
-4. 重构 `GamePlayer` 为抽象基类，创建 `AIPlayer` 和 `HumanPlayer` 实现
-5. 重命名 `Role` 为 `GameRole`，整合Prompt系统和技能系统
-6. 创建新的 `GameEngine` 实现
-7. 设计技能系统架构（GameSkill、SkillResult、SkillEffect等）
+## 8. 总结
 
-### 阶段2：删除旧架构
-1. 删除 `GameParameters` 接口
-2. 删除 `ScenarioRegistry` 类
-3. 删除 `PlayerType` 枚举
-4. 删除不必要的服务类
-5. 删除Action相关类（被技能系统取代）
-6. 重命名 `LLMService` 为 `PlayerDriver`
-7. 重命名 `LLMModel` 为 `PlayerIntelligence`
-8. 整合散落外部的Prompt到GameRole中
-
-### 阶段4：外部适配器重构
-1. 创建 `GameAssembler` 类
-2. 重构Flutter适配器
-3. 重构Console适配器
-
-### 阶段5：测试和验证
-1. 编写单元测试
-2. 集成测试验证
-3. 性能测试验证
-
-## 8. 风险评估
-
-### 8.1 兼容性风险
-- **影响**: 现有的游戏服务需要适配
-- **缓解**: 提供适配器层，逐步迁移
-
-### 8.2 功能风险
-- **影响**: 可能丢失某些功能
-- **缓解**: 仔细分析现有功能，确保必要功能不丢失
-
-### 8.3 性能风险
-- **影响**: 重构可能影响性能
-- **缓解**: 性能测试对比，确保性能不下降
-
-## 9. 总结
-
-### 9.1 核心设计理念
+### 8.1 核心设计理念
 
 本次重构实现了真正的**游戏引擎自洽运行**：
 
@@ -1437,7 +1431,7 @@ test('9人局游戏测试', () async {
    - `GameObserver` - 外界交互接口
 
 2. **内部自洽**: 游戏引擎内部结构极其简洁
-   - 核心状态：GameState和GameStatus
+   - 核心状态：GameState（纯游戏逻辑）和GameEngine._status（引擎状态）
    - 阶段处理器：2个专门的处理器（夜晚、白天）
    - 工具类：GameRandom随机数生成
    - 技能系统：统一所有游戏行为
@@ -1447,7 +1441,7 @@ test('9人局游戏测试', () async {
    - 游戏引擎只负责触发事件
    - 不关心谁接收事件、如何处理
 
-### 9.2 架构优势
+### 8.2 架构优势
 
 - **职责明确**: 游戏引擎专注于游戏逻辑执行
 - **状态自洽**: 内部管理所有必要状态和工具
@@ -1455,7 +1449,7 @@ test('9人局游戏测试', () async {
 - **易于扩展**: 新增功能不影响现有代码
 - **完全解耦**: 可以在任何环境中运行
 
-### 9.3 关键变化
+### 8.3 关键变化
 
 1. **简化接口**: 从复杂的GameParameters到4个简单参数
 2. **内部管理**: 游戏引擎内部创建所有必要组件
