@@ -2,7 +2,7 @@ import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 // import 'package:werewolf_arena/services/config/config.dart'; // 移除Flutter依赖
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart'; // 重新导入新的场景类
-import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/logging/game_engine_logger.dart';
 import 'package:werewolf_arena/core/events/base/game_event.dart';
 import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/core/events/phase_events.dart';
@@ -11,6 +11,7 @@ import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/rules/victory_conditions.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 
 /// 简化后的游戏状态类 - 专注于纯游戏逻辑状态
 /// 
@@ -40,6 +41,9 @@ class GameState {
   // 技能效果管理（替代NightActionState和VotingState）
   final Map<String, dynamic> skillEffects; // 存储技能效果状态
   final Map<String, int> skillUsageCounts; // 跟踪技能使用次数
+
+  // 内部日志器单例引用
+  GameEngineLogger get logger => GameEngineLogger.instance;
 
   GameState({
     required this.gameId,
@@ -225,13 +229,22 @@ class GameState {
 
   /// Check if game should end
   bool checkGameEnd() {
-    LoggerUtil.instance.d('游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys');
-    LoggerUtil.instance.d(
-      '存活玩家详情: ${alivePlayers.map((p) => p.formattedName).join(', ')}',
+    logger.debug(
+      GameLogCategory.state,
+      '游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys',
+      metadata: {
+        'aliveWerewolves': aliveWerewolves,
+        'aliveGoodGuys': aliveGoodGuys,
+        'alivePlayers': alivePlayers.map((p) => p.formattedName).toList(),
+      },
     );
 
     if (alivePlayers.length < 2) {
-      LoggerUtil.instance.w('游戏异常：存活玩家少于2人');
+      logger.warning(
+        GameLogCategory.state,
+        '游戏异常：存活玩家少于2人',
+        metadata: {'alivePlayerCount': alivePlayers.length},
+      );
       endGame('Game Error');
       return true;
     }
@@ -244,7 +257,7 @@ class GameState {
       return true;
     }
 
-    LoggerUtil.instance.d('游戏继续，未达到结束条件');
+    logger.debug(GameLogCategory.state, '游戏继续，未达到结束条件');
     return false;
   }
 

@@ -1,12 +1,12 @@
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/skills/game_skill.dart';
 import 'package:werewolf_arena/core/skills/skill_result.dart';
 import 'package:werewolf_arena/core/skills/skill_processor.dart';
 import 'package:werewolf_arena/core/events/phase_events.dart';
 import 'package:werewolf_arena/core/events/player_events.dart';
-import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 import 'phase_processor.dart';
 
 /// 夜晚阶段处理器（基于技能系统重构）
@@ -20,7 +20,10 @@ class NightPhaseProcessor implements PhaseProcessor {
 
   @override
   Future<void> process(GameState state) async {
-    LoggerUtil.instance.d('开始处理夜晚阶段 - 第${state.dayNumber}夜');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '开始处理夜晚阶段 - 第${state.dayNumber}夜',
+    );
 
     // 1. 阶段开始事件（所有人可见）
     state.addEvent(PhaseChangeEvent(
@@ -60,7 +63,10 @@ class NightPhaseProcessor implements PhaseProcessor {
     // 7. 切换到白天阶段
     await state.changePhase(GamePhase.day);
 
-    LoggerUtil.instance.d('夜晚阶段处理完成');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '夜晚阶段处理完成',
+    );
   }
 
   /// 执行技能列表
@@ -78,15 +84,27 @@ class NightPhaseProcessor implements PhaseProcessor {
       );
 
       try {
-        LoggerUtil.instance.d('执行技能: ${skill.name} (玩家: ${player.name})');
+        GameEngineLogger.instance.debug(
+          GameLogCategory.skill,
+          '执行技能: ${skill.name} (玩家: ${player.name})',
+          metadata: {'skill': skill.skillId, 'player': player.name},
+        );
         
         // 使用玩家执行技能
         final result = await player.executeSkill(skill, state);
         results.add(result);
         
-        LoggerUtil.instance.d('技能执行完成: ${skill.name}, 成功: ${result.success}');
+        GameEngineLogger.instance.debug(
+          GameLogCategory.skill,
+          '技能执行完成: ${skill.name}, 成功: ${result.success}',
+          metadata: {'skill': skill.skillId, 'success': result.success},
+        );
       } catch (e) {
-        LoggerUtil.instance.e('技能执行失败: ${skill.name}, 错误: $e');
+        GameEngineLogger.instance.error(
+          GameLogCategory.skill,
+          '技能执行失败: ${skill.name}, 错误: $e',
+          metadata: {'skill': skill.skillId, 'error': e},
+        );
         // 创建失败结果
         results.add(SkillResult(
           success: false,
@@ -118,7 +136,11 @@ class NightPhaseProcessor implements PhaseProcessor {
         isPeacefulNight: true,
         dayNumber: state.dayNumber,
       ));
-      LoggerUtil.instance.d('第${state.dayNumber}夜是平安夜，无人死亡');
+      GameEngineLogger.instance.info(
+        GameLogCategory.phase,
+        '第${state.dayNumber}夜是平安夜，无人死亡',
+        metadata: {'dayNumber': state.dayNumber, 'nightResult': 'peaceful'},
+      );
     } else {
       // 有人死亡
       final deathEvents = tonightDeaths.map((victim) {
@@ -136,7 +158,11 @@ class NightPhaseProcessor implements PhaseProcessor {
       ));
       
       final deadPlayerNames = tonightDeaths.map((p) => p.name).join('、');
-      LoggerUtil.instance.d('第${state.dayNumber}夜死亡玩家：$deadPlayerNames');
+      GameEngineLogger.instance.info(
+        GameLogCategory.phase,
+        '第${state.dayNumber}夜死亡玩家：$deadPlayerNames',
+        metadata: {'dayNumber': state.dayNumber, 'deaths': deadPlayerNames},
+      );
     }
   }
 
@@ -149,7 +175,11 @@ class NightPhaseProcessor implements PhaseProcessor {
 
   /// Handle game error - don't stop phase, log error and continue
   Future<void> _handleGameError(dynamic error) async {
-    LoggerUtil.instance.e('Night phase error: $error');
+    GameEngineLogger.instance.error(
+      GameLogCategory.phase,
+      'Night phase error: $error',
+      metadata: {'error': error},
+    );
     // Just log and continue with next processor
   }
 }

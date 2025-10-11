@@ -4,6 +4,7 @@ import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 
 /// 游戏观察者接口
 ///
@@ -94,6 +95,12 @@ abstract class GameObserver {
 
   /// 遗言
   void onLastWords(GamePlayer player, String lastWords);
+
+  /// 游戏引擎内部日志事件
+  /// 
+  /// 游戏引擎通过此方法向外部暴露内部运行日志
+  /// 外部观察者可以选择如何处理这些日志（输出到文件、控制台、UI等）
+  void onGameLog(GameLogEvent logEvent);
 }
 
 /// 简单的观察者适配器，提供空实现
@@ -190,6 +197,9 @@ abstract class GameObserverAdapter implements GameObserver {
 
   @override
   void onLastWords(GamePlayer player, String lastWords) {}
+
+  @override
+  void onGameLog(GameLogEvent logEvent) {}
 }
 
 /// 复合观察者，可以同时处理多个观察者实现
@@ -381,6 +391,14 @@ class CompositeGameObserver implements GameObserver {
     _notifyObservers(
       (observer) => observer.onLastWords(player, lastWords),
       'onLastWords',
+    );
+  }
+
+  @override
+  void onGameLog(GameLogEvent logEvent) {
+    _notifyObservers(
+      (observer) => observer.onGameLog(logEvent),
+      'onGameLog',
     );
   }
 }

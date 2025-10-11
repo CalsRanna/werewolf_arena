@@ -5,7 +5,8 @@ import 'package:openai_dart/openai_dart.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'json_cleaner.dart';
 import 'package:werewolf_arena/core/domain/entities/game_player.dart';
-import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 
 /// LLM API retry configuration
@@ -141,9 +142,10 @@ class OpenAIService {
 
         // 如果重试过，记录成功日志
         if (attempt > 1) {
-          LoggerUtil.instance.d(
+          GameEngineLogger.instance.debug(
+            GameLogCategory.engine,
             'LLM API call succeeded on attempt $attempt',
-            LogCategory.llmApi,
+            metadata: {'attempt': attempt},
           );
         }
 
@@ -158,20 +160,20 @@ class OpenAIService {
 
         if (attempt == retryConfig.maxAttempts) {
           // 最后一次尝试失败，记录错误日志
-          LoggerUtil.instance.e(
+          GameEngineLogger.instance.error(
+            GameLogCategory.engine,
             'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException',
-            null,
-            null,
-            LogCategory.llmApi,
+            metadata: {'attempts': retryConfig.maxAttempts, 'error': lastException},
           );
           break;
         }
 
         // 记录重试日志
         final delay = _calculateBackoffDelay(attempt);
-        LoggerUtil.instance.w(
+        GameEngineLogger.instance.warning(
+          GameLogCategory.engine,
           'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e',
-          LogCategory.llmApi,
+          metadata: {'attempt': attempt, 'maxAttempts': retryConfig.maxAttempts, 'delay': delay.inMilliseconds},
         );
 
         // 计算退避延迟时间
@@ -329,9 +331,10 @@ $context
       );
 
       // 调试信息：输出请求详情
-      LoggerUtil.instance.d(
+      GameEngineLogger.instance.debug(
+        GameLogCategory.engine,
         'API Request - Model: $effectiveModel, Messages: ${messages.length}',
-        LogCategory.llmApi,
+        metadata: {'model': effectiveModel, 'messageCount': messages.length},
       );
 
       final response = await client.createChatCompletion(request: request);
@@ -522,7 +525,11 @@ ${options.map((opt) => '- $opt').join('\n')}
       // Default to first option if no match found
       return options.first;
     } catch (e) {
-      LoggerUtil.instance.e('Error generating simple decision: $e');
+      GameEngineLogger.instance.error(
+        GameLogCategory.engine,
+        'Error generating simple decision: $e',
+        metadata: {'error': e},
+      );
       return options.first; // Default to first option on error
     }
   }
@@ -592,7 +599,11 @@ $prompt
 
       return null; // Default to not using poison if parsing fails
     } catch (e) {
-      LoggerUtil.instance.e('Error generating poison decision: $e');
+      GameEngineLogger.instance.error(
+        GameLogCategory.engine,
+        'Error generating poison decision: $e',
+        metadata: {'error': e},
+      );
       return null; // Default to not using poison on error
     }
   }

@@ -1,5 +1,6 @@
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 
 /// 游戏胜利条件判定类
 ///
@@ -27,7 +28,10 @@ class VictoryConditions {
   String? check() {
     // Good guys win: all werewolves are dead.
     if (_state.aliveWerewolves == 0) {
-      LoggerUtil.instance.i('好人阵营获胜！所有狼人已出局\n');
+      GameEngineLogger.instance.info(
+        GameLogCategory.victory,
+        '好人阵营获胜！所有狼人已出局',
+      );
       return '好人阵营';
     }
 
@@ -36,7 +40,10 @@ class VictoryConditions {
     final aliveGods = _state.gods.where((p) => p.isAlive).length;
     if (_state.gods.isNotEmpty && aliveGods == 0) {
       if (_state.aliveWerewolves >= _state.aliveVillagers) {
-        LoggerUtil.instance.i('狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）\n');
+        GameEngineLogger.instance.info(
+          GameLogCategory.victory,
+          '狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）',
+        );
         return '狼人阵营';
       }
     }
@@ -44,7 +51,10 @@ class VictoryConditions {
     // Condition 2: Kill all villagers (if any villagers exist in the game)
     if (_state.villagers.isNotEmpty && _state.aliveVillagers == 0) {
       if (_state.aliveWerewolves >= aliveGods) {
-        LoggerUtil.instance.i('狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）\n');
+        GameEngineLogger.instance.info(
+          GameLogCategory.victory,
+          '狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）',
+        );
         return '狼人阵营';
       }
     }

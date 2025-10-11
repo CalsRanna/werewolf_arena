@@ -10,7 +10,8 @@ import 'package:werewolf_arena/core/engine/processors/night_phase_processor.dart
 import 'package:werewolf_arena/core/engine/processors/day_phase_processor.dart';
 import 'package:werewolf_arena/core/engine/utils/game_random.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 
 /// 简化版游戏引擎 - 只需要4个参数的构造函数，内部创建阶段处理器和工具类
 class GameEngine {
@@ -51,6 +52,9 @@ class GameEngine {
   /// 初始化游戏
   Future<void> initializeGame() async {
     try {
+      // 设置日志器的观察者
+      GameEngineLogger.instance.setObserver(_observer);
+      
       // 创建游戏状态
       _currentState = GameState(
         gameId: 'game_${DateTime.now().millisecondsSinceEpoch}',
@@ -65,9 +69,20 @@ class GameEngine {
       // 通知状态更新（暂时注释掉，因为接口不匹配）
       // _observer?.onStateChange(_currentState!);
       
-      LoggerUtil.instance.d('游戏初始化完成');
+      GameEngineLogger.instance.info(
+        GameLogCategory.engine,
+        '游戏初始化完成',
+        metadata: {
+          'playerCount': players.length,
+          'scenario': scenario.id,
+        },
+      );
     } catch (e) {
-      LoggerUtil.instance.e('游戏初始化失败: $e');
+      GameEngineLogger.instance.error(
+        GameLogCategory.engine,
+        '游戏初始化失败: $e',
+        metadata: {'error': e},
+      );
       await _handleGameError(e);
       rethrow;
     }
@@ -80,7 +95,10 @@ class GameEngine {
     }
     
     if (isGameRunning) {
-      LoggerUtil.instance.d('游戏已在运行中');
+      GameEngineLogger.instance.debug(
+        GameLogCategory.engine,
+        '游戏已在运行中',
+      );
       return;
     }
     
@@ -89,7 +107,10 @@ class GameEngine {
     // 通知状态更新（暂时注释掉，因为接口不匹配）
     // _observer?.onStateChange(_currentState!);
     
-    LoggerUtil.instance.d('游戏开始');
+    GameEngineLogger.instance.info(
+      GameLogCategory.engine,
+      '游戏开始',
+    );
   }
   
   /// 执行游戏步骤
@@ -125,7 +146,11 @@ class GameEngine {
       
       return true; // 还有下一步可执行
     } catch (e) {
-      LoggerUtil.instance.e('游戏步骤执行错误: $e');
+      GameEngineLogger.instance.error(
+        GameLogCategory.engine,
+        '游戏步骤执行错误: $e',
+        metadata: {'error': e},
+      );
       await _handleGameError(e);
       return false; // 出错时停止执行
     }
@@ -143,15 +168,26 @@ class GameEngine {
     // 通知状态更新（暂时注释掉，因为接口不匹配）
     // _observer?.onStateChange(state);
     
-    LoggerUtil.instance.d('游戏结束');
+    GameEngineLogger.instance.info(
+      GameLogCategory.engine,
+      '游戏结束',
+      metadata: {'winner': state.winner ?? 'unknown'},
+    );
   }
   
   /// 处理游戏错误
   Future<void> _handleGameError(dynamic error) async {
-    LoggerUtil.instance.e('游戏错误: $error');
+    GameEngineLogger.instance.error(
+      GameLogCategory.engine,
+      '游戏错误: $error',
+      metadata: {'error': error},
+    );
     
     // 不停止游戏，只记录错误并继续
-    LoggerUtil.instance.d('游戏继续运行，错误已记录');
+    GameEngineLogger.instance.debug(
+      GameLogCategory.engine,
+      '游戏继续运行，错误已记录',
+    );
     
     // 通知观察者错误
     _observer?.onErrorMessage?.call('游戏发生错误', errorDetails: error);
@@ -159,6 +195,9 @@ class GameEngine {
   
   /// 清理资源
   void dispose() {
-    LoggerUtil.instance.d('游戏引擎资源清理完成');
+    GameEngineLogger.instance.debug(
+      GameLogCategory.engine,
+      '游戏引擎资源清理完成',
+    );
   }
 }

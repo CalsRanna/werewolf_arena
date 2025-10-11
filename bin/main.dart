@@ -1,17 +1,17 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/core/engine/game_assembler.dart';
 import 'package:werewolf_arena/core/engine/game_engine_new.dart';
 import 'console_output.dart';
 import 'console_observer.dart';
-import 'console_config.dart';
-import 'config_loader.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
-/// 
+///
 /// 基于新架构的控制台应用：
 /// - 使用GameAssembler创建游戏引擎
-/// - 简化启动流程，移除复杂的参数管理  
+/// - 简化启动流程，移除复杂的参数管理
 /// - 保持控制台友好的用户体验
 Future<void> main(List<String> arguments) async {
   final console = GameConsole.instance;
@@ -45,11 +45,11 @@ Future<void> main(List<String> arguments) async {
 
     // 1. 解析启动参数
     console.printLine('⚙️ 解析启动参数...');
-    
+
     final configPath = argResults['config'] as String?;
     final playerCountStr = argResults['players'] as String?;
     final scenarioId = argResults['scenario'] as String?;
-    
+
     int? playerCount;
     if (playerCountStr != null) {
       playerCount = int.tryParse(playerCountStr);
@@ -71,7 +71,7 @@ Future<void> main(List<String> arguments) async {
 
     // 3. 使用GameAssembler创建游戏引擎
     console.printLine('🎮 正在组装游戏引擎...');
-    
+
     GameEngine gameEngine;
     try {
       gameEngine = await GameAssembler.assembleGame(
@@ -100,26 +100,26 @@ Future<void> main(List<String> arguments) async {
     console.printLine('   描述: ${gameEngine.scenario.description}');
     console.printLine('   玩家数量: ${gameEngine.players.length}');
     console.printLine();
-    
+
     // 显示玩家列表
     console.printLine('👥 玩家列表：');
     for (var i = 0; i < gameEngine.players.length; i++) {
       final player = gameEngine.players[i];
       console.printLine('   ${i + 1}. ${player.name} (${player.role.name})');
     }
-    
+
     console.printLine();
     console.printSeparator('=', 60);
     console.printLine();
 
     // 5. 开始游戏循环
     console.printLine('🚀 开始游戏...\n');
-    
+
     // 游戏引擎已经在GameAssembler中初始化，直接开始执行
     while (!gameEngine.isGameEnded) {
       try {
         await gameEngine.executeGameStep();
-        
+
         // 添加小延迟，让用户有时间阅读输出
         await Future.delayed(const Duration(milliseconds: 500));
       } catch (e) {
@@ -132,14 +132,13 @@ Future<void> main(List<String> arguments) async {
     console.printLine();
     console.printSeparator('=', 60);
     console.printLine('✅ 游戏已结束');
-    
+
     final finalState = gameEngine.currentState;
     if (finalState != null && finalState.winner != null) {
       console.printLine('🏆 获胜者: ${finalState.winner}');
       console.printLine('🕐 游戏时长: ${finalState.dayNumber} 天');
       console.printLine('⚰️ 存活玩家: ${finalState.alivePlayers.length}');
     }
-    
   } catch (e, stackTrace) {
     console.displayError('运行错误: $e', errorDetails: stackTrace);
     exit(1);

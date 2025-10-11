@@ -9,7 +9,8 @@ import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
 import 'package:werewolf_arena/core/engine/utils/game_random.dart';
-import 'package:werewolf_arena/services/logging/logger.dart';
+import 'package:werewolf_arena/core/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 import 'phase_processor.dart';
 
 /// 白天阶段处理器（基于技能系统重构，包含发言和投票）
@@ -27,7 +28,11 @@ class DayPhaseProcessor implements PhaseProcessor {
 
   @override
   Future<void> process(GameState state) async {
-    LoggerUtil.instance.d('开始处理白天阶段 - 第${state.dayNumber}天');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '开始处理白天阶段 - 第${state.dayNumber}天',
+      metadata: {'dayNumber': state.dayNumber},
+    );
 
     // 1. 阶段开始事件（所有人可见）
     state.addEvent(PhaseChangeEvent(
@@ -56,12 +61,18 @@ class DayPhaseProcessor implements PhaseProcessor {
     state.dayNumber++;
     await state.changePhase(GamePhase.night);
 
-    LoggerUtil.instance.d('白天阶段处理完成，准备进入下一个夜晚');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '白天阶段处理完成，准备进入下一个夜晚',
+    );
   }
 
   /// 公布夜晚结果
   Future<void> _announceNightResults(GameState state) async {
-    LoggerUtil.instance.d('公布夜晚结果');
+    GameEngineLogger.instance.debug(
+      GameLogCategory.phase,
+      '公布夜晚结果',
+    );
 
     // 筛选出今晚的死亡事件
     final deathEvents = state.eventHistory.whereType<DeadEvent>().toList();
@@ -78,22 +89,35 @@ class DayPhaseProcessor implements PhaseProcessor {
 
     // 记录夜晚结果
     if (isPeacefulNight) {
-      LoggerUtil.instance.d('第${state.dayNumber}夜是平安夜，无人死亡');
+      GameEngineLogger.instance.info(
+        GameLogCategory.phase,
+        '第${state.dayNumber}夜是平安夜，无人死亡',
+        metadata: {'dayNumber': state.dayNumber, 'nightResult': 'peaceful'},
+      );
     } else {
       final deadPlayers = deathEvents.map((e) => e.victim.name).join('、');
-      LoggerUtil.instance.d('第${state.dayNumber}夜死亡玩家：$deadPlayers');
+      GameEngineLogger.instance.info(
+        GameLogCategory.phase,
+        '第${state.dayNumber}夜死亡玩家：$deadPlayers',
+        metadata: {'dayNumber': state.dayNumber, 'deaths': deadPlayers},
+      );
     }
 
     // 公布当前存活玩家
     final alivePlayers = state.alivePlayers;
-    LoggerUtil.instance.d(
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
       '当前存活玩家：${alivePlayers.map((p) => p.name).join('、')}',
+      metadata: {'aliveCount': alivePlayers.length},
     );
   }
 
   /// 运行讨论阶段 - 通过技能系统处理玩家发言
   Future<void> _runDiscussionPhase(GameState state) async {
-    LoggerUtil.instance.d('开始讨论阶段');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '开始讨论阶段',
+    );
 
     // 获取发言顺序
     final speakingOrder = _getSpeakingOrder(state);
@@ -119,16 +143,28 @@ class DayPhaseProcessor implements PhaseProcessor {
 
       for (final skill in playerSkills) {
         try {
-          LoggerUtil.instance.d('处理玩家 ${player.name} 的发言');
+          GameEngineLogger.instance.debug(
+            GameLogCategory.player,
+            '处理玩家 ${player.name} 的发言',
+            metadata: {'player': player.name},
+          );
           
           final result = await player.executeSkill(skill, state);
           speakResults.add(result);
           
           if (result.success) {
-            LoggerUtil.instance.d('玩家 ${player.name} 发言完成');
+            GameEngineLogger.instance.debug(
+              GameLogCategory.player,
+              '玩家 ${player.name} 发言完成',
+              metadata: {'player': player.name},
+            );
           }
         } catch (e) {
-          LoggerUtil.instance.e('玩家 ${player.name} 发言失败: $e');
+          GameEngineLogger.instance.error(
+            GameLogCategory.player,
+            '玩家 ${player.name} 发言失败: $e',
+            metadata: {'player': player.name, 'error': e},
+          );
         }
 
         // 玩家间发言延迟
@@ -136,12 +172,19 @@ class DayPhaseProcessor implements PhaseProcessor {
       }
     }
 
-    LoggerUtil.instance.d('讨论阶段结束，共${speakResults.length}位玩家发言');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '讨论阶段结束，共${speakResults.length}位玩家发言',
+      metadata: {'speakCount': speakResults.length},
+    );
   }
 
   /// 运行投票阶段 - 通过技能系统处理投票
   Future<void> _runVotingPhase(GameState state) async {
-    LoggerUtil.instance.d('开始投票阶段');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '开始投票阶段',
+    );
 
     // 收集投票技能
     final voteSkills = <GameSkill>[];
@@ -164,23 +207,38 @@ class DayPhaseProcessor implements PhaseProcessor {
       );
 
       try {
-        LoggerUtil.instance.d('处理玩家 ${player.name} 的投票');
+        GameEngineLogger.instance.debug(
+          GameLogCategory.player,
+          '处理玩家 ${player.name} 的投票',
+          metadata: {'player': player.name},
+        );
         
         final result = await player.executeSkill(skill, state);
         voteResults.add(result);
         
         if (result.success && result.target != null) {
-          LoggerUtil.instance.d('玩家 ${player.name} 投票给 ${result.target!.name}');
+          GameEngineLogger.instance.debug(
+            GameLogCategory.player,
+            '玩家 ${player.name} 投票给 ${result.target!.name}',
+            metadata: {'voter': player.name, 'target': result.target!.name},
+          );
         }
       } catch (e) {
-        LoggerUtil.instance.e('玩家 ${player.name} 投票失败: $e');
+        GameEngineLogger.instance.error(
+          GameLogCategory.player,
+          '玩家 ${player.name} 投票失败: $e',
+          metadata: {'player': player.name, 'error': e},
+        );
       }
     }
 
     // 处理投票结果
     await _processVotingResults(state, voteResults);
 
-    LoggerUtil.instance.d('投票阶段结束');
+    GameEngineLogger.instance.info(
+      GameLogCategory.phase,
+      '投票阶段结束',
+    );
   }
 
   /// 处理投票结果
@@ -198,7 +256,10 @@ class DayPhaseProcessor implements PhaseProcessor {
     }
 
     if (voteCount.isEmpty) {
-      LoggerUtil.instance.d('没有有效投票，跳过出局');
+      GameEngineLogger.instance.warning(
+        GameLogCategory.phase,
+        '没有有效投票，跳过出局',
+      );
       return;
     }
 
@@ -216,14 +277,22 @@ class DayPhaseProcessor implements PhaseProcessor {
     } else {
       // 平票处理（简化为随机选择一个，实际应该有PK环节）
       final eliminated = _random.choice(candidates);
-      LoggerUtil.instance.d('平票情况，随机选择${eliminated.name}出局');
+      GameEngineLogger.instance.info(
+        GameLogCategory.phase,
+        '平票情况，随机选择${eliminated.name}出局',
+        metadata: {'eliminated': eliminated.name, 'reason': 'tie'},
+      );
       await _eliminatePlayer(state, eliminated, voteDetails[eliminated] ?? []);
     }
   }
 
   /// 淘汰玩家
   Future<void> _eliminatePlayer(GameState state, GamePlayer player, List<GamePlayer> voters) async {
-    LoggerUtil.instance.d('玩家 ${player.name} 被投票出局');
+    GameEngineLogger.instance.info(
+      GameLogCategory.player,
+      '玩家 ${player.name} 被投票出局',
+      metadata: {'eliminated': player.name, 'voterCount': voters.length},
+    );
 
     // 创建投票出局事件（暂时注释掉，因为类型不匹配）
     // state.addEvent(VoteEvent(
@@ -245,7 +314,11 @@ class DayPhaseProcessor implements PhaseProcessor {
   /// 处理猎人开枪
   Future<void> _handleHunterShoot(GameState state, GamePlayer hunter) async {
     // 简化处理，实际应该通过技能系统
-    LoggerUtil.instance.d('猎人 ${hunter.name} 可以开枪');
+    GameEngineLogger.instance.info(
+      GameLogCategory.skill,
+      '猎人 ${hunter.name} 可以开枪',
+      metadata: {'hunter': hunter.name},
+    );
     
     // 这里应该调用猎人的开枪技能
     // 为了简化，暂时跳过具体实现
@@ -261,7 +334,11 @@ class DayPhaseProcessor implements PhaseProcessor {
     _random.shuffle(shuffled);
 
     final orderNames = shuffled.map((p) => p.name).join(' → ');
-    LoggerUtil.instance.d('发言顺序：$orderNames');
+    GameEngineLogger.instance.debug(
+      GameLogCategory.phase,
+      '发言顺序：$orderNames',
+      metadata: {'speakingOrder': shuffled.map((p) => p.name).toList()},
+    );
 
     return shuffled;
   }

@@ -6,6 +6,7 @@ import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
+import 'package:werewolf_arena/core/logging/game_log_event.dart';
 
 /// 基于 Stream 的游戏观察者
 ///
@@ -202,6 +203,14 @@ class StreamGameObserver implements GameObserver {
   @override
   void onGameStateChanged(GameState state) {
     _onGameStateChangedController.add(state);
+  }
+
+  @override
+  void onGameLog(GameLogEvent logEvent) {
+    // 将游戏日志事件转换为普通消息事件
+    final prefix = '[${logEvent.level.name.toUpperCase()}]';
+    final category = '[${logEvent.category.name}]';
+    _gameEventController.add('$prefix$category ${logEvent.message}');
   }
 
   // ============ 辅助方法 ============

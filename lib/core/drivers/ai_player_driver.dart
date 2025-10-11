@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/core/drivers/player_driver.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/services/llm/llm_service.dart';
-import 'package:werewolf_arena/services/llm/json_cleaner.dart';
+import 'package:werewolf_arena/core/llm/llm_service.dart';
+import 'package:werewolf_arena/core/llm/json_cleaner.dart';
 
 /// AI玩家驱动器
 /// 
