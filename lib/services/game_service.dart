@@ -200,6 +200,24 @@ class GameService {
     // 为了兼容性，这里只是一个空实现
   }
 
+  /// @deprecated 使用createGame替代
+  /// 
+  /// 保留此方法以确保现有代码的兼容性
+  @Deprecated('使用createGame方法替代')
+  void setGamePlayers(List<dynamic> players) {
+    // 这个方法在新架构中不再需要，因为玩家由GameAssembler创建
+    // 为了兼容性，这里只是一个空实现
+  }
+
+  /// @deprecated 使用getCurrentPlayers替代
+  /// 
+  /// 保留此方法以确保现有代码的兼容性
+  @Deprecated('使用getCurrentPlayers方法替代')
+  List<dynamic> getCurrentGamePlayers() {
+    _ensureInitialized();
+    return _gameEngine?.players ?? [];
+  }
+
   /// @deprecated 使用executeNextStep替代
   /// 
   /// 保留此方法以确保现有代码的兼容性

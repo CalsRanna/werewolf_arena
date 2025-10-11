@@ -36,6 +36,11 @@ class GameViewModel {
     return players.value.where((p) => p.isAlive).length;
   });
 
+  /// 兼容性属性：与aliveGamePlayersCount相同，为了保持UI兼容性
+  late final alivePlayersCount = computed(() {
+    return players.value.where((p) => p.isAlive).length;
+  });
+
   late final canStartGame = computed(() {
     return !isGameRunning.value && players.value.isNotEmpty;
   });

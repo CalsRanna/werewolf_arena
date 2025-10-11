@@ -92,7 +92,7 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onPlayerAction(
+  void onGamePlayerAction(
     GamePlayer player,
     String actionType,
     dynamic target, {
@@ -109,7 +109,7 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onPlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
+  void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
     final causeStr = _getDeathCauseString(cause);
     var message = '${player.name} 死亡 ($causeStr)';
     if (killer != null) {
@@ -119,7 +119,7 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onPlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {
+  void onGamePlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {
     final typeStr = speechType != null
         ? '[${_getSpeechTypeString(speechType)}]'
         : '';
@@ -189,8 +189,8 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onAlivePlayersAnnouncement(List<GamePlayer> alivePlayers) {
-    final names = alivePlayers.map((p) => p.name).join(', ');
+  void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers) {
+    final names = aliveGamePlayers.map((p) => p.name).join(', ');
     _gameEventController.add('当前存活玩家: $names');
   }
 
