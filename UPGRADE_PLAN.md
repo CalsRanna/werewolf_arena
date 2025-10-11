@@ -61,23 +61,27 @@ dart analyze
 ```
 
 #### 1.3 创建PlayerDriver架构（6小时）
-**任务1.3.1**: 创建PlayerDriver抽象接口
-- 在`lib/core/drivers/`目录下创建`player_driver.dart`
-- 定义generateSkillResponse抽象方法
-- 设计统一的AI响应接口
+**[✓] 任务1.3.1**: 创建PlayerDriver抽象接口
+- ✓ 在`lib/core/drivers/`目录下创建`player_driver.dart`
+- ✓ 定义generateSkillResponse抽象方法
+- ✓ 设计统一的AI响应接口
+- ✓ 避免循环依赖问题，使用dynamic类型
 
-**任务1.3.2**: 实现AIPlayerDriver
-- 在`lib/core/drivers/`目录下创建`ai_player_driver.dart`
-- 集成OpenAIService用于AI决策
-- 实现游戏上下文构建逻辑
-- 实现JSON响应清理逻辑
+**[✓] 任务1.3.2**: 实现AIPlayerDriver
+- ✓ 在`lib/core/drivers/`目录下创建`ai_player_driver.dart`
+- ✓ 集成OpenAIService用于AI决策
+- ✓ 实现游戏上下文构建逻辑
+- ✓ 实现JSON响应清理逻辑
+- ✓ 使用PlayerIntelligence配置LLM连接
 
-**任务1.3.3**: 实现HumanPlayerDriver
-- 在`lib/core/drivers/`目录下创建`human_player_driver.dart`
-- 实现等待人类输入的逻辑框架
-- 预留UI集成接口
+**[✓] 任务1.3.3**: 实现HumanPlayerDriver
+- ✓ 在`lib/core/drivers/`目录下创建`human_player_driver.dart`
+- ✓ 实现等待人类输入的逻辑框架
+- ✓ 预留UI集成接口
+- ✓ 提供submitInput和cancelInput方法
+- ✓ 支持超时处理和状态查询
 
-**任务1.3.4**: 运行代码分析
+**[✓] 任务1.3.4**: 运行代码分析
 ```bash
 dart analyze
 ```

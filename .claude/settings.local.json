@@ -25,7 +25,8 @@
       "Bash(for dir in lib/widget/forms lib/widget/game lib/widget/common lib/util lib/config lib/data/datasources lib/data/repositories lib/data/models lib/assets/images lib/assets/fonts lib/assets/animations)",
       "Bash(do if [ -d \"$dir\" ])",
       "Bash(then echo \"删除: $dir\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
