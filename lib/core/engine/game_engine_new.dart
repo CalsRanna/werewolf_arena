@@ -60,7 +60,7 @@ class GameEngine {
       
       // 初始化游戏
       _currentState!.startGame();
-      _status = GameEngineStatus.waiting;
+      _status = GameEngineStatus.playing; // 设置为进行中状态
       
       // 通知状态更新（暂时注释掉，因为接口不匹配）
       // _observer?.onStateChange(_currentState!);
@@ -93,8 +93,9 @@ class GameEngine {
   }
   
   /// 执行游戏步骤
-  Future<void> executeGameStep() async {
-    if (!isGameRunning || isGameEnded) return;
+  /// 返回bool表示是否还有下一步骤可执行
+  Future<bool> executeGameStep() async {
+    if (!isGameRunning || isGameEnded) return false;
     
     try {
       // 根据当前阶段选择对应的处理器
@@ -107,7 +108,7 @@ class GameEngine {
       
       // 如果游戏已结束，直接返回
       if (processor == null) {
-        return;
+        return false;
       }
       
       // 执行阶段处理
@@ -119,10 +120,14 @@ class GameEngine {
       // 检查游戏结束
       if (_currentState!.checkGameEnd()) {
         await _endGame();
+        return false; // 游戏结束，没有下一步
       }
+      
+      return true; // 还有下一步可执行
     } catch (e) {
       LoggerUtil.instance.e('游戏步骤执行错误: $e');
       await _handleGameError(e);
+      return false; // 出错时停止执行
     }
   }
   
