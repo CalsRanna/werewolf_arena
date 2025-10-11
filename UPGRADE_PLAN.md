@@ -141,25 +141,26 @@ dart analyze
 ```
 
 #### 2.2 重构GameRole架构（8小时）
-**任务2.2.1**: 重构Role为GameRole
-- 重命名`lib/core/domain/entities/role.dart`为`game_role.dart`
-- 整合Prompt系统，添加rolePrompt属性
-- 添加技能列表属性（skills）
-- 添加getAvailableSkills方法
-- 添加事件响应方法
+**[✓] 任务2.2.1**: 重构Role为GameRole
+- ✓ 创建`lib/core/domain/entities/game_role.dart`抽象基类
+- ✓ 整合Prompt系统，添加rolePrompt属性
+- ✓ 添加技能列表属性（skills）
+- ✓ 添加getAvailableSkills方法
+- ✓ 添加事件响应方法
 
-**任务2.2.2**: 更新所有角色实现
-- 更新所有角色类继承GameRole
-- 为每个角色配置相应的技能列表
-- 实现getAvailableSkills方法
-- 添加角色特定的prompt
+**[✓] 任务2.2.2**: 更新所有角色实现
+- ✓ 在`lib/core/domain/entities/role_implementations.dart`中实现所有角色类
+- ✓ 为每个角色配置相应的技能列表
+- ✓ 实现getAvailableSkills方法
+- ✓ 添加角色特定的prompt
 
-**任务2.2.3**: 创建基础技能实现
-- 在`lib/core/skills/`目录下创建`base_skills.dart`
-- 实现WerewolfKillSkill、GuardProtectSkill等基础技能
-- 为每个技能配置适当的priority和prompt
+**[✓] 任务2.2.3**: 创建基础技能实现
+- ✓ 在`lib/core/skills/`目录下创建`base_skills.dart`
+- ✓ 实现WerewolfKillSkill、GuardProtectSkill等基础技能
+- ✓ 为每个技能配置适当的priority和prompt
+- ✓ 创建角色工厂类GameRoleFactory
 
-**任务2.2.4**: 运行代码分析
+**[✓] 任务2.2.4**: 运行代码分析
 ```bash
 dart analyze
 ```
