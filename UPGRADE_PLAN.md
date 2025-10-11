@@ -318,22 +318,31 @@ dart analyze
 这些错误将在后续阶段修复。
 
 #### 4.3 更新依赖注入和适配器（4小时）
-**任务4.3.1**: 更新DI配置
-- 更新`lib/di.dart`中的依赖注入配置
-- 注册新的GameEngine和相关组件
+**[✓] 任务4.3.1**: 更新DI配置
+- ✓ 更新`lib/di.dart`中的依赖注入配置，增强文档和工具方法
+- ✓ 简化配置，专注于真正需要全局管理的组件
 
-**任务4.3.2**: 更新GameService
-- 更新`lib/services/game_service.dart`以使用新的GameEngine
-- 保持Stream事件流的兼容性
+**[✓] 任务4.3.2**: 更新GameService
+- ✓ 完全重写`lib/services/game_service.dart`以使用GameAssembler
+- ✓ 添加createGame、createQuickGame等新接口方法
+- ✓ 保持Stream事件流的兼容性，添加向后兼容的@Deprecated方法
 
-**任务4.3.3**: 更新控制台适配器
-- 更新`lib/widget/console/console_adapter.dart`
-- 使用GameAssembler创建游戏
+**[✓] 任务4.3.3**: 更新控制台适配器
+- ✓ 完全重写`bin/main.dart`使用GameAssembler创建游戏
+- ✓ 移除对已删除GameParameters的依赖
+- ✓ 简化启动流程，添加友好的错误处理
 
-**任务4.3.4**: 运行代码分析
+**[✓] 任务4.3.4**: 运行代码分析
 ```bash
 dart analyze
 ```
+注：发现134个编译错误，主要包括：
+- ConfigLoader缺失方法（loadFromFile、loadDefaultConfig）
+- GameRandom缺失generator属性
+- Role/GameRole类型不匹配问题
+- GameState缺失已删除的属性（nightActions、votingState）
+- Player/GamePlayer类型兼容性问题
+这些错误将在阶段5中系统性修复。
 
 ### 阶段5：测试和验证（预计2-3天）
 

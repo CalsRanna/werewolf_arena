@@ -1,22 +1,18 @@
 import 'dart:io';
 import 'package:args/args.dart';
-import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
-import 'package:werewolf_arena/core/engine/game_engine.dart';
-import 'package:werewolf_arena/services/config/config.dart';
-import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
-// import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
-import 'package:werewolf_arena/core/domain/entities/player.dart' hide AIPlayer;
-import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
-import 'package:werewolf_arena/services/llm/llm_service.dart';
-import 'package:werewolf_arena/services/llm/prompt_manager.dart';
+import 'package:werewolf_arena/core/engine/game_assembler.dart';
+import 'package:werewolf_arena/core/engine/game_engine_new.dart';
 import 'console_output.dart';
 import 'console_observer.dart';
 import 'console_config.dart';
 import 'config_loader.dart';
-import 'console_game_parameters.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
+/// 
+/// 基于新架构的控制台应用：
+/// - 使用GameAssembler创建游戏引擎
+/// - 简化启动流程，移除复杂的参数管理
+/// - 保持控制台友好的用户体验
 Future<void> main(List<String> arguments) async {
   final console = GameConsole.instance;
 
@@ -24,7 +20,8 @@ Future<void> main(List<String> arguments) async {
     // 解析命令行参数
     final parser = ArgParser()
       ..addOption('config', abbr: 'c', help: '配置文件路径')
-      ..addOption('players', abbr: 'p', help: '玩家数量')
+      ..addOption('players', abbr: 'p', help: '玩家数量 (9或12)')
+      ..addOption('scenario', abbr: 's', help: '游戏场景ID')
       ..addFlag('debug', abbr: 'd', help: '启用调试模式', defaultsTo: false)
       ..addFlag('help', abbr: 'h', help: '显示帮助信息', negatable: false);
 
@@ -46,116 +43,103 @@ Future<void> main(List<String> arguments) async {
     console.initialize(useColors: true);
     console.printHeader('狼人杀竞技场 - 控制台模式', color: ConsoleColor.green);
 
-    // 0. 配置文件自检
-    console.printLine('🔍 检查配置文件...');
-    final configHelper = ConsoleConfigHelper();
-    final configDir = await configHelper.ensureConfigFiles();
-
-    if (configDir == null) {
-      console.displayError('配置文件初始化失败，程序退出');
-      exit(1);
-    }
-
-    // 1. 加载配置
-    console.printLine('📝 正在加载配置...');
-
-    AppConfig appConfig;
-    String? configDirPath;
+    // 1. 解析启动参数
+    console.printLine('⚙️ 解析启动参数...');
+    
     final configPath = argResults['config'] as String?;
-
-    if (configPath != null) {
-      console.printLine('   使用自定义配置: $configPath');
-      // 使用自定义配置目录（从配置文件路径提取目录）
-      configDirPath = configPath.contains('/')
-          ? configPath.substring(0, configPath.lastIndexOf('/'))
-          : null;
-      final loader = ConsoleConfigLoader(customConfigDir: configDirPath);
-      appConfig = await loader.loadConfig();
-    } else {
-      console.printLine('   从可执行文件目录加载配置: $configDir');
-      final loader = ConsoleConfigLoader(customConfigDir: configDir);
-      appConfig = await loader.loadConfig();
+    final playerCountStr = argResults['players'] as String?;
+    final scenarioId = argResults['scenario'] as String?;
+    
+    int? playerCount;
+    if (playerCountStr != null) {
+      playerCount = int.tryParse(playerCountStr);
+      if (playerCount == null || (playerCount != 9 && playerCount != 12)) {
+        console.displayError('无效的玩家数量: $playerCountStr (支持9或12人)');
+        exit(1);
+      }
     }
 
-    // 初始化场景管理器
-    // final scenarioRegistry = ScenarioRegistry(); // 已删除
-    // scenarioRegistry.initialize(); // 已删除
+    // 显示启动配置
+    console.printLine('   配置文件: ${configPath ?? '默认配置'}');
+    console.printLine('   玩家数量: ${playerCount ?? '默认(9人)'}');
+    console.printLine('   游戏场景: ${scenarioId ?? '自动选择'}');
+    console.printLine();
 
-    // 2. 初始化游戏引擎
-    console.printLine('🎮 正在初始化游戏引擎...');
+    // 2. 创建游戏观察者
+    console.printLine('👁️ 创建游戏观察者...');
     final observer = ConsoleGameObserver();
 
-    // 创建控制台游戏参数
-    final gameParameters = ConsoleGameParameters(appConfig);
-
-    final gameEngine = GameEngine(
-      parameters: gameParameters,
-      observer: observer,
-    );
-
-    // 3. 创建玩家
-    console.printLine('👥 正在创建AI玩家...');
-    final playerCountStr = argResults['players'] as String?;
-
-    // 选择合适的场景
-    // 暂时添加导入以便编译通过
-    if (playerCountStr != null) {
-      // final playerCount = int.tryParse(playerCountStr);
-      // if (playerCount == null) {
-      //   console.displayError('无效的玩家数量: $playerCountStr');
-      //   exit(1);
-      // }
-      // final scenarios = scenarioRegistry.getScenariosByPlayerCount(playerCount); // 已删除
-      // if (scenarios.isEmpty) {
-      //   console.displayError('没有找到适合 $playerCount 人的场景');
-      //   exit(1);
-      // }
-      // gameParameters.setCurrentScenario(scenarios.first.id);
-      console.displayError('指定玩家数量功能将在阶段4重构时恢复');
-      exit(1);
-    } else {
-      // 使用默认场景 - 暂时硬编码为9人局
-      // final allScenarios = scenarioRegistry.scenarios.values.toList(); // 已删除
-      // if (allScenarios.isEmpty) {
-      //   console.displayError('没有可用的游戏场景');
-      //   exit(1);
-      // }
-      // gameParameters.setCurrentScenario(allScenarios.first.id);
-      console.displayError('场景选择功能将在阶段4重构时恢复');
+    // 3. 使用GameAssembler创建游戏引擎
+    console.printLine('🎮 正在组装游戏引擎...');
+    
+    GameEngine gameEngine;
+    try {
+      gameEngine = await GameAssembler.assembleGame(
+        configPath: configPath,
+        scenarioId: scenarioId,
+        playerCount: playerCount,
+        observer: observer,
+      );
+      console.printLine('   ✅ 游戏引擎创建成功');
+    } catch (e) {
+      console.displayError('游戏引擎创建失败: $e');
+      console.printLine();
+      console.printLine('💡 建议检查：');
+      console.printLine('   - 配置文件是否存在且格式正确');
+      console.printLine('   - API密钥是否有效');
+      console.printLine('   - 网络连接是否正常');
       exit(1);
     }
 
-    // 使用当前场景创建玩家
-    final scenario = gameParameters.currentScenario;
-    if (scenario == null) {
-      console.displayError('无法获取游戏场景');
-      exit(1);
+    // 4. 显示游戏信息
+    console.printLine();
+    console.printSeparator('=', 60);
+    console.printLine();
+    console.printLine('🎯 游戏信息：');
+    console.printLine('   场景: ${gameEngine.scenario.name}');
+    console.printLine('   描述: ${gameEngine.scenario.description}');
+    console.printLine('   玩家数量: ${gameEngine.players.length}');
+    console.printLine();
+    
+    // 显示玩家列表
+    console.printLine('👥 玩家列表：');
+    for (var i = 0; i < gameEngine.players.length; i++) {
+      final player = gameEngine.players[i];
+      console.printLine('   ${i + 1}. ${player.name} (${player.role.name})');
     }
-
-    final players = _createPlayersForScenario(scenario, appConfig);
-    console.printLine('   创建了 ${players.length} 个玩家');
-
-    // 设置玩家到游戏引擎
-    await gameEngine.initializeGame();
-    gameEngine.setPlayers(players);
-
+    
     console.printLine();
     console.printSeparator('=', 60);
     console.printLine();
 
-    // 4. 开始游戏循环
+    // 5. 开始游戏循环
     console.printLine('🚀 开始游戏...\n');
-    await gameEngine.startGame();
-
-    // 执行游戏循环,直到游戏结束
+    
+    // 游戏引擎已经在GameAssembler中初始化，直接开始执行
     while (!gameEngine.isGameEnded) {
-      await gameEngine.executeGameStep();
+      try {
+        await gameEngine.executeGameStep();
+        
+        // 添加小延迟，让用户有时间阅读输出
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        console.displayError('游戏执行错误: $e');
+        console.printLine('尝试继续游戏...\n');
+      }
     }
 
-    // 5. 游戏结束
+    // 6. 游戏结束
     console.printLine();
     console.printSeparator('=', 60);
     console.printLine('✅ 游戏已结束');
+    
+    final finalState = gameEngine.currentState;
+    if (finalState != null && finalState.winner != null) {
+      console.printLine('🏆 获胜者: ${finalState.winner}');
+      console.printLine('🕐 游戏时长: ${finalState.dayNumber} 天');
+      console.printLine('⚰️ 存活玩家: ${finalState.alivePlayers.length}');
+    }
+    
   } catch (e, stackTrace) {
     console.displayError('运行错误: $e', errorDetails: stackTrace);
     exit(1);
@@ -164,58 +148,22 @@ Future<void> main(List<String> arguments) async {
 
 /// 打印帮助信息
 void _printHelp(ArgParser parser) {
-  print('狼人杀竞技场 - 控制台模式');
+  print('狼人杀竞技场 - 控制台模式 (新架构)');
   print('');
-  print('用法: dart run [选项]');
+  print('用法: dart run bin/main.dart [选项]');
   print('');
   print('选项:');
   print(parser.usage);
   print('');
+  print('支持的场景:');
+  print('  9_players   - 9人标准局');
+  print('  12_players  - 12人局');
+  print('');
   print('示例:');
-  print('  dart run                    # 使用默认配置运行');
-  print('  dart run -- -p 8            # 指定8个玩家');
-  print('  dart run -- -c config.yaml  # 使用自定义配置');
-  print('  dart run -- -d              # 启用调试模式');
-}
-
-/// 为场景创建玩家
-List<Player> _createPlayersForScenario(
-  GameScenario scenario,
-  AppConfig config,
-) {
-  final players = <Player>[];
-  final roleIds = scenario.getExpandedRoles();
-  roleIds.shuffle(); // 随机打乱角色顺序
-
-  for (int i = 0; i < roleIds.length; i++) {
-    final playerNumber = i + 1;
-    final playerName = '${playerNumber}号玩家';
-    final roleId = roleIds[i];
-    final role = scenario.createRole(roleId);
-
-    // 获取玩家专属的LLM配置
-    final playerLLMConfig = config.getPlayerLLMConfig(playerNumber);
-    final playerModelConfig = PlayerModelConfig.fromMap(playerLLMConfig);
-
-    // 创建LLM服务和Prompt管理器
-    final llmService = OpenAIService.fromPlayerConfig(playerModelConfig);
-    final promptManager = PromptManager();
-
-    // 创建AI玩家实例
-    final player = AIPlayer(
-      id: playerName,
-      name: playerName,
-      index: i,
-      role: role,
-      intelligence: PlayerIntelligence(
-        baseUrl: playerModelConfig.baseUrl ?? 'https://api.openai.com',
-        apiKey: playerModelConfig.apiKey,
-        modelId: playerModelConfig.model,
-      ),
-    );
-
-    players.add(player);
-  }
-
-  return players;
+  print('  dart run bin/main.dart                        # 使用默认配置运行');
+  print('  dart run bin/main.dart -p 9                   # 指定9人局');
+  print('  dart run bin/main.dart -s 12_players          # 指定12人场景');
+  print('  dart run bin/main.dart -c config/my.yaml      # 使用自定义配置');
+  print('  dart run bin/main.dart -d                     # 启用调试模式');
+  print('  dart run bin/main.dart -p 9 -c config.yaml   # 组合参数');
 }
