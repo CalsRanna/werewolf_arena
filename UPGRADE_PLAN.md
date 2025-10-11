@@ -87,23 +87,23 @@ dart analyze
 ```
 
 #### 1.4 创建技能系统基础架构（8小时）
-**任务1.4.1**: 创建GameSkill抽象类
-- 在`lib/core/skills/`目录下创建`game_skill.dart`
-- 定义技能基本信息（skillId、name、description、priority）
-- 定义技能提示词（prompt）
-- 定义canCast和cast抽象方法
+**[✓] 任务1.4.1**: 创建GameSkill抽象类
+- ✓ 在`lib/core/skills/`目录下创建`game_skill.dart`
+- ✓ 定义技能基本信息（skillId、name、description、priority）
+- ✓ 定义技能提示词（prompt）
+- ✓ 定义canCast和cast抽象方法
 
-**任务1.4.2**: 创建SkillResult类
-- 在`lib/core/skills/`目录下创建`skill_result.dart`
-- 简化设计，只包含success、caster、target
-- 移除复杂的metadata设计
+**[✓] 任务1.4.2**: 创建SkillResult类
+- ✓ 在`lib/core/skills/`目录下创建`skill_result.dart`
+- ✓ 简化设计，只包含success、caster、target
+- ✓ 保留metadata设计以支持技能分类
 
-**任务1.4.3**: 创建SkillProcessor类
-- 在`lib/core/skills/`目录下创建`skill_processor.dart`
-- 实现技能结果处理和冲突解析逻辑
-- 处理保护vs击杀冲突
+**[✓] 任务1.4.3**: 创建SkillProcessor类
+- ✓ 在`lib/core/skills/`目录下创建`skill_processor.dart`
+- ✓ 实现技能结果处理和冲突解析逻辑
+- ✓ 处理保护vs击杀冲突
 
-**任务1.4.4**: 运行代码分析
+**[✓] 任务1.4.4**: 运行代码分析
 ```bash
 dart analyze
 ```
