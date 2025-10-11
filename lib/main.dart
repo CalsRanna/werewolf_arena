@@ -33,11 +33,6 @@ class WerewolfArenaApp extends StatelessWidget {
       ),
     );
 
-    var colorScheme = ColorScheme.fromSeed(
-      brightness: Brightness.dark,
-      seedColor: Color(0xFF6366F1), // 紫色主题
-    );
-
-    return ThemeData(appBarTheme: appBarTheme, colorScheme: colorScheme);
+    return ThemeData(appBarTheme: appBarTheme);
   }
 }
