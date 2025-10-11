@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/events/game_log_event.dart';
 
 /// 游戏胜利条件判定类

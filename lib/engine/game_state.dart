@@ -2,7 +2,7 @@ import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 // import 'package:werewolf_arena/services/config/config.dart'; // 移除Flutter依赖
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart'; // 重新导入新的场景类
-import 'package:werewolf_arena/engine/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/events/phase_events.dart';

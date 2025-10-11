@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skills/skill_result.dart';
 import 'package:werewolf_arena/engine/skills/skill_processor.dart';
 import 'package:werewolf_arena/engine/events/phase_events.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
-import 'package:werewolf_arena/engine/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'phase_processor.dart';
 

@@ -7,7 +7,7 @@ import 'package:werewolf_arena/engine/events/phase_events.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/game_random.dart';
-import 'package:werewolf_arena/engine/logging/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'phase_processor.dart';
 
