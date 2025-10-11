@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:werewolf_arena/core/engine/game_observer.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
@@ -93,12 +93,12 @@ class StreamGameObserver implements GameObserver {
 
   @override
   void onPlayerAction(
-    Player player,
+    GamePlayer player,
     String actionType,
     dynamic target, {
     Map<String, dynamic>? details,
   }) {
-    final targetStr = target is Player ? target.name : target.toString();
+    final targetStr = target is GamePlayer ? target.name : target.toString();
     var message = '${player.name} 执行 $actionType -> $targetStr';
     if (details != null && details.isNotEmpty) {
       message +=
@@ -109,7 +109,7 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onPlayerDeath(Player player, DeathCause cause, {Player? killer}) {
+  void onPlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
     final causeStr = _getDeathCauseString(cause);
     var message = '${player.name} 死亡 ($causeStr)';
     if (killer != null) {
@@ -119,7 +119,7 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
+  void onPlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {
     final typeStr = speechType != null
         ? '[${_getSpeechTypeString(speechType)}]'
         : '';
@@ -127,13 +127,13 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onVoteCast(Player voter, Player target, {VoteType? voteType}) {
+  void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType}) {
     final typeStr = voteType == VoteType.pk ? 'PK投票' : '投票';
     _gameEventController.add('$typeStr: ${voter.name} -> ${target.name}');
   }
 
   @override
-  void onNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber) {
+  void onNightResult(List<GamePlayer> deaths, bool isPeacefulNight, int dayNumber) {
     if (isPeacefulNight) {
       _gameEventController.add('昨晚是平安夜');
     } else {
@@ -163,8 +163,8 @@ class StreamGameObserver implements GameObserver {
   @override
   void onVoteResults(
     Map<String, int> results,
-    Player? executed,
-    List<Player>? pkCandidates,
+    GamePlayer? executed,
+    List<GamePlayer>? pkCandidates,
   ) {
     if (results.isEmpty) {
       _gameEventController.add('没有投票结果');
@@ -189,13 +189,13 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onAlivePlayersAnnouncement(List<Player> alivePlayers) {
+  void onAlivePlayersAnnouncement(List<GamePlayer> alivePlayers) {
     final names = alivePlayers.map((p) => p.name).join(', ');
     _gameEventController.add('当前存活玩家: $names');
   }
 
   @override
-  void onLastWords(Player player, String lastWords) {
+  void onLastWords(GamePlayer player, String lastWords) {
     _gameEventController.add('【遗言】${player.name}: $lastWords');
   }
 

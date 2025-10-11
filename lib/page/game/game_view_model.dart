@@ -4,7 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/services/game_service.dart';
 import 'package:werewolf_arena/services/config_service.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 
 class GameViewModel {
@@ -16,10 +16,10 @@ class GameViewModel {
   final Signal<bool> isExecutingStep = signal(false);
   final Signal<int> currentDay = signal(0);
   final Signal<String> currentPhase = signal('等待开始');
-  final Signal<List<Player>> players = signal([]);
+  final Signal<List<GamePlayer>> players = signal([]);
   final Signal<List<String>> eventLog = signal([]);
   final Signal<String> gameStatus = signal('准备就绪');
-  final Signal<int> selectedPlayerCount = signal(12);
+  final Signal<int> selectedGamePlayerCount = signal(12);
   final Signal<String> selectedScenario = signal('标准场景');
 
   // SnackBar提示用的StreamController
@@ -32,7 +32,7 @@ class GameViewModel {
     return '第${currentDay.value}天 - ${currentPhase.value}';
   });
 
-  late final alivePlayersCount = computed(() {
+  late final aliveGamePlayersCount = computed(() {
     return players.value.where((p) => p.isAlive).length;
   });
 
@@ -49,7 +49,7 @@ class GameViewModel {
   StreamSubscription? _gameEventsSubscription;
   StreamSubscription? _onGameStartSubscription;
   StreamSubscription? _onPhaseChangeSubscription;
-  StreamSubscription? _onPlayerActionSubscription;
+  StreamSubscription? _onGamePlayerActionSubscription;
   StreamSubscription? _onGameEndSubscription;
   StreamSubscription? _onErrorSubscription;
 
@@ -69,12 +69,12 @@ class GameViewModel {
     try {
       final scenario = _configService.currentScenario;
       if (scenario != null) {
-        final newPlayers = _configService
-            .createPlayersForScenario(scenario)
-            .cast<Player>();
-        players.value = newPlayers;
-        _addLog('已创建 ${newPlayers.length} 名玩家');
-        _addLog('玩家列表: ${newPlayers.map((p) => p.formattedName).join(', ')}');
+        final newGamePlayers = _configService
+            .createGamePlayersForScenario(scenario)
+            .cast<GamePlayer>();
+        players.value = newGamePlayers;
+        _addLog('已创建 ${newGamePlayers.length} 名玩家');
+        _addLog('玩家列表: ${newGamePlayers.map((p) => p.formattedName).join(', ')}');
       } else {
         players.value = [];
         _addLog('警告: 未选择游戏场景，无法创建玩家');
@@ -101,7 +101,7 @@ class GameViewModel {
         throw Exception('玩家列表为空，请先选择游戏场景');
       }
 
-      _gameService.setPlayers(players.value);
+      _gameService.setGamePlayers(players.value);
       _addLog('设置玩家列表: ${players.value.length} 名玩家');
 
       // 开始游戏
@@ -129,8 +129,8 @@ class GameViewModel {
       await _gameService.executeNextStep();
 
       // 更新玩家状态
-      final currentPlayers = _gameService.getCurrentPlayers().cast<Player>();
-      players.value = currentPlayers;
+      final currentGamePlayers = _gameService.getCurrentGamePlayers().cast<GamePlayer>();
+      players.value = currentGamePlayers;
 
       // 更新天数
       final currentState = _gameService.currentState;
@@ -168,11 +168,11 @@ class GameViewModel {
     try {
       final scenario = _configService.currentScenario;
       if (scenario != null) {
-        final newPlayers = _configService
-            .createPlayersForScenario(scenario)
-            .cast<Player>();
-        players.value = newPlayers;
-        _addLog('游戏重置 - 重新创建了 ${newPlayers.length} 名玩家');
+        final newGamePlayers = _configService
+            .createGamePlayersForScenario(scenario)
+            .cast<GamePlayer>();
+        players.value = newGamePlayers;
+        _addLog('游戏重置 - 重新创建了 ${newGamePlayers.length} 名玩家');
       } else {
         players.value = [];
         _addLog('游戏重置 - 警告: 未选择游戏场景');
@@ -185,8 +185,8 @@ class GameViewModel {
   }
 
   /// 设置玩家数量
-  void setPlayerCount(int count) {
-    selectedPlayerCount.value = count;
+  void setGamePlayerCount(int count) {
+    selectedGamePlayerCount.value = count;
     _addLog('选择玩家数量: $count');
 
     // 自动选择合适的场景
@@ -222,7 +222,7 @@ class GameViewModel {
       currentPhase.value = phase;
     });
 
-    _onPlayerActionSubscription = _gameService.playerActionStream.listen((
+    _onGamePlayerActionSubscription = _gameService.playerActionStream.listen((
       action,
     ) {
       // 玩家动作已经通过 gameEvents 流记录，这里不需要重复添加
@@ -261,7 +261,7 @@ class GameViewModel {
     _gameEventsSubscription?.cancel();
     _onGameStartSubscription?.cancel();
     _onPhaseChangeSubscription?.cancel();
-    _onPlayerActionSubscription?.cancel();
+    _onGamePlayerActionSubscription?.cancel();
     _onGameEndSubscription?.cancel();
     _onErrorSubscription?.cancel();
     _snackBarMessageController.close();
@@ -273,7 +273,7 @@ class GameViewModel {
     players.dispose();
     eventLog.dispose();
     gameStatus.dispose();
-    selectedPlayerCount.dispose();
+    selectedGamePlayerCount.dispose();
     selectedScenario.dispose();
     // Computed properties are automatically disposed with their dependencies
   }

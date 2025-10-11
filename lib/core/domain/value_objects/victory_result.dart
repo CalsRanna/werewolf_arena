@@ -43,6 +43,12 @@ class VictoryResult {
   /// 游戏是否继续
   bool get isGameContinues => winner == null;
 
+  /// 好人阵营是否胜利
+  bool get isGoodWins => winner == '好人阵营';
+
+  /// 狼人阵营是否胜利
+  bool get isEvilWins => winner == '狼人阵营';
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

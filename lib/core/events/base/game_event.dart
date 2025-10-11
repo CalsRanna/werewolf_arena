@@ -1,7 +1,7 @@
 import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/event_visibility.dart';
-import 'package:werewolf_arena/core/domain/entities/role.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_role.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 游戏事件基类
@@ -19,10 +19,10 @@ abstract class GameEvent {
   final GameEventType type;
 
   /// 事件发起者
-  final Player? initiator;
+  final GamePlayer? initiator;
 
   /// 事件目标
-  final Player? target;
+  final GamePlayer? target;
 
   /// 事件可见性
   final EventVisibility visibility;
@@ -31,7 +31,7 @@ abstract class GameEvent {
   final List<String> visibleToPlayerNames;
 
   /// 可见角色ID(当visibility为roleSpecific时使用)
-  final String? visibleToRole;
+  final String? visibleToGameRole;
 
   /// 事件元数据
   final Map<String, dynamic> metadata;
@@ -43,7 +43,7 @@ abstract class GameEvent {
     this.target,
     this.visibility = EventVisibility.public,
     this.visibleToPlayerNames = const [],
-    this.visibleToRole,
+    this.visibleToGameRole,
     Map<String, dynamic>? metadata,
   }) : timestamp = DateTime.now(),
        metadata = metadata ?? {};
@@ -59,7 +59,7 @@ abstract class GameEvent {
   bool isVisibleTo(dynamic player) {
     // Extract player properties (support both Player and test objects)
     final playerName = player.name as String;
-    final role = player.role as Role;
+    final role = player.role as GameRole;
     final isAlive = player.isAlive as bool;
 
     switch (visibility) {
@@ -70,7 +70,7 @@ abstract class GameEvent {
         return role.isWerewolf;
 
       case EventVisibility.roleSpecific:
-        return visibleToRole != null && role.roleId == visibleToRole;
+        return visibleToGameRole != null && role.roleId == visibleToGameRole;
 
       case EventVisibility.playerSpecific:
         return visibleToPlayerNames.contains(playerName);
@@ -95,7 +95,7 @@ abstract class GameEvent {
       'target': target?.name,
       'visibility': visibility.name,
       'visibleToPlayerNames': visibleToPlayerNames,
-      'visibleToRole': visibleToRole,
+      'visibleToGameRole': visibleToGameRole,
       'metadata': metadata,
     };
   }

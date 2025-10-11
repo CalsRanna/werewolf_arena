@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/core/domain/entities/game_player.dart';
-import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/entities/game_role.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/events/base/game_event.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
@@ -21,7 +21,7 @@ class AIPlayer extends GamePlayer {
   final String _id;
   final String _name;
   final int _index;
-  final Role _role;
+  final GameRole _role;
   
   @override
   String get id => _id;
@@ -30,7 +30,7 @@ class AIPlayer extends GamePlayer {
   @override
   int get index => _index;
   @override
-  Role get role => _role;
+  GameRole get role => _role;
   
   bool _isAlive = true;
   bool _isProtected = false;
@@ -53,7 +53,7 @@ class AIPlayer extends GamePlayer {
     required String id,
     required String name,
     required int index,
-    required Role role,
+    required GameRole role,
     required PlayerIntelligence intelligence,
   }) : _id = id,
        _name = name,
@@ -150,6 +150,11 @@ class AIPlayer extends GamePlayer {
   @override
   void setSilenced(bool silenced) {
     _isSilenced = silenced;
+  }
+  
+  // 为测试添加的便利方法
+  set isDead(bool dead) {
+    _isAlive = !dead;
   }
   
   @override

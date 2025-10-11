@@ -150,7 +150,7 @@ class GameAssembler {
     final random = GameRandom();
     
     // 获取角色列表并随机分配
-    final roleTypes = scenario.getExpandedRoles();
+    final roleTypes = scenario.getExpandedGameRoles();
     roleTypes.shuffle(random.generator);
     
     // 创建玩家
@@ -217,7 +217,7 @@ class GameAssembler {
     final random = GameRandom();
     
     // 获取角色列表并随机分配
-    final roleTypes = scenario.getExpandedRoles();
+    final roleTypes = scenario.getExpandedGameRoles();
     roleTypes.shuffle(random.generator);
     
     // 创建玩家
@@ -296,7 +296,7 @@ class GameAssembler {
       return false;
     }
     
-    final roles = scenario.getExpandedRoles();
+    final roles = scenario.getExpandedGameRoles();
     if (roles.length != scenario.playerCount) {
       return false;
     }

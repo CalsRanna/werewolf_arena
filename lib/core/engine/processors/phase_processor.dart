@@ -1,6 +1,5 @@
-
-import '../../state/game_state.dart';
-import '../../domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// The abstract base class for all phase processors.
 ///

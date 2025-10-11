@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/core/engine/game_observer.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'console_output.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
@@ -28,9 +28,9 @@ class ConsoleGameObserver extends GameObserverAdapter {
     GameState state,
     String winner,
     int totalDays,
-    int finalPlayerCount,
+    int finalGamePlayerCount,
   ) {
-    _console.displayGameEnd(state, winner, totalDays, finalPlayerCount);
+    _console.displayGameEnd(state, winner, totalDays, finalGamePlayerCount);
   }
 
   @override
@@ -39,27 +39,27 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onPlayerAction(
-    Player player,
+  void onGamePlayerAction(
+    GamePlayer player,
     String actionType,
     dynamic target, {
     Map<String, dynamic>? details,
   }) {
-    _console.displayPlayerAction(player, actionType, target, details: details);
+    _console.displayGamePlayerAction(player, actionType, target, details: details);
   }
 
   @override
-  void onPlayerDeath(Player player, DeathCause cause, {Player? killer}) {
-    _console.displayPlayerDeath(player, cause, killer: killer);
+  void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
+    _console.displayGamePlayerDeath(player, cause, killer: killer);
   }
 
   @override
-  void onPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
-    _console.displayPlayerSpeak(player, message, speechType: speechType);
+  void onGamePlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {
+    _console.displayGamePlayerSpeak(player, message, speechType: speechType);
   }
 
   @override
-  void onVoteCast(Player voter, Player target, {VoteType? voteType}) {
+  void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType}) {
     String voteTypeText = '';
     if (voteType != null) {
       switch (voteType) {
@@ -71,7 +71,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
           break;
       }
     }
-    _console.displayPlayerAction(
+    _console.displayGamePlayerAction(
       voter,
       '投票',
       target,
@@ -80,7 +80,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber) {
+  void onNightResult(List<GamePlayer> deaths, bool isPeacefulNight, int dayNumber) {
     _console.displayNightResult(deaths, isPeacefulNight, dayNumber);
   }
 
@@ -97,19 +97,19 @@ class ConsoleGameObserver extends GameObserverAdapter {
   @override
   void onVoteResults(
     Map<String, int> results,
-    Player? executed,
-    List<Player>? pkCandidates,
+    GamePlayer? executed,
+    List<GamePlayer>? pkCandidates,
   ) {
     _console.displayVoteResults(results, executed, pkCandidates);
   }
 
   @override
-  void onAlivePlayersAnnouncement(List<Player> alivePlayers) {
-    _console.displayAlivePlayers(alivePlayers);
+  void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers) {
+    _console.displayAliveGamePlayers(aliveGamePlayers);
   }
 
   @override
-  void onLastWords(Player player, String lastWords) {
+  void onLastWords(GamePlayer player, String lastWords) {
     _console.displayLastWords(player, lastWords);
   }
 }

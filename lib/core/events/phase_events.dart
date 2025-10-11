@@ -3,7 +3,7 @@ import 'package:werewolf_arena/core/events/player_events.dart' show DeadEvent;
 import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/event_visibility.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 阶段转换事件 - 公开可见
@@ -63,7 +63,7 @@ class NightResultEvent extends GameEvent {
 
 /// 发言顺序公告事件 - 公开可见
 class SpeechOrderAnnouncementEvent extends GameEvent {
-  final List<Player> speakingOrder;
+  final List<GamePlayer> speakingOrder;
   final int dayNumber;
   final String direction; // "顺序" 或 "逆序"
 

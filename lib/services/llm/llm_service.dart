@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:openai_dart/openai_dart.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'json_cleaner.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
 import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 
@@ -39,7 +39,7 @@ class LLMResponse {
   factory LLMResponse.success({
     required String content,
     Map<String, dynamic> parsedData = const {},
-    List<Player> targets = const [],
+    List<GamePlayer> targets = const [],
     String statement = '',
     int tokensUsed = 0,
     int responseTimeMs = 0,
@@ -76,7 +76,7 @@ class LLMResponse {
 
   final String content;
   final Map<String, dynamic> parsedData;
-  final List<Player> targets;
+  final List<GamePlayer> targets;
   final String statement;
   final bool isValid;
   final List<String> errors;
@@ -201,13 +201,13 @@ class OpenAIService {
   }
 
   Future<LLMResponse> generateAction({
-    required Player player,
+    required GamePlayer player,
     required GameState state,
     required String rolePrompt,
   }) async {
-    // Use player's model config if available, otherwise use defaults
-    final effectiveModel = player.modelConfig?.model ?? model;
-    final effectiveApiKey = player.modelConfig?.apiKey ?? apiKey;
+    // Use default model config for now - player-specific config handled by AIPlayerDriver
+    final effectiveModel = model;
+    final effectiveApiKey = apiKey;
 
     final response = await generateResponse(
       systemPrompt: rolePrompt,
@@ -225,7 +225,7 @@ class OpenAIService {
   }
 
   Future<LLMResponse> generateStatement({
-    required Player player,
+    required GamePlayer player,
     required GameState state,
     required String context,
     required String prompt,
@@ -255,9 +255,9 @@ Current situation:
 $context
 ''';
 
-    // Use player's model config if available, otherwise use defaults
-    final effectiveModel = player.modelConfig?.model ?? model;
-    final effectiveApiKey = player.modelConfig?.apiKey ?? apiKey;
+    // Use default model config for now - player-specific config handled by AIPlayerDriver
+    final effectiveModel = model;
+    final effectiveApiKey = apiKey;
 
     final response = await generateResponse(
       systemPrompt: '你是一个狼人游戏玩家，请根据提示生成 JSON 格式的回复。',
@@ -383,7 +383,7 @@ $context
 
   Future<LLMResponse> _parseActionResponse(
     LLMResponse response,
-    Player player,
+    GamePlayer player,
     GameState state,
   ) async {
     final jsonData = await _parseJsonResponse(response.content);
@@ -392,7 +392,7 @@ $context
       return LLMResponse.success(
         content: response.content,
         parsedData: <String, dynamic>{},
-        targets: <Player>[],
+        targets: <GamePlayer>[],
         statement: '',
         tokensUsed: response.tokensUsed,
         responseTimeMs: response.responseTimeMs,
@@ -405,10 +405,10 @@ $context
     final statement = jsonData['statement'] ?? jsonData['陈述'] ?? '';
     final reasoning = jsonData['reasoning'] ?? jsonData['推理'] ?? '';
 
-    final targets = <Player>[];
+    final targets = <GamePlayer>[];
     if (targetId != null && targetId.toString().isNotEmpty) {
       // 首先尝试直接通过名字查找
-      Player? target = state.getPlayerByName(targetId.toString());
+      GamePlayer? target = state.getPlayerByName(targetId.toString());
 
       // 如果找不到,尝试通过玩家名字查找(支持"3号玩家"这样的格式)
       if (target == null) {
@@ -463,7 +463,7 @@ $context
     return JsonCleaner.extractJson(content);
   }
 
-  String _buildContext(Player player, GameState state) {
+  String _buildContext(GamePlayer player, GameState state) {
     final alivePlayers = state.alivePlayers.map((p) => p.name).join(', ');
     final deadPlayers = state.deadPlayers.map((p) => p.name).join(', ');
 
@@ -479,7 +479,7 @@ Your role: ${player.role.name}
 
   /// Generate simple decision from limited options
   Future<String> generateSimpleDecision({
-    required Player player,
+    required GamePlayer player,
     required String prompt,
     required List<String> options,
     required GameState state,
@@ -528,8 +528,8 @@ ${options.map((opt) => '- $opt').join('\n')}
   }
 
   /// Generate poison decision with target selection
-  Future<Player?> generatePoisonDecision({
-    required Player player,
+  Future<GamePlayer?> generatePoisonDecision({
+    required GamePlayer player,
     required String prompt,
     required GameState state,
   }) async {

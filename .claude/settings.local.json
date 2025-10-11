@@ -27,7 +27,9 @@
       "Bash(then echo \"删除: $dir\")",
       "Bash(fi)",
       "Bash(mkdir:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

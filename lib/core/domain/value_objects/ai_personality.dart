@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/shared/random_helper.dart';
 
@@ -120,11 +120,11 @@ class Personality {
 
   /// 初始化信任度
   void initializeTrustLevels(
-    List<Player> allPlayers,
-    String currentPlayerName,
+    List<GamePlayer> allGamePlayers,
+    String currentGamePlayerName,
   ) {
-    for (final player in allPlayers) {
-      if (player.name != currentPlayerName) {
+    for (final player in allGamePlayers) {
+      if (player.name != currentGamePlayerName) {
         trustLevels[player.name] = 0.5; // 初始中等信任度
         memory[player.name] = [];
       }

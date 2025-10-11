@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/entities/game_role.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/events/base/game_event.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
@@ -6,6 +6,10 @@ import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/drivers/player_driver.dart';
 import 'package:werewolf_arena/core/skills/game_skill.dart';
 import 'package:werewolf_arena/core/skills/skill_result.dart';
+import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
+import 'package:werewolf_arena/core/domain/entities/human_player.dart';
+import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
+import 'package:werewolf_arena/core/domain/value_objects/player_model_config.dart';
 
 /// 游戏玩家抽象基类
 /// 
@@ -15,7 +19,7 @@ abstract class GamePlayer {
   String get id;
   String get name;
   int get index; // 玩家序号（1号玩家、2号玩家等）
-  Role get role;
+  GameRole get role;
   
   // 每个玩家有自己的Driver
   PlayerDriver get driver;
@@ -31,13 +35,14 @@ abstract class GamePlayer {
   // 历史行动
   List<GameEvent> get actionHistory;
   
-  // Role-based getters
+  // GameRole-based getters
   bool get isWerewolf => role.isWerewolf;
   bool get isVillager => role.isVillager;
   bool get isGod => role.isGod;
   bool get isGood => role.isGood;
   bool get isEvil => role.isEvil;
   bool get isDead => !isAlive;
+  set isDead(bool dead) => setAlive(!dead);
   
   // 核心方法 - 通过自己的Driver执行技能
   Future<SkillResult> executeSkill(GameSkill skill, GameState state);
@@ -88,5 +93,43 @@ abstract class GamePlayer {
   @override
   String toString() {
     return '$name (${role.name})';
+  }
+
+  // 静态工厂方法，用于测试和外部创建
+  /// 创建AI玩家
+  static AIPlayer ai({
+    required String id,
+    required String name,
+    required GameRole role,
+    PlayerDriver? driver,
+  }) {
+    // 创建默认的PlayerIntelligence用于测试
+    final intelligence = PlayerIntelligence(
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: 'test-key',
+      modelId: 'gpt-3.5-turbo',
+    );
+    
+    return AIPlayer(
+      id: id,
+      name: name,
+      index: 1, // 默认索引，实际使用时会被正确设置
+      role: role,
+      intelligence: intelligence,
+    );
+  }
+
+  /// 创建人类玩家
+  static HumanPlayer human({
+    required String id,
+    required String name,
+    required GameRole role,
+  }) {
+    return HumanPlayer(
+      id: id,
+      name: name,
+      index: 1, // 默认索引，实际使用时会被正确设置
+      role: role,
+    );
   }
 }

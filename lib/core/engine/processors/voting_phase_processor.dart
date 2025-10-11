@@ -1,7 +1,8 @@
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
-import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_role.dart';
 import 'package:werewolf_arena/services/logging/logger.dart';
 import 'package:werewolf_arena/services/logging/player_logger.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
@@ -42,11 +43,11 @@ class VotingPhaseProcessor implements PhaseProcessor {
   Future<void> _collectVotes(GameState state) async {
     LoggerUtil.instance.d('开始收集投票');
 
-    final alivePlayers = state.alivePlayers.where((p) => p.isAlive).toList();
+    final aliveGamePlayers = state.alivePlayers.where((p) => p.isAlive).toList();
     final voteFutures = <Future<void>>[];
 
     // 收集所有玩家的投票任务
-    for (final voter in alivePlayers) {
+    for (final voter in aliveGamePlayers) {
       if (voter is AIPlayer && voter.isAlive) {
         voteFutures.add(_processSingleVote(voter, state));
       }
@@ -64,7 +65,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
       LoggerUtil.instance.d('处理玩家 ${voter.name} 的投票');
 
       // 更新玩家事件日志
-      PlayerLogger.instance.updatePlayerEvents(voter, state);
+      GamePlayerLogger.instance.updateGamePlayerEvents(voter, state);
 
       // 玩家独立决策
       await voter.processInformation(state);
@@ -93,7 +94,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
     // 获取投票统计
     final voteResults = state.votingState.getVoteResults();
     final voteTarget = state.votingState.getVoteTarget(state.alivePlayers);
-    final tiedPlayers = state.votingState.getTiedPlayers(state.alivePlayers);
+    final tiedGamePlayers = state.votingState.getTiedGamePlayers(state.alivePlayers);
 
     // 记录投票统计
     if (voteResults.isNotEmpty) {
@@ -101,7 +102,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
         ..sort((a, b) => b.value.compareTo(a.value));
       LoggerUtil.instance.d('投票结果：');
       for (final entry in sortedResults) {
-        final player = state.getPlayerByName(entry.key);
+        final player = state.getGamePlayerByName(entry.key);
         LoggerUtil.instance.d(
           '  ${player?.name ?? entry.key}: ${entry.value} 票',
         );
@@ -123,11 +124,11 @@ class VotingPhaseProcessor implements PhaseProcessor {
       await _handleHunterDeath(voteTarget, state);
     } else {
       // 检查平票情况
-      if (tiedPlayers.length > 1) {
+      if (tiedGamePlayers.length > 1) {
         LoggerUtil.instance.d(
-          '投票平票：${tiedPlayers.map((p) => p.name).join('、')}',
+          '投票平票：${tiedGamePlayers.map((p) => p.name).join('、')}',
         );
-        await _handlePKPhase(tiedPlayers, state);
+        await _handlePKPhase(tiedGamePlayers, state);
       } else if (voteResults.isEmpty) {
         LoggerUtil.instance.d('没有玩家投票');
       } else {
@@ -140,21 +141,21 @@ class VotingPhaseProcessor implements PhaseProcessor {
   }
 
   /// 处理PK（平票）阶段 - 平票玩家发言，然后其他人投票
-  Future<void> _handlePKPhase(List<Player> tiedPlayers, GameState state) async {
+  Future<void> _handlePKPhase(List<GamePlayer> tiedGamePlayers, GameState state) async {
     LoggerUtil.instance.d(
-      '开始PK阶段，平票玩家：${tiedPlayers.map((p) => p.name).join('、')}',
+      '开始PK阶段，平票玩家：${tiedGamePlayers.map((p) => p.name).join('、')}',
     );
 
     // 平票玩家依次发言
-    for (int i = 0; i < tiedPlayers.length; i++) {
-      final player = tiedPlayers[i];
+    for (int i = 0; i < tiedGamePlayers.length; i++) {
+      final player = tiedGamePlayers[i];
 
       if (player is AIPlayer && player.isAlive) {
         try {
           LoggerUtil.instance.d('处理PK玩家 ${player.name} 的发言');
 
           // 更新玩家事件日志
-          PlayerLogger.instance.updatePlayerEvents(player, state);
+          GamePlayerLogger.instance.updateGamePlayerEvents(player, state);
 
           await player.processInformation(state);
           final statement = await player.generateStatement(
@@ -178,7 +179,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
         }
 
         // PK玩家发言间隔
-        if (i < tiedPlayers.length - 1) {
+        if (i < tiedGamePlayers.length - 1) {
           await Future.delayed(const Duration(milliseconds: 1000));
         }
       }
@@ -190,7 +191,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
     state.votingState.clearVotes();
 
     // 其他玩家投票（不包括PK玩家自己）
-    await _collectPKVotes(tiedPlayers, state);
+    await _collectPKVotes(tiedGamePlayers, state);
 
     // 统计PK投票结果
     final pkResults = state.votingState.getVoteResults();
@@ -199,7 +200,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
       final sortedPkResults = pkResults.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
       for (final entry in sortedPkResults) {
-        final player = state.getPlayerByName(entry.key);
+        final player = state.getGamePlayerByName(entry.key);
         LoggerUtil.instance.d(
           '  ${player?.name ?? entry.key}: ${entry.value} 票',
         );
@@ -210,7 +211,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
 
     // 得出PK结果
     final pkTarget = state.votingState.getVoteTarget(state.alivePlayers);
-    if (pkTarget != null && tiedPlayers.contains(pkTarget)) {
+    if (pkTarget != null && tiedGamePlayers.contains(pkTarget)) {
       LoggerUtil.instance.d('PK结果：${pkTarget.name} 出局');
 
       // PK阶段被淘汰的玩家先留遗言
@@ -233,13 +234,13 @@ class VotingPhaseProcessor implements PhaseProcessor {
 
   /// 收集PK投票（其他玩家投票，不包括PK候选人）
   Future<void> _collectPKVotes(
-    List<Player> pkCandidates,
+    List<GamePlayer> pkCandidates,
     GameState state,
   ) async {
-    final alivePlayers = state.alivePlayers.where((p) => p.isAlive).toList();
+    final aliveGamePlayers = state.alivePlayers.where((p) => p.isAlive).toList();
 
     // 排除PK候选人自己
-    final voters = alivePlayers
+    final voters = aliveGamePlayers
         .where((p) => !pkCandidates.contains(p))
         .toList();
 
@@ -260,13 +261,13 @@ class VotingPhaseProcessor implements PhaseProcessor {
   Future<void> _processPKVote(
     AIPlayer voter,
     GameState state,
-    List<Player> pkCandidates,
+    List<GamePlayer> pkCandidates,
   ) async {
     try {
       LoggerUtil.instance.d('处理玩家 ${voter.name} 的PK投票');
 
       // 更新玩家事件日志
-      PlayerLogger.instance.updatePlayerEvents(voter, state);
+      GamePlayerLogger.instance.updateGamePlayerEvents(voter, state);
 
       await voter.processInformation(state);
       final target = await voter.chooseVoteTarget(
@@ -291,19 +292,19 @@ class VotingPhaseProcessor implements PhaseProcessor {
   }
 
   /// 处理玩家死亡（包括猎人技能）
-  Future<void> _handleHunterDeath(Player hunter, GameState state) async {
-    if (hunter.role is HunterRole) {
-      final hunterRole = hunter.role as HunterRole;
+  Future<void> _handleHunterDeath(GamePlayer hunter, GameState state) async {
+    if (hunter.role is HunterGameRole) {
+      final hunterGameRole = hunter.role as HunterGameRole;
 
       // 检查猎人是否可以开枪
-      if (hunterRole.canShoot(state)) {
+      if (hunterGameRole.canShoot(state)) {
         LoggerUtil.instance.d('猎人 ${hunter.name} 可以开枪');
 
         if (hunter is AIPlayer) {
           // 简单AI：射击最可疑的玩家
-          final suspiciousPlayers = hunter.getMostSuspiciousPlayers(state);
-          if (suspiciousPlayers.isNotEmpty) {
-            final target = suspiciousPlayers.first;
+          final suspiciousGamePlayers = hunter.getMostSuspiciousGamePlayers(state);
+          if (suspiciousGamePlayers.isNotEmpty) {
+            final target = suspiciousGamePlayers.first;
             final event = hunter.createHunterShootEvent(target, state);
             if (event != null) {
               hunter.executeEvent(event, state);
@@ -321,7 +322,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
 
   /// 处理玩家遗言
   Future<void> _handleLastWords(
-    Player player,
+    GamePlayer player,
     GameState state,
     String executionType,
   ) async {
@@ -336,7 +337,7 @@ class VotingPhaseProcessor implements PhaseProcessor {
     if (player is AIPlayer) {
       try {
         // 更新玩家知识
-        PlayerLogger.instance.updatePlayerEvents(player, state);
+        GamePlayerLogger.instance.updateGamePlayerEvents(player, state);
         await player.processInformation(state);
 
         // 根据执行类型生成上下文

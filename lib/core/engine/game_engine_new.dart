@@ -51,18 +51,11 @@ class GameEngine {
   /// 初始化游戏
   Future<void> initializeGame() async {
     try {
-      // 暂时创建一个兼容的AppConfig（临时解决方案）
-      final appConfig = _createCompatibleAppConfig();
-      
-      // 暂时转换GamePlayer为Player（临时解决方案）
-      final compatiblePlayers = _convertToCompatiblePlayers();
-      
       // 创建游戏状态
       _currentState = GameState(
         gameId: 'game_${DateTime.now().millisecondsSinceEpoch}',
-        config: appConfig,
         scenario: scenario,
-        players: compatiblePlayers,
+        players: players, // 直接使用GamePlayer列表
       );
       
       // 初始化游戏
@@ -78,20 +71,6 @@ class GameEngine {
       await _handleGameError(e);
       rethrow;
     }
-  }
-  
-  /// 创建兼容的AppConfig（临时解决方案）
-  dynamic _createCompatibleAppConfig() {
-    // 这里需要创建一个AppConfig实例
-    // 暂时返回null，在后续阶段中实现
-    return null;
-  }
-  
-  /// 转换GamePlayer为Player（临时解决方案）
-  List<dynamic> _convertToCompatiblePlayers() {
-    // 这里需要转换GamePlayer为Player
-    // 暂时返回空列表，在后续阶段中实现
-    return [];
   }
   
   /// 开始游戏
@@ -123,7 +102,13 @@ class GameEngine {
         GamePhase.night => _nightProcessor,
         GamePhase.day => _dayProcessor,
         GamePhase.voting => _dayProcessor, // 投票合并到白天阶段
+        GamePhase.ended => null, // 游戏结束时不需要处理器
       };
+      
+      // 如果游戏已结束，直接返回
+      if (processor == null) {
+        return;
+      }
       
       // 执行阶段处理
       await processor.process(_currentState!);

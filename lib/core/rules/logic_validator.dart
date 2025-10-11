@@ -4,8 +4,8 @@ import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/core/events/skill_events.dart';
 import 'package:werewolf_arena/core/events/phase_events.dart';
 import 'package:werewolf_arena/core/events/system_events.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
-import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_role.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 
@@ -14,7 +14,7 @@ class LogicValidator {
   /// 检测发言中的逻辑矛盾并返回标签
   static List<String> detectContradictions(
     String message,
-    Player speaker,
+    GamePlayer speaker,
     GameState state,
   ) {
     final tags = <String>[];
@@ -34,7 +34,7 @@ class LogicValidator {
   /// 检测事实性矛盾
   static List<String> _detectFactualContradictions(
     String message,
-    Player speaker,
+    GamePlayer speaker,
     GameState state,
   ) {
     final tags = <String>[];
@@ -88,13 +88,13 @@ class LogicValidator {
   /// 检测聊爆发言
   static List<String> _detectSuspiciousStatements(
     String message,
-    Role speakerRole,
+    GameRole speakerGameRole,
   ) {
     final tags = <String>[];
     final lowerMessage = message.toLowerCase();
 
     // 预言家相关的聊爆检测
-    if (speakerRole.roleId == 'seer') {
+    if (speakerGameRole.roleId == 'seer') {
       if (lowerMessage.contains('随便验') ||
           lowerMessage.contains('凭感觉') ||
           lowerMessage.contains('中间挑') ||
@@ -124,7 +124,7 @@ class LogicValidator {
   /// 检测逻辑不一致
   static List<String> _detectLogicalInconsistencies(
     String message,
-    Player speaker,
+    GamePlayer speaker,
     GameState state,
   ) {
     final tags = <String>[];

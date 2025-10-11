@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
@@ -144,8 +144,8 @@ class GameConsole {
   }
 
   /// 显示玩家发言
-  void displayPlayerSpeak(
-    Player player,
+  void displayGamePlayerSpeak(
+    GamePlayer player,
     String message, {
     SpeechType? speechType,
   }) {
@@ -169,8 +169,8 @@ class GameConsole {
   }
 
   /// 显示玩家行动
-  void displayPlayerAction(
-    Player player,
+  void displayGamePlayerAction(
+    GamePlayer player,
     String actionType,
     dynamic target, {
     Map<String, dynamic>? details,
@@ -211,7 +211,7 @@ class GameConsole {
   }
 
   /// 显示玩家死亡
-  void displayPlayerDeath(Player player, DeathCause cause, {Player? killer}) {
+  void displayGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
     String causeText;
     ConsoleColor causeColor;
 
@@ -247,7 +247,7 @@ class GameConsole {
 
   /// 显示夜晚结果
   void displayNightResult(
-    List<Player> deaths,
+    List<GamePlayer> deaths,
     bool isPeacefulNight,
     int dayNumber,
   ) {
@@ -257,7 +257,7 @@ class GameConsole {
     } else {
       printLine(_colorize('🌙 第${dayNumber}天夜晚结果:', ConsoleColor.yellow));
       for (final death in deaths) {
-        displayPlayerDeath(death, DeathCause.other); // 默认显示,具体死亡原因通过事件回调处理
+        displayGamePlayerDeath(death, DeathCause.other); // 默认显示,具体死亡原因通过事件回调处理
       }
     }
     printLine();
@@ -266,8 +266,8 @@ class GameConsole {
   /// 显示投票结果
   void displayVoteResults(
     Map<String, int> results,
-    Player? executed,
-    List<Player>? pkCandidates,
+    GamePlayer? executed,
+    List<GamePlayer>? pkCandidates,
   ) {
     printLine(_colorize('📊 投票统计:', ConsoleColor.blue));
 
@@ -295,18 +295,18 @@ class GameConsole {
   }
 
   /// 显示存活玩家列表
-  void displayAlivePlayers(List<Player> alivePlayers) {
-    if (alivePlayers.isEmpty) {
+  void displayAliveGamePlayers(List<GamePlayer> aliveGamePlayers) {
+    if (aliveGamePlayers.isEmpty) {
       printLine(_colorize('❌ 没有存活的玩家', ConsoleColor.red));
       return;
     }
 
-    final names = alivePlayers.map((p) => p.formattedName).join('、');
+    final names = aliveGamePlayers.map((p) => p.formattedName).join('、');
     printLine(_colorize('💚 当前存活玩家: ', ConsoleColor.green) + names);
   }
 
   /// 显示遗言
-  void displayLastWords(Player player, String lastWords) {
+  void displayLastWords(GamePlayer player, String lastWords) {
     printLine();
     printLine(_colorize('📢 ${player.formattedName} 的遗言:', ConsoleColor.cyan));
     printLine(lastWords);
@@ -318,7 +318,7 @@ class GameConsole {
     GameState state,
     String winner,
     int totalDays,
-    int finalPlayerCount,
+    int finalGamePlayerCount,
   ) {
     printLine();
     printHeader('🎊 游戏结束', color: ConsoleColor.green);
@@ -339,7 +339,7 @@ class GameConsole {
     printLine();
 
     // 存活玩家
-    printLine(_colorize('✅ 最终存活: ', ConsoleColor.green) + '$finalPlayerCount人');
+    printLine(_colorize('✅ 最终存活: ', ConsoleColor.green) + '$finalGamePlayerCount人');
     for (final player in state.alivePlayers) {
       final camp = player.role.isWerewolf ? '狼人' : '好人';
       printLine('  ✓ ${player.name} - ${player.role.name} ($camp)');

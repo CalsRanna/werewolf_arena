@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
@@ -21,7 +21,7 @@ import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
 ///   }
 ///
 ///   @override
-///   void onPlayerDeath(Player player, DeathCause cause, {Player? killer}) {
+///   void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
 ///     print('${player.name} 死亡');
 ///   }
 ///
@@ -47,31 +47,31 @@ abstract class GameObserver {
     GameState state,
     String winner,
     int totalDays,
-    int finalPlayerCount,
+    int finalGamePlayerCount,
   );
 
   /// 阶段转换
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber);
 
   /// 玩家行动
-  void onPlayerAction(
-    Player player,
+  void onGamePlayerAction(
+    GamePlayer player,
     String actionType,
     dynamic target, {
     Map<String, dynamic>? details,
   });
 
   /// 玩家死亡
-  void onPlayerDeath(Player player, DeathCause cause, {Player? killer});
+  void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer});
 
   /// 玩家发言
-  void onPlayerSpeak(Player player, String message, {SpeechType? speechType});
+  void onGamePlayerSpeak(GamePlayer player, String message, {SpeechType? speechType});
 
   /// 投票事件
-  void onVoteCast(Player voter, Player target, {VoteType? voteType});
+  void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType});
 
   /// 夜晚结果公告
-  void onNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber);
+  void onNightResult(List<GamePlayer> deaths, bool isPeacefulNight, int dayNumber);
 
   /// 系统消息（法官公告等）
   void onSystemMessage(String message, {int? dayNumber, GamePhase? phase});
@@ -85,15 +85,15 @@ abstract class GameObserver {
   /// 投票结果统计
   void onVoteResults(
     Map<String, int> results,
-    Player? executed,
-    List<Player>? pkCandidates,
+    GamePlayer? executed,
+    List<GamePlayer>? pkCandidates,
   );
 
   /// 存活玩家公告
-  void onAlivePlayersAnnouncement(List<Player> alivePlayers);
+  void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers);
 
   /// 遗言
-  void onLastWords(Player player, String lastWords);
+  void onLastWords(GamePlayer player, String lastWords);
 }
 
 /// 简单的观察者适配器，提供空实现
@@ -105,17 +105,17 @@ abstract class GameObserver {
 /// ```dart
 /// // 只关注玩家死亡和游戏结束事件
 /// class DeathTracker extends GameObserverAdapter {
-///   final List<Player> deadPlayers = [];
+///   final List<GamePlayer> deadGamePlayers = [];
 ///
 ///   @override
-///   void onPlayerDeath(Player player, DeathCause cause, {Player? killer}) {
-///     deadPlayers.add(player);
+///   void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
+///     deadGamePlayers.add(player);
 ///     print('${player.name} 死亡，原因：$cause');
 ///   }
 ///
 ///   @override
-///   void onGameEnd(GameState state, String winner, int totalDays, int finalPlayerCount) {
-///     print('游戏结束，共有 ${deadPlayers.length} 人死亡');
+///   void onGameEnd(GameState state, String winner, int totalDays, int finalGamePlayerCount) {
+///     print('游戏结束，共有 ${deadGamePlayers.length} 人死亡');
 ///   }
 ///
 ///   // 不需要实现其他12个方法
@@ -139,32 +139,32 @@ abstract class GameObserverAdapter implements GameObserver {
     GameState state,
     String winner,
     int totalDays,
-    int finalPlayerCount,
+    int finalGamePlayerCount,
   ) {}
 
   @override
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {}
 
   @override
-  void onPlayerAction(
-    Player player,
+  void onGamePlayerAction(
+    GamePlayer player,
     String actionType,
     dynamic target, {
     Map<String, dynamic>? details,
   }) {}
 
   @override
-  void onPlayerDeath(Player player, DeathCause cause, {Player? killer}) {}
+  void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {}
 
   @override
-  void onPlayerSpeak(Player player, String message, {SpeechType? speechType}) {}
+  void onGamePlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {}
 
   @override
-  void onVoteCast(Player voter, Player target, {VoteType? voteType}) {}
+  void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType}) {}
 
   @override
   void onNightResult(
-    List<Player> deaths,
+    List<GamePlayer> deaths,
     bool isPeacefulNight,
     int dayNumber,
   ) {}
@@ -181,15 +181,15 @@ abstract class GameObserverAdapter implements GameObserver {
   @override
   void onVoteResults(
     Map<String, int> results,
-    Player? executed,
-    List<Player>? pkCandidates,
+    GamePlayer? executed,
+    List<GamePlayer>? pkCandidates,
   ) {}
 
   @override
-  void onAlivePlayersAnnouncement(List<Player> alivePlayers) {}
+  void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers) {}
 
   @override
-  void onLastWords(Player player, String lastWords) {}
+  void onLastWords(GamePlayer player, String lastWords) {}
 }
 
 /// 复合观察者，可以同时处理多个观察者实现
@@ -267,11 +267,11 @@ class CompositeGameObserver implements GameObserver {
     GameState state,
     String winner,
     int totalDays,
-    int finalPlayerCount,
+    int finalGamePlayerCount,
   ) {
     _notifyObservers(
       (observer) =>
-          observer.onGameEnd(state, winner, totalDays, finalPlayerCount),
+          observer.onGameEnd(state, winner, totalDays, finalGamePlayerCount),
       'onGameEnd',
     );
   }
@@ -285,38 +285,38 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onPlayerAction(
-    Player player,
+  void onGamePlayerAction(
+    GamePlayer player,
     String actionType,
     dynamic target, {
     Map<String, dynamic>? details,
   }) {
     _notifyObservers(
       (observer) =>
-          observer.onPlayerAction(player, actionType, target, details: details),
-      'onPlayerAction',
+          observer.onGamePlayerAction(player, actionType, target, details: details),
+      'onGamePlayerAction',
     );
   }
 
   @override
-  void onPlayerDeath(Player player, DeathCause cause, {Player? killer}) {
+  void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
     _notifyObservers(
-      (observer) => observer.onPlayerDeath(player, cause, killer: killer),
-      'onPlayerDeath',
+      (observer) => observer.onGamePlayerDeath(player, cause, killer: killer),
+      'onGamePlayerDeath',
     );
   }
 
   @override
-  void onPlayerSpeak(Player player, String message, {SpeechType? speechType}) {
+  void onGamePlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {
     _notifyObservers(
       (observer) =>
-          observer.onPlayerSpeak(player, message, speechType: speechType),
-      'onPlayerSpeak',
+          observer.onGamePlayerSpeak(player, message, speechType: speechType),
+      'onGamePlayerSpeak',
     );
   }
 
   @override
-  void onVoteCast(Player voter, Player target, {VoteType? voteType}) {
+  void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType}) {
     _notifyObservers(
       (observer) => observer.onVoteCast(voter, target, voteType: voteType),
       'onVoteCast',
@@ -324,7 +324,7 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onNightResult(List<Player> deaths, bool isPeacefulNight, int dayNumber) {
+  void onNightResult(List<GamePlayer> deaths, bool isPeacefulNight, int dayNumber) {
     _notifyObservers(
       (observer) => observer.onNightResult(deaths, isPeacefulNight, dayNumber),
       'onNightResult',
@@ -359,8 +359,8 @@ class CompositeGameObserver implements GameObserver {
   @override
   void onVoteResults(
     Map<String, int> results,
-    Player? executed,
-    List<Player>? pkCandidates,
+    GamePlayer? executed,
+    List<GamePlayer>? pkCandidates,
   ) {
     _notifyObservers(
       (observer) => observer.onVoteResults(results, executed, pkCandidates),
@@ -369,15 +369,15 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onAlivePlayersAnnouncement(List<Player> alivePlayers) {
+  void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers) {
     _notifyObservers(
-      (observer) => observer.onAlivePlayersAnnouncement(alivePlayers),
-      'onAlivePlayersAnnouncement',
+      (observer) => observer.onAliveGamePlayersAnnouncement(aliveGamePlayers),
+      'onAliveGamePlayersAnnouncement',
     );
   }
 
   @override
-  void onLastWords(Player player, String lastWords) {
+  void onLastWords(GamePlayer player, String lastWords) {
     _notifyObservers(
       (observer) => observer.onLastWords(player, lastWords),
       'onLastWords',

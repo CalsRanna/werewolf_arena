@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/core/domain/entities/player.dart';
-import 'package:werewolf_arena/services/config/config.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+// import 'package:werewolf_arena/services/config/config.dart'; // 移除Flutter依赖
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart'; // 重新导入新的场景类
 import 'package:werewolf_arena/services/logging/logger.dart';
@@ -23,14 +23,14 @@ import 'package:werewolf_arena/core/rules/victory_conditions.dart';
 class GameState {
   final String gameId;
   final DateTime startTime;
-  final AppConfig config;
+  // final AppConfig config; // 移除Flutter依赖
   final GameScenario scenario;
 
   // 核心游戏状态
   GamePhase currentPhase;
   int dayNumber;
 
-  List<Player> players;
+  List<GamePlayer> players;
   final List<GameEvent> eventHistory;
   final Map<String, dynamic> metadata;
 
@@ -43,7 +43,7 @@ class GameState {
 
   GameState({
     required this.gameId,
-    required this.config,
+    // required this.config, // 移除Flutter依赖
     required this.scenario,
     required this.players,
     this.currentPhase = GamePhase.night,
@@ -63,14 +63,14 @@ class GameState {
   bool get isDay => currentPhase == GamePhase.day;
   bool get isVoting => currentPhase == GamePhase.voting;
 
-  List<Player> get alivePlayers => players.where((p) => p.isAlive).toList();
-  List<Player> get deadPlayers => players.where((p) => !p.isAlive).toList();
+  List<GamePlayer> get alivePlayers => players.where((p) => p.isAlive).toList();
+  List<GamePlayer> get deadPlayers => players.where((p) => !p.isAlive).toList();
 
-  List<Player> get werewolves =>
+  List<GamePlayer> get werewolves =>
       players.where((p) => p.role.isWerewolf).toList();
-  List<Player> get villagers =>
+  List<GamePlayer> get villagers =>
       players.where((p) => p.role.isVillager).toList();
-  List<Player> get gods => players.where((p) => p.role.isGod).toList();
+  List<GamePlayer> get gods => players.where((p) => p.role.isGod).toList();
 
   int get aliveWerewolves => werewolves.where((p) => p.isAlive).length;
   int get aliveVillagers => villagers.where((p) => p.isAlive).length;
@@ -142,13 +142,13 @@ class GameState {
   }
 
   /// Get all events visible to a specific player
-  List<GameEvent> getEventsForPlayer(Player player) {
+  List<GameEvent> getEventsForPlayer(GamePlayer player) {
     return eventHistory.where((event) => event.isVisibleTo(player)).toList();
   }
 
   /// Get recent events visible to a specific player
   List<GameEvent> getRecentEventsForPlayer(
-    Player player, {
+    GamePlayer player, {
     Duration timeWindow = const Duration(minutes: 5),
   }) {
     final cutoffTime = DateTime.now().subtract(timeWindow);
@@ -161,7 +161,7 @@ class GameState {
   }
 
   /// Get events of a specific type visible to a player
-  List<GameEvent> getEventsByType(Player player, GameEventType type) {
+  List<GameEvent> getEventsByType(GamePlayer player, GameEventType type) {
     return eventHistory
         .where((event) => event.type == type && event.isVisibleTo(player))
         .toList();
@@ -204,8 +204,8 @@ class GameState {
     addEvent(event);
   }
 
-  void playerDeath(Player player, DeathCause cause) {
-    player.isAlive = false;
+  void playerDeath(GamePlayer player, DeathCause cause) {
+    player.setAlive(false);
 
     final event = DeadEvent(
       victim: player,
@@ -241,7 +241,7 @@ class GameState {
     return false;
   }
 
-  Player? getPlayerByName(String playerName) {
+  GamePlayer? getPlayerByName(String playerName) {
     try {
       return players.firstWhere((p) => p.name == playerName);
     } catch (e) {
@@ -249,7 +249,7 @@ class GameState {
     }
   }
 
-  List<Player> getPlayersByRole(String roleId) {
+  List<GamePlayer> getPlayersByRole(String roleId) {
     return players.where((p) => p.role.roleId == roleId).toList();
   }
 
@@ -266,7 +266,7 @@ class GameState {
     return {
       'gameId': gameId,
       'startTime': startTime.toIso8601String(),
-      'config': config.toJson(),
+      // 'config': config.toJson(), // 移除Flutter依赖
       'scenario': {
         'id': scenario.id,
         'name': scenario.name,
@@ -286,18 +286,19 @@ class GameState {
   }
 
   factory GameState.fromJson(Map<String, dynamic> json) {
-    final config = AppConfig.fromJson(json['config']);
-    final players = (json['players'] as List)
-        .map((p) => Player.fromJson(p))
-        .toList();
+    // TODO: 实现GamePlayer的序列化/反序列化
+    // final config = AppConfig.fromJson(json['config']); // 移除Flutter依赖
+    // final players = (json['players'] as List)
+    //     .map((p) => GamePlayer.fromJson(p))
+    //     .toList();
 
     final eventHistory = <GameEvent>[];
 
     return GameState(
       gameId: json['gameId'],
-      config: config,
+      // config: config, // 移除Flutter依赖
       scenario: Scenario9Players(), // Placeholder - 使用新的场景类
-      players: players,
+      players: [], // TODO: 实现玩家序列化
       currentPhase: GamePhase.values.firstWhere(
         (p) => p.name == json['currentPhase'],
       ),

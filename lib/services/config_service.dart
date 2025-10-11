@@ -3,10 +3,9 @@ import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 // import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
-import 'package:werewolf_arena/core/domain/entities/player.dart' hide AIPlayer;
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/services/llm/llm_service.dart';
-import 'package:werewolf_arena/services/llm/prompt_manager.dart';
 
 /// 配置服务 - Flutter友好的包装层
 class ConfigService {
@@ -78,10 +77,10 @@ class ConfigService {
   }
 
   /// 为场景创建玩家
-  List<Player> createPlayersForScenario(GameScenario scenario) {
+  List<GamePlayer> createGamePlayersForScenario(GameScenario scenario) {
     _ensureInitialized();
 
-    final players = <Player>[];
+    final players = <GamePlayer>[];
     final roleIds = scenario.getExpandedRoles();
     roleIds.shuffle(); // 随机打乱角色顺序
 
@@ -92,20 +91,19 @@ class ConfigService {
       final role = scenario.createRole(roleId);
 
       // 获取玩家专属的LLM配置
-      final playerLLMConfig = _gameParameters!.getPlayerLLMConfig(playerNumber);
-      final playerModelConfig = PlayerModelConfig.fromMap(playerLLMConfig);
+      final playerLLMConfig = _gameParameters!.getGamePlayerLLMConfig(playerNumber);
+      final playerModelConfig = GamePlayerModelConfig.fromMap(playerLLMConfig);
 
-      // 创建LLM服务和Prompt管理器
-      final llmService = OpenAIService.fromPlayerConfig(playerModelConfig);
-      final promptManager = PromptManager();
+      // 创建LLM服务
+      final llmService = OpenAIService.fromGamePlayerConfig(playerModelConfig);
 
       // 创建AI玩家实例
-      final player = AIPlayer(
+      final player = AIGamePlayer(
         id: playerName,
         name: playerName,
         index: i,
         role: role,
-        intelligence: PlayerIntelligence(
+        intelligence: GamePlayerIntelligence(
           baseUrl: playerModelConfig.baseUrl ?? 'https://api.openai.com',
           apiKey: playerModelConfig.apiKey,
           modelId: playerModelConfig.model,

@@ -317,17 +317,18 @@ class WitchHealSkill extends GameSkill {
         );
       }
       
-      // 检查是否有玩家被击杀（需要从当前夜晚的事件中获取）
-      final tonightVictim = state.nightActions.tonightVictim;
-      if (tonightVictim == null) {
-        return SkillResult.failure(
-          caster: player,
-          metadata: {
-            'skillId': skillId,
-            'reason': 'No one was killed tonight',
-          },
-        );
-      }
+      // 检查是否有玩家被击杀（临时注释掉nightActions引用）
+      // TODO: 从skillEffects或事件历史中获取受害者信息
+      // final tonightVictim = state.nightActions.tonightVictim;
+      // if (tonightVictim == null) {
+      //   return SkillResult.failure(
+      //     caster: player,
+      //     metadata: {
+      //       'skillId': skillId,
+      //       'reason': 'No one was killed tonight',
+      //     },
+      //   );
+      // }
       
       // 生成女巫治疗技能执行结果
       // 具体的事件创建由GameEngine处理
@@ -337,10 +338,10 @@ class WitchHealSkill extends GameSkill {
       
       return SkillResult.success(
         caster: player,
-        target: tonightVictim,
+        target: null, // TODO: 设置正确的目标
         metadata: {
           'skillId': skillId,
-          'victimName': tonightVictim.name,
+          'victimName': 'unknown', // TODO: 从skillEffects获取受害者名称
           'skillType': 'witch_heal',
         },
       );

@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/entities/game_role.dart';
 import 'package:werewolf_arena/core/domain/enums/role_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/victory_result.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
@@ -26,20 +26,20 @@ abstract class GameScenario {
   Map<RoleType, int> get roleDistribution;
 
   /// 获取展开的角色列表（根据数量）
-  List<RoleType> getExpandedRoles();
+  List<RoleType> getExpandedGameRoles();
 
   /// 创建角色实例
-  Role createRole(RoleType roleType);
+  GameRole createGameRole(RoleType roleType);
 
   /// 检查胜利条件
   VictoryResult checkVictoryCondition(GameState state);
 
   /// 验证角色分布是否有效
-  bool isValidRoleDistribution() {
-    final totalRoles = roleDistribution.values.fold(
+  bool isValidGameRoleDistribution() {
+    final totalGameRoles = roleDistribution.values.fold(
       0,
       (sum, count) => sum + count,
     );
-    return totalRoles == playerCount;
+    return totalGameRoles == playerCount;
   }
 }

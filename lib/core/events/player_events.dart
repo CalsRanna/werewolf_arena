@@ -5,14 +5,14 @@ import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 玩家死亡事件 - 公开可见
 class DeadEvent extends GameEvent {
-  final Player victim;
+  final GamePlayer victim;
   final DeathCause cause;
-  final Player? killer;
+  final GamePlayer? killer;
   final int? dayNumber;
   final GamePhase? phase;
 
@@ -33,8 +33,7 @@ class DeadEvent extends GameEvent {
 
   @override
   void execute(GameState state) {
-    // Will be implemented when GameState is properly imported
-    // victim.isAlive = false;
+    victim.setAlive(false);
   }
 
   @override
@@ -52,8 +51,8 @@ class DeadEvent extends GameEvent {
 
 /// 投票事件 - 公开可见
 class VoteEvent extends GameEvent {
-  final Player voter;
-  final Player candidate;
+  final GamePlayer voter;
+  final GamePlayer candidate;
   final VoteType voteType;
   final int? dayNumber;
   final GamePhase? phase;
@@ -93,7 +92,7 @@ class VoteEvent extends GameEvent {
 
 /// 发言事件 - 根据类型决定可见性
 class SpeakEvent extends GameEvent {
-  final Player speaker;
+  final GamePlayer speaker;
   final String message;
   final SpeechType speechType;
   final int? dayNumber;
@@ -111,7 +110,7 @@ class SpeakEvent extends GameEvent {
           type: GameEventType.playerAction,
           initiator: speaker,
           visibility: _getDefaultVisibility(speechType),
-          visibleToRole: speechType == SpeechType.werewolfDiscussion
+          visibleToGameRole: speechType == SpeechType.werewolfDiscussion
               ? 'werewolf'
               : null,
         );

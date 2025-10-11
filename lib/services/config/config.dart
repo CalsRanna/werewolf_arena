@@ -3,7 +3,7 @@ import 'dart:io'
 import 'package:yaml/yaml.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
 // import 'package:werewolf_arena/core/scenarios/scenario_registry.dart'; // 已删除
-import 'package:werewolf_arena/core/engine/game_parameters.dart';
+// import 'package:werewolf_arena/core/engine/game_parameters.dart'; // 已删除
 import 'package:werewolf_arena/services/config/preference_loader.dart';
 
 /// 应用统一配置
@@ -49,136 +49,123 @@ class AppConfig {
     // 解析默认 LLM 配置
     final defaultLLM = yaml['default_llm'] as YamlMap;
 
-    // 安全获取 API key，避免在 Web 平台访问 Platform.environment
-    String apiKey = defaultLLM['api_key'] ?? '';
-    if (apiKey.isEmpty) {
-      try {
-        apiKey = Platform.environment['OPENAI_API_KEY'] ?? '';
-      } catch (e) {
-        // Web 平台不支持 Platform.environment，使用空字符串
-        apiKey = '';
-      }
-    }
-
-    // 解析玩家专属模型配置
+    // 解析玩家专属配置
     final playerModels = <String, PlayerLLMConfig>{};
-    if (yaml['player_models'] != null) {
-      final playerModelsYaml = yaml['player_models'] as YamlMap;
-      for (final entry in playerModelsYaml.entries) {
-        final playerKey = entry.key as String;
-        final playerConfig = entry.value as YamlMap;
-        playerModels[playerKey] = PlayerLLMConfig._fromYaml(playerConfig);
+    final playerModelYaml = yaml['player_models'] as YamlMap?;
+    if (playerModelYaml != null) {
+      for (final entry in playerModelYaml.entries) {
+        final playerNumber = entry.key as String;
+        final config = entry.value as YamlMap;
+        playerModels[playerNumber] = PlayerLLMConfig._fromYaml(config);
       }
     }
 
     // 解析日志配置
-    final loggingYaml =
-        yaml['logging'] as YamlMap? ?? YamlMap.wrap(_getDefaultLoggingConfig());
+    final loggingYaml = yaml['logging'] as YamlMap?;
+    final logging = loggingYaml != null
+        ? LoggingConfig._fromYaml(loggingYaml)
+        : LoggingConfig.defaultConfig();
 
     return AppConfig(
-      defaultModel: defaultLLM['model'] ?? 'gpt-3.5-turbo',
-      defaultApiKey: apiKey,
-      defaultBaseUrl: defaultLLM['base_url'],
-      timeoutSeconds: defaultLLM['timeout_seconds'] ?? 30,
-      maxRetries: defaultLLM['max_retries'] ?? 3,
+      defaultModel: defaultLLM['model'] as String,
+      defaultApiKey: defaultLLM['api_key'] as String,
+      defaultBaseUrl: defaultLLM['base_url'] as String?,
+      timeoutSeconds: defaultLLM['timeout_seconds'] as int? ?? 30,
+      maxRetries: defaultLLM['max_retries'] as int? ?? 3,
       playerModels: playerModels,
-      logging: LoggingConfig._fromYaml(loggingYaml),
+      logging: logging,
     );
   }
 
-  /// 从 YamlMap 创建配置（用于 Web 平台）
-  factory AppConfig.fromYamlMap(YamlMap yaml) {
-    return AppConfig._fromYaml(yaml);
-  }
-
-  /// 创建默认配置（用于 Web 平台）
-  factory AppConfig.defaults() {
-    return AppConfig._fromYaml(
-      YamlMap.wrap({
-        'default_llm': {
-          'model': 'gpt-3.5-turbo',
-          'api_key': '',
-          'base_url': null,
-          'timeout_seconds': 30,
-          'max_retries': 3,
-        },
-        'player_models': {},
-        'logging': _getDefaultLoggingConfig(),
-      }),
-    );
-  }
-
-  static Map<String, dynamic> _getDefaultLoggingConfig() {
-    return {
-      'level': 'info',
-      'enable_console': true,
-      'enable_file': true,
-      'backup_count': 5,
-    };
-  }
-
-  /// 序列化为 JSON（用于 SharedPreferences）
+  /// 转换为 JSON 格式用于 SharedPreferences 存储
   Map<String, dynamic> toJson() {
     return {
-      'defaultModel': defaultModel,
-      'defaultApiKey': defaultApiKey,
-      'defaultBaseUrl': defaultBaseUrl,
-      'timeoutSeconds': timeoutSeconds,
-      'maxRetries': maxRetries,
-      'playerModels': playerModels.map(
+      'default_llm': {
+        'model': defaultModel,
+        'api_key': defaultApiKey,
+        'base_url': defaultBaseUrl,
+        'timeout_seconds': timeoutSeconds,
+        'max_retries': maxRetries,
+      },
+      'player_models': playerModels.map(
         (key, value) => MapEntry(key, value.toJson()),
       ),
       'logging': logging.toJson(),
     };
   }
 
-  /// 从 JSON 反序列化（用于 SharedPreferences）
-  static AppConfig fromJson(Map<String, dynamic> json) {
-    final playerModelsJson =
-        json['playerModels'] as Map<String, dynamic>? ?? {};
-    final playerModels = playerModelsJson.map(
-      (key, value) => MapEntry(
-        key,
-        PlayerLLMConfig.fromJson(value as Map<String, dynamic>),
-      ),
-    );
+  /// 从 JSON 创建配置
+  factory AppConfig.fromJson(Map<String, dynamic> json) {
+    final defaultLLM = json['default_llm'] as Map<String, dynamic>;
+
+    // 解析玩家专属配置
+    final playerModels = <String, PlayerLLMConfig>{};
+    final playerModelJson = json['player_models'] as Map<String, dynamic>?;
+    if (playerModelJson != null) {
+      for (final entry in playerModelJson.entries) {
+        final playerNumber = entry.key;
+        final config = entry.value as Map<String, dynamic>;
+        playerModels[playerNumber] = PlayerLLMConfig.fromJson(config);
+      }
+    }
+
+    // 解析日志配置
+    final loggingJson = json['logging'] as Map<String, dynamic>?;
+    final logging = loggingJson != null
+        ? LoggingConfig.fromJson(loggingJson)
+        : LoggingConfig.defaultConfig();
 
     return AppConfig(
-      defaultModel: json['defaultModel'],
-      defaultApiKey: json['defaultApiKey'],
-      defaultBaseUrl: json['defaultBaseUrl'],
-      timeoutSeconds: json['timeoutSeconds'],
-      maxRetries: json['maxRetries'],
+      defaultModel: defaultLLM['model'] as String,
+      defaultApiKey: defaultLLM['api_key'] as String,
+      defaultBaseUrl: defaultLLM['base_url'] as String?,
+      timeoutSeconds: defaultLLM['timeout_seconds'] as int? ?? 30,
+      maxRetries: defaultLLM['max_retries'] as int? ?? 3,
       playerModels: playerModels,
-      logging: LoggingConfig.fromJson(json['logging']),
+      logging: logging,
     );
   }
 
   /// 获取指定玩家的 LLM 配置
   Map<String, dynamic> getPlayerLLMConfig(int playerNumber) {
+    // 查找玩家专属配置
     final playerKey = playerNumber.toString();
-
-    // 如果有玩家专属配置，使用专属配置
     if (playerModels.containsKey(playerKey)) {
       final playerConfig = playerModels[playerKey]!;
       return {
         'model': playerConfig.model,
         'api_key': playerConfig.apiKey,
         'base_url': playerConfig.baseUrl,
-        'timeout_seconds': timeoutSeconds,
-        'max_retries': maxRetries,
+        'max_retries': playerConfig.maxRetries ?? maxRetries,
+        'timeout_seconds': playerConfig.timeoutSeconds ?? timeoutSeconds,
       };
     }
 
-    // 否则使用默认配置
+    // 使用默认配置
     return {
       'model': defaultModel,
       'api_key': defaultApiKey,
       'base_url': defaultBaseUrl,
-      'timeout_seconds': timeoutSeconds,
       'max_retries': maxRetries,
+      'timeout_seconds': timeoutSeconds,
     };
   }
+
+  /// 创建默认配置
+  factory AppConfig.defaultConfig() {
+    return AppConfig(
+      defaultModel: 'gpt-3.5-turbo',
+      defaultApiKey: '',
+      defaultBaseUrl: 'https://api.openai.com/v1',
+      timeoutSeconds: 30,
+      maxRetries: 3,
+      playerModels: {},
+      logging: LoggingConfig.defaultConfig(),
+    );
+  }
+
+  /// 兼容性方法：defaults()
+  static AppConfig defaults() => AppConfig.defaultConfig();
 }
 
 /// 玩家专属 LLM 配置
@@ -186,26 +173,47 @@ class PlayerLLMConfig {
   final String model;
   final String apiKey;
   final String? baseUrl;
+  final int? maxRetries;
+  final int? timeoutSeconds;
 
-  PlayerLLMConfig({required this.model, required this.apiKey, this.baseUrl});
+  PlayerLLMConfig({
+    required this.model,
+    required this.apiKey,
+    this.baseUrl,
+    this.maxRetries,
+    this.timeoutSeconds,
+  });
 
+  /// 从 YamlMap 创建配置
   factory PlayerLLMConfig._fromYaml(YamlMap yaml) {
     return PlayerLLMConfig(
-      model: yaml['model'] ?? '',
-      apiKey: yaml['api_key'] ?? '',
-      baseUrl: yaml['base_url'],
+      model: yaml['model'] as String,
+      apiKey: yaml['api_key'] as String,
+      baseUrl: yaml['base_url'] as String?,
+      maxRetries: yaml['max_retries'] as int?,
+      timeoutSeconds: yaml['timeout_seconds'] as int?,
     );
   }
 
+  /// 转换为 JSON 格式
   Map<String, dynamic> toJson() {
-    return {'model': model, 'apiKey': apiKey, 'baseUrl': baseUrl};
+    return {
+      'model': model,
+      'api_key': apiKey,
+      'base_url': baseUrl,
+      'max_retries': maxRetries,
+      'timeout_seconds': timeoutSeconds,
+    };
   }
 
-  static PlayerLLMConfig fromJson(Map<String, dynamic> json) {
+  /// 从 JSON 创建配置
+  factory PlayerLLMConfig.fromJson(Map<String, dynamic> json) {
     return PlayerLLMConfig(
-      model: json['model'],
-      apiKey: json['apiKey'],
-      baseUrl: json['baseUrl'],
+      model: json['model'] as String,
+      apiKey: json['api_key'] as String,
+      baseUrl: json['base_url'] as String?,
+      maxRetries: json['max_retries'] as int?,
+      timeoutSeconds: json['timeout_seconds'] as int?,
     );
   }
 }
@@ -215,120 +223,58 @@ class LoggingConfig {
   final String level;
   final bool enableConsole;
   final bool enableFile;
+  final int backupCount;
   final int maxLogFiles;
 
   LoggingConfig({
     required this.level,
     required this.enableConsole,
     required this.enableFile,
+    required this.backupCount,
     required this.maxLogFiles,
   });
 
+  /// 从 YamlMap 创建配置
   factory LoggingConfig._fromYaml(YamlMap yaml) {
     return LoggingConfig(
-      level: yaml['level'] ?? 'info',
-      enableConsole: yaml['enable_console'] ?? true,
-      enableFile: yaml['enable_file'] ?? true,
-      maxLogFiles: yaml['backup_count'] ?? 5,
+      level: yaml['level'] as String? ?? 'info',
+      enableConsole: yaml['enable_console'] as bool? ?? true,
+      enableFile: yaml['enable_file'] as bool? ?? true,
+      backupCount: yaml['backup_count'] as int? ?? 5,
+      maxLogFiles: yaml['max_log_files'] as int? ?? 10,
     );
   }
 
+  /// 转换为 JSON 格式
   Map<String, dynamic> toJson() {
     return {
       'level': level,
       'enableConsole': enableConsole,
       'enableFile': enableFile,
+      'backupCount': backupCount,
       'maxLogFiles': maxLogFiles,
     };
   }
 
-  static LoggingConfig fromJson(Map<String, dynamic> json) {
+  /// 从 JSON 创建配置
+  factory LoggingConfig.fromJson(Map<String, dynamic> json) {
     return LoggingConfig(
-      level: json['level'],
-      enableConsole: json['enableConsole'],
-      enableFile: json['enableFile'],
-      maxLogFiles: json['maxLogFiles'],
+      level: json['level'] as String? ?? 'info',
+      enableConsole: json['enableConsole'] as bool? ?? true,
+      enableFile: json['enableFile'] as bool? ?? true,
+      backupCount: json['backupCount'] as int? ?? 5,
+      maxLogFiles: json['maxLogFiles'] as int? ?? 10,
     );
   }
-}
 
-/// Flutter 游戏参数实现（用于 GUI 应用）
-///
-/// 使用 SharedPreferences 进行配置持久化，适用于 Flutter 跨平台应用。
-///
-/// 使用方式：
-/// ```dart
-/// final parameters = FlutterGameParameters.instance;
-/// await parameters.initialize();
-/// ```
-class FlutterGameParameters implements GameParameters {
-  @override
-  late AppConfig config;
-
-  @override
-  // late final ScenarioRegistry scenarioRegistry; // 已删除
-
-  @override
-  GameScenario? currentScenario;
-
-  PreferenceConfigLoader? _configLoader;
-
-  FlutterGameParameters._();
-
-  static FlutterGameParameters? _instance;
-  static FlutterGameParameters get instance {
-    _instance ??= FlutterGameParameters._();
-    return _instance!;
-  }
-
-  /// 初始化配置系统（GUI 应用使用 SharedPreferences）
-  @override
-  Future<void> initialize() async {
-    // GUI 应用始终使用 SharedPreferences
-    _configLoader = PreferenceConfigLoader();
-
-    // 加载配置
-    config = await _configLoader!.loadConfig();
-
-    // 初始化场景注册表
-    // scenarioRegistry = ScenarioRegistry(); // 已删除
-    // scenarioRegistry.initialize(); // 已删除
-  }
-
-  /// 保存配置（GUI 端）
-  @override
-  Future<void> saveConfig(AppConfig newConfig) async {
-    if (_configLoader != null) {
-      await _configLoader!.saveConfig(newConfig);
-      config = newConfig;
-    }
-  }
-
-  /// 设置当前场景
-  @override
-  void setCurrentScenario(String scenarioId) {
-    // final scenario = scenarioRegistry.getScenario(scenarioId); // 已删除
-    // if (scenario == null) {
-    //   throw Exception('场景不存在: $scenarioId');
-    // }
-    // currentScenario = scenario;
-    throw UnimplementedError('setCurrentScenario 将在阶段4删除，请使用GameAssembler');
-  }
-
-  /// 获取当前场景
-  @override
-  GameScenario? get scenario => currentScenario;
-
-  /// 获取适合指定玩家数量的场景
-  @override
-  List<GameScenario> getAvailableScenarios(int playerCount) {
-    // return scenarioRegistry.getScenariosByPlayerCount(playerCount); // 已删除
-    throw UnimplementedError('getAvailableScenarios 将在阶段4删除，请使用GameAssembler');
-  }
-
-  /// 为指定玩家获取 LLM 配置
-  @override
-  Map<String, dynamic> getPlayerLLMConfig(int playerNumber) {
-    return config.getPlayerLLMConfig(playerNumber);
+  /// 创建默认配置
+  factory LoggingConfig.defaultConfig() {
+    return LoggingConfig(
+      level: 'info',
+      enableConsole: true,
+      enableFile: true,
+      backupCount: 5,
+      maxLogFiles: 10,
+    );
   }
 }

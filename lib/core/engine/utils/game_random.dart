@@ -5,6 +5,9 @@ import 'dart:math';
 class GameRandom {
   final Random _random;
   
+  /// 获取内部的Random实例（为了与旧代码兼容）
+  Random get generator => _random;
+  
   /// 默认构造函数，使用系统随机种子
   GameRandom() : _random = Random();
   

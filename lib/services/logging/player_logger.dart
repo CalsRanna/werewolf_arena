@@ -3,27 +3,27 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'logger.dart';
 
-/// Player-specific logger for debugging event visibility
-class PlayerLogger {
-  static PlayerLogger? _instance;
+/// GamePlayer-specific logger for debugging event visibility
+class GamePlayerLogger {
+  static GamePlayerLogger? _instance;
 
   final String _playerLogsDirName = 'player_logs';
   final Map<String, IOSink> _playerSinks = {};
   String? _appDocDir;
 
-  PlayerLogger._internal();
+  GamePlayerLogger._internal();
 
   /// Get singleton instance
-  static PlayerLogger get instance {
-    _instance ??= PlayerLogger._internal();
+  static GamePlayerLogger get instance {
+    _instance ??= GamePlayerLogger._internal();
     return _instance!;
   }
 
   /// Get the player logs directory path
-  Future<String> _getPlayerLogsDir() async {
+  Future<String> _getGamePlayerLogsDir() async {
     // 在 Flutter 环境下，使用应用文档目录
     if (!kIsWeb &&
         (Platform.isAndroid ||
@@ -47,7 +47,7 @@ class PlayerLogger {
   /// Initialize player logger
   Future<void> initialize() async {
     try {
-      final logDirPath = await _getPlayerLogsDir();
+      final logDirPath = await _getGamePlayerLogsDir();
       final logDir = Directory(logDirPath);
       if (!logDir.existsSync()) {
         logDir.createSync(recursive: true);
@@ -60,7 +60,7 @@ class PlayerLogger {
   }
 
   /// Update player's visible events log before their action
-  void updatePlayerEvents(Player player, GameState state) {
+  void updateGamePlayerEvents(GamePlayer player, GameState state) {
     // 在 Flutter 移动端禁用文件日志，避免权限问题
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       return; // 静默跳过，不记录日志
@@ -74,7 +74,7 @@ class PlayerLogger {
       }
 
       // 异步创建日志（不阻塞游戏流程）
-      _createPlayerLogAsync(player, state);
+      _createGamePlayerLogAsync(player, state);
     } catch (e) {
       // 静默处理错误
       if (kDebugMode) {
@@ -84,8 +84,8 @@ class PlayerLogger {
   }
 
   /// 异步创建玩家日志（不阻塞主流程）
-  void _createPlayerLogAsync(Player player, GameState state) {
-    _getPlayerLogsDir()
+  void _createGamePlayerLogAsync(GamePlayer player, GameState state) {
+    _getGamePlayerLogsDir()
         .then((logDirPath) {
           final fileName = 'player_${player.name}.log';
           final fullPath = path.join(logDirPath, fileName);
@@ -93,7 +93,7 @@ class PlayerLogger {
           final sink = logFile.openWrite(mode: FileMode.write);
 
           // Write all visible events
-          final visibleEvents = state.getEventsForPlayer(player);
+          final visibleEvents = state.getEventsForGamePlayer(player);
           for (int i = 0; i < visibleEvents.length; i++) {
             final event = visibleEvents[i];
             sink.writeln('⏺ ${event.toJson()}\n');
@@ -109,16 +109,16 @@ class PlayerLogger {
   }
 
   /// Update events for all players (useful for debugging)
-  void updateAllPlayersEvents(GameState state) {
+  void updateAllGamePlayersEvents(GameState state) {
     for (final player in state.players) {
-      updatePlayerEvents(player, state);
+      updateGamePlayerEvents(player, state);
     }
   }
 
   /// Clean up all player log files
   Future<void> clearAllLogs() async {
     try {
-      final logDirPath = await _getPlayerLogsDir();
+      final logDirPath = await _getGamePlayerLogsDir();
       final logDir = Directory(logDirPath);
       if (logDir.existsSync()) {
         for (final file in logDir.listSync()) {
@@ -145,7 +145,7 @@ class PlayerLogger {
       _playerSinks.clear();
     } catch (e) {
       if (kDebugMode) {
-        print('Failed to dispose PlayerLogger: $e');
+        print('Failed to dispose GamePlayerLogger: $e');
       }
     }
     _instance = null;

@@ -4,15 +4,15 @@ import 'package:werewolf_arena/core/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/event_visibility.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/entities/player.dart';
+import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 
 /// 通用技能执行事件 - 可配置可见性
 class SkillExecutionEvent extends GameEvent {
   final String skillId;
   final String skillName;
-  final Player caster;
-  final Player? target;
+  final GamePlayer caster;
+  final GamePlayer? target;
   final Map<String, dynamic> skillData;
   final int? dayNumber;
   final GamePhase? phase;
@@ -69,7 +69,7 @@ class SkillExecutionEvent extends GameEvent {
 /// 技能结果事件 - 用于公布技能执行的结果
 class SkillResultEvent extends GameEvent {
   final String skillId;
-  final Player caster;
+  final GamePlayer caster;
   final bool success;
   final String? resultMessage;
   final Map<String, dynamic> resultData;
@@ -108,13 +108,13 @@ class SkillResultEvent extends GameEvent {
 
 /// 狼人击杀事件 - 仅狼人可见
 class WerewolfKillEvent extends GameEvent {
-  final Player actor;
+  final GamePlayer actor;
   final int? dayNumber;
   final GamePhase? phase;
 
   WerewolfKillEvent({
     required this.actor,
-    required Player target,
+    required GamePlayer target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -134,13 +134,13 @@ class WerewolfKillEvent extends GameEvent {
 
 /// 守卫保护事件 - 仅守卫可见
 class GuardProtectEvent extends GameEvent {
-  final Player actor;
+  final GamePlayer actor;
   final int? dayNumber;
   final GamePhase? phase;
 
   GuardProtectEvent({
     required this.actor,
-    required Player target,
+    required GamePlayer target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -161,14 +161,14 @@ class GuardProtectEvent extends GameEvent {
 
 /// 预言家查验事件 - 仅预言家可见
 class SeerInvestigateEvent extends GameEvent {
-  final Player actor;
+  final GamePlayer actor;
   final String investigationResult;
   final int? dayNumber;
   final GamePhase? phase;
 
   SeerInvestigateEvent({
     required this.actor,
-    required Player target,
+    required GamePlayer target,
     required this.investigationResult,
     this.dayNumber,
     this.phase,
@@ -191,13 +191,13 @@ class SeerInvestigateEvent extends GameEvent {
 
 /// 女巫救人事件 - 仅女巫可见
 class WitchHealEvent extends GameEvent {
-  final Player actor;
+  final GamePlayer actor;
   final int? dayNumber;
   final GamePhase? phase;
 
   WitchHealEvent({
     required this.actor,
-    required Player target,
+    required GamePlayer target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -217,13 +217,13 @@ class WitchHealEvent extends GameEvent {
 
 /// 女巫毒杀事件 - 仅女巫可见
 class WitchPoisonEvent extends GameEvent {
-  final Player actor;
+  final GamePlayer actor;
   final int? dayNumber;
   final GamePhase? phase;
 
   WitchPoisonEvent({
     required this.actor,
-    required Player target,
+    required GamePlayer target,
     this.dayNumber,
     this.phase,
   }) : super(
@@ -244,13 +244,13 @@ class WitchPoisonEvent extends GameEvent {
 
 /// 猎人开枪事件 - 公开可见
 class HunterShootEvent extends GameEvent {
-  final Player actor;
+  final GamePlayer actor;
   final int? dayNumber;
   final GamePhase? phase;
 
   HunterShootEvent({
     required this.actor,
-    required Player target,
+    required GamePlayer target,
     this.dayNumber,
     this.phase,
   }) : super(

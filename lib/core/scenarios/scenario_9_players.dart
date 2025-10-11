@@ -1,4 +1,5 @@
-import 'package:werewolf_arena/core/domain/entities/role.dart';
+import 'package:werewolf_arena/core/domain/entities/role_implementations.dart';
+import 'package:werewolf_arena/core/domain/entities/game_role.dart';
 import 'package:werewolf_arena/core/domain/enums/role_type.dart';
 import 'package:werewolf_arena/core/domain/value_objects/victory_result.dart';
 import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
@@ -58,7 +59,7 @@ class Scenario9Players extends GameScenario {
   };
 
   @override
-  List<RoleType> getExpandedRoles() {
+  List<RoleType> getExpandedGameRoles() {
     final roles = <RoleType>[];
     roleDistribution.forEach((role, count) {
       for (int i = 0; i < count; i++) {
@@ -69,7 +70,7 @@ class Scenario9Players extends GameScenario {
   }
 
   @override
-  Role createRole(RoleType roleType) {
+  GameRole createGameRole(RoleType roleType) {
     switch (roleType) {
       case RoleType.werewolf:
         return WerewolfRole();
