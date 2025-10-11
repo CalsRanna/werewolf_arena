@@ -1,15 +1,15 @@
 import 'package:test/test.dart';
-import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
-import 'package:werewolf_arena/core/domain/entities/human_player.dart';
-import 'package:werewolf_arena/core/domain/entities/role_implementations.dart';
-import 'package:werewolf_arena/core/domain/entities/game_role.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart';
-import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/skills/game_skill.dart';
-import 'package:werewolf_arena/core/skills/skill_result.dart';
+import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
+import 'package:werewolf_arena/engine/domain/entities/human_player.dart';
+import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_role.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
+import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/skills/game_skill.dart';
+import 'package:werewolf_arena/engine/skills/skill_result.dart';
 
 void main() {
   group('GamePlayer基础功能测试', () {

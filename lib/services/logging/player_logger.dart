@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import '../../util/logger_util.dart';
 
 /// 玩家专用日志器 - 用于记录玩家可见事件，便于调试

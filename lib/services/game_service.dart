@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:werewolf_arena/core/engine/game_engine.dart';
-import 'package:werewolf_arena/core/engine/game_assembler.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/engine/game_engine.dart';
+import 'package:werewolf_arena/engine/engine/game_assembler.dart';
+import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/services/stream_game_observer.dart';
 
 /// 游戏服务 - Flutter 友好的包装层

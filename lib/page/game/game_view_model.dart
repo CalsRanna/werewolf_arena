@@ -4,7 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/services/game_service.dart';
 import 'package:werewolf_arena/services/config_service.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 
 class GameViewModel {
@@ -79,7 +79,9 @@ class GameViewModel {
             .cast<GamePlayer>();
         players.value = newGamePlayers;
         _addLog('已创建 ${newGamePlayers.length} 名玩家');
-        _addLog('玩家列表: ${newGamePlayers.map((p) => p.formattedName).join(', ')}');
+        _addLog(
+          '玩家列表: ${newGamePlayers.map((p) => p.formattedName).join(', ')}',
+        );
       } else {
         players.value = [];
         _addLog('警告: 未选择游戏场景，无法创建玩家');
@@ -134,7 +136,9 @@ class GameViewModel {
       await _gameService.executeNextStep();
 
       // 更新玩家状态
-      final currentGamePlayers = _gameService.getCurrentGamePlayers().cast<GamePlayer>();
+      final currentGamePlayers = _gameService
+          .getCurrentGamePlayers()
+          .cast<GamePlayer>();
       players.value = currentGamePlayers;
 
       // 更新天数

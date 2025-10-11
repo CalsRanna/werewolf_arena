@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
-import 'package:werewolf_arena/core/engine/game_assembler.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_engine_status.dart';
-import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
+import 'package:werewolf_arena/engine/engine/game_assembler.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_engine_status.dart';
+import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 
 /// 集成测试 - 验证完整游戏流程和架构组件协作
 ///

@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'package:werewolf_arena/core/engine/game_observer.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
-import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
-import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
-import 'package:werewolf_arena/core/logging/game_log_event.dart';
+import 'package:werewolf_arena/engine/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/vote_type.dart';
+import 'package:werewolf_arena/engine/logging/game_log_event.dart';
 
 /// 基于 Stream 的游戏观察者
 ///
@@ -110,7 +110,11 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
+  void onGamePlayerDeath(
+    GamePlayer player,
+    DeathCause cause, {
+    GamePlayer? killer,
+  }) {
     final causeStr = _getDeathCauseString(cause);
     var message = '${player.name} 死亡 ($causeStr)';
     if (killer != null) {
@@ -120,7 +124,11 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onGamePlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {
+  void onGamePlayerSpeak(
+    GamePlayer player,
+    String message, {
+    SpeechType? speechType,
+  }) {
     final typeStr = speechType != null
         ? '[${_getSpeechTypeString(speechType)}]'
         : '';
@@ -134,7 +142,11 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onNightResult(List<GamePlayer> deaths, bool isPeacefulNight, int dayNumber) {
+  void onNightResult(
+    List<GamePlayer> deaths,
+    bool isPeacefulNight,
+    int dayNumber,
+  ) {
     if (isPeacefulNight) {
       _gameEventController.add('昨晚是平安夜');
     } else {

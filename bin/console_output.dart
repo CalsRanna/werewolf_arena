@@ -1,9 +1,9 @@
 import 'dart:io';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
-import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
 
 /// 游戏控制台显示工具类
 ///

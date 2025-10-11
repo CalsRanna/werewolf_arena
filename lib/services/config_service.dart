@@ -1,12 +1,12 @@
-import 'package:werewolf_arena/core/domain/value_objects/game_config.dart';
-import 'package:werewolf_arena/core/domain/value_objects/config_loader.dart';
-import 'package:werewolf_arena/core/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_9_players.dart';
-import 'package:werewolf_arena/core/scenarios/scenario_12_players.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
-import 'package:werewolf_arena/core/domain/entities/ai_player.dart';
-import 'package:werewolf_arena/core/domain/enums/role_type.dart';
-import 'package:werewolf_arena/core/domain/entities/role_implementations.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/config_loader.dart';
+import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
+import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart';
+import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
+import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
+import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
 
 /// 配置服务 - v2.0.0架构的Flutter友好包装层
 ///

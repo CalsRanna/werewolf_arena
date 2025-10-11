@@ -1,11 +1,11 @@
-import 'package:werewolf_arena/core/engine/game_observer.dart';
-import 'package:werewolf_arena/core/state/game_state.dart';
-import 'package:werewolf_arena/core/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'console_output.dart';
-import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
-import 'package:werewolf_arena/core/domain/value_objects/speech_type.dart';
-import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/vote_type.dart';
 
 /// 控制台游戏观察者
 ///
@@ -45,16 +45,29 @@ class ConsoleGameObserver extends GameObserverAdapter {
     dynamic target, {
     Map<String, dynamic>? details,
   }) {
-    _console.displayGamePlayerAction(player, actionType, target, details: details);
+    _console.displayGamePlayerAction(
+      player,
+      actionType,
+      target,
+      details: details,
+    );
   }
 
   @override
-  void onGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
+  void onGamePlayerDeath(
+    GamePlayer player,
+    DeathCause cause, {
+    GamePlayer? killer,
+  }) {
     _console.displayGamePlayerDeath(player, cause, killer: killer);
   }
 
   @override
-  void onGamePlayerSpeak(GamePlayer player, String message, {SpeechType? speechType}) {
+  void onGamePlayerSpeak(
+    GamePlayer player,
+    String message, {
+    SpeechType? speechType,
+  }) {
     _console.displayGamePlayerSpeak(player, message, speechType: speechType);
   }
 
@@ -80,7 +93,11 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onNightResult(List<GamePlayer> deaths, bool isPeacefulNight, int dayNumber) {
+  void onNightResult(
+    List<GamePlayer> deaths,
+    bool isPeacefulNight,
+    int dayNumber,
+  ) {
     _console.displayNightResult(deaths, isPeacefulNight, dayNumber);
   }
 
