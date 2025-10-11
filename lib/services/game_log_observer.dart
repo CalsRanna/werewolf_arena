@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/engine/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/logging/game_log_event.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'package:werewolf_arena/util/logger_util.dart';
 
 /// 日志观察者实现

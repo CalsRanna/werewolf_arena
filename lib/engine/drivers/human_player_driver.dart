@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:werewolf_arena/engine/drivers/player_driver.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 人类玩家驱动器
 ///

@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
 
 /// 发言技能（白天专用）

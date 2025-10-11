@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/engine/state/game_state.dart';
-import 'package:werewolf_arena/engine/events/base/game_event.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/events/skill_events.dart';
 import 'package:werewolf_arena/engine/events/phase_events.dart';

@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/engine/logging/game_log_event.dart';
-import 'package:werewolf_arena/engine/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 
 /// 游戏引擎内部日志器单例

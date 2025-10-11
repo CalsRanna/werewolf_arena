@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/engine/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'console_output.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';

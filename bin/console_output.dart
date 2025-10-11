@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';

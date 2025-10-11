@@ -3,7 +3,7 @@ import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
 import 'package:werewolf_arena/engine/skills/skill_processor.dart';
 import 'package:werewolf_arena/engine/skills/night_skills.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';

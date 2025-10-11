@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
 import 'package:werewolf_arena/engine/domain/enums/role_alignment.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';

@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'package:werewolf_arena/engine/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/vote_type.dart';
-import 'package:werewolf_arena/engine/logging/game_log_event.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
 
 /// 基于 Stream 的游戏观察者
 ///

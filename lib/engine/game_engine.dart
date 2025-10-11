@@ -1,16 +1,16 @@
 import 'dart:async';
 
-import 'package:werewolf_arena/engine/state/game_state.dart';
-import 'package:werewolf_arena/engine/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_engine_status.dart';
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/engine/engine/processors/night_phase_processor.dart';
-import 'package:werewolf_arena/engine/engine/processors/day_phase_processor.dart';
+import 'package:werewolf_arena/engine/processors/night_phase_processor.dart';
+import 'package:werewolf_arena/engine/processors/day_phase_processor.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/logging/game_engine_logger.dart';
-import 'package:werewolf_arena/engine/logging/game_log_event.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
 
 /// 简化版游戏引擎 - 只需要4个参数的构造函数，内部创建阶段处理器和工具类
 class GameEngine {

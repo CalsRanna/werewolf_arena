@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/drivers/player_driver.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/llm/llm_service.dart';
 import 'package:werewolf_arena/engine/llm/json_cleaner.dart';
 

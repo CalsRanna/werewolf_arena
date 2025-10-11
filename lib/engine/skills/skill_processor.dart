@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 技能处理器
 ///

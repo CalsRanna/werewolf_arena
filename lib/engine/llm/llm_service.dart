@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'json_cleaner.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/logging/game_engine_logger.dart';
-import 'package:werewolf_arena/engine/logging/game_log_event.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/player_model_config.dart';
 
 /// LLM API retry configuration

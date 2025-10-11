@@ -7,7 +7,7 @@ import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
 

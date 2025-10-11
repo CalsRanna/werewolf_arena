@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 玩家驱动器抽象接口
 ///

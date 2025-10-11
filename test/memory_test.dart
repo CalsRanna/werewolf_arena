@@ -1,8 +1,8 @@
 // ignore_for_file: avoid_print
 
 import 'package:test/test.dart';
-import 'package:werewolf_arena/engine/engine/game_assembler.dart';
-import 'package:werewolf_arena/engine/engine/game_engine.dart';
+import 'package:werewolf_arena/engine/game_assembler.dart';
+import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/vote_type.dart';

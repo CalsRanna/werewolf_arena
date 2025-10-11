@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:werewolf_arena/engine/engine/game_engine.dart';
-import 'package:werewolf_arena/engine/engine/game_assembler.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_engine.dart';
+import 'package:werewolf_arena/engine/game_assembler.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/services/stream_game_observer.dart';
 

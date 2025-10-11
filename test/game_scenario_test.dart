@@ -2,7 +2,7 @@ import 'package:test/test.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
 

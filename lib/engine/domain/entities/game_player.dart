@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/engine/domain/entities/game_role.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
-import 'package:werewolf_arena/engine/events/base/game_event.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/drivers/player_driver.dart';

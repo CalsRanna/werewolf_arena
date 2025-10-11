@@ -1,5 +1,5 @@
-import 'package:werewolf_arena/engine/engine/game_engine.dart';
-import 'package:werewolf_arena/engine/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/game_engine.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/config_loader.dart';
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
@@ -10,7 +10,7 @@ import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/human_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
 import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
-import 'package:werewolf_arena/engine/engine/utils/game_random.dart';
+import 'package:werewolf_arena/engine/game_random.dart';
 
 /// 游戏组装器 - 负责外部逻辑：配置加载、场景选择、玩家创建
 ///

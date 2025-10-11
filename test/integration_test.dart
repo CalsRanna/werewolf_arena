@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:werewolf_arena/engine/engine/game_assembler.dart';
+import 'package:werewolf_arena/engine/game_assembler.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_engine_status.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';

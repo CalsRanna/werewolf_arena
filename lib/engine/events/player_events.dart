@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/events/base/game_event.dart';
+import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/event_visibility.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
@@ -6,7 +6,7 @@ import 'package:werewolf_arena/engine/domain/value_objects/vote_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 玩家死亡事件 - 公开可见
 class DeadEvent extends GameEvent {

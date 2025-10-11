@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
 
 /// 游戏技能抽象类

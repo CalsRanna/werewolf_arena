@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
@@ -6,9 +6,9 @@ import 'package:werewolf_arena/engine/skills/skill_result.dart';
 import 'package:werewolf_arena/engine/events/phase_events.dart';
 import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
-import 'package:werewolf_arena/engine/engine/utils/game_random.dart';
+import 'package:werewolf_arena/engine/game_random.dart';
 import 'package:werewolf_arena/engine/logging/game_engine_logger.dart';
-import 'package:werewolf_arena/engine/logging/game_log_event.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'phase_processor.dart';
 
 /// 白天阶段处理器（基于技能系统重构，包含发言和投票）

@@ -3,7 +3,7 @@ import 'package:werewolf_arena/engine/domain/entities/game_role.dart';
 import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/victory_result.dart';
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/engine/state/game_state.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 标准12人局场景
 /// 4狼4民+4神配置，无警长
