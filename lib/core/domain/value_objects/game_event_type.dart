@@ -18,6 +18,9 @@ enum GameEventType {
   /// 技能使用
   skillUsed,
 
+  /// 技能结果
+  skillResult,
+
   /// 投票
   voteCast,
 

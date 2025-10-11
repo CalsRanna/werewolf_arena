@@ -7,6 +7,105 @@ import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/entities/player.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 
+/// 通用技能执行事件 - 可配置可见性
+class SkillExecutionEvent extends GameEvent {
+  final String skillId;
+  final String skillName;
+  final Player caster;
+  final Player? target;
+  final Map<String, dynamic> skillData;
+  final int? dayNumber;
+  final GamePhase? phase;
+
+  SkillExecutionEvent({
+    required this.skillId,
+    required this.skillName,
+    required this.caster,
+    this.target,
+    this.skillData = const {},
+    this.dayNumber,
+    this.phase,
+    EventVisibility visibility = EventVisibility.playerSpecific,
+    List<String>? visibleToPlayerNames,
+  }) : super(
+          eventId: 'skill_${skillId}_${caster.name}_${DateTime.now().millisecondsSinceEpoch}',
+          type: GameEventType.skillUsed,
+          initiator: caster,
+          target: target,
+          visibility: visibility,
+          visibleToPlayerNames: visibleToPlayerNames ?? [caster.name],
+        );
+
+  @override
+  void execute(GameState state) {
+    // 技能执行的具体逻辑在技能类中处理，这里只记录事件
+    // 可以根据skillData中的信息执行相应的状态变更
+    
+    // 更新技能使用次数
+    state.incrementSkillUsage(skillId);
+    
+    // 根据技能类型设置相应的技能效果
+    if (skillData.isNotEmpty) {
+      final effectKey = '${skillId}_${caster.name}';
+      state.setSkillEffect(effectKey, skillData);
+    }
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'skillId': skillId,
+      'skillName': skillName,
+      'caster': caster.name,
+      'target': target?.name,
+      'skillData': skillData,
+      'dayNumber': dayNumber,
+      'phase': phase?.name,
+    };
+  }
+}
+
+/// 技能结果事件 - 用于公布技能执行的结果
+class SkillResultEvent extends GameEvent {
+  final String skillId;
+  final Player caster;
+  final bool success;
+  final String? resultMessage;
+  final Map<String, dynamic> resultData;
+
+  SkillResultEvent({
+    required this.skillId,
+    required this.caster,
+    required this.success,
+    this.resultMessage,
+    this.resultData = const {},
+    EventVisibility visibility = EventVisibility.public,
+  }) : super(
+          eventId: 'skill_result_${skillId}_${DateTime.now().millisecondsSinceEpoch}',
+          type: GameEventType.skillResult,
+          initiator: caster,
+          visibility: visibility,
+        );
+
+  @override
+  void execute(GameState state) {
+    // 技能结果事件主要用于信息传递，不直接修改游戏状态
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      'skillId': skillId,
+      'caster': caster.name,
+      'success': success,
+      'resultMessage': resultMessage,
+      'resultData': resultData,
+    };
+  }
+}
+
 /// 狼人击杀事件 - 仅狼人可见
 class WerewolfKillEvent extends GameEvent {
   final Player actor;

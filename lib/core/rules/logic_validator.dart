@@ -226,6 +226,10 @@ class LogicValidator {
         }
         return '$actor使用技能';
 
+      case GameEventType.skillResult:
+        final actor = event.initiator?.name ?? '?';
+        return '$actor技能结果';
+
       case GameEventType.voteCast:
         final voter = event.initiator?.name ?? '?';
         final target = event.target?.name ?? '?';
