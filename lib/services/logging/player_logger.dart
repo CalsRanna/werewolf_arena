@@ -1,153 +1,127 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/domain/entities/game_player.dart';
-import 'logger.dart';
+import '../../util/logger_util.dart';
 
-/// GamePlayer-specific logger for debugging event visibility
-class GamePlayerLogger {
-  static GamePlayerLogger? _instance;
+/// 玩家专用日志器 - 用于记录玩家可见事件，便于调试
+class PlayerLogger {
+  static PlayerLogger? _instance;
 
-  final String _playerLogsDirName = 'player_logs';
-  final Map<String, IOSink> _playerSinks = {};
-  String? _appDocDir;
+  PlayerLogger._internal();
 
-  GamePlayerLogger._internal();
-
-  /// Get singleton instance
-  static GamePlayerLogger get instance {
-    _instance ??= GamePlayerLogger._internal();
+  /// 获取单例实例
+  static PlayerLogger get instance {
+    _instance ??= PlayerLogger._internal();
     return _instance!;
   }
 
-  /// Get the player logs directory path
-  Future<String> _getGamePlayerLogsDir() async {
-    // 在 Flutter 环境下，使用应用文档目录
-    if (!kIsWeb &&
-        (Platform.isAndroid ||
-            Platform.isIOS ||
-            Platform.isMacOS ||
-            Platform.isWindows ||
-            Platform.isLinux)) {
-      _appDocDir ??= (await getApplicationDocumentsDirectory()).path;
-      return path.join(_appDocDir!, _playerLogsDirName);
-    }
-
-    // 在其他环境下，使用相对路径
-    final gameSessionDir = LoggerUtil.instance.gameSessionDir;
-    if (gameSessionDir != null) {
-      return gameSessionDir;
-    } else {
-      return _playerLogsDirName;
-    }
-  }
-
-  /// Initialize player logger
-  Future<void> initialize() async {
+  /// 记录玩家的可见事件到单独的文件
+  ///
+  /// [player] 玩家对象
+  /// [state] 游戏状态
+  /// [logDir] 日志目录，默认为 'logs/players'
+  Future<void> logPlayerEvents(
+    GamePlayer player,
+    GameState state, {
+    String logDir = 'logs/players',
+  }) async {
     try {
-      final logDirPath = await _getGamePlayerLogsDir();
-      final logDir = Directory(logDirPath);
-      if (!logDir.existsSync()) {
-        logDir.createSync(recursive: true);
+      // 创建玩家日志目录
+      final playerLogsDir = Directory(logDir);
+      if (!await playerLogsDir.exists()) {
+        await playerLogsDir.create(recursive: true);
       }
+
+      // 创建玩家专用日志文件
+      final fileName = 'player_${player.name}_events.log';
+      final filePath = path.join(logDir, fileName);
+      final logFile = File(filePath);
+
+      // 获取玩家可见的事件
+      final visibleEvents = state.getEventsForGamePlayer(player);
+
+      // 写入日志
+      final sink = logFile.openWrite(mode: FileMode.write);
+
+      sink.writeln('=== 玩家 ${player.name} 的可见事件日志 ===');
+      sink.writeln('角色: ${player.role.name}');
+      sink.writeln('游戏ID: ${state.gameId}');
+      sink.writeln('当前天数: ${state.dayNumber}');
+      sink.writeln('当前阶段: ${state.currentPhase.displayName}');
+      sink.writeln('生成时间: ${DateTime.now()}');
+      sink.writeln('======================================\\n');
+
+      for (int i = 0; i < visibleEvents.length; i++) {
+        final event = visibleEvents[i];
+        sink.writeln('事件 ${i + 1}:');
+        sink.writeln('  类型: ${event.type.name}');
+        sink.writeln('  时间: ${event.timestamp}');
+        sink.writeln('  发起者: ${event.initiator?.name ?? 'N/A'}');
+        sink.writeln('  目标: ${event.target?.name ?? 'N/A'}');
+        sink.writeln('  可见性: ${event.visibility.name}');
+        sink.writeln('  JSON: ${event.toJson()}');
+        sink.writeln('');
+      }
+
+      await sink.flush();
+      await sink.close();
+
+      // 使用主日志器记录操作
+      LoggerUtil.instance.d('已为玩家 ${player.name} 生成事件日志: $filePath');
     } catch (e) {
-      if (kDebugMode) {
-        print('Failed to create player logs directory: $e');
-      }
+      LoggerUtil.instance.e('为玩家 ${player.name} 生成事件日志失败', e);
     }
   }
 
-  /// Update player's visible events log before their action
-  void updateGamePlayerEvents(GamePlayer player, GameState state) {
-    // 在 Flutter 移动端禁用文件日志，避免权限问题
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      return; // 静默跳过，不记录日志
-    }
+  /// 为所有玩家记录可见事件日志
+  Future<void> logAllPlayersEvents(GameState state) async {
+    LoggerUtil.instance.i('开始为所有玩家生成事件日志...');
 
-    try {
-      // Close existing sink if it exists
-      if (_playerSinks.containsKey(player.name)) {
-        _playerSinks[player.name]!.close();
-        _playerSinks.remove(player.name);
-      }
-
-      // 异步创建日志（不阻塞游戏流程）
-      _createGamePlayerLogAsync(player, state);
-    } catch (e) {
-      // 静默处理错误
-      if (kDebugMode) {
-        print('Failed to update events log for player ${player.name}: $e');
-      }
-    }
-  }
-
-  /// 异步创建玩家日志（不阻塞主流程）
-  void _createGamePlayerLogAsync(GamePlayer player, GameState state) {
-    _getGamePlayerLogsDir()
-        .then((logDirPath) {
-          final fileName = 'player_${player.name}.log';
-          final fullPath = path.join(logDirPath, fileName);
-          final logFile = File(fullPath);
-          final sink = logFile.openWrite(mode: FileMode.write);
-
-          // Write all visible events
-          final visibleEvents = state.getEventsForGamePlayer(player);
-          for (int i = 0; i < visibleEvents.length; i++) {
-            final event = visibleEvents[i];
-            sink.writeln('⏺ ${event.toJson()}\n');
-          }
-
-          sink.flush().then((_) => sink.close());
-        })
-        .catchError((e) {
-          if (kDebugMode) {
-            print('Failed to create log for player ${player.name}: $e');
-          }
-        });
-  }
-
-  /// Update events for all players (useful for debugging)
-  void updateAllGamePlayersEvents(GameState state) {
     for (final player in state.players) {
-      updateGamePlayerEvents(player, state);
+      await logPlayerEvents(player, state);
     }
+
+    LoggerUtil.instance.i('所有玩家事件日志生成完成');
   }
 
-  /// Clean up all player log files
-  Future<void> clearAllLogs() async {
+  /// 清理玩家日志文件
+  ///
+  /// [logDir] 日志目录，默认为 'logs/players'
+  /// [olderThanDays] 删除多少天前的日志文件，默认为7天
+  Future<void> clearOldLogs({
+    String logDir = 'logs/players',
+    int olderThanDays = 7,
+  }) async {
     try {
-      final logDirPath = await _getGamePlayerLogsDir();
-      final logDir = Directory(logDirPath);
-      if (logDir.existsSync()) {
-        for (final file in logDir.listSync()) {
-          if (file is File &&
-              file.path.endsWith('.log') &&
-              path.basename(file.path).startsWith('player_')) {
-            file.deleteSync();
+      final playerLogsDir = Directory(logDir);
+      if (!await playerLogsDir.exists()) {
+        return;
+      }
+
+      final cutoffTime = DateTime.now().subtract(Duration(days: olderThanDays));
+      int deletedCount = 0;
+
+      await for (final entity in playerLogsDir.list()) {
+        if (entity is File &&
+            entity.path.contains('player_') &&
+            entity.path.endsWith('.log')) {
+          final stat = await entity.stat();
+          if (stat.modified.isBefore(cutoffTime)) {
+            await entity.delete();
+            deletedCount++;
           }
         }
       }
+
+      LoggerUtil.instance.i('清理完成，删除了 $deletedCount 个过期的玩家日志文件');
     } catch (e) {
-      if (kDebugMode) {
-        print('Failed to clear player logs: $e');
-      }
+      LoggerUtil.instance.e('清理玩家日志文件失败', e);
     }
   }
 
-  /// Dispose resources
+  /// 清理资源
   Future<void> dispose() async {
-    try {
-      for (final sink in _playerSinks.values) {
-        await sink.close();
-      }
-      _playerSinks.clear();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to dispose GamePlayerLogger: $e');
-      }
-    }
     _instance = null;
   }
 }
