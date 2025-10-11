@@ -9,7 +9,7 @@ import 'package:werewolf_arena/core/domain/enums/role_type.dart';
 import 'package:werewolf_arena/core/domain/entities/role_implementations.dart';
 
 /// 配置服务 - v2.0.0架构的Flutter友好包装层
-/// 
+///
 /// 提供Flutter UI层访问新架构配置系统的便捷接口
 class ConfigService {
   GameConfig? _gameConfig;
@@ -32,11 +32,14 @@ class ConfigService {
     } catch (e) {
       // 如果加载失败，创建一个基本的默认配置
       _gameConfig = GameConfig(
-        playerIntelligences: List.generate(12, (index) => PlayerIntelligence(
-          baseUrl: 'https://api.openai.com/v1',
-          apiKey: 'your-api-key-${index + 1}',
-          modelId: 'gpt-4',
-        )),
+        playerIntelligences: List.generate(
+          12,
+          (index) => PlayerIntelligence(
+            baseUrl: 'https://api.openai.com/v1',
+            apiKey: 'your-api-key-${index + 1}',
+            modelId: 'gpt-4',
+          ),
+        ),
         maxRetries: 3,
       );
     }
@@ -77,15 +80,15 @@ class ConfigService {
   /// 自动选择场景
   Future<void> autoSelectScenario(int playerCount) async {
     await ensureInitialized();
-    
+
     final suitableScenarios = _scenarios.values
         .where((scenario) => scenario.playerCount == playerCount)
         .toList();
-    
+
     if (suitableScenarios.isEmpty) {
       throw Exception('没有找到适合 $playerCount 人的场景');
     }
-    
+
     _currentScenarioId = suitableScenarios.first.id;
   }
 
@@ -109,7 +112,7 @@ class ConfigService {
 
     final players = <GamePlayer>[];
     final roleTypes = scenario.getExpandedGameRoles();
-    
+
     // 随机打乱角色顺序
     final shuffledRoles = List<RoleType>.from(roleTypes);
     shuffledRoles.shuffle();
@@ -118,13 +121,14 @@ class ConfigService {
       final playerNumber = i + 1;
       final playerName = '${playerNumber}号玩家';
       final roleType = shuffledRoles[i];
-      
+
       // 创建角色实例
       final role = GameRoleFactory.createRoleFromType(roleType);
 
       // 获取玩家的智能配置
-      final intelligence = _gameConfig!.getPlayerIntelligence(playerNumber) 
-          ?? _gameConfig!.defaultIntelligence!;
+      final intelligence =
+          _gameConfig!.getPlayerIntelligence(playerNumber) ??
+          _gameConfig!.defaultIntelligence!;
 
       // 创建AI玩家
       final player = AIPlayer(
@@ -142,17 +146,23 @@ class ConfigService {
   }
 
   /// 更新玩家智能配置
-  void updatePlayerIntelligence(int playerNumber, PlayerIntelligence intelligence) {
+  void updatePlayerIntelligence(
+    int playerNumber,
+    PlayerIntelligence intelligence,
+  ) {
     _ensureInitialized();
-    
-    if (playerNumber < 1 || playerNumber > _gameConfig!.playerIntelligences.length) {
+
+    if (playerNumber < 1 ||
+        playerNumber > _gameConfig!.playerIntelligences.length) {
       throw ArgumentError('无效的玩家编号: $playerNumber');
     }
-    
+
     // 创建新的配置实例（因为GameConfig是不可变的）
-    final newIntelligences = List<PlayerIntelligence>.from(_gameConfig!.playerIntelligences);
+    final newIntelligences = List<PlayerIntelligence>.from(
+      _gameConfig!.playerIntelligences,
+    );
     newIntelligences[playerNumber - 1] = intelligence;
-    
+
     _gameConfig = GameConfig(
       playerIntelligences: newIntelligences,
       maxRetries: _gameConfig!.maxRetries,
@@ -164,7 +174,8 @@ class ConfigService {
   int get maxPlayers => 15;
 
   /// 检查玩家数量是否有效
-  bool isValidPlayerCount(int count) => count >= minPlayers && count <= maxPlayers;
+  bool isValidPlayerCount(int count) =>
+      count >= minPlayers && count <= maxPlayers;
 
   /// 兼容性属性：为了保持UI层兼容性
   /// @deprecated 使用gameConfig替代
@@ -174,11 +185,11 @@ class ConfigService {
     return _MockAppConfig(gameConfig);
   }
 
-  /// 兼容性属性：为了保持UI层兼容性  
+  /// 兼容性属性：为了保持UI层兼容性
   /// @deprecated 新架构中不再需要GameParameters
   @Deprecated('新架构中不再需要GameParameters')
   dynamic get gameParameters {
-    return _MockGameParameters(this);
+    return _MockGameParameters();
   }
 
   /// 确保已初始化
@@ -200,9 +211,9 @@ class ConfigService {
 /// Mock类：为了保持与旧AppConfig的兼容性
 class _MockAppConfig {
   final GameConfig _gameConfig;
-  
+
   _MockAppConfig(this._gameConfig);
-  
+
   // 提供旧UI层期望的属性
   dynamic get defaultLLM => _gameConfig.defaultIntelligence;
   dynamic get playerModels => _gameConfig.playerIntelligences;
@@ -210,10 +221,8 @@ class _MockAppConfig {
 
 /// Mock类：为了保持与旧GameParameters的兼容性
 class _MockGameParameters {
-  final ConfigService _configService;
-  
-  _MockGameParameters(this._configService);
-  
+  _MockGameParameters();
+
   // 提供旧UI层期望的方法
   Future<void> saveConfig(dynamic newConfig) async {
     // 在新架构中，配置保存逻辑需要重新设计

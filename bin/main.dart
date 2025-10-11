@@ -3,7 +3,7 @@
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/core/engine/game_assembler.dart';
-import 'package:werewolf_arena/core/engine/game_engine_new.dart';
+import 'package:werewolf_arena/core/engine/game_engine.dart';
 import 'console_output.dart';
 import 'console_observer.dart';
 

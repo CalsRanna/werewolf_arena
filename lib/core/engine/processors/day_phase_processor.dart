@@ -3,11 +3,9 @@ import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/domain/entities/game_player.dart';
 import 'package:werewolf_arena/core/skills/game_skill.dart';
 import 'package:werewolf_arena/core/skills/skill_result.dart';
-import 'package:werewolf_arena/core/skills/skill_processor.dart';
 import 'package:werewolf_arena/core/events/phase_events.dart';
 import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';
-import 'package:werewolf_arena/core/domain/value_objects/vote_type.dart';
 import 'package:werewolf_arena/core/engine/utils/game_random.dart';
 import 'package:werewolf_arena/core/logging/game_engine_logger.dart';
 import 'package:werewolf_arena/core/logging/game_log_event.dart';
@@ -20,7 +18,6 @@ import 'phase_processor.dart';
 /// - 玩家讨论发言（通过技能系统）
 /// - 投票出局（合并原投票阶段）
 class DayPhaseProcessor implements PhaseProcessor {
-  final SkillProcessor _skillProcessor = SkillProcessor();
   final GameRandom _random = GameRandom();
 
   @override
@@ -35,11 +32,13 @@ class DayPhaseProcessor implements PhaseProcessor {
     );
 
     // 1. 阶段开始事件（所有人可见）
-    state.addEvent(PhaseChangeEvent(
-      oldPhase: state.currentPhase,
-      newPhase: GamePhase.day,
-      dayNumber: state.dayNumber,
-    ));
+    state.addEvent(
+      PhaseChangeEvent(
+        oldPhase: state.currentPhase,
+        newPhase: GamePhase.day,
+        dayNumber: state.dayNumber,
+      ),
+    );
 
     // 2. 公布夜晚结果
     await _announceNightResults(state);
@@ -51,28 +50,24 @@ class DayPhaseProcessor implements PhaseProcessor {
     await _runVotingPhase(state);
 
     // 5. 阶段结束事件（所有人可见）
-    state.addEvent(PhaseChangeEvent(
-      oldPhase: GamePhase.day,
-      newPhase: GamePhase.night,
-      dayNumber: state.dayNumber + 1,
-    ));
+    state.addEvent(
+      PhaseChangeEvent(
+        oldPhase: GamePhase.day,
+        newPhase: GamePhase.night,
+        dayNumber: state.dayNumber + 1,
+      ),
+    );
 
     // 6. 切换到夜晚阶段（开始新的一天）
     state.dayNumber++;
     await state.changePhase(GamePhase.night);
 
-    GameEngineLogger.instance.info(
-      GameLogCategory.phase,
-      '白天阶段处理完成，准备进入下一个夜晚',
-    );
+    GameEngineLogger.instance.info(GameLogCategory.phase, '白天阶段处理完成，准备进入下一个夜晚');
   }
 
   /// 公布夜晚结果
   Future<void> _announceNightResults(GameState state) async {
-    GameEngineLogger.instance.debug(
-      GameLogCategory.phase,
-      '公布夜晚结果',
-    );
+    GameEngineLogger.instance.debug(GameLogCategory.phase, '公布夜晚结果');
 
     // 筛选出今晚的死亡事件
     final deathEvents = state.eventHistory.whereType<DeadEvent>().toList();
@@ -114,10 +109,7 @@ class DayPhaseProcessor implements PhaseProcessor {
 
   /// 运行讨论阶段 - 通过技能系统处理玩家发言
   Future<void> _runDiscussionPhase(GameState state) async {
-    GameEngineLogger.instance.info(
-      GameLogCategory.phase,
-      '开始讨论阶段',
-    );
+    GameEngineLogger.instance.info(GameLogCategory.phase, '开始讨论阶段');
 
     // 获取发言顺序
     final speakingOrder = _getSpeakingOrder(state);
@@ -125,8 +117,13 @@ class DayPhaseProcessor implements PhaseProcessor {
     // 收集当前阶段可用的发言技能
     final speakSkills = <GameSkill>[];
     for (final player in speakingOrder) {
-      final playerSpeakSkills = player.role.getAvailableSkills(GamePhase.day)
-          .where((skill) => skill.skillId.contains('speak') || skill.skillId.contains('discussion'));
+      final playerSpeakSkills = player.role
+          .getAvailableSkills(GamePhase.day)
+          .where(
+            (skill) =>
+                skill.skillId.contains('speak') ||
+                skill.skillId.contains('discussion'),
+          );
       for (final skill in playerSpeakSkills) {
         if (skill.canCast(player, state)) {
           speakSkills.add(skill);
@@ -137,9 +134,9 @@ class DayPhaseProcessor implements PhaseProcessor {
     // 按发言顺序执行技能
     final speakResults = <SkillResult>[];
     for (final player in speakingOrder) {
-      final playerSkills = speakSkills.where((skill) => 
-        player.role.skills.contains(skill)
-      ).toList();
+      final playerSkills = speakSkills
+          .where((skill) => player.role.skills.contains(skill))
+          .toList();
 
       for (final skill in playerSkills) {
         try {
@@ -148,10 +145,10 @@ class DayPhaseProcessor implements PhaseProcessor {
             '处理玩家 ${player.name} 的发言',
             metadata: {'player': player.name},
           );
-          
+
           final result = await player.executeSkill(skill, state);
           speakResults.add(result);
-          
+
           if (result.success) {
             GameEngineLogger.instance.debug(
               GameLogCategory.player,
@@ -181,15 +178,13 @@ class DayPhaseProcessor implements PhaseProcessor {
 
   /// 运行投票阶段 - 通过技能系统处理投票
   Future<void> _runVotingPhase(GameState state) async {
-    GameEngineLogger.instance.info(
-      GameLogCategory.phase,
-      '开始投票阶段',
-    );
+    GameEngineLogger.instance.info(GameLogCategory.phase, '开始投票阶段');
 
     // 收集投票技能
     final voteSkills = <GameSkill>[];
     for (final player in state.alivePlayers) {
-      final playerVoteSkills = player.role.getAvailableSkills(GamePhase.day)
+      final playerVoteSkills = player.role
+          .getAvailableSkills(GamePhase.day)
           .where((skill) => skill.skillId.contains('vote'));
       for (final skill in playerVoteSkills) {
         if (skill.canCast(player, state)) {
@@ -212,10 +207,10 @@ class DayPhaseProcessor implements PhaseProcessor {
           '处理玩家 ${player.name} 的投票',
           metadata: {'player': player.name},
         );
-        
+
         final result = await player.executeSkill(skill, state);
         voteResults.add(result);
-        
+
         if (result.success && result.target != null) {
           GameEngineLogger.instance.debug(
             GameLogCategory.player,
@@ -235,14 +230,14 @@ class DayPhaseProcessor implements PhaseProcessor {
     // 处理投票结果
     await _processVotingResults(state, voteResults);
 
-    GameEngineLogger.instance.info(
-      GameLogCategory.phase,
-      '投票阶段结束',
-    );
+    GameEngineLogger.instance.info(GameLogCategory.phase, '投票阶段结束');
   }
 
   /// 处理投票结果
-  Future<void> _processVotingResults(GameState state, List<SkillResult> voteResults) async {
+  Future<void> _processVotingResults(
+    GameState state,
+    List<SkillResult> voteResults,
+  ) async {
     // 统计投票
     final Map<GamePlayer, int> voteCount = {};
     final Map<GamePlayer, List<GamePlayer>> voteDetails = {};
@@ -256,10 +251,7 @@ class DayPhaseProcessor implements PhaseProcessor {
     }
 
     if (voteCount.isEmpty) {
-      GameEngineLogger.instance.warning(
-        GameLogCategory.phase,
-        '没有有效投票，跳过出局',
-      );
+      GameEngineLogger.instance.warning(GameLogCategory.phase, '没有有效投票，跳过出局');
       return;
     }
 
@@ -287,7 +279,11 @@ class DayPhaseProcessor implements PhaseProcessor {
   }
 
   /// 淘汰玩家
-  Future<void> _eliminatePlayer(GameState state, GamePlayer player, List<GamePlayer> voters) async {
+  Future<void> _eliminatePlayer(
+    GameState state,
+    GamePlayer player,
+    List<GamePlayer> voters,
+  ) async {
     GameEngineLogger.instance.info(
       GameLogCategory.player,
       '玩家 ${player.name} 被投票出局',
@@ -319,7 +315,7 @@ class DayPhaseProcessor implements PhaseProcessor {
       '猎人 ${hunter.name} 可以开枪',
       metadata: {'hunter': hunter.name},
     );
-    
+
     // 这里应该调用猎人的开枪技能
     // 为了简化，暂时跳过具体实现
   }

@@ -12,6 +12,7 @@ class SkillExecutionEvent extends GameEvent {
   final String skillId;
   final String skillName;
   final GamePlayer caster;
+  @override
   final GamePlayer? target;
   final Map<String, dynamic> skillData;
   final int? dayNumber;
@@ -25,14 +26,13 @@ class SkillExecutionEvent extends GameEvent {
     this.skillData = const {},
     this.dayNumber,
     this.phase,
-    EventVisibility visibility = EventVisibility.playerSpecific,
+    super.visibility = EventVisibility.playerSpecific,
     List<String>? visibleToPlayerNames,
   }) : super(
           eventId: 'skill_${skillId}_${caster.name}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillUsed,
           initiator: caster,
           target: target,
-          visibility: visibility,
           visibleToPlayerNames: visibleToPlayerNames ?? [caster.name],
         );
 
@@ -80,12 +80,11 @@ class SkillResultEvent extends GameEvent {
     required this.success,
     this.resultMessage,
     this.resultData = const {},
-    EventVisibility visibility = EventVisibility.public,
+    super.visibility = EventVisibility.public,
   }) : super(
           eventId: 'skill_result_${skillId}_${DateTime.now().millisecondsSinceEpoch}',
           type: GameEventType.skillResult,
           initiator: caster,
-          visibility: visibility,
         );
 
   @override

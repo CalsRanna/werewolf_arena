@@ -2,7 +2,7 @@
 
 import 'package:test/test.dart';
 import 'package:werewolf_arena/core/engine/game_assembler.dart';
-import 'package:werewolf_arena/core/engine/game_engine_new.dart';
+import 'package:werewolf_arena/core/engine/game_engine.dart';
 import 'package:werewolf_arena/core/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/core/events/player_events.dart';
 import 'package:werewolf_arena/core/domain/value_objects/death_cause.dart';

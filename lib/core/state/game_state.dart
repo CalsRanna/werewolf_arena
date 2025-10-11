@@ -14,7 +14,7 @@ import 'package:werewolf_arena/core/rules/victory_conditions.dart';
 import 'package:werewolf_arena/core/logging/game_log_event.dart';
 
 /// 简化后的游戏状态类 - 专注于纯游戏逻辑状态
-/// 
+///
 /// 职责：
 /// - 管理玩家列表和基本游戏信息
 /// - 管理事件历史
@@ -126,19 +126,6 @@ class GameState {
     lastUpdateTime = DateTime.now();
   }
 
-  /// 清空临时技能效果（保留持久效果）
-  void clearTemporarySkillEffects() {
-    final persistentKeys = skillEffects.keys
-        .where((key) => key.startsWith('persistent_'))
-        .toList();
-    
-    skillEffects.clear();
-    for (final key in persistentKeys) {
-      // 恢复持久效果，但这里简化处理
-    }
-    lastUpdateTime = DateTime.now();
-  }
-
   // Methods
   void addEvent(GameEvent event) {
     eventHistory.add(event);
@@ -153,9 +140,7 @@ class GameState {
   /// Get recent events visible to a specific player
   /// Get events visible to a specific player
   List<GameEvent> getEventsForGamePlayer(GamePlayer player) {
-    return eventHistory
-        .where((event) => event.isVisibleTo(player))
-        .toList();
+    return eventHistory.where((event) => event.isVisibleTo(player)).toList();
   }
 
   List<GameEvent> getRecentEventsForPlayer(
@@ -315,19 +300,19 @@ class GameState {
     final eventHistory = <GameEvent>[];
 
     return GameState(
-      gameId: json['gameId'],
-      // config: config, // 移除Flutter依赖
-      scenario: Scenario9Players(), // Placeholder - 使用新的场景类
-      players: [], // TODO: 实现玩家序列化
-      currentPhase: GamePhase.values.firstWhere(
-        (p) => p.name == json['currentPhase'],
-      ),
-      dayNumber: json['dayNumber'],
-      eventHistory: eventHistory,
-      metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
-      skillEffects: Map<String, dynamic>.from(json['skillEffects'] ?? {}),
-      skillUsageCounts: Map<String, int>.from(json['skillUsageCounts'] ?? {}),
-    )
+        gameId: json['gameId'],
+        // config: config, // 移除Flutter依赖
+        scenario: Scenario9Players(), // Placeholder - 使用新的场景类
+        players: [], // TODO: 实现玩家序列化
+        currentPhase: GamePhase.values.firstWhere(
+          (p) => p.name == json['currentPhase'],
+        ),
+        dayNumber: json['dayNumber'],
+        eventHistory: eventHistory,
+        metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
+        skillEffects: Map<String, dynamic>.from(json['skillEffects'] ?? {}),
+        skillUsageCounts: Map<String, int>.from(json['skillUsageCounts'] ?? {}),
+      )
       ..lastUpdateTime = json['lastUpdateTime'] != null
           ? DateTime.parse(json['lastUpdateTime'])
           : null

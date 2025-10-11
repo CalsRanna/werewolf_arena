@@ -88,7 +88,7 @@ class GameConsole {
   void displayGameStart(int playerCount, Map<String, int> roleDistribution) {
     printHeader('🐺 狼人杀游戏开始', color: ConsoleColor.green);
 
-    printLine(_colorize('👥 玩家数量: ', ConsoleColor.blue) + '$playerCount 人');
+    printLine('${_colorize('👥 玩家数量: ', ConsoleColor.blue)}$playerCount 人');
 
     printLine();
     printLine(_colorize('📋 角色分布:', ConsoleColor.blue));
@@ -112,11 +112,11 @@ class GameConsole {
 
     switch (newPhase) {
       case GamePhase.night:
-        message = '🌙 第${dayNumber}天夜晚 - 天黑请闭眼';
+        message = '🌙 第$dayNumber天夜晚 - 天黑请闭眼';
         color = ConsoleColor.magenta;
         break;
       case GamePhase.day:
-        message = '☀️ 第${dayNumber}天白天 - 天亮了';
+        message = '☀️ 第$dayNumber天白天 - 天亮了';
         color = ConsoleColor.yellow;
         break;
       case GamePhase.voting:
@@ -211,7 +211,11 @@ class GameConsole {
   }
 
   /// 显示玩家死亡
-  void displayGamePlayerDeath(GamePlayer player, DeathCause cause, {GamePlayer? killer}) {
+  void displayGamePlayerDeath(
+    GamePlayer player,
+    DeathCause cause, {
+    GamePlayer? killer,
+  }) {
     String causeText;
     ConsoleColor causeColor;
 
@@ -240,8 +244,7 @@ class GameConsole {
 
     String killerText = killer != null ? ' by ${killer.formattedName}' : '';
     printLine(
-      _colorize('💀 ', causeColor) +
-          '${player.formattedName} $causeText$killerText',
+      '${_colorize('💀 ', causeColor)}${player.formattedName} $causeText$killerText',
     );
   }
 
@@ -255,7 +258,7 @@ class GameConsole {
     if (isPeacefulNight) {
       printLine(_colorize('🌙 昨晚是平安夜,没有人死亡', ConsoleColor.green));
     } else {
-      printLine(_colorize('🌙 第${dayNumber}天夜晚结果:', ConsoleColor.yellow));
+      printLine(_colorize('🌙 第$dayNumber天夜晚结果:', ConsoleColor.yellow));
       for (final death in deaths) {
         displayGamePlayerDeath(death, DeathCause.other); // 默认显示,具体死亡原因通过事件回调处理
       }
@@ -339,7 +342,9 @@ class GameConsole {
     printLine();
 
     // 存活玩家
-    printLine(_colorize('✅ 最终存活: ', ConsoleColor.green) + '$finalGamePlayerCount人');
+    printLine(
+      _colorize('✅ 最终存活: ', ConsoleColor.green) + '$finalGamePlayerCount人',
+    );
     for (final player in state.alivePlayers) {
       final camp = player.role.isWerewolf ? '狼人' : '好人';
       printLine('  ✓ ${player.name} - ${player.role.name} ($camp)');

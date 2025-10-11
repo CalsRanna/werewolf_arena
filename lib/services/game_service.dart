@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:werewolf_arena/core/engine/game_engine_new.dart';
+import 'package:werewolf_arena/core/engine/game_engine.dart';
 import 'package:werewolf_arena/core/engine/game_assembler.dart';
 import 'package:werewolf_arena/core/state/game_state.dart';
 import 'package:werewolf_arena/core/domain/entities/game_player.dart';
@@ -11,7 +11,7 @@ import 'package:werewolf_arena/services/stream_game_observer.dart';
 /// - 使用GameAssembler创建游戏引擎
 /// - 保持Stream事件流的兼容性
 /// - 简化接口，专注于UI层需要的功能
-/// 
+///
 /// 主要变化：
 /// - 不再需要GameParameters，使用GameAssembler的4参数模式
 /// - GameEngine通过GameAssembler外部创建
@@ -54,7 +54,7 @@ class GameService {
   bool get isExecutingStep => _isExecutingStep;
 
   /// 初始化游戏服务
-  /// 
+  ///
   /// 新架构下只需要创建观察者，游戏引擎通过createGame方法创建
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -66,12 +66,12 @@ class GameService {
   }
 
   /// 创建新游戏
-  /// 
+  ///
   /// 使用GameAssembler创建游戏引擎，支持配置参数：
   /// - [configPath]: 配置文件路径（可选）
   /// - [scenarioId]: 场景ID（可选，如'9_players'）
   /// - [playerCount]: 玩家数量（可选）
-  /// 
+  ///
   /// 这是新架构的主要接口，替代了旧的setPlayers方法
   Future<void> createGame({
     String? configPath,
@@ -102,7 +102,7 @@ class GameService {
   }
 
   /// 快速创建游戏的便捷方法
-  /// 
+  ///
   /// 使用常见的配置快速创建游戏
   Future<void> createQuickGame({int playerCount = 9}) async {
     await createGame(
@@ -134,7 +134,7 @@ class GameService {
   }
 
   /// 重置游戏
-  /// 
+  ///
   /// 清理当前游戏状态，准备创建新游戏
   Future<void> resetGame() async {
     _ensureInitialized();
@@ -147,7 +147,7 @@ class GameService {
   }
 
   /// 清理当前游戏
-  /// 
+  ///
   /// 内部方法，用于清理游戏引擎状态
   Future<void> _cleanupCurrentGame() async {
     // 等待当前步骤完成
@@ -157,7 +157,7 @@ class GameService {
 
     // 清理游戏引擎
     _gameEngine = null;
-    
+
     // 注意：不清理观察者，因为UI层可能还在监听
   }
 
@@ -169,7 +169,7 @@ class GameService {
   }
 
   /// 释放资源
-  /// 
+  ///
   /// 清理所有资源，包括游戏引擎和观察者
   void dispose() {
     _gameEngine = null;
@@ -179,9 +179,9 @@ class GameService {
   }
 
   // 兼容性方法 - 为了保持与现有UI层的兼容性
-  
+
   /// @deprecated 使用createGame替代
-  /// 
+  ///
   /// 保留此方法以确保现有代码的兼容性
   @Deprecated('使用createGame方法替代')
   Future<void> initializeGame() async {
@@ -192,7 +192,7 @@ class GameService {
   }
 
   /// @deprecated 使用createGame替代
-  /// 
+  ///
   /// 保留此方法以确保现有代码的兼容性
   @Deprecated('使用createGame方法替代')
   void setPlayers(List<dynamic> players) {
@@ -201,7 +201,7 @@ class GameService {
   }
 
   /// @deprecated 使用createGame替代
-  /// 
+  ///
   /// 保留此方法以确保现有代码的兼容性
   @Deprecated('使用createGame方法替代')
   void setGamePlayers(List<dynamic> players) {
@@ -210,7 +210,7 @@ class GameService {
   }
 
   /// @deprecated 使用getCurrentPlayers替代
-  /// 
+  ///
   /// 保留此方法以确保现有代码的兼容性
   @Deprecated('使用getCurrentPlayers方法替代')
   List<dynamic> getCurrentGamePlayers() {
@@ -219,7 +219,7 @@ class GameService {
   }
 
   /// @deprecated 使用executeNextStep替代
-  /// 
+  ///
   /// 保留此方法以确保现有代码的兼容性
   @Deprecated('使用executeNextStep方法替代')
   Future<void> startGame() async {

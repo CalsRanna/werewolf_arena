@@ -137,7 +137,7 @@ class GameLogEvent {
     final levelStr = level.name.toUpperCase().padRight(7);
     final categoryStr = category.name.toUpperCase().padRight(8);
     final phaseStr = phase != null ? '[${phase!.displayName}]' : '';
-    final dayStr = dayNumber != null ? '[第${dayNumber}天]' : '';
+    final dayStr = dayNumber != null ? '[第$dayNumber天]' : '';
     
     return '$timeStr $levelStr $categoryStr $phaseStr$dayStr $message';
   }
