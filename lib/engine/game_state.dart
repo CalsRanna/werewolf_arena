@@ -177,6 +177,7 @@ class GameState {
       newPhase: newPhase,
       dayNumber: dayNumber,
     );
+    logger.d(event.toString());
     addEvent(event);
   }
 
@@ -189,6 +190,7 @@ class GameState {
       playerCount: players.length,
       roleDistribution: _getRoleDistribution(),
     );
+    logger.d(event.toString());
     addEvent(event);
   }
 
@@ -202,6 +204,7 @@ class GameState {
       finalPlayerCount: alivePlayers.length,
       gameStartTime: startTime,
     );
+    logger.d(event.toString());
     addEvent(event);
   }
 
@@ -214,6 +217,7 @@ class GameState {
       dayNumber: dayNumber,
       phase: currentPhase,
     );
+    logger.d(event.toString());
     addEvent(event);
   }
 

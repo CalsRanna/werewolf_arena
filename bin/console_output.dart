@@ -78,7 +78,7 @@ class GameConsole {
   void printHeader(String title, {ConsoleColor color = ConsoleColor.cyan}) {
     final border = '=' * 60;
     printLine(_colorize(border, color));
-    printLine(_colorize('  $title', color));
+    printLine(_colorize(title, color));
     printLine(_colorize(border, color));
     printLine();
   }
@@ -88,23 +88,6 @@ class GameConsole {
   }
 
   // === 游戏相关显示方法 ===
-
-  /// 显示游戏开始信息
-  void displayGameStart(int playerCount, Map<String, int> roleDistribution) {
-    printHeader('🐺 狼人杀游戏开始', color: ConsoleColor.green);
-
-    printLine('${_colorize('👥 玩家数量: ', ConsoleColor.blue)}$playerCount 人');
-
-    printLine();
-    printLine(_colorize('📋 角色分布:', ConsoleColor.blue));
-    roleDistribution.forEach((role, count) {
-      printLine('  • $role: $count 人');
-    });
-
-    printLine();
-    printLine(_colorize('🎮 游戏开始!', ConsoleColor.green));
-    printLine();
-  }
 
   /// 显示阶段转换信息
   void displayPhaseChange(

@@ -20,8 +20,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
     int playerCount,
     Map<String, int> roleDistribution,
   ) {
-    _console.printLine('onGameStart:');
-    _console.displayGameStart(playerCount, roleDistribution);
+    _console.printLine('游戏开始');
   }
 
   @override
@@ -31,7 +30,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
     int totalDays,
     int finalGamePlayerCount,
   ) {
-    _console.printLine('onGameEnd:');
     _console.displayGameEnd(state, winner, totalDays, finalGamePlayerCount);
   }
 
@@ -41,7 +39,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
     GamePhase newPhase,
     int dayNumber,
   ) async {
-    _console.printLine('onPhaseChange:');
     _console.displayPhaseChange(oldPhase, newPhase, dayNumber);
     _console.readLine();
   }
@@ -53,7 +50,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
     dynamic target, {
     Map<String, dynamic>? details,
   }) {
-    _console.printLine('onGamePlayerAction:');
     _console.displayGamePlayerAction(
       player,
       actionType,
@@ -68,7 +64,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
     DeathCause cause, {
     GamePlayer? killer,
   }) {
-    _console.printLine('onGamePlayerDeath:');
     _console.displayGamePlayerDeath(player, cause, killer: killer);
   }
 
@@ -78,7 +73,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
     String message, {
     SpeechType? speechType,
   }) {
-    _console.printLine('onGamePlayerSpeak:');
     _console.displayGamePlayerSpeak(player, message, speechType: speechType);
   }
 
@@ -95,7 +89,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
           break;
       }
     }
-    _console.printLine('onVoteCast:');
     _console.displayGamePlayerAction(
       voter,
       '投票',
@@ -110,20 +103,17 @@ class ConsoleGameObserver extends GameObserverAdapter {
     bool isPeacefulNight,
     int dayNumber,
   ) async {
-    _console.printLine('onNightResult:');
     _console.displayNightResult(deaths, isPeacefulNight, dayNumber);
     _console.readLine();
   }
 
   @override
   void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
-    _console.printLine('onSystemMessage:');
     _console.displaySystemMessage(message, dayNumber: dayNumber, phase: phase);
   }
 
   @override
   void onErrorMessage(String error, {Object? errorDetails}) {
-    _console.printLine('onErrorMessage:');
     _console.displayError(error, errorDetails: errorDetails);
   }
 
@@ -133,20 +123,17 @@ class ConsoleGameObserver extends GameObserverAdapter {
     GamePlayer? executed,
     List<GamePlayer>? pkCandidates,
   ) {
-    _console.printLine('onVoteResults:');
     _console.displayVoteResults(results, executed, pkCandidates);
   }
 
   @override
   void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers) {
-    _console.printLine('onAliveGamePlayersAnnouncement:');
     _console.displayAliveGamePlayers(aliveGamePlayers);
   }
 
   @override
   void onGameStateChanged(GameState state) {
     // 显示当前游戏状态摘要
-    _console.printLine('onGameStateChanged:');
     _console.printLine(
       '   第${state.dayNumber}天 ${_getPhaseDisplayName(state.currentPhase)}',
     );
@@ -157,7 +144,6 @@ class ConsoleGameObserver extends GameObserverAdapter {
 
   @override
   void onLastWords(GamePlayer player, String lastWords) {
-    _console.printLine('onLastWords:');
     _console.displayLastWords(player, lastWords);
   }
 

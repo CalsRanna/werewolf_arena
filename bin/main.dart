@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/engine/game_assembler.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/services/game_log_observer.dart';
 import 'console_output.dart';
 import 'console_game_observer.dart';
+import 'console_game_log_observer.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
 ///
@@ -42,7 +42,7 @@ Future<void> main(List<String> arguments) async {
 
     // 初始化控制台
     console.initialize(useColors: true);
-    console.printHeader('狼人杀竞技场 - 控制台模式', color: ConsoleColor.green);
+    console.printHeader('狼人杀竞技场', color: ConsoleColor.green);
 
     final configPath = argResults['config'] as String?;
     final playerCountStr = argResults['players'] as String?;
@@ -59,7 +59,7 @@ Future<void> main(List<String> arguments) async {
 
     final observer = CompositeGameObserver();
     observer.addObserver(ConsoleGameObserver());
-    observer.addObserver(GameLogObserver());
+    observer.addObserver(ConsoleGameLogObserver());
 
     final gameEngine = await GameAssembler.assembleGame(
       configPath: configPath,

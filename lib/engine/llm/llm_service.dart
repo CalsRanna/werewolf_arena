@@ -323,18 +323,13 @@ $context
         }).toList(),
       );
 
-      // 调试信息：输出请求详情
-      GameEngineLogger.instance.d(
-        'API Request - Model: $effectiveModel, Messages: ${messages.length}',
-      );
-
       final response = await client.createChatCompletion(request: request);
 
       if (response.choices.isNotEmpty) {
         final message = response.choices.first.message;
         final content = message.content ?? '';
         final tokensUsed = response.usage?.totalTokens ?? 0;
-
+        GameEngineLogger.instance.d('[API] Response: $content');
         return {
           'content': content,
           'tokensUsed': tokensUsed,

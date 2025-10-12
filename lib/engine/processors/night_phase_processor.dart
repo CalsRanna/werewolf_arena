@@ -20,15 +20,12 @@ class NightPhaseProcessor implements PhaseProcessor {
 
   @override
   Future<void> process(GameState state) async {
-    GameEngineLogger.instance.i('开始处理夜晚阶段 - 第${state.dayNumber}夜');
     var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天黑请闭眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.addEvent(judgeAnnouncementEvent);
-    var phaseChangeEvent = PhaseChangeEvent(
-      oldPhase: state.currentPhase,
-      newPhase: GamePhase.night,
-      dayNumber: state.dayNumber,
-    );
-    state.addEvent(phaseChangeEvent);
+    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '狼人请睁眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.addEvent(judgeAnnouncementEvent);
 
     // 2. 收集当前阶段可用技能
     final availableSkills = <GameSkill>[];
@@ -62,8 +59,6 @@ class NightPhaseProcessor implements PhaseProcessor {
 
     // 7. 切换到白天阶段
     await state.changePhase(GamePhase.day);
-
-    GameEngineLogger.instance.i('夜晚阶段处理完成');
   }
 
   /// 执行技能列表
