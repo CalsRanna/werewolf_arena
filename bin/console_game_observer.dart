@@ -36,9 +36,14 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
+  Future<void> onPhaseChange(
+    GamePhase oldPhase,
+    GamePhase newPhase,
+    int dayNumber,
+  ) async {
     _console.printLine('onPhaseChange:');
     _console.displayPhaseChange(oldPhase, newPhase, dayNumber);
+    _console.readLine();
   }
 
   @override
@@ -100,13 +105,14 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onNightResult(
+  Future<void> onNightResult(
     List<GamePlayer> deaths,
     bool isPeacefulNight,
     int dayNumber,
-  ) {
+  ) async {
     _console.printLine('onNightResult:');
     _console.displayNightResult(deaths, isPeacefulNight, dayNumber);
+    _console.readLine();
   }
 
   @override

@@ -1,0 +1,63 @@
+import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/skills/game_skill.dart';
+import 'package:werewolf_arena/engine/skills/skill_result.dart';
+
+/// 发言技能（白天专用）
+///
+/// 玩家在白天阶段的正常发言
+class SpeakSkill extends GameSkill {
+  @override
+  String get skillId => 'speak';
+
+  @override
+  String get name => '发言';
+
+  @override
+  String get description => '在白天阶段进行发言讨论';
+
+  @override
+  int get priority => 50; // 普通优先级
+
+  @override
+  String get prompt => '''
+现在是白天讨论阶段，请进行你的发言。
+
+你可以选择以下发言策略：
+1. 分享信息：公布你掌握的信息（如果你是神职）
+2. 分析推理：分析昨晚的结果和玩家行为
+3. 表达怀疑：指出你怀疑的玩家并说明理由
+4. 为自己辩护：如果被怀疑，为自己澄清
+5. 引导投票：建议大家投票给特定玩家
+
+发言要点：
+- 保持逻辑性和说服力
+- 根据你的角色身份调整发言策略
+- 观察其他玩家的反应
+- 为接下来的投票做准备
+
+请发表你的观点：
+''';
+
+  @override
+  bool canCast(dynamic player, GameState state) {
+    return player.isAlive && !player.isSilenced && state.currentPhase.isDay;
+  }
+
+  @override
+  Future<SkillResult> cast(dynamic player, GameState state) async {
+    try {
+      // 生成发言技能执行结果
+      // 具体的事件创建由GameEngine根据玩家输入处理
+
+      return SkillResult.success(
+        caster: player,
+        metadata: {'skillId': skillId, 'speechType': 'normal'},
+      );
+    } catch (e) {
+      return SkillResult.failure(
+        caster: player,
+        metadata: {'skillId': skillId, 'error': e.toString()},
+      );
+    }
+  }
+}

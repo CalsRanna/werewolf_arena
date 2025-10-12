@@ -1,5 +1,10 @@
-import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
+import 'package:werewolf_arena/engine/domain/entities/guard_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/hunter_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/seer_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/villager_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/werewolf_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/witch_role.dart';
 import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/victory_result.dart';
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';

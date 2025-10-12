@@ -6,7 +6,7 @@ import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
-import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
 
 /// 配置服务 - v2.0.0架构的Flutter友好包装层
 ///

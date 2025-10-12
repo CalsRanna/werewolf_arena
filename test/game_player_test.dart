@@ -1,8 +1,9 @@
 import 'package:test/test.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/human_player.dart';
-import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/villager_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/werewolf_role.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';

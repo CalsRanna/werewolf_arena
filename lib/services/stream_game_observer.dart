@@ -84,7 +84,11 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
+  Future<void> onPhaseChange(
+    GamePhase oldPhase,
+    GamePhase newPhase,
+    int dayNumber,
+  ) async {
     final phaseStr = _getPhaseString(newPhase);
     _gameEventController.add(
       '阶段变更: ${_getPhaseString(oldPhase)} -> $phaseStr (第$dayNumber天)',
@@ -142,11 +146,11 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onNightResult(
+  Future<void> onNightResult(
     List<GamePlayer> deaths,
     bool isPeacefulNight,
     int dayNumber,
-  ) {
+  ) async {
     if (isPeacefulNight) {
       _gameEventController.add('昨晚是平安夜');
     } else {

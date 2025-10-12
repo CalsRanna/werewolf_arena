@@ -1,12 +1,15 @@
 import 'package:test/test.dart';
+import 'package:werewolf_arena/engine/domain/entities/guard_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/villager_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/werewolf_role.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
+import 'package:werewolf_arena/engine/skills/kill_skill.dart';
+import 'package:werewolf_arena/engine/skills/protect_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
 import 'package:werewolf_arena/engine/skills/skill_processor.dart';
-import 'package:werewolf_arena/engine/skills/night_skills.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
-import 'package:werewolf_arena/engine/domain/entities/role_implementations.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
@@ -184,16 +187,16 @@ void main() {
   });
 
   group('夜晚技能测试', () {
-    late WerewolfKillSkill werewolfKill;
-    late GuardProtectSkill guardProtect;
+    late KillSkill kill;
+    late ProtectSkill protect;
     late GamePlayer werewolf;
     late GamePlayer guard;
     late GamePlayer villager;
     late GameState nightState;
 
     setUp(() {
-      werewolfKill = WerewolfKillSkill();
-      guardProtect = GuardProtectSkill();
+      kill = KillSkill();
+      protect = ProtectSkill();
 
       final intelligence = PlayerIntelligence(
         baseUrl: 'https://api.openai.com/v1',
@@ -235,20 +238,20 @@ void main() {
     });
 
     test('狼人击杀技能属性测试', () {
-      expect(werewolfKill.skillId, equals('werewolf_kill'));
-      expect(werewolfKill.name, equals('狼人击杀'));
-      expect(werewolfKill.priority, equals(100));
-      expect(werewolfKill.prompt, contains('夜晚阶段'));
-      expect(werewolfKill.prompt, contains('击杀目标'));
+      expect(kill.skillId, equals('werewolf_kill'));
+      expect(kill.name, equals('狼人击杀'));
+      expect(kill.priority, equals(100));
+      expect(kill.prompt, contains('夜晚阶段'));
+      expect(kill.prompt, contains('击杀目标'));
     });
 
     test('狼人击杀技能施放条件测试', () {
       // 狼人在夜晚可以施放
-      expect(werewolfKill.canCast(werewolf, nightState), isTrue);
+      expect(kill.canCast(werewolf, nightState), isTrue);
 
       // 非狼人不能施放
-      expect(werewolfKill.canCast(guard, nightState), isFalse);
-      expect(werewolfKill.canCast(villager, nightState), isFalse);
+      expect(kill.canCast(guard, nightState), isFalse);
+      expect(kill.canCast(villager, nightState), isFalse);
 
       // 白天不能施放
       final dayState = GameState(
@@ -258,15 +261,15 @@ void main() {
         dayNumber: 1,
         currentPhase: GamePhase.day,
       );
-      expect(werewolfKill.canCast(werewolf, dayState), isFalse);
+      expect(kill.canCast(werewolf, dayState), isFalse);
 
       // 死亡的狼人不能施放
       werewolf.setAlive(false);
-      expect(werewolfKill.canCast(werewolf, nightState), isFalse);
+      expect(kill.canCast(werewolf, nightState), isFalse);
     });
 
     test('狼人击杀技能执行测试', () async {
-      final result = await werewolfKill.cast(werewolf, nightState);
+      final result = await kill.cast(werewolf, nightState);
 
       expect(result.success, isTrue);
       expect(result.caster, equals(werewolf));
@@ -276,19 +279,19 @@ void main() {
     });
 
     test('守卫保护技能属性测试', () {
-      expect(guardProtect.skillId, equals('guard_protect'));
-      expect(guardProtect.name, equals('守卫保护'));
-      expect(guardProtect.priority, equals(90));
-      expect(guardProtect.prompt, contains('守护'));
+      expect(protect.skillId, equals('guard_protect'));
+      expect(protect.name, equals('守卫保护'));
+      expect(protect.priority, equals(90));
+      expect(protect.prompt, contains('守护'));
     });
 
     test('守卫保护技能施放条件测试', () {
       // 守卫在夜晚可以施放
-      expect(guardProtect.canCast(guard, nightState), isTrue);
+      expect(protect.canCast(guard, nightState), isTrue);
 
       // 非守卫不能施放
-      expect(guardProtect.canCast(werewolf, nightState), isFalse);
-      expect(guardProtect.canCast(villager, nightState), isFalse);
+      expect(protect.canCast(werewolf, nightState), isFalse);
+      expect(protect.canCast(villager, nightState), isFalse);
     });
   });
 
@@ -298,8 +301,8 @@ void main() {
     setUp(() {
       skills = [
         TestSkill(priority: 50),
-        WerewolfKillSkill(), // priority 100
-        GuardProtectSkill(), // priority 90
+        KillSkill(), // priority 100
+        ProtectSkill(), // priority 90
         TestSkill(priority: 30),
         TestSkill(priority: 80),
       ];

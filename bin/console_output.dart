@@ -60,6 +60,11 @@ class GameConsole {
     }
   }
 
+  String? readLine() {
+    stdout.write('请输入回车键继续');
+    return stdin.readLineSync();
+  }
+
   // === 基础输出方法 ===
 
   void printLine([String? text]) {

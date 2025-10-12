@@ -52,7 +52,11 @@ abstract class GameObserver {
   );
 
   /// 阶段转换
-  void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber);
+  Future<void> onPhaseChange(
+    GamePhase oldPhase,
+    GamePhase newPhase,
+    int dayNumber,
+  );
 
   /// 玩家行动
   void onGamePlayerAction(
@@ -80,7 +84,7 @@ abstract class GameObserver {
   void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType});
 
   /// 夜晚结果公告
-  void onNightResult(
+  Future<void> onNightResult(
     List<GamePlayer> deaths,
     bool isPeacefulNight,
     int dayNumber,
@@ -162,7 +166,11 @@ abstract class GameObserverAdapter implements GameObserver {
   ) {}
 
   @override
-  void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {}
+  Future<void> onPhaseChange(
+    GamePhase oldPhase,
+    GamePhase newPhase,
+    int dayNumber,
+  ) async {}
 
   @override
   void onGamePlayerAction(
@@ -190,11 +198,11 @@ abstract class GameObserverAdapter implements GameObserver {
   void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType}) {}
 
   @override
-  void onNightResult(
+  Future<void> onNightResult(
     List<GamePlayer> deaths,
     bool isPeacefulNight,
     int dayNumber,
-  ) {}
+  ) async {}
 
   @override
   void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {}
@@ -307,7 +315,11 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
+  Future<void> onPhaseChange(
+    GamePhase oldPhase,
+    GamePhase newPhase,
+    int dayNumber,
+  ) async {
     _notifyObservers(
       (observer) => observer.onPhaseChange(oldPhase, newPhase, dayNumber),
       'onPhaseChange',
@@ -366,11 +378,11 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onNightResult(
+  Future<void> onNightResult(
     List<GamePlayer> deaths,
     bool isPeacefulNight,
     int dayNumber,
-  ) {
+  ) async {
     _notifyObservers(
       (observer) => observer.onNightResult(deaths, isPeacefulNight, dayNumber),
       'onNightResult',
