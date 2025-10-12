@@ -3,11 +3,10 @@
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:werewolf_arena/engine/game_assembler.dart';
-import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/services/game_log_observer.dart';
 import 'console_output.dart';
-import 'console_observer.dart';
+import 'console_game_observer.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
 ///
@@ -45,9 +44,6 @@ Future<void> main(List<String> arguments) async {
     console.initialize(useColors: true);
     console.printHeader('狼人杀竞技场 - 控制台模式', color: ConsoleColor.green);
 
-    // 1. 解析启动参数
-    console.printLine('⚙️ 解析启动参数...');
-
     final configPath = argResults['config'] as String?;
     final playerCountStr = argResults['players'] as String?;
     final scenarioId = argResults['scenario'] as String?;
@@ -61,88 +57,25 @@ Future<void> main(List<String> arguments) async {
       }
     }
 
-    // 显示启动配置
-    console.printLine('   配置文件: ${configPath ?? '默认配置'}');
-    console.printLine('   玩家数量: ${playerCount ?? '默认(9人)'}');
-    console.printLine('   游戏场景: ${scenarioId ?? '自动选择'}');
-    console.printLine();
-
-    // 2. 创建游戏观察者
-    console.printLine('👁️ 创建游戏观察者...');
     final observer = CompositeGameObserver();
     observer.addObserver(ConsoleGameObserver());
     observer.addObserver(GameLogObserver());
 
-    // 3. 使用GameAssembler创建游戏引擎
-    console.printLine('🎮 正在组装游戏引擎...');
+    final gameEngine = await GameAssembler.assembleGame(
+      configPath: configPath,
+      scenarioId: scenarioId,
+      playerCount: playerCount,
+      observer: observer,
+    );
+    await gameEngine.initializeGame();
 
-    GameEngine gameEngine;
-    try {
-      gameEngine = await GameAssembler.assembleGame(
-        configPath: configPath,
-        scenarioId: scenarioId,
-        playerCount: playerCount,
-        observer: observer,
-      );
-      console.printLine('   ✅ 游戏引擎创建成功');
-    } catch (e) {
-      console.displayError('游戏引擎创建失败: $e');
-      console.printLine();
-      console.printLine('💡 建议检查：');
-      console.printLine('   - 配置文件是否存在且格式正确');
-      console.printLine('   - API密钥是否有效');
-      console.printLine('   - 网络连接是否正常');
-      exit(1);
-    }
-
-    // 4. 显示游戏信息
-    console.printLine();
-    console.printSeparator('=', 60);
-    console.printLine();
-    console.printLine('🎯 游戏信息：');
-    console.printLine('   场景: ${gameEngine.scenario.name}');
-    console.printLine('   描述: ${gameEngine.scenario.description}');
-    console.printLine('   玩家数量: ${gameEngine.players.length}');
-    console.printLine();
-
-    // 显示玩家列表
-    console.printLine('👥 玩家列表：');
-    for (var i = 0; i < gameEngine.players.length; i++) {
-      final player = gameEngine.players[i];
-      console.printLine('   ${i + 1}. ${player.name} (${player.role.name})');
-    }
-
-    console.printLine();
-    console.printSeparator('=', 60);
-    console.printLine();
-
-    // 5. 初始化游戏引擎
-    console.printLine('🔧 初始化游戏引擎...');
-    try {
-      await gameEngine.initializeGame();
-      console.printLine('   ✅ 游戏引擎初始化成功');
-    } catch (e) {
-      console.displayError('游戏引擎初始化失败: $e');
-      exit(1);
-    }
-
-    // 6. 开始游戏循环
-    console.printLine('🚀 开始游戏...\n');
-
-    // 现在开始执行游戏步骤
     while (!gameEngine.isGameEnded) {
-      try {
-        await gameEngine.executeGameStep();
+      await gameEngine.executeGameStep();
 
-        // 添加小延迟，让用户有时间阅读输出
-        await Future.delayed(const Duration(milliseconds: 500));
-      } catch (e) {
-        console.displayError('游戏执行错误: $e');
-        console.printLine('尝试继续游戏...\n');
-      }
+      // 添加小延迟，让用户有时间阅读输出
+      await Future.delayed(const Duration(milliseconds: 500));
     }
 
-    // 7. 游戏结束
     console.printLine();
     console.printSeparator('=', 60);
     console.printLine('✅ 游戏已结束');

@@ -335,15 +335,14 @@ class GameConsole {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
     printLine(
-      _colorize('⏱️ 游戏时长: ', ConsoleColor.blue) +
-          '$minutes分$seconds秒,共$totalDays天',
+      '${_colorize('⏱️ 游戏时长: ', ConsoleColor.blue)}$minutes分$seconds秒,共$totalDays天',
     );
 
     printLine();
 
     // 存活玩家
     printLine(
-      _colorize('✅ 最终存活: ', ConsoleColor.green) + '$finalGamePlayerCount人',
+      '${_colorize('✅ 最终存活: ', ConsoleColor.green)}$finalGamePlayerCount人',
     );
     for (final player in state.alivePlayers) {
       final camp = player.role.isWerewolf ? '狼人' : '好人';
@@ -354,7 +353,7 @@ class GameConsole {
     if (state.deadPlayers.isNotEmpty) {
       printLine();
       printLine(
-        _colorize('❌ 已出局: ', ConsoleColor.red) + '${state.deadPlayers.length}人',
+        '${_colorize('❌ 已出局: ', ConsoleColor.red)}${state.deadPlayers.length}人',
       );
       for (final player in state.deadPlayers) {
         final camp = player.role.isWerewolf ? '狼人' : '好人';
@@ -408,7 +407,7 @@ class GameConsole {
     printLine();
     printLine(_colorize('❌ 错误: ', ConsoleColor.red) + error);
     if (errorDetails != null) {
-      printLine(_colorize('详情: ', ConsoleColor.gray) + '$errorDetails');
+      printLine('${_colorize('详情: ', ConsoleColor.gray)}$errorDetails');
     }
     printLine();
   }

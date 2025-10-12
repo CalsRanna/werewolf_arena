@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/events/system_events.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
@@ -20,7 +21,7 @@ class NightPhaseProcessor implements PhaseProcessor {
   @override
   Future<void> process(GameState state) async {
     GameEngineLogger.instance.i('开始处理夜晚阶段 - 第${state.dayNumber}夜');
-
+    state.addEvent(JudgeAnnouncementEvent(announcement: '天黑请闭眼'));
     // 1. 阶段开始事件（所有人可见）
     state.addEvent(
       PhaseChangeEvent(

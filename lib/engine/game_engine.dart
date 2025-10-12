@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:werewolf_arena/engine/events/game_event.dart';
+import 'package:werewolf_arena/engine/events/phase_events.dart';
+import 'package:werewolf_arena/engine/events/player_events.dart';
+import 'package:werewolf_arena/engine/events/system_events.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
@@ -44,6 +48,36 @@ class GameEngine {
       hasGameStarted && _status == GameEngineStatus.playing;
   bool get isGameEnded => hasGameStarted && _status == GameEngineStatus.ended;
 
+  void _listenEvent(GameEvent event) {
+    switch (event) {
+      case GameStartEvent():
+        _observer?.onGameStart(
+          _currentState!,
+          players.length,
+          _getRoleDistribution(),
+        );
+      case GameEndEvent():
+        _observer?.onGameEnd(
+          _currentState!,
+          event.winner,
+          event.totalDays,
+          event.finalPlayerCount,
+        );
+      case DeadEvent():
+        _observer?.onGamePlayerDeath(event.victim, event.cause);
+      case PhaseChangeEvent():
+        _observer?.onPhaseChange(
+          event.oldPhase,
+          event.newPhase,
+          event.dayNumber,
+        );
+      case JudgeAnnouncementEvent():
+        _observer?.onSystemMessage(event.announcement);
+      default:
+        break;
+    }
+  }
+
   /// 初始化游戏
   Future<void> initializeGame() async {
     try {
@@ -56,18 +90,11 @@ class GameEngine {
         scenario: scenario,
         players: players, // 直接使用GamePlayer列表
       );
+      _currentState!.eventStream.listen(_listenEvent);
 
       // 初始化游戏
       _currentState!.startGame();
       _status = GameEngineStatus.playing; // 设置为进行中状态
-
-      // 通知游戏开始
-      _observer?.onGameStart(
-        _currentState!,
-        players.length,
-        _getRoleDistribution(),
-      );
-      _observer?.onGameStateChanged(_currentState!);
 
       GameEngineLogger.instance.i('游戏初始化完成');
     } catch (e) {
@@ -89,9 +116,6 @@ class GameEngine {
     }
 
     _status = GameEngineStatus.playing;
-
-    // 通知状态更新
-    _observer?.onGameStateChanged(_currentState!);
 
     GameEngineLogger.instance.i('游戏开始');
   }
@@ -118,9 +142,6 @@ class GameEngine {
       // 执行阶段处理
       await processor.process(_currentState!);
 
-      // 通知状态更新
-      _observer?.onGameStateChanged(_currentState!);
-
       // 检查游戏结束
       if (_currentState!.checkGameEnd()) {
         await _endGame();
@@ -144,14 +165,6 @@ class GameEngine {
     _status = GameEngineStatus.ended;
     state.endGame(state.winner ?? 'unknown');
 
-    // 通知游戏结束
-    _observer?.onGameEnd(
-      state,
-      state.winner ?? '未知',
-      state.dayNumber,
-      state.alivePlayers.length,
-    );
-
     GameEngineLogger.instance.i('游戏结束');
   }
 
@@ -171,13 +184,11 @@ class GameEngine {
 
     // 不停止游戏，只记录错误并继续
     GameEngineLogger.instance.d('游戏继续运行，错误已记录');
-
-    // 通知观察者错误
-    _observer?.onErrorMessage.call('游戏发生错误', errorDetails: error);
   }
 
   /// 清理资源
   void dispose() {
+    _currentState?.dispose();
     GameEngineLogger.instance.d('游戏引擎资源清理完成');
   }
 }

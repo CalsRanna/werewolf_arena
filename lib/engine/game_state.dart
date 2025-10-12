@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 // import 'package:werewolf_arena/services/config/config.dart'; // 移除Flutter依赖
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
@@ -43,6 +45,9 @@ class GameState {
 
   // 内部日志器单例引用
   GameEngineLogger get logger => GameEngineLogger.instance;
+
+  final _controller = StreamController<GameEvent>.broadcast();
+  Stream<GameEvent> get eventStream => _controller.stream;
 
   GameState({
     required this.gameId,
@@ -129,6 +134,7 @@ class GameState {
   void addEvent(GameEvent event) {
     eventHistory.add(event);
     lastUpdateTime = DateTime.now();
+    _controller.add(event);
   }
 
   /// Get all events visible to a specific player
@@ -304,5 +310,9 @@ class GameState {
           ? DateTime.parse(json['lastUpdateTime'])
           : null
       ..winner = json['winner'];
+  }
+
+  void dispose() {
+    _controller.close();
   }
 }

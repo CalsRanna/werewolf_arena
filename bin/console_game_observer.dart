@@ -1,8 +1,7 @@
+import 'console_output.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/events/game_log_event.dart';
-import 'console_output.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
@@ -21,6 +20,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
     int playerCount,
     Map<String, int> roleDistribution,
   ) {
+    _console.printLine('onGameStart:');
     _console.displayGameStart(playerCount, roleDistribution);
   }
 
@@ -31,11 +31,13 @@ class ConsoleGameObserver extends GameObserverAdapter {
     int totalDays,
     int finalGamePlayerCount,
   ) {
+    _console.printLine('onGameEnd:');
     _console.displayGameEnd(state, winner, totalDays, finalGamePlayerCount);
   }
 
   @override
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase, int dayNumber) {
+    _console.printLine('onPhaseChange:');
     _console.displayPhaseChange(oldPhase, newPhase, dayNumber);
   }
 
@@ -46,6 +48,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
     dynamic target, {
     Map<String, dynamic>? details,
   }) {
+    _console.printLine('onGamePlayerAction:');
     _console.displayGamePlayerAction(
       player,
       actionType,
@@ -60,6 +63,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
     DeathCause cause, {
     GamePlayer? killer,
   }) {
+    _console.printLine('onGamePlayerDeath:');
     _console.displayGamePlayerDeath(player, cause, killer: killer);
   }
 
@@ -69,6 +73,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
     String message, {
     SpeechType? speechType,
   }) {
+    _console.printLine('onGamePlayerSpeak:');
     _console.displayGamePlayerSpeak(player, message, speechType: speechType);
   }
 
@@ -85,6 +90,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
           break;
       }
     }
+    _console.printLine('onVoteCast:');
     _console.displayGamePlayerAction(
       voter,
       '投票',
@@ -99,16 +105,19 @@ class ConsoleGameObserver extends GameObserverAdapter {
     bool isPeacefulNight,
     int dayNumber,
   ) {
+    _console.printLine('onNightResult:');
     _console.displayNightResult(deaths, isPeacefulNight, dayNumber);
   }
 
   @override
   void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
+    _console.printLine('onSystemMessage:');
     _console.displaySystemMessage(message, dayNumber: dayNumber, phase: phase);
   }
 
   @override
   void onErrorMessage(String error, {Object? errorDetails}) {
+    _console.printLine('onErrorMessage:');
     _console.displayError(error, errorDetails: errorDetails);
   }
 
@@ -118,22 +127,32 @@ class ConsoleGameObserver extends GameObserverAdapter {
     GamePlayer? executed,
     List<GamePlayer>? pkCandidates,
   ) {
+    _console.printLine('onVoteResults:');
     _console.displayVoteResults(results, executed, pkCandidates);
   }
 
   @override
   void onAliveGamePlayersAnnouncement(List<GamePlayer> aliveGamePlayers) {
+    _console.printLine('onAliveGamePlayersAnnouncement:');
     _console.displayAliveGamePlayers(aliveGamePlayers);
   }
 
   @override
   void onGameStateChanged(GameState state) {
     // 显示当前游戏状态摘要
-    _console.printLine('📊 游戏状态更新:');
-    _console.printLine('   阶段: ${_getPhaseDisplayName(state.currentPhase)}');
-    _console.printLine('   第${state.dayNumber}天');
+    _console.printLine('onGameStateChanged:');
+    _console.printLine(
+      '   第${state.dayNumber}天 ${_getPhaseDisplayName(state.currentPhase)}',
+    );
+
     _console.printLine('   存活玩家: ${state.alivePlayers.length}人');
     _console.printLine();
+  }
+
+  @override
+  void onLastWords(GamePlayer player, String lastWords) {
+    _console.printLine('onLastWords:');
+    _console.displayLastWords(player, lastWords);
   }
 
   /// 获取阶段显示名称
@@ -148,10 +167,5 @@ class ConsoleGameObserver extends GameObserverAdapter {
       case GamePhase.ended:
         return '🏁 游戏结束';
     }
-  }
-
-  @override
-  void onLastWords(GamePlayer player, String lastWords) {
-    _console.displayLastWords(player, lastWords);
   }
 }
