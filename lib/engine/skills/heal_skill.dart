@@ -45,7 +45,11 @@ class HealSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
       // 检查是否还有解药
       final hasAntidote =

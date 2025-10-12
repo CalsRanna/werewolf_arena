@@ -1,6 +1,9 @@
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
+import 'package:werewolf_arena/engine/events/player_events.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 
 /// 狼人讨论技能（夜晚专用）
 ///
@@ -41,14 +44,49 @@ class WerewolfDiscussSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
-      // 生成狼人讨论技能执行结果
-      // 具体的事件创建由GameEngine根据玩家输入处理
+      // 从AI响应中获取讨论内容
+      String discussionContent = '暂时观察情况';
+      String? reasoning;
+      
+      if (aiResponse != null) {
+        discussionContent = aiResponse['message']?.toString() ?? 
+                           aiResponse['statement']?.toString() ?? 
+                           '让我们分析一下今天的情况';
+        reasoning = aiResponse['reasoning']?.toString();
+      }
+
+      // 创建狼人讨论事件（仅狼人可见）
+      final discussEvent = SpeakEvent(
+        speaker: player,
+        message: discussionContent,
+        speechType: SpeechType.werewolfDiscussion,
+        dayNumber: state.dayNumber,
+        phase: state.currentPhase,
+      );
+
+      // 添加事件到游戏状态
+      state.addEvent(discussEvent);
+
+      // 记录讨论日志（仅调试可见）
+      GameEngineLogger.instance.d('${player.name} 狼人讨论: $discussionContent');
+      if (reasoning != null) {
+        GameEngineLogger.instance.d('讨论理由: $reasoning');
+      }
 
       return SkillResult.success(
         caster: player,
-        metadata: {'skillId': skillId, 'skillType': 'werewolf_discuss'},
+        metadata: {
+          'skillId': skillId, 
+          'skillType': 'werewolf_discuss',
+          'message': discussionContent,
+          'reasoning': reasoning,
+        },
       );
     } catch (e) {
       return SkillResult.failure(

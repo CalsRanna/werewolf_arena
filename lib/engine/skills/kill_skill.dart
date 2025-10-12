@@ -45,7 +45,11 @@ class KillSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
       // 获取可击杀的目标（排除狼人队友）
       final availableTargets = state.alivePlayers

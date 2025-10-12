@@ -63,7 +63,11 @@ class ShootSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
       // 获取可射杀的目标（排除自己，包括所有存活玩家）
       final availableTargets = state.alivePlayers.toList();

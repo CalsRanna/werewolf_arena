@@ -46,7 +46,11 @@ class PoisonSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
       // 检查是否还有毒药
       final hasPoison = player.role.getPrivateData<bool>('has_poison') ?? true;

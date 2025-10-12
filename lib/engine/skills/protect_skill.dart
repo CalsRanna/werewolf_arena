@@ -45,7 +45,11 @@ class ProtectSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
       // 获取上次守护的玩家
       final lastProtected = player.role.getPrivateData<String>(

@@ -401,7 +401,11 @@ class MockSkill extends GameSkill {
   bool canCast(dynamic player, GameState state) => canCastResult;
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     return castResult ??
         SkillResult.success(
           caster: player,

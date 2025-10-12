@@ -41,7 +41,12 @@ abstract class GameSkill {
   ///
   /// [player] 施放技能的玩家
   /// [state] 当前游戏状态
+  /// [aiResponse] AI玩家的响应数据（可选），包含AI生成的决策信息
   ///
   /// 返回技能执行结果
-  Future<SkillResult> cast(dynamic player, GameState state);
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  );
 }

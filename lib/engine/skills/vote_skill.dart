@@ -33,14 +33,44 @@ class VoteSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
-      // 生成发言技能执行结果
-      // 具体的事件创建由GameEngine根据玩家输入处理
+      // 从AI响应中获取投票目标
+      dynamic targetName;
+      String? reasoning;
+      
+      if (aiResponse != null) {
+        targetName = aiResponse['target'] ?? aiResponse['target_id'];
+        reasoning = aiResponse['reasoning']?.toString();
+      }
+
+      // 查找目标玩家
+      dynamic targetPlayer;
+      if (targetName != null) {
+        final targetStr = targetName.toString();
+        try {
+          targetPlayer = state.players.firstWhere(
+            (p) => p.name == targetStr,
+          );
+        } catch (e) {
+          // 如果找不到目标玩家，设为null
+          targetPlayer = null;
+        }
+      }
 
       return SkillResult.success(
         caster: player,
-        metadata: {'skillId': skillId, 'speechType': 'normal'},
+        target: targetPlayer,
+        metadata: {
+          'skillId': skillId, 
+          'speechType': 'normal',
+          'target': targetName?.toString(),
+          'reasoning': reasoning,
+        },
       );
     } catch (e) {
       return SkillResult.failure(

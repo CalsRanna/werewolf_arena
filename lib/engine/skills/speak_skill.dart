@@ -1,6 +1,9 @@
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
+import 'package:werewolf_arena/engine/events/player_events.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 
 /// 发言技能（白天专用）
 ///
@@ -44,14 +47,49 @@ class SpeakSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
-      // 生成发言技能执行结果
-      // 具体的事件创建由GameEngine根据玩家输入处理
+      // 从AI响应中获取发言内容
+      String speechContent = '暂时保持沉默';
+      String? reasoning;
+      
+      if (aiResponse != null) {
+        speechContent = aiResponse['message']?.toString() ?? 
+                       aiResponse['statement']?.toString() ?? 
+                       '我认为今天需要仔细分析情况';
+        reasoning = aiResponse['reasoning']?.toString();
+      }
+
+      // 创建发言事件
+      final speakEvent = SpeakEvent(
+        speaker: player,
+        message: speechContent,
+        speechType: SpeechType.normal,
+        dayNumber: state.dayNumber,
+        phase: state.currentPhase,
+      );
+
+      // 添加事件到游戏状态
+      state.addEvent(speakEvent);
+
+      // 记录发言日志
+      GameEngineLogger.instance.i('${player.name} 发言: $speechContent');
+      if (reasoning != null) {
+        GameEngineLogger.instance.d('发言理由: $reasoning');
+      }
 
       return SkillResult.success(
         caster: player,
-        metadata: {'skillId': skillId, 'speechType': 'normal'},
+        metadata: {
+          'skillId': skillId, 
+          'speechType': 'normal',
+          'message': speechContent,
+          'reasoning': reasoning,
+        },
       );
     } catch (e) {
       return SkillResult.failure(

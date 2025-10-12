@@ -44,7 +44,11 @@ class InvestigateSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     try {
       // 获取可查验的目标（排除自己）
       final availableTargets = state.alivePlayers

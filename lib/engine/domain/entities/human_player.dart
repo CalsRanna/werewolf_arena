@@ -99,8 +99,8 @@ class HumanPlayer extends GamePlayer {
         expectedFormat: _getExpectedFormat(skill),
       );
 
-      // 调用技能的cast方法
-      final result = await skill.cast(this, state);
+      // 调用技能的cast方法，传递AI响应（对于人类玩家，这通常是空的）
+      final result = await skill.cast(this, state, aiResponse: response);
 
       // 记录技能使用
       useSkill(skill.skillId);

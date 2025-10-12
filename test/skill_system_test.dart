@@ -489,7 +489,11 @@ class TestSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(dynamic player, GameState state) async {
+  Future<SkillResult> cast(
+    dynamic player, 
+    GameState state, 
+    {Map<String, dynamic>? aiResponse}
+  ) async {
     if (shouldFail) {
       return SkillResult.failure(
         caster: player,
