@@ -265,10 +265,10 @@ void main() {
     });
 
     test('技能结果提交测试', () async {
-      final skillResult = SkillResult.success(
+      final skillResult = SkillResult(
         caster: humanPlayer,
         target: humanPlayer,
-        metadata: {'action': 'test'},
+        reasoning: 'test',
       );
 
       // 提交技能结果（不会阻塞，因为是broadcast stream）
@@ -318,22 +318,20 @@ void main() {
       mockSkill.canCastResult = false;
 
       final result = await aiPlayer.executeSkill(mockSkill, gameState);
-      expect(result.success, isFalse);
-      expect(result.metadata['reason'], equals('Cannot cast skill'));
+      expect(result?.reasoning, equals('Cannot cast skill'));
     });
 
     test('技能执行成功', () async {
       // 设置技能为可施放
       mockSkill.canCastResult = true;
-      mockSkill.castResult = SkillResult.success(
+      mockSkill.castResult = SkillResult(
         caster: aiPlayer,
         target: aiPlayer,
-        metadata: {'test': 'success'},
+        reasoning: 'test',
       );
 
       final result = await aiPlayer.executeSkill(mockSkill, gameState);
-      expect(result.success, isTrue);
-      expect(result.caster, equals(aiPlayer));
+      expect(result?.reasoning, equals('test'));
     });
   });
 
@@ -402,15 +400,11 @@ class MockSkill extends GameSkill {
 
   @override
   Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+    dynamic player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     return castResult ??
-        SkillResult.success(
-          caster: player,
-          target: player,
-          metadata: {'mock': true},
-        );
+        SkillResult(caster: player, target: player, reasoning: 'test');
   }
 }

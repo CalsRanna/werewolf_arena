@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 
 /// Console端配置加载器 - 从可执行文件所在目录加载 YAML 文件
@@ -22,13 +23,15 @@ class ConsoleConfigLoader {
       final configPath = path.join(_configDir, 'werewolf_config.yaml');
       return AppConfig.loadFromFile(configPath);
     } catch (e) {
-      print('无法从文件加载配置: $e，使用默认配置');
+      GameEngineLogger.instance.e('无法从文件加载配置: $e，使用默认配置');
       return AppConfig.defaults();
     }
   }
 
   /// Console端不支持保存配置，只从文件读取
   Future<void> saveConfig(AppConfig config) async {
-    print('Console端不支持保存配置，请手动编辑 werewolf_config.yaml 文件');
+    GameEngineLogger.instance.w(
+      'Console端不支持保存配置，请手动编辑 werewolf_config.yaml 文件',
+    );
   }
 }

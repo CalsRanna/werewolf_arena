@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'package:werewolf_arena/util/logger_util.dart';
 import 'package:yaml/yaml.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 
@@ -30,9 +31,9 @@ class ConfigLoader {
 
       final file = File(actualConfigPath);
       if (!file.existsSync()) {
-        print('配置文件不存在: $actualConfigPath');
+        LoggerUtil.instance.w('配置文件不存在: $actualConfigPath');
         await _createDefaultConfigFile(actualConfigPath);
-        print('已自动创建默认配置文件: $actualConfigPath');
+        LoggerUtil.instance.d('已自动创建默认配置文件: $actualConfigPath');
       }
 
       final yamlString = file.readAsStringSync();
@@ -40,7 +41,7 @@ class ConfigLoader {
 
       return _parseGameConfigFromYaml(yamlMap);
     } catch (e) {
-      print('配置文件加载失败: $e，使用默认配置');
+      LoggerUtil.instance.e('配置文件加载失败: $e，使用默认配置');
       return _createDefaultGameConfig();
     }
   }
@@ -188,17 +189,17 @@ class ConfigLoader {
   Future<void> _createDefaultConfigFile(String configPath) async {
     try {
       final file = File(configPath);
-      
+
       // 确保父目录存在
       await file.parent.create(recursive: true);
-      
+
       // 生成默认配置内容
       final defaultContent = generateSampleConfigYaml();
-      
+
       // 写入文件
       await file.writeAsString(defaultContent);
     } catch (e) {
-      print('创建默认配置文件失败: $e');
+      LoggerUtil.instance.e('创建默认配置文件失败: $e');
       // 如果创建失败，继续使用内存中的默认配置
     }
   }

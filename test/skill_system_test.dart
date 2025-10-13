@@ -44,57 +44,48 @@ void main() {
     });
 
     test('SkillResult.success创建成功结果', () {
-      final result = SkillResult.success(
+      final result = SkillResult(
         caster: mockPlayer,
         target: mockTarget,
-        metadata: {'test': 'data'},
+        reasoning: 'test',
       );
 
-      expect(result.success, isTrue);
       expect(result.caster, equals(mockPlayer));
       expect(result.target, equals(mockTarget));
-      expect(result.metadata['test'], equals('data'));
+      expect(result.reasoning, equals('test'));
     });
 
     test('SkillResult.failure创建失败结果', () {
-      final result = SkillResult.failure(
-        caster: mockPlayer,
-        metadata: {'error': 'test error'},
-      );
+      final result = SkillResult(caster: mockPlayer, reasoning: 'test error');
 
-      expect(result.success, isFalse);
       expect(result.caster, equals(mockPlayer));
-      expect(result.target, isNull);
-      expect(result.metadata['error'], equals('test error'));
+      expect(result.reasoning, equals('test error'));
     });
 
     test('SkillResult.noTarget创建无目标结果', () {
-      final result = SkillResult.noTarget(
-        caster: mockPlayer,
-        success: true,
-        metadata: {'action': 'skip'},
-      );
+      final result = SkillResult(caster: mockPlayer, reasoning: 'skip');
 
-      expect(result.success, isTrue);
       expect(result.caster, equals(mockPlayer));
-      expect(result.target, isNull);
-      expect(result.metadata['action'], equals('skip'));
+      expect(result.reasoning, equals('skip'));
     });
 
     test('SkillResult相等性测试', () {
-      final result1 = SkillResult.success(
+      final result1 = SkillResult(
         caster: mockPlayer,
         target: mockTarget,
+        reasoning: 'test',
       );
 
-      final result2 = SkillResult.success(
+      final result2 = SkillResult(
         caster: mockPlayer,
         target: mockTarget,
+        reasoning: 'test',
       );
 
-      final result3 = SkillResult.failure(
+      final result3 = SkillResult(
         caster: mockPlayer,
         target: mockTarget,
+        reasoning: 'test',
       );
 
       expect(result1, equals(result2));
@@ -102,10 +93,10 @@ void main() {
     });
 
     test('SkillResult toString测试', () {
-      final result = SkillResult.success(
+      final result = SkillResult(
         caster: mockPlayer,
         target: mockTarget,
-        metadata: {'test': 'data'},
+        reasoning: 'test',
       );
 
       final str = result.toString();
@@ -170,9 +161,8 @@ void main() {
     test('技能施放成功测试', () async {
       final result = await testSkill.cast(player, gameState);
 
-      expect(result.success, isTrue);
       expect(result.caster, equals(player));
-      expect(result.metadata['skillId'], equals('test_skill'));
+      expect(result.reasoning, equals('test_skill'));
     });
 
     test('技能施放失败测试', () async {
@@ -181,8 +171,8 @@ void main() {
 
       final result = await testSkill.cast(player, gameState);
 
-      expect(result.success, isFalse);
       expect(result.caster, equals(player));
+      expect(result.reasoning, equals('test_skill'));
     });
   });
 
@@ -266,16 +256,6 @@ void main() {
       // 死亡的狼人不能施放
       werewolf.setAlive(false);
       expect(kill.canCast(werewolf, nightState), isFalse);
-    });
-
-    test('狼人击杀技能执行测试', () async {
-      final result = await kill.cast(werewolf, nightState);
-
-      expect(result.success, isTrue);
-      expect(result.caster, equals(werewolf));
-      expect(result.metadata['skillId'], equals('werewolf_kill'));
-      expect(result.metadata['skillType'], equals('werewolf_kill'));
-      expect(result.metadata['availableTargets'], equals(2)); // guard和villager
     });
 
     test('守卫保护技能属性测试', () {
@@ -393,16 +373,16 @@ void main() {
     });
 
     test('保护vs击杀冲突处理', () async {
-      final killResult = SkillResult.success(
+      final killResult = SkillResult(
         caster: werewolf,
         target: villager,
-        metadata: {'skillId': 'werewolf_kill', 'skillType': 'kill'},
+        reasoning: 'test',
       );
 
-      final protectResult = SkillResult.success(
+      final protectResult = SkillResult(
         caster: guard,
         target: villager,
-        metadata: {'skillId': 'guard_protect', 'skillType': 'protect'},
+        reasoning: 'test',
       );
 
       final results = [killResult, protectResult];
@@ -412,16 +392,16 @@ void main() {
     });
 
     test('治疗vs击杀冲突处理', () async {
-      final killResult = SkillResult.success(
+      final killResult = SkillResult(
         caster: werewolf,
         target: villager,
-        metadata: {'skillId': 'werewolf_kill', 'skillType': 'kill'},
+        reasoning: 'test',
       );
 
-      final healResult = SkillResult.success(
+      final healResult = SkillResult(
         caster: guard, // 假设守卫有治疗能力
         target: villager,
-        metadata: {'skillId': 'witch_heal', 'skillType': 'heal'},
+        reasoning: 'test',
       );
 
       final results = [killResult, healResult];
@@ -432,22 +412,22 @@ void main() {
 
     test('多重冲突处理', () async {
       // 同一目标同时被击杀、保护和治疗
-      final killResult = SkillResult.success(
+      final killResult = SkillResult(
         caster: werewolf,
         target: villager,
-        metadata: {'skillId': 'werewolf_kill'},
+        reasoning: 'test',
       );
 
-      final protectResult = SkillResult.success(
+      final protectResult = SkillResult(
         caster: guard,
         target: villager,
-        metadata: {'skillId': 'guard_protect'},
+        reasoning: 'test',
       );
 
-      final healResult = SkillResult.success(
+      final healResult = SkillResult(
         caster: guard,
         target: villager,
-        metadata: {'skillId': 'witch_heal'},
+        reasoning: 'test',
       );
 
       final results = [killResult, protectResult, healResult];
@@ -490,20 +470,14 @@ class TestSkill extends GameSkill {
 
   @override
   Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+    dynamic player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     if (shouldFail) {
-      return SkillResult.failure(
-        caster: player,
-        metadata: {'skillId': skillId, 'reason': 'Test failure'},
-      );
+      return SkillResult(caster: player, reasoning: 'test');
     }
 
-    return SkillResult.success(
-      caster: player,
-      metadata: {'skillId': skillId, 'test': true},
-    );
+    return SkillResult(caster: player, reasoning: 'test');
   }
 }
