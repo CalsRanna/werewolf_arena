@@ -8,6 +8,7 @@ import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/speak_skill.dart';
 import 'package:werewolf_arena/engine/skills/vote_skill.dart';
 import 'package:werewolf_arena/engine/skills/kill_skill.dart';
+import 'package:werewolf_arena/engine/skills/werewolf_discuss_skill.dart';
 
 /// 狼人角色
 class WerewolfRole extends GameRole {
@@ -37,7 +38,12 @@ class WerewolfRole extends GameRole {
 ''';
 
   @override
-  List<GameSkill> get skills => [KillSkill(), SpeakSkill(), VoteSkill()];
+  List<GameSkill> get skills => [
+    WerewolfDiscussSkill(),
+    KillSkill(),
+    SpeakSkill(),
+    VoteSkill(),
+  ];
 
   @override
   List<GameSkill> getAvailableSkills(GamePhase phase) {
@@ -70,6 +76,8 @@ class WerewolfRole extends GameRole {
       return phase == GamePhase.day;
     } else if (skill is VoteSkill) {
       return phase == GamePhase.day;
+    } else if (skill is WerewolfDiscussSkill) {
+      return phase == GamePhase.night;
     }
     return false;
   }

@@ -64,5 +64,5 @@ keys.json
 *.backup
 
 # Configuration files
-config/default_config.yaml
+werewolf_config.yaml
 

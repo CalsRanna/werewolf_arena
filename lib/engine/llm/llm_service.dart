@@ -158,7 +158,7 @@ class OpenAIService {
         if (attempt == retryConfig.maxAttempts) {
           // 最后一次尝试失败，记录错误日志
           GameEngineLogger.instance.e(
-            'LLM API call failed after ${retryConfig.maxAttempts} attempts: $lastException',
+            '$e, attempts ${retryConfig.maxAttempts}',
           );
           break;
         }
@@ -166,7 +166,7 @@ class OpenAIService {
         // 记录重试日志
         final delay = _calculateBackoffDelay(attempt);
         GameEngineLogger.instance.w(
-          'LLM API call failed (attempt $attempt/${retryConfig.maxAttempts}), retrying in ${delay.inMilliseconds}ms: $e',
+          '$e, attempt $attempt/${retryConfig.maxAttempts}, retrying in ${delay.inMilliseconds}ms',
         );
 
         // 计算退避延迟时间

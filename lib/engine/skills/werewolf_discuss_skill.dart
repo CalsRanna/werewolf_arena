@@ -1,7 +1,7 @@
+import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
-import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 
@@ -45,19 +45,20 @@ class WerewolfDiscussSkill extends GameSkill {
 
   @override
   Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+    dynamic player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     try {
       // 从AI响应中获取讨论内容
       String discussionContent = '暂时观察情况';
       String? reasoning;
-      
+
       if (aiResponse != null) {
-        discussionContent = aiResponse['message']?.toString() ?? 
-                           aiResponse['statement']?.toString() ?? 
-                           '让我们分析一下今天的情况';
+        discussionContent =
+            aiResponse['message']?.toString() ??
+            aiResponse['statement']?.toString() ??
+            '让我们分析一下今天的情况';
         reasoning = aiResponse['reasoning']?.toString();
       }
 
@@ -74,7 +75,6 @@ class WerewolfDiscussSkill extends GameSkill {
       state.addEvent(discussEvent);
 
       // 记录讨论日志（仅调试可见）
-      GameEngineLogger.instance.d('${player.name} 狼人讨论: $discussionContent');
       if (reasoning != null) {
         GameEngineLogger.instance.d('讨论理由: $reasoning');
       }
@@ -82,7 +82,7 @@ class WerewolfDiscussSkill extends GameSkill {
       return SkillResult.success(
         caster: player,
         metadata: {
-          'skillId': skillId, 
+          'skillId': skillId,
           'skillType': 'werewolf_discuss',
           'message': discussionContent,
           'reasoning': reasoning,

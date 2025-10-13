@@ -1,7 +1,7 @@
+import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
-import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 
@@ -48,19 +48,20 @@ class SpeakSkill extends GameSkill {
 
   @override
   Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+    dynamic player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     try {
       // 从AI响应中获取发言内容
       String speechContent = '暂时保持沉默';
       String? reasoning;
-      
+
       if (aiResponse != null) {
-        speechContent = aiResponse['message']?.toString() ?? 
-                       aiResponse['statement']?.toString() ?? 
-                       '我认为今天需要仔细分析情况';
+        speechContent =
+            aiResponse['message']?.toString() ??
+            aiResponse['statement']?.toString() ??
+            '我认为今天需要仔细分析情况';
         reasoning = aiResponse['reasoning']?.toString();
       }
 
@@ -85,7 +86,7 @@ class SpeakSkill extends GameSkill {
       return SkillResult.success(
         caster: player,
         metadata: {
-          'skillId': skillId, 
+          'skillId': skillId,
           'speechType': 'normal',
           'message': speechContent,
           'reasoning': reasoning,

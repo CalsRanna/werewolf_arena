@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:werewolf_arena/engine/events/dead_event.dart';
+import 'package:werewolf_arena/engine/events/game_end_event.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
-import 'package:werewolf_arena/engine/events/phase_events.dart';
-import 'package:werewolf_arena/engine/events/player_events.dart';
-import 'package:werewolf_arena/engine/events/system_events.dart';
+import 'package:werewolf_arena/engine/events/game_start_event.dart';
+import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
+import 'package:werewolf_arena/engine/events/phase_change_event.dart';
+import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
@@ -73,6 +76,8 @@ class GameEngine {
         );
       case JudgeAnnouncementEvent():
         _observer?.onSystemMessage(event.announcement);
+      case SpeakEvent():
+        _observer?.onGamePlayerSpeak(event.speaker, event.message);
       default:
         break;
     }

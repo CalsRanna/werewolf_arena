@@ -69,7 +69,7 @@ class GameConsole {
 
   void printLine([String? text]) {
     if (text != null) {
-      stdout.writeln(text);
+      stdout.writeln('● $text');
     } else {
       stdout.writeln();
     }
@@ -123,12 +123,9 @@ class GameConsole {
   }
 
   /// 显示系统消息(法官公告)
-  void displaySystemMessage(
-    String message, {
-    int? dayNumber,
-    GamePhase? phase,
-  }) {
-    printLine(_colorize('[法官]: ', ConsoleColor.cyan) + message);
+  void displaySystemMessage(String message) {
+    var prefix = _colorize('[法官]: ', ConsoleColor.green);
+    printLine('$prefix$message');
   }
 
   /// 显示玩家发言

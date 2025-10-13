@@ -109,7 +109,7 @@ class ConsoleGameObserver extends GameObserverAdapter {
 
   @override
   void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
-    _console.displaySystemMessage(message, dayNumber: dayNumber, phase: phase);
+    _console.displaySystemMessage(message);
   }
 
   @override

@@ -1,10 +1,10 @@
 // ignore_for_file: avoid_print
 
 import 'package:test/test.dart';
+import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/game_assembler.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/engine/events/player_events.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 
 /// 性能测试 - 验证游戏引擎、技能系统和事件系统的性能
