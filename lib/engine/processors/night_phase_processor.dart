@@ -44,7 +44,7 @@ class NightPhaseProcessor implements PhaseProcessor {
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.addEvent(judgeAnnouncementEvent);
-    List<Future<SkillResult>> futures = [];
+    List<Future<SkillResult?>> futures = [];
     for (final werewolf in werewolves) {
       var future = werewolf.executeSkill(
         werewolf.role.skills.whereType<KillSkill>().first,

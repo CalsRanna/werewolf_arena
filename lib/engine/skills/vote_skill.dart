@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
@@ -28,55 +29,48 @@ class VoteSkill extends GameSkill {
 ''';
 
   @override
-  bool canCast(dynamic player, GameState state) {
+  bool canCast(GamePlayer player, GameState state) {
     return player.isAlive && !player.isSilenced && state.currentPhase.isDay;
   }
 
   @override
-  Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+  Future<SkillResult?> cast(
+    GamePlayer player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     try {
       // 从AI响应中获取投票目标
-      dynamic targetName;
+      String? target;
+      String? message;
       String? reasoning;
-      
+
       if (aiResponse != null) {
-        targetName = aiResponse['target'] ?? aiResponse['target_id'];
-        reasoning = aiResponse['reasoning']?.toString();
+        target = aiResponse['target'] ?? aiResponse['target_id'];
+        message = aiResponse['message'];
+        reasoning = aiResponse['reasoning'] ?? '';
       }
 
       // 查找目标玩家
-      dynamic targetPlayer;
-      if (targetName != null) {
-        final targetStr = targetName.toString();
+      GamePlayer? targetPlayer;
+      if (target != null) {
+        final targetStr = target.toString();
         try {
-          targetPlayer = state.players.firstWhere(
-            (p) => p.name == targetStr,
-          );
+          targetPlayer = state.players.firstWhere((p) => p.name == targetStr);
         } catch (e) {
           // 如果找不到目标玩家，设为null
           targetPlayer = null;
         }
       }
 
-      return SkillResult.success(
+      return SkillResult(
         caster: player,
         target: targetPlayer,
-        metadata: {
-          'skillId': skillId, 
-          'speechType': 'normal',
-          'target': targetName?.toString(),
-          'reasoning': reasoning,
-        },
+        message: message,
+        reasoning: reasoning ?? '',
       );
     } catch (e) {
-      return SkillResult.failure(
-        caster: player,
-        metadata: {'skillId': skillId, 'error': e.toString()},
-      );
+      return null;
     }
   }
 }

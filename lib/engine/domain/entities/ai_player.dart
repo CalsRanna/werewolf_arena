@@ -62,13 +62,8 @@ class AIPlayer extends GamePlayer {
        driver = AIPlayerDriver(intelligence: intelligence);
 
   @override
-  Future<SkillResult> executeSkill(GameSkill skill, GameState state) async {
-    if (!skill.canCast(this, state)) {
-      return SkillResult.failure(
-        caster: this,
-        metadata: {'reason': 'Cannot cast skill', 'skillId': skill.skillId},
-      );
-    }
+  Future<SkillResult?> executeSkill(GameSkill skill, GameState state) async {
+    if (!skill.canCast(this, state)) return null;
 
     try {
       // 使用Driver生成技能响应
@@ -88,10 +83,7 @@ class AIPlayer extends GamePlayer {
 
       return result;
     } catch (e) {
-      return SkillResult.failure(
-        caster: this,
-        metadata: {'error': e.toString(), 'skillId': skill.skillId},
-      );
+      return null;
     }
   }
 

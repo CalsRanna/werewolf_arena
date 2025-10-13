@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
 
@@ -35,7 +36,7 @@ abstract class GameSkill {
   /// [state] 当前游戏状态
   ///
   /// 返回true表示可以施放，false表示不能施放
-  bool canCast(dynamic player, GameState state);
+  bool canCast(GamePlayer player, GameState state);
 
   /// 施放技能
   ///
@@ -44,9 +45,9 @@ abstract class GameSkill {
   /// [aiResponse] AI玩家的响应数据（可选），包含AI生成的决策信息
   ///
   /// 返回技能执行结果
-  Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  );
+  Future<SkillResult?> cast(
+    GamePlayer player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  });
 }

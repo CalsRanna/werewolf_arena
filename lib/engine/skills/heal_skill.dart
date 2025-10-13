@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
@@ -37,7 +38,7 @@ class HealSkill extends GameSkill {
 ''';
 
   @override
-  bool canCast(dynamic player, GameState state) {
+  bool canCast(GamePlayer player, GameState state) {
     return player.isAlive &&
         player.role.roleId == 'witch' &&
         state.currentPhase.isNight &&
@@ -45,55 +46,49 @@ class HealSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+  Future<SkillResult?> cast(
+    GamePlayer player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     try {
       // 检查是否还有解药
       final hasAntidote =
           player.role.getPrivateData<bool>('has_antidote') ?? true;
-      if (!hasAntidote) {
-        return SkillResult.failure(
-          caster: player,
-          metadata: {'skillId': skillId, 'reason': 'Antidote already used'},
-        );
+      if (!hasAntidote) return null;
+
+      // 从AI响应中获取是否使用解药的决定
+      bool useAntidote = false;
+      String? message;
+      String? reasoning;
+
+      if (aiResponse != null) {
+        // 对于解药，可能不需要target，而是一个bool决定
+        useAntidote = aiResponse['use_antidote'] ?? false;
+        message = aiResponse['message'];
+        reasoning = aiResponse['reasoning'] ?? '';
       }
 
-      // 检查是否有玩家被击杀（临时注释掉nightActions引用）
-      // TODO: 从skillEffects或事件历史中获取受害者信息
-      // final tonightVictim = state.nightActions.tonightVictim;
-      // if (tonightVictim == null) {
-      //   return SkillResult.failure(
-      //     caster: player,
-      //     metadata: {
-      //       'skillId': skillId,
-      //       'reason': 'No one was killed tonight',
-      //     },
-      //   );
-      // }
-
-      // 生成女巫治疗技能执行结果
-      // 具体的事件创建由GameEngine处理
+      if (!useAntidote) {
+        return SkillResult(
+          caster: player,
+          target: null,
+          message: message,
+          reasoning: reasoning ?? '选择不使用解药',
+        );
+      }
 
       // 标记解药已使用
       player.role.setPrivateData('has_antidote', false);
 
-      return SkillResult.success(
+      return SkillResult(
         caster: player,
-        target: null, // TODO: 设置正确的目标
-        metadata: {
-          'skillId': skillId,
-          'victimName': 'unknown', // TODO: 从skillEffects获取受害者名称
-          'skillType': 'witch_heal',
-        },
+        target: null, // TODO: 设置正确的目标（被救活的玩家）
+        message: message,
+        reasoning: reasoning ?? '使用解药救活玩家',
       );
     } catch (e) {
-      return SkillResult.failure(
-        caster: player,
-        metadata: {'skillId': skillId, 'error': e.toString()},
-      );
+      return null;
     }
   }
 }

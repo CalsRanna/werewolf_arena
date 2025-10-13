@@ -71,24 +71,12 @@ class HumanPlayer extends GamePlayer {
 
   /// 取消当前等待的技能输入
   void cancelSkillInput() {
-    if (!_actionController.isClosed) {
-      _actionController.add(
-        SkillResult.failure(
-          caster: this,
-          metadata: {'reason': 'Cancelled by user'},
-        ),
-      );
-    }
+    if (!_actionController.isClosed) {}
   }
 
   @override
-  Future<SkillResult> executeSkill(GameSkill skill, GameState state) async {
-    if (!skill.canCast(this, state)) {
-      return SkillResult.failure(
-        caster: this,
-        metadata: {'reason': 'Cannot cast skill', 'skillId': skill.skillId},
-      );
-    }
+  Future<SkillResult?> executeSkill(GameSkill skill, GameState state) async {
+    if (!skill.canCast(this, state)) return null;
 
     try {
       // 使用Driver处理技能响应（通常是等待人类输入）
@@ -108,10 +96,7 @@ class HumanPlayer extends GamePlayer {
 
       return result;
     } catch (e) {
-      return SkillResult.failure(
-        caster: this,
-        metadata: {'error': e.toString(), 'skillId': skill.skillId},
-      );
+      return null;
     }
   }
 

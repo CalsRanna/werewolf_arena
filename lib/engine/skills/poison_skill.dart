@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
@@ -38,7 +39,7 @@ class PoisonSkill extends GameSkill {
 ''';
 
   @override
-  bool canCast(dynamic player, GameState state) {
+  bool canCast(GamePlayer player, GameState state) {
     return player.isAlive &&
         player.role.roleId == 'witch' &&
         state.currentPhase.isNight &&
@@ -46,19 +47,16 @@ class PoisonSkill extends GameSkill {
   }
 
   @override
-  Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+  Future<SkillResult?> cast(
+    GamePlayer player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     try {
       // 检查是否还有毒药
       final hasPoison = player.role.getPrivateData<bool>('has_poison') ?? true;
       if (!hasPoison) {
-        return SkillResult.failure(
-          caster: player,
-          metadata: {'skillId': skillId, 'reason': 'Poison already used'},
-        );
+        return null;
       }
 
       // 获取可毒死的目标（排除自己）
@@ -67,34 +65,48 @@ class PoisonSkill extends GameSkill {
           .toList();
 
       if (availableTargets.isEmpty) {
-        return SkillResult.failure(
-          caster: player,
-          metadata: {
-            'skillId': skillId,
-            'reason': 'No available targets to poison',
-          },
-        );
+        return null;
       }
 
-      // 生成女巫毒药技能执行结果
-      // 具体的事件创建由GameEngine根据玩家决策处理
+      // 从AI响应中获取毒药目标
+      String? target;
+      String? message;
+      String? reasoning;
 
-      // 标记毒药已使用
-      player.role.setPrivateData('has_poison', false);
+      if (aiResponse != null) {
+        target = aiResponse['target'] ?? aiResponse['target_id'];
+        message = aiResponse['message'];
+        reasoning = aiResponse['reasoning'] ?? '';
+      }
 
-      return SkillResult.success(
+      // 查找目标玩家
+      GamePlayer? targetPlayer;
+      if (target != null) {
+        final targetStr = target.toString();
+        try {
+          targetPlayer = state.players.firstWhere((p) => p.name == targetStr);
+          // 验证目标是否有效
+          if (!availableTargets.contains(targetPlayer)) {
+            targetPlayer = null;
+          }
+        } catch (e) {
+          targetPlayer = null;
+        }
+      }
+
+      // 只有选择了目标才标记毒药已使用
+      if (targetPlayer != null) {
+        player.role.setPrivateData('has_poison', false);
+      }
+
+      return SkillResult(
         caster: player,
-        metadata: {
-          'skillId': skillId,
-          'availableTargets': availableTargets.length,
-          'skillType': 'witch_poison',
-        },
+        target: targetPlayer,
+        message: message,
+        reasoning: reasoning ?? '',
       );
     } catch (e) {
-      return SkillResult.failure(
-        caster: player,
-        metadata: {'skillId': skillId, 'error': e.toString()},
-      );
+      return null;
     }
   }
 }

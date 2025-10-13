@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
@@ -38,18 +39,18 @@ class ProtectSkill extends GameSkill {
 ''';
 
   @override
-  bool canCast(dynamic player, GameState state) {
+  bool canCast(GamePlayer player, GameState state) {
     return player.isAlive &&
         player.role.roleId == 'guard' &&
         state.currentPhase.isNight;
   }
 
   @override
-  Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+  Future<SkillResult?> cast(
+    GamePlayer player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     try {
       // 获取上次守护的玩家
       final lastProtected = player.role.getPrivateData<String>(
@@ -65,32 +66,43 @@ class ProtectSkill extends GameSkill {
       }).toList();
 
       if (availableTargets.isEmpty) {
-        return SkillResult.failure(
-          caster: player,
-          metadata: {
-            'skillId': skillId,
-            'reason': 'No available targets (consecutive protection rule)',
-          },
-        );
+        return null;
       }
 
-      // 生成守卫保护技能执行结果
-      // 具体的事件创建由GameEngine根据玩家决策处理
+      // 从AI响应中获取保护目标
+      String? target;
+      String? message;
+      String? reasoning;
 
-      return SkillResult.success(
+      if (aiResponse != null) {
+        target = aiResponse['target'] ?? aiResponse['target_id'];
+        message = aiResponse['message'];
+        reasoning = aiResponse['reasoning'] ?? '';
+      }
+
+      // 查找目标玩家
+      GamePlayer? targetPlayer;
+      if (target != null) {
+        final targetStr = target.toString();
+        try {
+          targetPlayer = state.players.firstWhere((p) => p.name == targetStr);
+          // 验证目标是否有效
+          if (!availableTargets.contains(targetPlayer)) {
+            targetPlayer = null;
+          }
+        } catch (e) {
+          targetPlayer = null;
+        }
+      }
+
+      return SkillResult(
         caster: player,
-        metadata: {
-          'skillId': skillId,
-          'availableTargets': availableTargets.length,
-          'lastProtected': lastProtected,
-          'skillType': 'guard_protect',
-        },
+        target: targetPlayer,
+        message: message,
+        reasoning: reasoning ?? '',
       );
     } catch (e) {
-      return SkillResult.failure(
-        caster: player,
-        metadata: {'skillId': skillId, 'error': e.toString()},
-      );
+      return null;
     }
   }
 }

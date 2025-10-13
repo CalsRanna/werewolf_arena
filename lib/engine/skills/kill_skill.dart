@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/skill_result.dart';
@@ -38,18 +39,18 @@ class KillSkill extends GameSkill {
 ''';
 
   @override
-  bool canCast(dynamic player, GameState state) {
+  bool canCast(GamePlayer player, GameState state) {
     return player.isAlive &&
         player.role.isWerewolf &&
         state.currentPhase.isNight;
   }
 
   @override
-  Future<SkillResult> cast(
-    dynamic player, 
-    GameState state, 
-    {Map<String, dynamic>? aiResponse}
-  ) async {
+  Future<SkillResult?> cast(
+    GamePlayer player,
+    GameState state, {
+    Map<String, dynamic>? aiResponse,
+  }) async {
     try {
       // 获取可击杀的目标（排除狼人队友）
       final availableTargets = state.alivePlayers
@@ -57,31 +58,43 @@ class KillSkill extends GameSkill {
           .toList();
 
       if (availableTargets.isEmpty) {
-        return SkillResult.failure(
-          caster: player,
-          metadata: {'skillId': skillId, 'reason': 'No available targets'},
-        );
+        return null;
       }
 
-      // 这里应该通过PlayerDriver获取AI决策或等待人类输入
-      // 暂时实现基础逻辑，具体目标选择由GameEngine处理
+      // 从AI响应中获取击杀目标
+      String? target;
+      String? message;
+      String? reasoning;
+      
+      if (aiResponse != null) {
+        target = aiResponse['target'] ?? aiResponse['target_id'];
+        message = aiResponse['message'] ?? '';
+        reasoning = aiResponse['reasoning'] ?? '';
+      }
 
-      // 这里不直接创建事件，而是返回成功结果
-      // 具体的事件创建由GameEngine根据玩家选择的目标处理
+      // 查找目标玩家
+      GamePlayer? targetPlayer;
+      if (target != null) {
+        final targetStr = target.toString();
+        try {
+          targetPlayer = state.players.firstWhere((p) => p.name == targetStr);
+          // 验证目标是否有效
+          if (!availableTargets.contains(targetPlayer)) {
+            targetPlayer = null;
+          }
+        } catch (e) {
+          targetPlayer = null;
+        }
+      }
 
-      return SkillResult.success(
+      return SkillResult(
         caster: player,
-        metadata: {
-          'skillId': skillId,
-          'availableTargets': availableTargets.length,
-          'skillType': 'werewolf_kill',
-        },
+        target: targetPlayer,
+        message: message ?? '',
+        reasoning: reasoning ?? '',
       );
     } catch (e) {
-      return SkillResult.failure(
-        caster: player,
-        metadata: {'skillId': skillId, 'error': e.toString()},
-      );
+      return null;
     }
   }
 }

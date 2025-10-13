@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
@@ -42,13 +43,13 @@ class SpeakSkill extends GameSkill {
 ''';
 
   @override
-  bool canCast(dynamic player, GameState state) {
+  bool canCast(GamePlayer player, GameState state) {
     return player.isAlive && !player.isSilenced && state.currentPhase.isDay;
   }
 
   @override
-  Future<SkillResult> cast(
-    dynamic player,
+  Future<SkillResult?> cast(
+    GamePlayer player,
     GameState state, {
     Map<String, dynamic>? aiResponse,
   }) async {
@@ -62,7 +63,7 @@ class SpeakSkill extends GameSkill {
             aiResponse['message']?.toString() ??
             aiResponse['statement']?.toString() ??
             '我认为今天需要仔细分析情况';
-        reasoning = aiResponse['reasoning']?.toString();
+        reasoning = aiResponse['reasoning']?.toString() ?? '';
       }
 
       // 创建发言事件
@@ -83,20 +84,14 @@ class SpeakSkill extends GameSkill {
         GameEngineLogger.instance.d('发言理由: $reasoning');
       }
 
-      return SkillResult.success(
+      return SkillResult(
         caster: player,
-        metadata: {
-          'skillId': skillId,
-          'speechType': 'normal',
-          'message': speechContent,
-          'reasoning': reasoning,
-        },
+        target: null, // 发言技能没有目标
+        message: speechContent,
+        reasoning: reasoning ?? '',
       );
     } catch (e) {
-      return SkillResult.failure(
-        caster: player,
-        metadata: {'skillId': skillId, 'error': e.toString()},
-      );
+      return null;
     }
   }
 }
