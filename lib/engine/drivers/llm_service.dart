@@ -96,7 +96,16 @@ class OpenAIService {
     OpenAIClient? client,
     this.baseUrl = 'https://api.openai.com/v1',
     this.retryConfig = const RetryConfig(),
-  }) : _client = client ?? OpenAIClient(apiKey: apiKey, baseUrl: baseUrl);
+  }) : _client =
+           client ??
+           OpenAIClient(
+             apiKey: apiKey,
+             baseUrl: baseUrl,
+             headers: {
+               'HTTP-Referer': 'https://github.com/CalsRanna/werewolf_arena',
+               'X-Title': 'Werewolf Arena',
+             },
+           );
 
   final String apiKey;
   final String model;
@@ -291,8 +300,16 @@ $context
     final effectiveApiKey = overrideApiKey ?? apiKey;
 
     // Use existing client or create new one with different API key
+    var headers = {
+      'HTTP-Referer': 'https://github.com/CalsRanna/werewolf_arena',
+      'X-Title': 'Werewolf Arena',
+    };
     final client = effectiveApiKey != apiKey
-        ? OpenAIClient(apiKey: effectiveApiKey, baseUrl: baseUrl)
+        ? OpenAIClient(
+            apiKey: effectiveApiKey,
+            baseUrl: baseUrl,
+            headers: headers,
+          )
         : _client;
 
     // 构建消息列表

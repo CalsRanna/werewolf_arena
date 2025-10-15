@@ -1,12 +1,20 @@
 // ignore_for_file: avoid_print
 
 import 'dart:io';
+
 import 'package:args/args.dart';
-import 'package:werewolf_arena/engine/game_assembler.dart';
+import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
+import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'console_output.dart';
-import 'console_game_observer.dart';
+import 'package:werewolf_arena/engine/game_random.dart';
+import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
+
+import 'config_loader.dart';
 import 'console_game_log_observer.dart';
+import 'console_game_observer.dart';
+import 'console_output.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
 ///
@@ -44,9 +52,7 @@ Future<void> main(List<String> arguments) async {
     console.initialize(useColors: true);
     console.printHeader('狼人杀竞技场', color: ConsoleColor.green);
 
-    final configPath = argResults['config'] as String?;
     final playerCountStr = argResults['players'] as String?;
-    final scenarioId = argResults['scenario'] as String?;
 
     int? playerCount;
     if (playerCountStr != null) {
@@ -61,12 +67,7 @@ Future<void> main(List<String> arguments) async {
     observer.addObserver(ConsoleGameObserver());
     observer.addObserver(ConsoleGameLogObserver());
 
-    final gameEngine = await GameAssembler.assembleGame(
-      configPath: configPath,
-      scenarioId: scenarioId,
-      playerCount: playerCount,
-      observer: observer,
-    );
+    final gameEngine = await _createGameEngine(observer);
     await gameEngine.initializeGame();
 
     while (!gameEngine.isGameEnded) {
@@ -90,6 +91,35 @@ Future<void> main(List<String> arguments) async {
     console.displayError('运行错误: $e', errorDetails: stackTrace);
     exit(1);
   }
+}
+
+Future<GameEngine> _createGameEngine(GameObserver observer) async {
+  final config = await ConsoleConfigLoader().loadGameConfig();
+  final scenario = Scenario12Players();
+  final players = <GamePlayer>[];
+  final random = GameRandom();
+  final roleTypes = scenario.getExpandedGameRoles();
+  roleTypes.shuffle(random.generator);
+  for (int i = 0; i < scenario.playerCount; i++) {
+    final playerIndex = i + 1;
+    final roleType = roleTypes[i];
+    final role = GameRoleFactory.createRoleFromType(roleType);
+    final intelligence = config.playerIntelligences[i];
+    final player = AIPlayer(
+      id: 'player_$playerIndex',
+      name: '$playerIndex号玩家',
+      index: playerIndex,
+      role: role,
+      intelligence: intelligence,
+    );
+    players.add(player);
+  }
+  return GameEngine(
+    config: config,
+    scenario: scenario,
+    players: players,
+    observer: observer,
+  );
 }
 
 /// 打印帮助信息
