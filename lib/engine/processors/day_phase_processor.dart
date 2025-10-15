@@ -1,6 +1,7 @@
 import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/night_result_event.dart';
+import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
@@ -32,10 +33,16 @@ class DayPhaseProcessor implements GameProcessor {
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
     for (var player in players) {
-      await player.executeSkill(
+      var result = await player.executeSkill(
         player.role.skills.whereType<SpeakSkill>().first,
         state,
       );
+      var speakEvent = SpeakEvent(
+        speaker: player,
+        message: result?.message ?? '',
+      );
+      state.handleEvent(speakEvent);
+      await observer?.onGameEvent(speakEvent);
     }
     judgeAnnouncementEvent = JudgeAnnouncementEvent(
       announcement: '所有玩家讨论结束，开始投票',

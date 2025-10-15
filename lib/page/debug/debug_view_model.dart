@@ -1,15 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
+import 'package:werewolf_arena/engine/events/speak_event.dart';
+import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_random.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 import 'package:werewolf_arena/util/dialog_util.dart';
+import 'package:werewolf_arena/util/logger_util.dart';
 
 class DebugViewModel {
   final url = 'https://openrouter.ai/api/v1';
@@ -18,7 +21,6 @@ class DebugViewModel {
 
   late final GameEngine gameEngine;
   final logs = Signal(<String>[]);
-  final controller = ScrollController();
   final running = Signal(false);
 
   Future<void> startGame() async {
@@ -47,17 +49,21 @@ class DebugViewModel {
       maxRetries: 3,
     );
     final scenario = Scenario12Players();
-    final observer = _Observer((String message) async {
-      await DialogUtil.instance.show(message);
-      logs.value = [...logs.value, message];
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        controller.animateTo(
-          controller.position.maxScrollExtent,
-          duration: Durations.short3,
-          curve: Curves.linear,
-        );
-      });
-    });
+    final observer = _Observer(
+      handleGameEvent: (GameEvent event) async {
+        if (event is GameLogEvent) {
+          LoggerUtil.instance.d(event.message);
+          return;
+        }
+        var message = switch (event) {
+          WerewolfDiscussionEvent() => event.message,
+          SpeakEvent() => event.message,
+          _ => event.toString(),
+        };
+        await DialogUtil.instance.show(message, title: event.initiator?.name);
+        logs.value = [...logs.value, message];
+      },
+    );
     final players = <GamePlayer>[];
     final random = GameRandom();
 
@@ -70,12 +76,6 @@ class DebugViewModel {
       final playerIndex = i + 1; // 玩家编号从1开始
       final roleType = roleTypes[i];
       final role = GameRoleFactory.createRoleFromType(roleType);
-
-      final intelligence = PlayerIntelligence(
-        baseUrl: url,
-        apiKey: key,
-        modelId: 'deepseek/deepseek-v3.2-exp',
-      );
 
       final player = AIPlayer(
         id: 'player_$playerIndex',
@@ -96,18 +96,17 @@ class DebugViewModel {
   }
 
   void dispose() {
-    controller.dispose();
     gameEngine.dispose();
   }
 }
 
 class _Observer extends GameObserver {
-  final Future<void> Function(String) onLog;
+  final Future<void> Function(GameEvent)? handleGameEvent;
 
-  _Observer(this.onLog);
+  _Observer({this.handleGameEvent});
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
-    await onLog(event.toString());
+    await handleGameEvent?.call(event);
   }
 }

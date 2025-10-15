@@ -52,7 +52,8 @@ ${_buildGameContext(player, state)}
     try {
       // 调用LLM服务生成响应
       final response = await _service.generateResponse(
-        systemPrompt: '你是狼人杀游戏中的角色，请根据提示生成JSON格式的决策结果。',
+        systemPrompt:
+            '你是狼人杀游戏中的角色，你的终极任务是帮助你的阵营赢得游戏胜利，为此你可以使用任何手段和战术。请根据提示生成JSON格式的决策结果。',
         userPrompt: fullPrompt,
         context: {
           'phase': state.currentPhase.name,

@@ -6,11 +6,11 @@ class DialogUtil {
 
   DialogUtil._();
 
-  Future<void> show(String message) async {
+  Future<void> show(String message, {String? title}) async {
     await showDialog(
       context: globalKey.currentContext!,
       builder: (context) => AlertDialog(
-        title: const Text('提示'),
+        title: Text(title ?? '提示'),
         content: Text(message),
         actions: [
           TextButton(

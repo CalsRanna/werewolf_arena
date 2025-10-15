@@ -3,6 +3,7 @@ import 'package:werewolf_arena/engine/domain/entities/hunter_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/seer_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/witch_role.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
+import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
@@ -36,10 +37,16 @@ class NightPhaseProcessor implements GameProcessor {
         .where((player) => player.role.isWerewolf)
         .toList();
     for (final werewolf in werewolves) {
-      await werewolf.executeSkill(
+      var result = await werewolf.executeSkill(
         werewolf.role.skills.whereType<WerewolfDiscussSkill>().first,
         state,
       );
+      var werewolfDiscussionEvent = WerewolfDiscussionEvent(
+        speaker: werewolf,
+        message: result?.message ?? '',
+      );
+      state.handleEvent(werewolfDiscussionEvent);
+      await observer?.onGameEvent(werewolfDiscussionEvent);
     }
     judgeAnnouncementEvent = JudgeAnnouncementEvent(
       announcement: '请选择你们要击杀的玩家',
