@@ -78,22 +78,13 @@ class ConsoleConfigLoader {
 
 # 默认LLM配置
 default_llm:
-  model: gpt-3.5-turbo
-  api_key: \${OPENAI_API_KEY}
-  base_url: https://api.openai.com/v1
+  api_key: YOUR_KEY_HERE
+  base_url: "https://api.openai.com/v1"
   max_retries: 3
 
-# 玩家专属模型配置（可选）
-# 如果不配置，所有玩家将使用默认配置
+# 玩家专属模型配置
 player_models:
-  "2":  # 2号玩家使用Claude
-    model: "claude-3-sonnet-20240229"
-    api_key: "\${ANTHROPIC_API_KEY}"
-    base_url: "https://api.anthropic.com/v1"
-  "3":  # 3号玩家使用不同的GPT模型
-    model: "gpt-4"
-    api_key: "\${OPENAI_API_KEY}"
-    base_url: "https://api.openai.com/v1"
+  - gpt-3.5-turbo
 
 # 日志配置（暂时保留兼容性，未来可能移除）
 logging:
