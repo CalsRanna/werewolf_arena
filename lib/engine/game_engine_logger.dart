@@ -24,21 +24,21 @@ class GameEngineLogger {
 
   /// 记录调试信息
   void d(String message) {
-    _observer?.onGameLog(GameLogEvent.debug(message));
+    _observer?.onGameEvent(GameLogEvent.debug(message));
   }
 
   /// 记录一般信息
   void i(String message) {
-    _observer?.onGameLog(GameLogEvent.info(message));
+    _observer?.onGameEvent(GameLogEvent.info(message));
   }
 
   /// 记录警告信息
   void w(String message) {
-    _observer?.onGameLog(GameLogEvent.warning(message));
+    _observer?.onGameEvent(GameLogEvent.warning(message));
   }
 
   /// 记录错误信息
   void e(String message) {
-    _observer?.onGameLog(GameLogEvent.error(message));
+    _observer?.onGameEvent(GameLogEvent.error(message));
   }
 }

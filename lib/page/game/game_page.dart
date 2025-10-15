@@ -14,7 +14,8 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin {
+class _GamePageState extends State<GamePage>
+    with SingleTickerProviderStateMixin {
   final GameViewModel viewModel = GetIt.instance.get<GameViewModel>();
   late TabController _tabController;
   StreamSubscription? _snackBarSubscription;
@@ -97,22 +98,13 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     return Row(
       children: [
         // 左侧控制面板
-        SizedBox(
-          width: 280,
-          child: _buildControlPanel(),
-        ),
+        SizedBox(width: 280, child: _buildControlPanel()),
 
         // 中间游戏区域
-        Expanded(
-          flex: 2,
-          child: _buildGameArea(),
-        ),
+        Expanded(flex: 2, child: _buildGameArea()),
 
         // 右侧事件日志
-        SizedBox(
-          width: 320,
-          child: _buildEventLogPanel(),
-        ),
+        SizedBox(width: 320, child: _buildEventLogPanel()),
       ],
     );
   }
@@ -122,10 +114,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     return Column(
       children: [
         // 上方游戏区域
-        Expanded(
-          flex: 2,
-          child: _buildGameArea(),
-        ),
+        Expanded(flex: 2, child: _buildGameArea()),
 
         // 下方Tab区域
         SizedBox(
@@ -165,11 +154,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
   Widget _buildMobileLayout() {
     return TabBarView(
       controller: _tabController,
-      children: [
-        _buildControlPanel(),
-        _buildGameArea(),
-        _buildEventLogPanel(),
-      ],
+      children: [_buildControlPanel(), _buildGameArea(), _buildEventLogPanel()],
     );
   }
 
@@ -187,13 +172,16 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
           children: [
             Row(
               children: [
-                Icon(Icons.control_camera, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.control_camera,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 SizedBox(width: 8),
                 Text(
                   '游戏控制',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -230,7 +218,9 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
                         '点击"开始游戏"启动，然后用"下一步"按钮推进游戏',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                       ),
                     ),
@@ -260,14 +250,16 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.people, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.people,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           viewModel.formattedTime.value,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -279,9 +271,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
             Divider(height: 24),
 
             // 玩家列表
-            Expanded(
-              child: _buildPlayersGrid(),
-            ),
+            Expanded(child: _buildPlayersGrid()),
           ],
         ),
       ),
@@ -300,21 +290,22 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
           children: [
             Row(
               children: [
-                Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.history,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 SizedBox(width: 8),
                 Text(
                   '事件日志',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             Divider(height: 24),
 
-            Expanded(
-              child: _buildEventLog(),
-            ),
+            Expanded(child: _buildEventLog()),
           ],
         ),
       ),
@@ -368,10 +359,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
   // 事件日志内容(用于Tab)
   Widget _buildEventLogContent() {
-    return Padding(
-      padding: EdgeInsets.all(16),
-      child: _buildEventLog(),
-    );
+    return Padding(padding: EdgeInsets.all(16), child: _buildEventLog());
   }
 
   // 游戏状态内容(用于Tab)
@@ -399,7 +387,11 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
           SizedBox(height: 8),
           _buildStatusRow(Icons.favorite, '存活玩家', '$aliveCount 人'),
           SizedBox(height: 8),
-          _buildStatusRow(Icons.calendar_today, '当前天数', '${viewModel.currentDay.value} 天'),
+          _buildStatusRow(
+            Icons.calendar_today,
+            '当前天数',
+            '${viewModel.currentDay.value} 天',
+          ),
         ],
       ),
     );
@@ -417,10 +409,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -429,8 +418,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
   Widget _buildControlButtons() {
     final canStart = viewModel.canStartGame.value;
-    final canNext = viewModel.canNextStep.value;
-    final isRunning = viewModel.isGameRunning.value;
 
     return Column(
       children: [
@@ -449,52 +436,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
             ),
           ),
         ),
-
-        SizedBox(height: 12),
-
-        // 下一步和重置按钮
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: SizedBox(
-                height: 44,
-                child: ElevatedButton.icon(
-                  onPressed: canNext ? () => viewModel.executeNextStep() : null,
-                  icon: Icon(Icons.skip_next, size: 20),
-                  label: Text('下一步', style: TextStyle(fontSize: 15)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: canNext
-                        ? Theme.of(context).colorScheme.secondary
-                        : null,
-                    foregroundColor: canNext
-                        ? Theme.of(context).colorScheme.onSecondary
-                        : null,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: SizedBox(
-                height: 44,
-                child: OutlinedButton.icon(
-                  onPressed: isRunning ? () => viewModel.resetGame() : null,
-                  icon: Icon(Icons.refresh, size: 18),
-                  label: Text('重置'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -509,10 +450,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
           children: [
             Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
-            Text(
-              '暂无玩家',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+            Text('暂无玩家', style: TextStyle(color: Colors.grey[600])),
             SizedBox(height: 8),
             Text(
               '点击开始游戏创建AI玩家',
@@ -657,10 +595,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
           children: [
             Icon(Icons.message_outlined, size: 48, color: Colors.grey[400]),
             SizedBox(height: 12),
-            Text(
-              '暂无事件',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+            Text('暂无事件', style: TextStyle(color: Colors.grey[600])),
             SizedBox(height: 4),
             Text(
               '游戏事件将在此显示',

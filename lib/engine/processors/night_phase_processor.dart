@@ -3,6 +3,7 @@ import 'package:werewolf_arena/engine/domain/entities/hunter_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/seer_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/witch_role.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/skills/heal_skill.dart';
@@ -23,13 +24,14 @@ class NightPhaseProcessor implements GameProcessor {
   GamePhase get supportedPhase => GamePhase.night;
 
   @override
-  Future<void> process(GameState state) async {
+  Future<void> process(GameState state, {GameObserver? observer}) async {
     var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天黑请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '狼人请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     final werewolves = state.alivePlayers
         .where((player) => player.role.isWerewolf)
         .toList();
@@ -44,6 +46,7 @@ class NightPhaseProcessor implements GameProcessor {
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     List<Future<SkillResult?>> futures = [];
     for (final werewolf in werewolves) {
       var future = werewolf.executeSkill(
@@ -56,12 +59,14 @@ class NightPhaseProcessor implements GameProcessor {
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     final seer = state.alivePlayers
         .where((player) => player.role is SeerRole)
         .first;
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要查验的玩家是谁');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     await seer.executeSkill(
       seer.role.skills.whereType<InvestigateSkill>().first,
       state,
@@ -69,9 +74,11 @@ class NightPhaseProcessor implements GameProcessor {
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '女巫请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     final witch = state.alivePlayers
         .where((player) => player.role is WitchRole)
         .first;
@@ -79,6 +86,7 @@ class NightPhaseProcessor implements GameProcessor {
       announcement: '昨晚 号玩家死亡，你有一瓶解药，你要用吗',
     );
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     await witch.executeSkill(
       witch.role.skills.whereType<HealSkill>().first,
       state,
@@ -89,6 +97,7 @@ class NightPhaseProcessor implements GameProcessor {
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     await witch.executeSkill(
       witch.role.skills.whereType<PoisonSkill>().first,
       state,
@@ -96,15 +105,18 @@ class NightPhaseProcessor implements GameProcessor {
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '女巫请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     final guard = state.alivePlayers
         .where((player) => player.role is GuardRole)
         .first;
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要守护的玩家是谁');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     await guard.executeSkill(
       guard.role.skills.whereType<ProtectSkill>().first,
       state,
@@ -112,18 +124,22 @@ class NightPhaseProcessor implements GameProcessor {
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     final hunter = state.alivePlayers
         .where((player) => player.role is HunterRole)
         .first;
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天亮了');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
 
     // 7. 切换到白天阶段
     await state.changePhase(GamePhase.day);

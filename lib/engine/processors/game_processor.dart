@@ -1,4 +1,5 @@
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 
 /// The abstract base class for all phase processors.
@@ -15,5 +16,5 @@ abstract class GameProcessor {
   /// resolving them, and generating events.
   ///
   /// - [state]: The current [GameState] of the game.
-  Future<void> process(GameState state);
+  Future<void> process(GameState state, {GameObserver? observer});
 }

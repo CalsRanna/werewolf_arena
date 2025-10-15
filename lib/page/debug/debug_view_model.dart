@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
+import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_random.dart';
@@ -103,26 +101,13 @@ class DebugViewModel {
   }
 }
 
-class _Observer extends GameObserverAdapter {
+class _Observer extends GameObserver {
   final Future<void> Function(String) onLog;
 
   _Observer(this.onLog);
 
   @override
-  Future<void> onGamePlayerSpeak(
-    GamePlayer player,
-    String message, {
-    SpeechType? speechType,
-  }) async {
-    await onLog('[${player.name}] $message');
-  }
-
-  @override
-  Future<void> onSystemMessage(
-    String message, {
-    int? dayNumber,
-    GamePhase? phase,
-  }) async {
-    await onLog('[System] $message');
+  Future<void> onGameEvent(GameEvent event) async {
+    await onLog(event.toString());
   }
 }

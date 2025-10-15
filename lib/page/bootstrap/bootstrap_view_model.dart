@@ -3,12 +3,10 @@ import 'package:get_it/get_it.dart';
 import 'package:signals/signals.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 import 'package:werewolf_arena/services/config_service.dart';
-import 'package:werewolf_arena/services/game_service.dart';
 
 class BootstrapViewModel {
   // 依赖注入的服务
   final ConfigService _configService = GetIt.instance.get<ConfigService>();
-  final GameService _gameService = GetIt.instance.get<GameService>();
 
   // Signals 状态管理
   final Signal<bool> isInitialized = signal(false);
@@ -30,7 +28,6 @@ class BootstrapViewModel {
       // 步骤 2: 初始化游戏服务
       initializationMessage.value = '正在初始化游戏引擎...';
       initializationProgress.value = 0.5;
-      await _gameService.initialize();
       await Future.delayed(Duration(milliseconds: 300));
 
       // 步骤 3: 预加载场景

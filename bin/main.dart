@@ -12,7 +12,6 @@ import 'package:werewolf_arena/engine/game_random.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 
 import 'config_loader.dart';
-import 'console_game_log_observer.dart';
 import 'console_game_observer.dart';
 import 'console_output.dart';
 
@@ -63,9 +62,7 @@ Future<void> main(List<String> arguments) async {
       }
     }
 
-    final observer = CompositeGameObserver();
-    observer.addObserver(ConsoleGameObserver());
-    observer.addObserver(ConsoleGameLogObserver());
+    final observer = ConsoleGameObserver();
 
     final gameEngine = await _createGameEngine(observer);
     await gameEngine.initializeGame();

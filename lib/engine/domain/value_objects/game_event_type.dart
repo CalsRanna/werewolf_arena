@@ -29,4 +29,7 @@ enum GameEventType {
 
   /// 夜晚降临
   nightFall,
+
+  /// 日志信息
+  log,
 }

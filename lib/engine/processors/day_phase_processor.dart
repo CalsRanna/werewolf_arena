@@ -1,6 +1,7 @@
 import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/night_result_event.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
@@ -19,9 +20,9 @@ class DayPhaseProcessor implements GameProcessor {
   GamePhase get supportedPhase => GamePhase.day;
 
   @override
-  Future<void> process(GameState state) async {
+  Future<void> process(GameState state, {GameObserver? observer}) async {
     // 2. 公布夜晚结果
-    await _announceNightResults(state);
+    await _announceNightResults(state, observer: observer);
 
     var players = state.alivePlayers;
     var judgeAnnouncementEvent = JudgeAnnouncementEvent(
@@ -29,6 +30,7 @@ class DayPhaseProcessor implements GameProcessor {
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     for (var player in players) {
       await player.executeSkill(
         player.role.skills.whereType<SpeakSkill>().first,
@@ -40,6 +42,7 @@ class DayPhaseProcessor implements GameProcessor {
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     for (var player in players) {
       await player.executeSkill(
         player.role.skills.whereType<VoteSkill>().first,
@@ -51,14 +54,17 @@ class DayPhaseProcessor implements GameProcessor {
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
-
+    await observer?.onGameEvent(judgeAnnouncementEvent);
     // 6. 切换到夜晚阶段（开始新的一天）
     state.dayNumber++;
     await state.changePhase(GamePhase.night);
   }
 
   /// 公布夜晚结果
-  Future<void> _announceNightResults(GameState state) async {
+  Future<void> _announceNightResults(
+    GameState state, {
+    GameObserver? observer,
+  }) async {
     GameEngineLogger.instance.d('公布夜晚结果');
 
     // 筛选出今晚的死亡事件
@@ -73,6 +79,7 @@ class DayPhaseProcessor implements GameProcessor {
       dayNumber: state.dayNumber,
     );
     state.handleEvent(nightResultEvent);
+    await observer?.onGameEvent(nightResultEvent);
 
     // 记录夜晚结果
     if (isPeacefulNight) {

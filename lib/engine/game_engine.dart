@@ -1,12 +1,5 @@
 import 'dart:async';
 
-import 'package:werewolf_arena/engine/events/dead_event.dart';
-import 'package:werewolf_arena/engine/events/game_end_event.dart';
-import 'package:werewolf_arena/engine/events/game_event.dart';
-import 'package:werewolf_arena/engine/events/game_start_event.dart';
-import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
-import 'package:werewolf_arena/engine/events/phase_change_event.dart';
-import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
@@ -51,38 +44,6 @@ class GameEngine {
       hasGameStarted && _status == GameEngineStatus.playing;
   bool get isGameEnded => hasGameStarted && _status == GameEngineStatus.ended;
 
-  void _listenEvent(GameEvent event) {
-    switch (event) {
-      case GameStartEvent():
-        _observer?.onGameStart(
-          _currentState!,
-          players.length,
-          _getRoleDistribution(),
-        );
-      case GameEndEvent():
-        _observer?.onGameEnd(
-          _currentState!,
-          event.winner,
-          event.totalDays,
-          event.finalPlayerCount,
-        );
-      case DeadEvent():
-        _observer?.onGamePlayerDeath(event.victim, event.cause);
-      case PhaseChangeEvent():
-        _observer?.onPhaseChange(
-          event.oldPhase,
-          event.newPhase,
-          event.dayNumber,
-        );
-      case JudgeAnnouncementEvent():
-        _observer?.onSystemMessage(event.announcement);
-      case SpeakEvent():
-        _observer?.onGamePlayerSpeak(event.speaker, event.message);
-      default:
-        break;
-    }
-  }
-
   /// 初始化游戏
   Future<void> initializeGame() async {
     try {
@@ -95,7 +56,6 @@ class GameEngine {
         scenario: scenario,
         players: players, // 直接使用GamePlayer列表
       );
-      _currentState!.eventStream.listen(_listenEvent);
 
       // 初始化游戏
       _currentState!.startGame();
@@ -145,7 +105,7 @@ class GameEngine {
       }
 
       // 执行阶段处理
-      await processor.process(_currentState!);
+      await processor.process(_currentState!, observer: _observer);
 
       // 检查游戏结束
       if (_currentState!.checkGameEnd()) {
@@ -171,16 +131,6 @@ class GameEngine {
     state.endGame(state.winner ?? 'unknown');
 
     GameEngineLogger.instance.i('游戏结束');
-  }
-
-  /// 获取角色分布统计
-  Map<String, int> _getRoleDistribution() {
-    final distribution = <String, int>{};
-    for (final player in players) {
-      final roleName = player.role.name;
-      distribution[roleName] = (distribution[roleName] ?? 0) + 1;
-    }
-    return distribution;
   }
 
   /// 处理游戏错误
