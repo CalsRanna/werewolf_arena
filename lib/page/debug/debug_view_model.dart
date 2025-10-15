@@ -11,6 +11,7 @@ import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_random.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
+import 'package:werewolf_arena/util/dialog_util.dart';
 
 class DebugViewModel {
   final url = 'https://openrouter.ai/api/v1';
@@ -48,7 +49,8 @@ class DebugViewModel {
       maxRetries: 3,
     );
     final scenario = Scenario12Players();
-    final observer = _Observer((String message) {
+    final observer = _Observer((String message) async {
+      await DialogUtil.instance.show(message);
       logs.value = [...logs.value, message];
       WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.animateTo(
@@ -102,21 +104,25 @@ class DebugViewModel {
 }
 
 class _Observer extends GameObserverAdapter {
-  final void Function(String) onLog;
+  final Future<void> Function(String) onLog;
 
   _Observer(this.onLog);
 
   @override
-  void onGamePlayerSpeak(
+  Future<void> onGamePlayerSpeak(
     GamePlayer player,
     String message, {
     SpeechType? speechType,
-  }) {
-    onLog('[${player.name}] $message');
+  }) async {
+    await onLog('[${player.name}] $message');
   }
 
   @override
-  void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
-    onLog('[System] $message');
+  Future<void> onSystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  }) async {
+    await onLog('[System] $message');
   }
 }

@@ -128,11 +128,11 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onGamePlayerSpeak(
+  Future<void> onGamePlayerSpeak(
     GamePlayer player,
     String message, {
     SpeechType? speechType,
-  }) {
+  }) async {
     final typeStr = speechType != null
         ? '[${_getSpeechTypeString(speechType)}]'
         : '';
@@ -160,7 +160,11 @@ class StreamGameObserver implements GameObserver {
   }
 
   @override
-  void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
+  Future<void> onSystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  }) async {
     var fullMessage = message;
     if (dayNumber != null) {
       fullMessage = '[第${dayNumber}天] $fullMessage';

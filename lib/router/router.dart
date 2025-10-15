@@ -1,8 +1,11 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/material.dart';
 import 'router.gr.dart';
 
 @AutoRouterConfig()
 class AppRouter extends RootStackRouter {
+  AppRouter() : super(navigatorKey: globalKey);
+
   @override
   List<AutoRoute> get routes {
     return [
@@ -16,4 +19,5 @@ class AppRouter extends RootStackRouter {
   }
 }
 
+final globalKey = GlobalKey<NavigatorState>();
 final router = AppRouter();

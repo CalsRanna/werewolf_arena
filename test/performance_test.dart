@@ -175,7 +175,7 @@ void main() {
           phase: gameState.currentPhase,
         );
 
-        gameState.addEvent(event);
+        gameState.handleEvent(event);
 
         iterStopwatch.stop();
         addTimes.add(iterStopwatch.elapsedMicroseconds);

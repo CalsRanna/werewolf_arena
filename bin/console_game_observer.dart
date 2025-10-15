@@ -68,11 +68,11 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onGamePlayerSpeak(
+  Future<void> onGamePlayerSpeak(
     GamePlayer player,
     String message, {
     SpeechType? speechType,
-  }) {
+  }) async {
     _console.displayGamePlayerSpeak(player, message, speechType: speechType);
   }
 
@@ -108,7 +108,11 @@ class ConsoleGameObserver extends GameObserverAdapter {
   }
 
   @override
-  void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
+  Future<void> onSystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  }) async {
     _console.displaySystemMessage(message);
   }
 

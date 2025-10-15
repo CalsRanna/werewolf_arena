@@ -76,7 +76,7 @@ class SpeakSkill extends GameSkill {
       );
 
       // 添加事件到游戏状态
-      state.addEvent(speakEvent);
+      state.handleEvent(speakEvent);
 
       // 记录发言日志
       GameEngineLogger.instance.i('${player.name} 发言: $speechContent');

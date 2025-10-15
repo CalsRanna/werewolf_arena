@@ -41,83 +41,145 @@ class _DebugPageState extends State<DebugPage> {
             child: Column(
               spacing: 16,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.start),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
                     ),
-                    Expanded(flex: 1, child: SizedBox()),
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.end),
-                    ),
-                  ],
+                    color: Colors.black.withValues(alpha: 0.5),
+                  ),
+                  height: 64,
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.start),
-                    ),
-                    Expanded(flex: 1, child: SizedBox()),
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.end),
-                    ),
-                  ],
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      var height = (constraints.maxHeight - 16 * 5) / 6;
+                      return Column(
+                        spacing: 16,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.start,
+                                  size: height,
+                                ),
+                              ),
+                              Expanded(flex: 1, child: SizedBox()),
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.end,
+                                  size: height,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.start,
+                                  size: height,
+                                ),
+                              ),
+                              Expanded(flex: 1, child: SizedBox()),
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.end,
+                                  size: height,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.start,
+                                  size: height,
+                                ),
+                              ),
+                              Expanded(flex: 1, child: SizedBox()),
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.end,
+                                  size: height,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.start,
+                                  size: height,
+                                ),
+                              ),
+                              Expanded(flex: 1, child: SizedBox()),
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.end,
+                                  size: height,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.start,
+                                  size: height,
+                                ),
+                              ),
+                              Expanded(flex: 1, child: SizedBox()),
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.end,
+                                  size: height,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.start,
+                                  size: height,
+                                ),
+                              ),
+                              Expanded(flex: 1, child: SizedBox()),
+                              Expanded(
+                                flex: 2,
+                                child: _buildPlayerInformation(
+                                  _AvatarAlignment.end,
+                                  size: height,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.start),
-                    ),
-                    Expanded(flex: 1, child: SizedBox()),
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.end),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.start),
-                    ),
-                    Expanded(flex: 1, child: SizedBox()),
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.end),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.start),
-                    ),
-                    Expanded(flex: 1, child: SizedBox()),
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.end),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.start),
-                    ),
-                    Expanded(flex: 1, child: SizedBox()),
-                    Expanded(
-                      flex: 2,
-                      child: _buildPlayerInformation(_AvatarAlignment.end),
-                    ),
-                  ],
+                FilledButton(
+                  onPressed: viewModel.startGame,
+                  child: Text('开始游戏'),
                 ),
               ],
             ),
@@ -127,8 +189,10 @@ class _DebugPageState extends State<DebugPage> {
     );
   }
 
-  Widget _buildPlayerInformation(_AvatarAlignment alignment) {
-    final size = 64.0;
+  Widget _buildPlayerInformation(
+    _AvatarAlignment alignment, {
+    double size = 64,
+  }) {
     var radius = Radius.circular(size);
     var borderRadius = BorderRadius.only(
       topRight: alignment == _AvatarAlignment.end ? Radius.zero : radius,

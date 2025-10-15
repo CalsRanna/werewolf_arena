@@ -1,0 +1,24 @@
+import 'package:flutter/material.dart';
+import 'package:werewolf_arena/router/router.dart';
+
+class DialogUtil {
+  static final DialogUtil instance = DialogUtil._();
+
+  DialogUtil._();
+
+  Future<void> show(String message) async {
+    await showDialog(
+      context: globalKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: const Text('提示'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            child: const Text('确定'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+}

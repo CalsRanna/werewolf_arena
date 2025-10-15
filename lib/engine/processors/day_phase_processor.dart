@@ -6,7 +6,7 @@ import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/skills/speak_skill.dart';
 import 'package:werewolf_arena/engine/skills/vote_skill.dart';
-import 'phase_processor.dart';
+import 'game_processor.dart';
 
 /// 白天阶段处理器（基于技能系统重构，包含发言和投票）
 ///
@@ -14,7 +14,7 @@ import 'phase_processor.dart';
 /// - 公布夜晚结果
 /// - 玩家讨论发言（通过技能系统）
 /// - 投票出局（合并原投票阶段）
-class DayPhaseProcessor implements PhaseProcessor {
+class DayPhaseProcessor implements GameProcessor {
   @override
   GamePhase get supportedPhase => GamePhase.day;
 
@@ -28,7 +28,7 @@ class DayPhaseProcessor implements PhaseProcessor {
       announcement: '所有玩家开始讨论',
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.addEvent(judgeAnnouncementEvent);
+    state.handleEvent(judgeAnnouncementEvent);
     for (var player in players) {
       await player.executeSkill(
         player.role.skills.whereType<SpeakSkill>().first,
@@ -39,7 +39,7 @@ class DayPhaseProcessor implements PhaseProcessor {
       announcement: '所有玩家讨论结束，开始投票',
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.addEvent(judgeAnnouncementEvent);
+    state.handleEvent(judgeAnnouncementEvent);
     for (var player in players) {
       await player.executeSkill(
         player.role.skills.whereType<VoteSkill>().first,
@@ -50,7 +50,7 @@ class DayPhaseProcessor implements PhaseProcessor {
       announcement: '所有玩家投票结束，开始结算',
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.addEvent(judgeAnnouncementEvent);
+    state.handleEvent(judgeAnnouncementEvent);
 
     // 6. 切换到夜晚阶段（开始新的一天）
     state.dayNumber++;
@@ -72,7 +72,7 @@ class DayPhaseProcessor implements PhaseProcessor {
       isPeacefulNight: isPeacefulNight,
       dayNumber: state.dayNumber,
     );
-    state.addEvent(nightResultEvent);
+    state.handleEvent(nightResultEvent);
 
     // 记录夜晚结果
     if (isPeacefulNight) {

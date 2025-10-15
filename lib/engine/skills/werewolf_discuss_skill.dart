@@ -73,7 +73,7 @@ class WerewolfDiscussSkill extends GameSkill {
       );
 
       // 添加事件到游戏状态
-      state.addEvent(discussEvent);
+      state.handleEvent(discussEvent);
 
       // 记录讨论日志（仅调试可见）
       if (reasoning != null) {

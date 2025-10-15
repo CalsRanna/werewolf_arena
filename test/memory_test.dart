@@ -84,7 +84,7 @@ void main() {
         // 添加不同类型的事件
         switch (i % 4) {
           case 0:
-            gameState.addEvent(
+            gameState.handleEvent(
               DeadEvent(
                 victim: player,
                 cause: DeathCause.werewolfKill,
@@ -94,7 +94,7 @@ void main() {
             );
             break;
           case 1:
-            gameState.addEvent(
+            gameState.handleEvent(
               SpeakEvent(
                 speaker: player,
                 message: '测试发言 $i',
@@ -104,7 +104,7 @@ void main() {
             );
             break;
           case 2:
-            gameState.addEvent(
+            gameState.handleEvent(
               VoteEvent(
                 voter: player,
                 candidate: gameState
@@ -115,7 +115,7 @@ void main() {
             );
             break;
           case 3:
-            gameState.addEvent(
+            gameState.handleEvent(
               LastWordsEvent(
                 speaker: player,
                 message: '遗言 $i',
@@ -170,7 +170,7 @@ void main() {
       for (int i = 0; i < eventCount; i++) {
         final player =
             gameState.alivePlayers[i % gameState.alivePlayers.length];
-        gameState.addEvent(
+        gameState.handleEvent(
           SpeakEvent(
             speaker: player,
             message: '大数据测试发言 $i',
@@ -331,7 +331,7 @@ void main() {
         for (int i = 0; i < 50; i++) {
           final player =
               gameState.alivePlayers[i % gameState.alivePlayers.length];
-          gameState.addEvent(
+          gameState.handleEvent(
             SpeakEvent(
               speaker: player,
               message: '游戏${gameIndex}的发言$i',

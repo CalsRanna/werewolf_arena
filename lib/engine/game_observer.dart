@@ -74,7 +74,7 @@ abstract class GameObserver {
   });
 
   /// 玩家发言
-  void onGamePlayerSpeak(
+  Future<void> onGamePlayerSpeak(
     GamePlayer player,
     String message, {
     SpeechType? speechType,
@@ -91,7 +91,11 @@ abstract class GameObserver {
   );
 
   /// 系统消息（法官公告等）
-  void onSystemMessage(String message, {int? dayNumber, GamePhase? phase});
+  Future<void> onSystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  });
 
   /// 错误消息
   void onErrorMessage(String error, {Object? errorDetails});
@@ -188,11 +192,11 @@ abstract class GameObserverAdapter implements GameObserver {
   }) {}
 
   @override
-  void onGamePlayerSpeak(
+  Future<void> onGamePlayerSpeak(
     GamePlayer player,
     String message, {
     SpeechType? speechType,
-  }) {}
+  }) async {}
 
   @override
   void onVoteCast(GamePlayer voter, GamePlayer target, {VoteType? voteType}) {}
@@ -205,7 +209,11 @@ abstract class GameObserverAdapter implements GameObserver {
   ) async {}
 
   @override
-  void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {}
+  Future<void> onSystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  }) async {}
 
   @override
   void onErrorMessage(String error, {Object? errorDetails}) {}
@@ -357,11 +365,11 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onGamePlayerSpeak(
+  Future<void> onGamePlayerSpeak(
     GamePlayer player,
     String message, {
     SpeechType? speechType,
-  }) {
+  }) async {
     _notifyObservers(
       (observer) =>
           observer.onGamePlayerSpeak(player, message, speechType: speechType),
@@ -390,7 +398,11 @@ class CompositeGameObserver implements GameObserver {
   }
 
   @override
-  void onSystemMessage(String message, {int? dayNumber, GamePhase? phase}) {
+  Future<void> onSystemMessage(
+    String message, {
+    int? dayNumber,
+    GamePhase? phase,
+  }) async {
     _notifyObservers(
       (observer) =>
           observer.onSystemMessage(message, dayNumber: dayNumber, phase: phase),

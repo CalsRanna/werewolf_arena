@@ -131,7 +131,7 @@ class GameState {
   }
 
   // Methods
-  void addEvent(GameEvent event) {
+  Future<void> handleEvent(GameEvent event) async {
     eventHistory.add(event);
     lastUpdateTime = DateTime.now();
     _controller.add(event);
@@ -178,7 +178,7 @@ class GameState {
       dayNumber: dayNumber,
     );
     logger.d(event.toString());
-    addEvent(event);
+    handleEvent(event);
   }
 
   void startGame() {
@@ -191,7 +191,7 @@ class GameState {
       roleDistribution: _getRoleDistribution(),
     );
     logger.d(event.toString());
-    addEvent(event);
+    handleEvent(event);
   }
 
   void endGame(String winner) {
@@ -205,7 +205,7 @@ class GameState {
       gameStartTime: startTime,
     );
     logger.d(event.toString());
-    addEvent(event);
+    handleEvent(event);
   }
 
   void playerDeath(GamePlayer player, DeathCause cause) {
@@ -218,7 +218,7 @@ class GameState {
       phase: currentPhase,
     );
     logger.d(event.toString());
-    addEvent(event);
+    handleEvent(event);
   }
 
   /// Check if game should end
