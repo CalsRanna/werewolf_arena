@@ -118,7 +118,7 @@ logging:
     }
 
     // 解析maxRetries
-    final maxRetries = (defaultLLM?['max_retries'] as int?) ?? 3;
+    final maxRetries = (defaultLLM['max_retries'] as int?) ?? 3;
 
     return GameConfig(
       playerIntelligences: playerIntelligences,

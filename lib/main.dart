@@ -17,22 +17,6 @@ class WerewolfArenaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: '狼人杀竞技场',
-      routerConfig: router.config(),
-      theme: _getTheme(),
-    );
-  }
-
-  ThemeData _getTheme() {
-    var appBarTheme = AppBarTheme(
-      titleTextStyle: TextStyle(
-        fontWeight: FontWeight.w500,
-        fontSize: 22,
-        height: 1.5,
-      ),
-    );
-
-    return ThemeData(appBarTheme: appBarTheme);
+    return MaterialApp.router(title: '狼人杀竞技场', routerConfig: router.config());
   }
 }
