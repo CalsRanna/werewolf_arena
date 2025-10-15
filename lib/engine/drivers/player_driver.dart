@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 玩家驱动器抽象接口
@@ -18,7 +19,7 @@ abstract class PlayerDriver {
   ///
   /// 返回包含玩家决策的Map，格式由具体技能定义
   Future<Map<String, dynamic>> generateSkillResponse({
-    required dynamic player, // 使用dynamic避免循环依赖
+    required GamePlayer player,
     required GameState state,
     required String skillPrompt,
     required String expectedFormat,

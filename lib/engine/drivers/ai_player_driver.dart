@@ -83,6 +83,9 @@ ${_buildGameContext(player, state)}
     final playerName = player?.name ?? 'Unknown';
     final playerRole = player?.role?.name ?? 'Unknown';
     final isAlive = player?.isAlive ?? false;
+    final events = state.eventHistory
+        .where((event) => event.isVisibleTo(player))
+        .toList();
 
     return '''
 游戏状态：
@@ -92,7 +95,9 @@ ${_buildGameContext(player, state)}
 - 死亡玩家：${deadPlayers.isNotEmpty ? deadPlayers : '无'}
 - 你的状态：${isAlive ? '存活' : '死亡'}
 - 你的角色：$playerRole
-- 你的名字：$playerName
+- 你的名字：$playerName,
+事件历史：
+${events.map((event) => event.toJson()).join('\n')}
 ''';
   }
 
