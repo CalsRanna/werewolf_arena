@@ -59,7 +59,7 @@ class AIPlayerDriver implements PlayerDriver {
         '''
 ${_buildGameContext(player, state)}
 ${(state.dayNumber == 1 && skill is WerewolfDiscussSkill) ? skill.firstNightPrompt : skill.prompt}
-${PlayerDriverResponse.formatPrompt}
+${skill is WerewolfDiscussSkill ? skill.formatPrompt : PlayerDriverResponse.formatPrompt}
 ''';
 
     try {

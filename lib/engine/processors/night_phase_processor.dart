@@ -324,6 +324,9 @@ class NightPhaseProcessor implements GameProcessor {
     var werewolfKillEvent = WerewolfKillEvent(target: target);
     state.handleEvent(werewolfKillEvent);
     await observer?.onGameEvent(werewolfKillEvent);
+    if (target.role.roleId == 'witch') {
+      state.canUserHeal = false;
+    }
     judgeAnnouncementEvent = JudgeAnnouncementEvent(
       announcement: '狼人选择击杀${target.formattedName}',
     );
@@ -364,6 +367,7 @@ class NightPhaseProcessor implements GameProcessor {
       final healEvent = WitchHealEvent(target: target);
       state.handleEvent(healEvent);
       await observer?.onGameEvent(healEvent);
+      state.canUserHeal = false;
       judgeAnnouncementEvent = JudgeAnnouncementEvent(
         announcement: '女巫对${target.formattedName}使用解药',
       );
@@ -397,6 +401,7 @@ class NightPhaseProcessor implements GameProcessor {
       final poisonEvent = WitchPoisonEvent(target: target);
       state.handleEvent(poisonEvent);
       await observer?.onGameEvent(poisonEvent);
+      state.canUserPoison = false;
       judgeAnnouncementEvent = JudgeAnnouncementEvent(
         announcement: '女巫对${target.formattedName}使用毒药',
       );
