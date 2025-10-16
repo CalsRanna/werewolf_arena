@@ -116,12 +116,7 @@ void main() {
           final player = alivePlayers.first;
           final skills = player.role.getAvailableSkills(GamePhase.night);
 
-          if (skills.isNotEmpty) {
-            final skill = skills.first;
-            if (skill.canCast(player, gameState)) {
-              await skill.cast(player, gameState);
-            }
-          }
+          if (skills.isNotEmpty) {}
         }
 
         iterStopwatch.stop();

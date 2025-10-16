@@ -1,10 +1,4 @@
-import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/events/speak_event.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
-import 'package:werewolf_arena/engine/skills/skill_result.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
 
 /// 发言技能（白天专用）
 ///
@@ -18,9 +12,6 @@ class SpeakSkill extends GameSkill {
 
   @override
   String get description => '在白天阶段进行发言讨论';
-
-  @override
-  int get priority => 50; // 普通优先级
 
   @override
   String get prompt => '''
@@ -41,57 +32,4 @@ class SpeakSkill extends GameSkill {
 
 请发表你的观点：
 ''';
-
-  @override
-  bool canCast(GamePlayer player, GameState state) {
-    return player.isAlive && !player.isSilenced && state.currentPhase.isDay;
-  }
-
-  @override
-  Future<SkillResult?> cast(
-    GamePlayer player,
-    GameState state, {
-    Map<String, dynamic>? aiResponse,
-  }) async {
-    try {
-      // 从AI响应中获取发言内容
-      String speechContent = '暂时保持沉默';
-      String? reasoning;
-
-      if (aiResponse != null) {
-        speechContent =
-            aiResponse['message']?.toString() ??
-            aiResponse['statement']?.toString() ??
-            '我认为今天需要仔细分析情况';
-        reasoning = aiResponse['reasoning']?.toString() ?? '';
-      }
-
-      // 创建发言事件
-      final speakEvent = SpeakEvent(
-        speaker: player,
-        message: speechContent,
-        speechType: SpeechType.normal,
-        dayNumber: state.dayNumber,
-        phase: state.currentPhase,
-      );
-
-      // 添加事件到游戏状态
-      state.handleEvent(speakEvent);
-
-      // 记录发言日志
-      GameEngineLogger.instance.i('${player.name} 发言: $speechContent');
-      if (reasoning != null) {
-        GameEngineLogger.instance.d('发言理由: $reasoning');
-      }
-
-      return SkillResult(
-        caster: player,
-        target: null, // 发言技能没有目标
-        message: speechContent,
-        reasoning: reasoning ?? '',
-      );
-    } catch (e) {
-      return null;
-    }
-  }
 }

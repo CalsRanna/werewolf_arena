@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/drivers/player_driver.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
@@ -27,19 +28,17 @@ class AIPlayerDriver implements PlayerDriver {
       );
 
   @override
-  Future<Map<String, dynamic>> generateSkillResponse({
-    required dynamic player,
+  Future<PlayerDriverResponse> request({
+    required GamePlayer player,
     required GameState state,
     required String skillPrompt,
-    required String expectedFormat,
   }) async {
     // 构建完整的提示词
     final fullPrompt =
         '''
 $skillPrompt
 
-请严格按照以下JSON格式返回结果：
-$expectedFormat
+${PlayerDriverResponse.formatPrompt}
 
 注意：
 1. 直接返回JSON，不要包含其他格式
@@ -57,19 +56,18 @@ ${_buildGameContext(player, state)}
         context: {
           'phase': state.currentPhase.name,
           'day': state.dayNumber,
-          'player_role': player?.role?.name ?? 'unknown',
+          'player_role': player.role.name,
         },
       );
 
       if (response.isValid) {
-        return await _parseJsonWithCleaner(response.content);
+        var json = await _parseJsonWithCleaner(response.content);
+        return PlayerDriverResponse.fromJson(json);
       } else {
-        // 如果响应无效，返回空决策
-        return {};
+        return PlayerDriverResponse();
       }
     } catch (e) {
-      // 出现异常时返回空决策
-      return {};
+      return PlayerDriverResponse();
     }
   }
 

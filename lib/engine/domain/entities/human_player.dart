@@ -75,28 +75,22 @@ class HumanPlayer extends GamePlayer {
   }
 
   @override
-  Future<SkillResult?> executeSkill(GameSkill skill, GameState state) async {
-    if (!skill.canCast(this, state)) return null;
-
+  Future<SkillResult> executeSkill(GameSkill skill, GameState state) async {
     try {
       // 使用Driver处理技能响应（通常是等待人类输入）
-      final response = await driver.generateSkillResponse(
+      final response = await driver.request(
         player: this,
         state: state,
         skillPrompt: skill.prompt,
-        expectedFormat: _getExpectedFormat(skill),
       );
-
-      // 调用技能的cast方法，传递AI响应（对于人类玩家，这通常是空的）
-      final result = await skill.cast(this, state, aiResponse: response);
-
-      // 记录技能使用
-      useSkill(skill.skillId);
-      // 不需要添加action，因为skill.cast已经处理了事件
-
-      return result;
+      return SkillResult(
+        caster: name,
+        target: response.target,
+        message: response.message,
+        reasoning: response.reasoning,
+      );
     } catch (e) {
-      return null;
+      return SkillResult(caster: name);
     }
   }
 
@@ -241,26 +235,6 @@ class HumanPlayer extends GamePlayer {
       'privateData': Map<String, dynamic>.from(privateData),
       'actionHistory': actionHistory.map((e) => e.toJson()).toList(),
     };
-  }
-
-  /// 获取技能的期望格式
-  String _getExpectedFormat(GameSkill skill) {
-    // 为人类玩家提供技能输入格式指导
-    if (skill.skillId.contains('kill') || skill.skillId.contains('attack')) {
-      return '选择要击杀的目标玩家';
-    } else if (skill.skillId.contains('protect') ||
-        skill.skillId.contains('guard')) {
-      return '选择要保护的目标玩家';
-    } else if (skill.skillId.contains('investigate') ||
-        skill.skillId.contains('check')) {
-      return '选择要查验的目标玩家';
-    } else if (skill.skillId.contains('vote')) {
-      return '选择要投票的目标玩家';
-    } else if (skill.skillId.contains('speak')) {
-      return '输入你的发言内容';
-    } else {
-      return '选择目标或输入内容';
-    }
   }
 
   /// 释放资源

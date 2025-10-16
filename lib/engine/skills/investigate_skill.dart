@@ -1,7 +1,4 @@
-import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
-import 'package:werewolf_arena/engine/skills/skill_result.dart';
 
 /// 预言家查验技能（夜晚专用）
 ///
@@ -15,9 +12,6 @@ class InvestigateSkill extends GameSkill {
 
   @override
   String get description => '夜晚可以查验一名玩家的身份（好人或狼人）';
-
-  @override
-  int get priority => 80; // 中等优先级
 
   @override
   String get prompt => '''
@@ -36,64 +30,4 @@ class InvestigateSkill extends GameSkill {
 
 请选择你要查验的目标。
 ''';
-
-  @override
-  bool canCast(GamePlayer player, GameState state) {
-    return player.isAlive &&
-        player.role.roleId == 'seer' &&
-        state.currentPhase.isNight;
-  }
-
-  @override
-  Future<SkillResult?> cast(
-    GamePlayer player,
-    GameState state, {
-    Map<String, dynamic>? aiResponse,
-  }) async {
-    try {
-      // 获取可查验的目标（排除自己）
-      final availableTargets = state.alivePlayers
-          .where((p) => p != player)
-          .toList();
-
-      if (availableTargets.isEmpty) {
-        return null;
-      }
-
-      // 从AI响应中获取查验目标
-      String? target;
-      String? message;
-      String? reasoning;
-
-      if (aiResponse != null) {
-        target = aiResponse['target'] ?? aiResponse['target_id'];
-        message = aiResponse['message'];
-        reasoning = aiResponse['reasoning'] ?? '';
-      }
-
-      // 查找目标玩家
-      GamePlayer? targetPlayer;
-      if (target != null) {
-        final targetStr = target.toString();
-        try {
-          targetPlayer = state.players.firstWhere((p) => p.name == targetStr);
-          // 验证目标是否有效
-          if (!availableTargets.contains(targetPlayer)) {
-            targetPlayer = null;
-          }
-        } catch (e) {
-          targetPlayer = null;
-        }
-      }
-
-      return SkillResult(
-        caster: player,
-        target: targetPlayer,
-        message: message,
-        reasoning: reasoning ?? '',
-      );
-    } catch (e) {
-      return null;
-    }
-  }
 }

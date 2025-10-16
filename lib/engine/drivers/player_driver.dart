@@ -18,10 +18,38 @@ abstract class PlayerDriver {
   /// [expectedFormat] 期望的JSON响应格式
   ///
   /// 返回包含玩家决策的Map，格式由具体技能定义
-  Future<Map<String, dynamic>> generateSkillResponse({
+  Future<PlayerDriverResponse> request({
     required GamePlayer player,
     required GameState state,
     required String skillPrompt,
-    required String expectedFormat,
   });
+}
+
+class PlayerDriverResponse {
+  final String? target;
+  final String? message;
+  final String? reasoning;
+
+  const PlayerDriverResponse({this.target, this.message, this.reasoning});
+
+  factory PlayerDriverResponse.fromJson(Map<String, dynamic> json) {
+    return PlayerDriverResponse(
+      target: json['target'] as String?,
+      message: json['message'] as String?,
+      reasoning: json['reasoning'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'target': target, 'message': message, 'reasoning': reasoning};
+  }
+
+  static String get formatPrompt => '''
+请严格按照以下JSON格式返回结果，不得包含其他类似markdown的标记：
+{
+  "target": "目标玩家名称或者null",
+  "message": "发言内容或者null",
+  "reasoning": "内心的思考内容"
+}
+''';
 }

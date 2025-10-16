@@ -1,7 +1,4 @@
-import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
-import 'package:werewolf_arena/engine/skills/skill_result.dart';
 
 /// 女巫解药技能（夜晚专用）
 ///
@@ -15,9 +12,6 @@ class HealSkill extends GameSkill {
 
   @override
   String get description => '使用解药救活被狼人击杀的玩家（限用一次）';
-
-  @override
-  int get priority => 85; // 高优先级，在狼人击杀之后执行
 
   @override
   String get prompt => '''
@@ -36,59 +30,4 @@ class HealSkill extends GameSkill {
 
 是否使用解药救活被击杀的玩家？
 ''';
-
-  @override
-  bool canCast(GamePlayer player, GameState state) {
-    return player.isAlive &&
-        player.role.roleId == 'witch' &&
-        state.currentPhase.isNight &&
-        (player.role.getPrivateData<bool>('has_antidote') ?? true);
-  }
-
-  @override
-  Future<SkillResult?> cast(
-    GamePlayer player,
-    GameState state, {
-    Map<String, dynamic>? aiResponse,
-  }) async {
-    try {
-      // 检查是否还有解药
-      final hasAntidote =
-          player.role.getPrivateData<bool>('has_antidote') ?? true;
-      if (!hasAntidote) return null;
-
-      // 从AI响应中获取是否使用解药的决定
-      bool useAntidote = false;
-      String? message;
-      String? reasoning;
-
-      if (aiResponse != null) {
-        // 对于解药，可能不需要target，而是一个bool决定
-        useAntidote = aiResponse['use_antidote'] ?? false;
-        message = aiResponse['message'];
-        reasoning = aiResponse['reasoning'] ?? '';
-      }
-
-      if (!useAntidote) {
-        return SkillResult(
-          caster: player,
-          target: null,
-          message: message,
-          reasoning: reasoning ?? '选择不使用解药',
-        );
-      }
-
-      // 标记解药已使用
-      player.role.setPrivateData('has_antidote', false);
-
-      return SkillResult(
-        caster: player,
-        target: null, // TODO: 设置正确的目标（被救活的玩家）
-        message: message,
-        reasoning: reasoning ?? '使用解药救活玩家',
-      );
-    } catch (e) {
-      return null;
-    }
-  }
 }

@@ -266,8 +266,8 @@ void main() {
 
     test('技能结果提交测试', () async {
       final skillResult = SkillResult(
-        caster: humanPlayer,
-        target: humanPlayer,
+        caster: humanPlayer.name,
+        target: humanPlayer.name,
         reasoning: 'test',
       );
 
@@ -318,20 +318,20 @@ void main() {
       mockSkill.canCastResult = false;
 
       final result = await aiPlayer.executeSkill(mockSkill, gameState);
-      expect(result?.reasoning, equals('Cannot cast skill'));
+      expect(result.reasoning, equals('Cannot cast skill'));
     });
 
     test('技能执行成功', () async {
       // 设置技能为可施放
       mockSkill.canCastResult = true;
       mockSkill.castResult = SkillResult(
-        caster: aiPlayer,
-        target: aiPlayer,
+        caster: aiPlayer.name,
+        target: aiPlayer.name,
         reasoning: 'test',
       );
 
       final result = await aiPlayer.executeSkill(mockSkill, gameState);
-      expect(result?.reasoning, equals('test'));
+      expect(result.reasoning, equals('test'));
     });
   });
 
@@ -390,21 +390,5 @@ class MockSkill extends GameSkill {
   String get description => 'A mock skill for testing';
 
   @override
-  int get priority => 5;
-
-  @override
   String get prompt => 'Mock skill prompt';
-
-  @override
-  bool canCast(dynamic player, GameState state) => canCastResult;
-
-  @override
-  Future<SkillResult> cast(
-    dynamic player,
-    GameState state, {
-    Map<String, dynamic>? aiResponse,
-  }) async {
-    return castResult ??
-        SkillResult(caster: player, target: player, reasoning: 'test');
-  }
 }

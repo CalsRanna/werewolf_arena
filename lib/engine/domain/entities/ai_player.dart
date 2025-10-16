@@ -62,28 +62,22 @@ class AIPlayer extends GamePlayer {
        driver = AIPlayerDriver(intelligence: intelligence);
 
   @override
-  Future<SkillResult?> executeSkill(GameSkill skill, GameState state) async {
-    if (!skill.canCast(this, state)) return null;
-
+  Future<SkillResult> executeSkill(GameSkill skill, GameState state) async {
     try {
       // 使用Driver生成技能响应
-      final response = await driver.generateSkillResponse(
+      final response = await driver.request(
         player: this,
         state: state,
         skillPrompt: skill.prompt,
-        expectedFormat: _getExpectedFormat(skill),
       );
-
-      // 调用技能的cast方法，传递AI响应
-      final result = await skill.cast(this, state, aiResponse: response);
-
-      // 记录技能使用
-      useSkill(skill.skillId);
-      // 不需要添加action，因为skill.cast已经处理了事件
-
-      return result;
+      return SkillResult(
+        caster: name,
+        target: response.target,
+        message: response.message,
+        reasoning: response.reasoning,
+      );
     } catch (e) {
-      return null;
+      return SkillResult(caster: name);
     }
   }
 
@@ -233,26 +227,6 @@ class AIPlayer extends GamePlayer {
       'privateData': Map<String, dynamic>.from(privateData),
       'actionHistory': actionHistory.map((e) => e.toJson()).toList(),
     };
-  }
-
-  /// 获取技能的期望格式
-  String _getExpectedFormat(GameSkill skill) {
-    // 根据技能类型返回不同的JSON格式要求
-    if (skill.skillId.contains('kill') || skill.skillId.contains('attack')) {
-      return '{"action": "kill", "target": "玩家名字", "reasoning": "选择理由"}';
-    } else if (skill.skillId.contains('protect') ||
-        skill.skillId.contains('guard')) {
-      return '{"action": "protect", "target": "玩家名字", "reasoning": "选择理由"}';
-    } else if (skill.skillId.contains('investigate') ||
-        skill.skillId.contains('check')) {
-      return '{"action": "investigate", "target": "玩家名字", "reasoning": "选择理由"}';
-    } else if (skill.skillId.contains('vote')) {
-      return '{"action": "vote", "target": "玩家名字", "reasoning": "选择理由"}';
-    } else if (skill.skillId.contains('speak')) {
-      return '{"action": "speak", "message": "发言内容", "reasoning": "发言策略"}';
-    } else {
-      return '{"action": "generic", "target": "玩家名字或null", "message": "附加信息", "reasoning": "选择理由"}';
-    }
   }
 
   /// 从事件更新知识库
