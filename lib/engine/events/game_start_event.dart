@@ -19,7 +19,12 @@ class GameStartEvent extends GameEvent {
       );
 
   @override
+  String toNarrative() {
+    return '第$dayNumber天${phase?.displayName}，游戏开始';
+  }
+
+  @override
   String toString() {
-    return 'GameStartEvent(id: $id)';
+    return 'GameStartEvent($id)';
   }
 }

@@ -209,17 +209,7 @@ class AIPlayer extends GamePlayer {
 
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'index': index,
-      'role': role.toJson(),
-      'type': 'ai',
-      'isAlive': isAlive,
-      'isProtected': isProtected,
-      'isSilenced': isSilenced,
-      'privateData': Map<String, dynamic>.from(privateData),
-      'actionHistory': actionHistory.map((e) => e.toJson()).toList(),
-    };
+    // TODO: implement toJson
+    throw UnimplementedError();
   }
 }

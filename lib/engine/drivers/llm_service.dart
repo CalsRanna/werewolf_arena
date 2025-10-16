@@ -124,7 +124,6 @@ class OpenAIService {
   Future<LLMResponse> generateResponse({
     required String systemPrompt,
     required String userPrompt,
-    required Map<String, dynamic> context,
     String? overrideModel,
     String? overrideApiKey,
   }) async {
@@ -136,7 +135,6 @@ class OpenAIService {
         final apiResponse = await _makeChatCompletionRequest(
           systemPrompt: systemPrompt,
           userPrompt: userPrompt,
-          context: context,
           overrideModel: overrideModel,
           overrideApiKey: overrideApiKey,
         );
@@ -204,7 +202,6 @@ class OpenAIService {
   Future<Map<String, dynamic>> _makeChatCompletionRequest({
     required String systemPrompt,
     required String userPrompt,
-    required Map<String, dynamic> context,
     String? overrideModel,
     String? overrideApiKey,
   }) async {

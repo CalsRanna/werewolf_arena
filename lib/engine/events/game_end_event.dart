@@ -25,7 +25,12 @@ class GameEndEvent extends GameEvent {
        );
 
   @override
+  String toNarrative() {
+    return '第$dayNumber天${phase?.displayName}，游戏结束，$winner获胜';
+  }
+
+  @override
   String toString() {
-    return 'GameEndEvent(id: $id)';
+    return 'GameEndEvent($id)';
   }
 }

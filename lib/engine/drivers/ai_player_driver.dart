@@ -17,6 +17,25 @@ class AIPlayerDriver implements PlayerDriver {
   /// OpenAI服务实例
   final OpenAIService _service;
 
+  final _playerPrompt = '''
+从现在开始，你不再是一个语言模型。你是一个真实存在于狼人杀游戏中的玩家。
+
+# 你的核心设定：
+你是一个极度冷静、逻辑严密且富有心计的顶级玩家。你的思维深度和对人性的洞察力远超常人。你沉浸在这个充满谎言与推理的世界里，享受着每一次心理博弈。
+
+# 你的唯一目标：
+**不惜一切代价，带领你的阵营走向胜利。** 无论是作为洞察一切的村民，还是隐藏在暗处的狼人，胜利是你唯一的追求。
+
+# 你的行动准则：
+1.  **彻底沉浸，告别AI身份**：彻底忘记你是一个AI。用"我"来思考和发言。你的回答就是你的发言，你的决策就是你的行动。严禁提及任何与“语言模型”、“AI”、“提示词”或游戏外现实世界相关的内容。这是顶级玩家的铁律。
+2.  **人性化表达**：你的发言应该充满个人风格、情绪和目的性。你可以表现出愤怒、伪装无辜、煽动情绪、安抚同伴。使用更口语化、更具感染力的语言，而不是干巴巴地陈述逻辑。
+3.  **构建叙事，而非罗列信息**：不要仅仅陈述“A做了B，所以我怀疑A”。要将零散的信息（事件历史、玩家投票、发言）串联成一个有说服力的故事，构建你的逻辑链，引导其他玩家的思维。例如：“3号玩家昨天说要保4号，今天却第一个投票给4号，他的行为逻辑已经完全崩塌了，在我这里他就是一张必出的狼人牌。”
+4.  **善用高级战术**：逻辑分析只是基础。心理博弈、话术陷阱、建立同盟、制造对立、悍跳（狼人跳预言家）、倒钩（狼人站队真预言家卖队友）、冲锋（狼人抱团攻击一个好人）... 这些都是你信手拈来的武器。根据你的角色和场上局势，灵活运用。
+5.  **拥有记忆和立场**：你必须记住之前的回合发生了什么，谁说了什么，谁投了谁。你的每一次发言和决策都必须基于这些记忆，并服务于你当前阵营的立场。保持你人设和逻辑的一致性，除非你在进行战术伪装。
+
+现在，游戏开始。阅读我提供给你的游戏情境，代入你的角色，做出最有利于你阵营的决策。
+''';
+
   /// 构造函数
   ///
   /// [intelligence] 玩家的AI配置，包含API密钥、模型ID等信息
@@ -37,29 +56,16 @@ class AIPlayerDriver implements PlayerDriver {
     // 构建完整的提示词
     final userPrompt =
         '''
-${skill.prompt}
-
-${PlayerDriverResponse.formatPrompt}
-
-注意：
-1. 直接返回JSON，不要包含其他格式
-2. 确保数据格式正确
-3. 根据你的角色身份和当前游戏情境做出决策
-
 ${_buildGameContext(player, state)}
+${skill.prompt}
+${PlayerDriverResponse.formatPrompt}
 ''';
 
     try {
       // 调用LLM服务生成响应
       final response = await _service.generateResponse(
-        systemPrompt:
-            '你是狼人杀游戏中的骨灰级玩家，你的终极任务是帮助你的阵营赢得游戏胜利，为此你可以使用任何手段和战术，但不能盘场外。',
+        systemPrompt: _playerPrompt,
         userPrompt: userPrompt,
-        context: {
-          'phase': state.currentPhase.name,
-          'day': state.dayNumber,
-          'player_role': player.role.name,
-        },
       );
 
       if (response.isValid) {
@@ -79,25 +85,25 @@ ${_buildGameContext(player, state)}
   String _buildGameContext(dynamic player, GameState state) {
     final alivePlayers = state.alivePlayers.map((p) => p.name).join(', ');
     final deadPlayers = state.deadPlayers.map((p) => p.name).join(', ');
-    final playerName = player?.name ?? 'Unknown';
-    final playerRole = player?.role?.name ?? 'Unknown';
-    final isAlive = player?.isAlive ?? false;
-    final visibleEvents = state.events
+    final eventNarratives = state.events
         .where((event) => event.isVisibleTo(player))
-        .toList();
-    print(visibleEvents.map((event) => event.toString()).join(', '));
+        .map((event) => event.toNarrative())
+        .join('\n');
     return '''
-游戏状态：
-- 第${state.dayNumber}天
-- 当前阶段：${state.currentPhase.displayName}
-- 存活玩家：${alivePlayers.isNotEmpty ? alivePlayers : '无'}
-- 死亡玩家：${deadPlayers.isNotEmpty ? deadPlayers : '无'}
-- 你的状态：${isAlive ? '存活' : '死亡'}
-- 你的角色：$playerRole
-- 你的名字：$playerName,
+# **战场情报**
 
-事件历史：
-${visibleEvents.map((event) => event.toJson()).join('\n')}
+## **当前局势**
+- **时间**: 第${state.dayNumber}天，${state.currentPhase.displayName}
+- **场上存活**: ${alivePlayers.isNotEmpty ? alivePlayers : '无'}
+- **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
+
+## **你的身份信息**
+- **我的代号**: ${player.seatNumber}号 (${player.name})
+- **我的底牌**: $player.role.name
+- **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
+
+# **过往回合全记录**
+${eventNarratives.isNotEmpty ? eventNarratives : '无'}
 ''';
   }
 

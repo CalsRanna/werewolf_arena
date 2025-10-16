@@ -1,20 +1,19 @@
-import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
 
 /// 法官公告事件 - 不可见
 class JudgeAnnouncementEvent extends GameEvent {
   final String announcement;
-  final int? dayNumber;
-  final GamePhase? phase;
 
-  JudgeAnnouncementEvent({
-    required this.announcement,
-    this.dayNumber,
-    this.phase,
-  }) : super(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
+  JudgeAnnouncementEvent({required this.announcement})
+    : super(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
+
+  @override
+  String toNarrative() {
+    return '第$dayNumber天${phase?.displayName}，法官宣布了$announcement';
+  }
 
   @override
   String toString() {
-    return 'JudgeAnnouncementEvent(id: $id)';
+    return 'JudgeAnnouncementEvent($id)';
   }
 }
