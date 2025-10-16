@@ -9,7 +9,7 @@ class GuardProtectEvent extends GameEvent {
 
   GuardProtectEvent({required GamePlayer target, this.dayNumber, this.phase})
     : super(
-        eventId: 'protect_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'protect_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
         visibility: ['guardian'],
       );

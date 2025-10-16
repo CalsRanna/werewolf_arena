@@ -9,7 +9,7 @@ class WerewolfKillEvent extends GameEvent {
 
   WerewolfKillEvent({required GamePlayer target, this.dayNumber, this.phase})
     : super(
-        eventId: 'kill_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'kill_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
         visibility: ['werewolf', 'witch'],
       );

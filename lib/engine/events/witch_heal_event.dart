@@ -9,7 +9,7 @@ class WitchHealEvent extends GameEvent {
 
   WitchHealEvent({required GamePlayer target, this.dayNumber, this.phase})
     : super(
-        eventId: 'heal_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'heal_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
         visibility: ['witch', 'werewolf'],
       );

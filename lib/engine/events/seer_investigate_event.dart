@@ -14,7 +14,7 @@ class SeerInvestigateEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-         eventId: 'investigate_${DateTime.now().millisecondsSinceEpoch}',
+         id: 'investigate_${DateTime.now().millisecondsSinceEpoch}',
          target: target,
          visibility: ['seer'],
        );

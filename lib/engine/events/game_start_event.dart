@@ -7,7 +7,7 @@ class GameStartEvent extends GameEvent {
 
   GameStartEvent({required this.playerCount, required this.roleDistribution})
     : super(
-        eventId: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
           'villager',
           'werewolf',

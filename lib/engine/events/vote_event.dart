@@ -15,7 +15,7 @@ class VoteEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-         eventId: 'vote_${voter.name}_${DateTime.now().millisecondsSinceEpoch}',
+         id: 'vote_${voter.name}_${DateTime.now().millisecondsSinceEpoch}',
          visibility: [
            'villager',
            'werewolf',

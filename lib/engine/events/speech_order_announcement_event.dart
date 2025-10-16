@@ -12,7 +12,7 @@ class SpeechOrderAnnouncementEvent extends GameEvent {
     required this.dayNumber,
     required this.direction,
   }) : super(
-         eventId: 'speech_order_${DateTime.now().millisecondsSinceEpoch}',
+         id: 'speech_order_${DateTime.now().millisecondsSinceEpoch}',
          visibility: [
            'villager',
            'werewolf',

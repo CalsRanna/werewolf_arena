@@ -11,5 +11,5 @@ class JudgeAnnouncementEvent extends GameEvent {
     required this.announcement,
     this.dayNumber,
     this.phase,
-  }) : super(eventId: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
+  }) : super(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
 }

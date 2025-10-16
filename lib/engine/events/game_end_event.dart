@@ -13,7 +13,7 @@ class GameEndEvent extends GameEvent {
     required this.finalPlayerCount,
     required this.gameStartTime,
   }) : super(
-         eventId: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
+         id: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
          visibility: [
            'villager',
            'werewolf',

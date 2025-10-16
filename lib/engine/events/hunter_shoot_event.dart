@@ -9,7 +9,7 @@ class HunterShootEvent extends GameEvent {
 
   HunterShootEvent({required GamePlayer target, this.dayNumber, this.phase})
     : super(
-        eventId: 'hunter_shoot_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'hunter_shoot_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
         visibility: ['hunter'],
       );

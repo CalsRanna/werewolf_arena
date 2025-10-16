@@ -15,7 +15,7 @@ class GameLogEvent extends GameEvent {
   final String message;
 
   GameLogEvent({required this.level, required this.message})
-    : super(eventId: 'debug');
+    : super(id: 'debug');
 
   GameLogEvent.debug(String message)
     : this(level: GameLogLevel.debug, message: message);

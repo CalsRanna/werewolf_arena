@@ -9,7 +9,7 @@ class WitchPoisonEvent extends GameEvent {
 
   WitchPoisonEvent({required GamePlayer target, this.dayNumber, this.phase})
     : super(
-        eventId: 'poison_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'poison_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
         visibility: ['witch'],
       );

@@ -15,7 +15,7 @@ class LastWordsEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-         eventId: 'speak_${DateTime.now().millisecondsSinceEpoch}',
+         id: 'speak_${DateTime.now().millisecondsSinceEpoch}',
          visibility: [
            'villager',
            'werewolf',

@@ -16,7 +16,7 @@ class DeadEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(
-         eventId: 'death_${DateTime.now().millisecondsSinceEpoch}',
+         id: 'death_${DateTime.now().millisecondsSinceEpoch}',
          visibility: [
            'villager',
            'werewolf',
