@@ -25,4 +25,9 @@ class SpeakEvent extends GameEvent {
            'guardian',
          ],
        );
+
+  @override
+  String toString() {
+    return 'SpeakEvent(id: $id)';
+  }
 }

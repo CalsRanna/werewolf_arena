@@ -22,4 +22,9 @@ class SpeechOrderAnnouncementEvent extends GameEvent {
            'guardian',
          ],
        );
+
+  @override
+  String toString() {
+    return 'SpeechOrderAnnouncementEvent(id: $id)';
+  }
 }

@@ -13,4 +13,9 @@ class HunterShootEvent extends GameEvent {
         target: target,
         visibility: ['hunter'],
       );
+
+  @override
+  String toString() {
+    return 'HunterShootEvent(id: $id)';
+  }
 }

@@ -23,13 +23,13 @@ abstract class GameEvent {
     return visibility.contains(player.role.roleId);
   }
 
-  @override
-  String toString() {
-    return 'GameEvent(id: $id)';
-  }
-
   /// 转换为JSON格式
   Map<String, dynamic> toJson() {
     return {'eventId': id, 'target': target?.name, 'visibility': visibility};
+  }
+
+  @override
+  String toString() {
+    return 'GameEvent(id: $id)';
   }
 }

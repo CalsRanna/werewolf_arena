@@ -13,4 +13,9 @@ class GuardProtectEvent extends GameEvent {
         target: target,
         visibility: ['guardian'],
       );
+
+  @override
+  String toString() {
+    return 'GuardProtectEvent(id: $id)';
+  }
 }

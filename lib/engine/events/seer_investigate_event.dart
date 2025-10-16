@@ -18,4 +18,9 @@ class SeerInvestigateEvent extends GameEvent {
          target: target,
          visibility: ['seer'],
        );
+
+  @override
+  String toString() {
+    return 'SeerInvestigateEvent(id: $id)';
+  }
 }

@@ -25,4 +25,9 @@ class LastWordsEvent extends GameEvent {
            'guardian',
          ],
        );
+
+  @override
+  String toString() {
+    return 'LastWordsEvent(id: $id)';
+  }
 }

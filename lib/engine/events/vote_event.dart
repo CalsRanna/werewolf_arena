@@ -25,4 +25,9 @@ class VoteEvent extends GameEvent {
            'guardian',
          ],
        );
+
+  @override
+  String toString() {
+    return 'VoteEvent(id: $id)';
+  }
 }

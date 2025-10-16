@@ -18,4 +18,9 @@ class WerewolfDiscussionEvent extends GameEvent {
          id: 'speak_${DateTime.now().millisecondsSinceEpoch}',
          visibility: ['werewolf'],
        );
+
+  @override
+  String toString() {
+    return 'WerewolfDiscussionEvent(id: $id)';
+  }
 }

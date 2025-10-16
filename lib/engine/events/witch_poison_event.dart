@@ -13,4 +13,9 @@ class WitchPoisonEvent extends GameEvent {
         target: target,
         visibility: ['witch'],
       );
+
+  @override
+  String toString() {
+    return 'WitchPoisonEvent(id: $id)';
+  }
 }

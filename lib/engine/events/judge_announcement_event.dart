@@ -12,4 +12,9 @@ class JudgeAnnouncementEvent extends GameEvent {
     this.dayNumber,
     this.phase,
   }) : super(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
+
+  @override
+  String toString() {
+    return 'JudgeAnnouncementEvent(id: $id)';
+  }
 }

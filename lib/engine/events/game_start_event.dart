@@ -17,4 +17,9 @@ class GameStartEvent extends GameEvent {
           'guardian',
         ],
       );
+
+  @override
+  String toString() {
+    return 'GameStartEvent(id: $id)';
+  }
 }

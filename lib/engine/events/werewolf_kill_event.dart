@@ -13,4 +13,9 @@ class WerewolfKillEvent extends GameEvent {
         target: target,
         visibility: ['werewolf', 'witch'],
       );
+
+  @override
+  String toString() {
+    return 'WerewolfKillEvent(id: $id)';
+  }
 }

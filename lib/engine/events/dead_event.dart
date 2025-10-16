@@ -37,4 +37,9 @@ class DeadEvent extends GameEvent {
       'phase': phase?.name,
     };
   }
+
+  @override
+  String toString() {
+    return 'DeadEvent(id: $id)';
+  }
 }

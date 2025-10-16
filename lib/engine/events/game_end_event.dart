@@ -23,4 +23,9 @@ class GameEndEvent extends GameEvent {
            'guardian',
          ],
        );
+
+  @override
+  String toString() {
+    return 'GameEndEvent(id: $id)';
+  }
 }
