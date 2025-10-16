@@ -33,7 +33,7 @@ class DayPhaseProcessor implements GameProcessor {
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
     for (var player in players) {
-      var result = await player.executeSkill(
+      var result = await player.cast(
         player.role.skills.whereType<SpeakSkill>().first,
         state,
       );
@@ -51,10 +51,7 @@ class DayPhaseProcessor implements GameProcessor {
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
     for (var player in players) {
-      await player.executeSkill(
-        player.role.skills.whereType<VoteSkill>().first,
-        state,
-      );
+      await player.cast(player.role.skills.whereType<VoteSkill>().first, state);
     }
     judgeAnnouncementEvent = JudgeAnnouncementEvent(
       announcement: '所有玩家投票结束，开始结算',

@@ -69,6 +69,10 @@ class GameConsole {
 
   // === 基础输出方法 ===
 
+  void printEvent(String text) {
+    printLine(_colorize(text, ConsoleColor.green));
+  }
+
   void printLine([String? text]) {
     if (text != null) {
       stdout.writeln('● $text');

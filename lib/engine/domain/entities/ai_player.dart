@@ -62,13 +62,13 @@ class AIPlayer extends GamePlayer {
        driver = AIPlayerDriver(intelligence: intelligence);
 
   @override
-  Future<SkillResult> executeSkill(GameSkill skill, GameState state) async {
+  Future<SkillResult> cast(GameSkill skill, GameState state) async {
     try {
       // 使用Driver生成技能响应
       final response = await driver.request(
         player: this,
         state: state,
-        skillPrompt: skill.prompt,
+        skill: skill,
       );
       return SkillResult(
         caster: name,

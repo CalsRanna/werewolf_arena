@@ -317,7 +317,7 @@ void main() {
       // 设置技能为无法施放
       mockSkill.canCastResult = false;
 
-      final result = await aiPlayer.executeSkill(mockSkill, gameState);
+      final result = await aiPlayer.cast(mockSkill, gameState);
       expect(result.reasoning, equals('Cannot cast skill'));
     });
 
@@ -330,7 +330,7 @@ void main() {
         reasoning: 'test',
       );
 
-      final result = await aiPlayer.executeSkill(mockSkill, gameState);
+      final result = await aiPlayer.cast(mockSkill, gameState);
       expect(result.reasoning, equals('test'));
     });
   });

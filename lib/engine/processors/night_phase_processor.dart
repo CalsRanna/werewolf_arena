@@ -37,7 +37,7 @@ class NightPhaseProcessor implements GameProcessor {
         .where((player) => player.role.isWerewolf)
         .toList();
     for (final werewolf in werewolves) {
-      var result = await werewolf.executeSkill(
+      var result = await werewolf.cast(
         werewolf.role.skills.whereType<WerewolfDiscussSkill>().first,
         state,
       );
@@ -56,7 +56,7 @@ class NightPhaseProcessor implements GameProcessor {
     await observer?.onGameEvent(judgeAnnouncementEvent);
     List<Future<SkillResult?>> futures = [];
     for (final werewolf in werewolves) {
-      var future = werewolf.executeSkill(
+      var future = werewolf.cast(
         werewolf.role.skills.whereType<KillSkill>().first,
         state,
       );
@@ -74,7 +74,7 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    await seer.executeSkill(
+    await seer.cast(
       seer.role.skills.whereType<InvestigateSkill>().first,
       state,
     );
@@ -94,10 +94,7 @@ class NightPhaseProcessor implements GameProcessor {
     );
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    await witch.executeSkill(
-      witch.role.skills.whereType<HealSkill>().first,
-      state,
-    );
+    await witch.cast(witch.role.skills.whereType<HealSkill>().first, state);
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     judgeAnnouncementEvent = JudgeAnnouncementEvent(
       announcement: '你有一瓶毒药，你要用吗',
@@ -105,10 +102,7 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    await witch.executeSkill(
-      witch.role.skills.whereType<PoisonSkill>().first,
-      state,
-    );
+    await witch.cast(witch.role.skills.whereType<PoisonSkill>().first, state);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '女巫请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
@@ -124,10 +118,7 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    await guard.executeSkill(
-      guard.role.skills.whereType<ProtectSkill>().first,
-      state,
-    );
+    await guard.cast(guard.role.skills.whereType<ProtectSkill>().first, state);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);

@@ -1,5 +1,6 @@
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/skills/game_skill.dart';
 
 /// 玩家驱动器抽象接口
 ///
@@ -21,7 +22,7 @@ abstract class PlayerDriver {
   Future<PlayerDriverResponse> request({
     required GamePlayer player,
     required GameState state,
-    required String skillPrompt,
+    required GameSkill skill,
   });
 }
 

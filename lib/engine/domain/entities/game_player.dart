@@ -44,7 +44,7 @@ abstract class GamePlayer {
   set isDead(bool dead) => setAlive(!dead);
 
   // 核心方法 - 通过自己的Driver执行技能
-  Future<SkillResult?> executeSkill(GameSkill skill, GameState state);
+  Future<SkillResult> cast(GameSkill skill, GameState state);
 
   // 事件处理
   void onGameEvent(GameEvent event);

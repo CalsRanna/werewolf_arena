@@ -75,13 +75,13 @@ class HumanPlayer extends GamePlayer {
   }
 
   @override
-  Future<SkillResult> executeSkill(GameSkill skill, GameState state) async {
+  Future<SkillResult> cast(GameSkill skill, GameState state) async {
     try {
       // 使用Driver处理技能响应（通常是等待人类输入）
       final response = await driver.request(
         player: this,
         state: state,
-        skillPrompt: skill.prompt,
+        skill: skill,
       );
       return SkillResult(
         caster: name,

@@ -1,4 +1,5 @@
 import 'package:werewolf_arena/engine/events/game_event.dart';
+import 'package:werewolf_arena/engine/events/game_log_event.dart';
 
 import 'console_output.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -12,6 +13,10 @@ class ConsoleGameObserver extends GameObserver {
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
-    _console.printLine(event.toString());
+    if (event is GameLogEvent) {
+      _console.printLine(event.toString());
+    } else {
+      _console.printEvent(event.toString());
+    }
   }
 }
