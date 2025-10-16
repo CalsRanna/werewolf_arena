@@ -15,7 +15,7 @@ class LastWordsEvent extends GameEvent {
           'seer',
           'witch',
           'hunter',
-          'guardian',
+          'guard',
         ],
       );
 

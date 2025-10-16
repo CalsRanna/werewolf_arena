@@ -16,7 +16,7 @@ class DeadEvent extends GameEvent {
           'seer',
           'witch',
           'hunter',
-          'guardian',
+          'guard',
         ],
       );
 

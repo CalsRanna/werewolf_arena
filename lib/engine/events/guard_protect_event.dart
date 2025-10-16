@@ -7,7 +7,7 @@ class GuardProtectEvent extends GameEvent {
     : super(
         id: 'protect_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
-        visibility: ['guardian'],
+        visibility: ['guard'],
       );
 
   @override

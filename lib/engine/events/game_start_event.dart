@@ -14,7 +14,7 @@ class GameStartEvent extends GameEvent {
           'seer',
           'witch',
           'hunter',
-          'guardian',
+          'guard',
         ],
       );
 

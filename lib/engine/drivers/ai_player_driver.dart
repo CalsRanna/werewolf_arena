@@ -6,6 +6,7 @@ import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/drivers/llm_service.dart';
 import 'package:werewolf_arena/engine/drivers/json_cleaner.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
+import 'package:werewolf_arena/engine/skills/werewolf_discuss_skill.dart';
 
 /// AI玩家驱动器
 ///
@@ -57,7 +58,7 @@ class AIPlayerDriver implements PlayerDriver {
     final userPrompt =
         '''
 ${_buildGameContext(player, state)}
-${skill.prompt}
+${(state.dayNumber == 1 && skill is WerewolfDiscussSkill) ? skill.firstNightPrompt : skill.prompt}
 ${PlayerDriverResponse.formatPrompt}
 ''';
 
@@ -89,6 +90,7 @@ ${PlayerDriverResponse.formatPrompt}
         .where((event) => event.isVisibleTo(player))
         .map((event) => event.toNarrative())
         .join('\n');
+    final teammates = state.werewolves.map((p) => p.name).join(', ');
     return '''
 # **战场情报**
 
@@ -101,6 +103,9 @@ ${PlayerDriverResponse.formatPrompt}
 - **我的名字**: ${player.name}
 - **我的底牌**: ${player.role.name}
 - **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
+
+# **【核心任务简报】**
+${player.role.prompt.replace("{teammates}", teammates)}
 
 # **过往回合全记录**
 ${eventNarratives.isNotEmpty ? eventNarratives : '无'}

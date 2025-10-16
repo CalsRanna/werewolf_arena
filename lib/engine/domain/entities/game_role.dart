@@ -17,7 +17,7 @@ abstract class GameRole {
   RoleType get type;
 
   // 角色身份提示词
-  String get rolePrompt; // 定义角色身份和阵营目标
+  String get prompt; // 定义角色身份和阵营目标
 
   // 技能系统
   List<GameSkill> get skills; // 角色拥有的技能列表

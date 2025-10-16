@@ -17,7 +17,7 @@ class SpeechOrderAnnouncementEvent extends GameEvent {
            'seer',
            'witch',
            'hunter',
-           'guardian',
+           'guard',
          ],
        );
 
