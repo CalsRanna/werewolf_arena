@@ -61,6 +61,8 @@ ${skill.prompt}
 ${PlayerDriverResponse.formatPrompt}
 ''';
 
+    print('AI玩家决策: $_playerPrompt\n$userPrompt');
+
     try {
       // 调用LLM服务生成响应
       final response = await _service.generateResponse(
@@ -75,6 +77,7 @@ ${PlayerDriverResponse.formatPrompt}
         return PlayerDriverResponse();
       }
     } catch (e) {
+      print('AI玩家决策失败: $e');
       return PlayerDriverResponse();
     }
   }
