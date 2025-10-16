@@ -105,7 +105,7 @@ ${PlayerDriverResponse.formatPrompt}
 - **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
 
 # **【核心任务简报】**
-${player.role.prompt.replace("{teammates}", teammates)}
+${player.role.prompt.replaceAll("{teammates}", teammates)}
 
 # **过往回合全记录**
 ${eventNarratives.isNotEmpty ? eventNarratives : '无'}

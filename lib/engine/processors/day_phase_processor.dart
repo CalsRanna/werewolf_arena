@@ -1,12 +1,15 @@
+import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/speak_event.dart';
+import 'package:werewolf_arena/engine/events/vote_event.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/skills/skill_result.dart';
 import 'package:werewolf_arena/engine/skills/speak_skill.dart';
 import 'package:werewolf_arena/engine/skills/vote_skill.dart';
+
 import 'game_processor.dart';
 
 /// 白天阶段处理器（基于技能系统重构，包含发言和投票）
@@ -21,13 +24,8 @@ class DayPhaseProcessor implements GameProcessor {
 
   @override
   Future<void> process(GameState state, {GameObserver? observer}) async {
-    // 2. 公布夜晚结果
-    await _announceNightResults(state, observer: observer);
-
     var players = state.alivePlayers;
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(
-      announcement: '所有玩家开始讨论',
-    );
+    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '开始讨论');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -49,44 +47,47 @@ class DayPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+    List<Future<SkillResult>> futures = [];
     for (var player in players) {
-      await player.cast(player.role.skills.whereType<VoteSkill>().first, state);
+      futures.add(
+        player.cast(player.role.skills.whereType<VoteSkill>().first, state),
+      );
     }
+    var results = await Future.wait(futures);
     judgeAnnouncementEvent = JudgeAnnouncementEvent(
       announcement: '所有玩家投票结束，开始结算',
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+
+    for (var result in results) {
+      var voteEvent = VoteEvent(
+        voter: state.getPlayerByName(result.caster)!,
+        candidate: state.getPlayerByName(result.target!)!,
+      );
+      state.handleEvent(voteEvent);
+      await observer?.onGameEvent(voteEvent);
+    }
+
+    ///统计得票最多的玩家出局
+    var map = <String, int>{};
+    for (var result in results) {
+      if (result.target == null) continue;
+      map[result.target!] = (map[result.target!] ?? 0) + 1;
+    }
+    var targetPlayerName = map.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+    var targetPlayer = state.getPlayerByName(targetPlayerName);
+    if (targetPlayer != null) {
+      targetPlayer.setAlive(false);
+    }
+    var deadEvent = DeadEvent(victim: targetPlayer!);
+    state.handleEvent(deadEvent);
+    await observer?.onGameEvent(deadEvent);
     // 6. 切换到夜晚阶段（开始新的一天）
     state.dayNumber++;
     await state.changePhase(GamePhase.night);
-  }
-
-  /// 公布夜晚结果
-  Future<void> _announceNightResults(
-    GameState state, {
-    GameObserver? observer,
-  }) async {
-    GameEngineLogger.instance.d('公布夜晚结果');
-
-    // 筛选出今晚的死亡事件
-    final deathEvents = state.events.whereType<DeadEvent>().toList();
-
-    final isPeacefulNight = deathEvents.isEmpty;
-
-    // 记录夜晚结果
-    if (isPeacefulNight) {
-      GameEngineLogger.instance.i('第${state.dayNumber}夜是平安夜，无人死亡');
-    } else {
-      final deadPlayers = deathEvents.map((e) => e.victim.name).join('、');
-      GameEngineLogger.instance.i('第${state.dayNumber}夜死亡玩家：$deadPlayers');
-    }
-
-    // 公布当前存活玩家
-    final alivePlayers = state.alivePlayers;
-    GameEngineLogger.instance.i(
-      '当前存活玩家：${alivePlayers.map((p) => p.name).join('、')}',
-    );
   }
 }

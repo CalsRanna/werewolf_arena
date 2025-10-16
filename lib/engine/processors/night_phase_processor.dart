@@ -4,6 +4,9 @@ import 'package:werewolf_arena/engine/domain/entities/hunter_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/seer_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/witch_role.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/events/dead_event.dart';
+import 'package:werewolf_arena/engine/events/guard_protect_event.dart';
+import 'package:werewolf_arena/engine/events/hunter_shoot_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/seer_investigate_event.dart';
 import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
@@ -51,40 +54,109 @@ class NightPhaseProcessor implements GameProcessor {
     final poisonTarget = await _processWitchPoison(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
     // 守卫守护
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请睁眼');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-    final guard = state.alivePlayers
-        .where((player) => player.role is GuardRole)
-        .first;
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要守护的玩家是谁');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-    await guard.cast(guard.role.skills.whereType<ProtectSkill>().first, state);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请睁眼');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-    final hunter = state.alivePlayers
-        .where((player) => player.role is HunterRole)
-        .first;
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请闭眼');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天亮了');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-
-    // 7. 切换到白天阶段
+    final guardTarget = await _processGuardProtect(state, observer: observer);
+    await Future.delayed(const Duration(seconds: 1));
+    // 猎人杀人
+    final shootTarget = await _processHunterKill(state, observer: observer);
+    await Future.delayed(const Duration(seconds: 1));
+    // 夜晚结算
+    await _processNightSettlement(
+      state,
+      observer: observer,
+      killTarget: killTarget,
+      healTarget: healTarget,
+      poisonTarget: poisonTarget,
+      guardTarget: guardTarget,
+      shootTarget: shootTarget,
+    );
+    await Future.delayed(const Duration(seconds: 1));
     await state.changePhase(GamePhase.day);
+  }
+
+  Future<void> _processNightSettlement(
+    GameState state, {
+    GameObserver? observer,
+    GamePlayer? killTarget,
+    GamePlayer? healTarget,
+    GamePlayer? poisonTarget,
+    GamePlayer? guardTarget,
+    GamePlayer? shootTarget,
+  }) async {
+    final lastAlivePlayers = state.alivePlayers;
+    if (killTarget != null) {
+      final killEvent = WerewolfKillEvent(target: killTarget);
+      state.handleEvent(killEvent);
+      await observer?.onGameEvent(killEvent);
+      final player = state.getPlayerByName(killTarget.name);
+      if (player != null) {
+        player.setAlive(false);
+      }
+    }
+    if (healTarget != null) {
+      final healEvent = WitchHealEvent(target: healTarget);
+      state.handleEvent(healEvent);
+      await observer?.onGameEvent(healEvent);
+      final player = state.getPlayerByName(healTarget.name);
+      if (player != null) {
+        player.setAlive(true);
+      }
+    }
+    if (poisonTarget != null) {
+      final poisonEvent = WitchPoisonEvent(target: poisonTarget);
+      state.handleEvent(poisonEvent);
+      await observer?.onGameEvent(poisonEvent);
+      final player = state.getPlayerByName(poisonTarget.name);
+      if (player != null) {
+        player.setAlive(false);
+      }
+    }
+    if (guardTarget != null) {
+      final guardEvent = GuardProtectEvent(target: guardTarget);
+      state.handleEvent(guardEvent);
+      await observer?.onGameEvent(guardEvent);
+      final player = state.getPlayerByName(guardTarget.name);
+      if (player != null) {
+        player.setProtected(true);
+        player.setAlive(true);
+      }
+    }
+    if (shootTarget != null) {
+      final hunterEvent = HunterShootEvent(target: shootTarget);
+      state.handleEvent(hunterEvent);
+      await observer?.onGameEvent(hunterEvent);
+      final player = state.getPlayerByName(shootTarget.name);
+      if (player != null) {
+        player.setAlive(false);
+      }
+    }
+    final deadPlayers = lastAlivePlayers
+        .where((player) => !player.isAlive)
+        .toList();
+    if (deadPlayers.isNotEmpty) {
+      var judgeAnnouncementEvent = JudgeAnnouncementEvent(
+        announcement: '昨晚是平安夜',
+      );
+      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+      state.handleEvent(judgeAnnouncementEvent);
+      await observer?.onGameEvent(judgeAnnouncementEvent);
+    } else {
+      for (var player in deadPlayers) {
+        final deadEvent = DeadEvent(victim: player);
+        state.handleEvent(deadEvent);
+        await observer?.onGameEvent(deadEvent);
+      }
+      var judgeAnnouncementEvent = JudgeAnnouncementEvent(
+        announcement:
+            '昨晚${deadPlayers.map((player) => player.formattedName).join('、')}死亡',
+      );
+      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+      state.handleEvent(judgeAnnouncementEvent);
+      await observer?.onGameEvent(judgeAnnouncementEvent);
+    }
+    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天亮了');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
   }
 
   GamePlayer? _getTargetGamePlayer(GameState state, List<String?> names) {
@@ -99,6 +171,101 @@ class NightPhaseProcessor implements GameProcessor {
         .reduce((a, b) => a.value > b.value ? a : b)
         .key;
     return state.getPlayerByName(targetPlayerName);
+  }
+
+  Future<GamePlayer?> _processHunterKill(
+    GameState state, {
+    GameObserver? observer,
+  }) async {
+    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请睁眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
+    final hunter = state.alivePlayers
+        .where((player) => player.role is HunterRole)
+        .first;
+    // TODO
+    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请闭眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
+    return null;
+  }
+
+  Future<GamePlayer?> _processGuardProtect(
+    GameState state, {
+    GameObserver? observer,
+  }) async {
+    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请睁眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
+    final guard = state.alivePlayers
+        .where((player) => player.role is GuardRole)
+        .first;
+    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要守护的玩家是谁');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
+    final result = await guard.cast(
+      guard.role.skills.whereType<ProtectSkill>().first,
+      state,
+    );
+    final target = state.getPlayerByName(result.target ?? '');
+    if (target != null) {
+      final protectEvent = GuardProtectEvent(target: target);
+      state.handleEvent(protectEvent);
+      await observer?.onGameEvent(protectEvent);
+      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+        announcement: '守卫对${target.formattedName}使用了保护',
+      );
+      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+      state.handleEvent(judgeAnnouncementEvent);
+    }
+    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
+    return target;
+  }
+
+  Future<void> _processSeerInvestigate(
+    GameState state, {
+    GameObserver? observer,
+  }) async {
+    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请睁眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
+    final seer = state.alivePlayers
+        .where((player) => player.role is SeerRole)
+        .first;
+    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要查验的玩家是谁');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
+    final result = await seer.cast(
+      seer.role.skills.whereType<InvestigateSkill>().first,
+      state,
+    );
+    final target = state.getPlayerByName(result.target ?? '');
+    if (target != null) {
+      final investigateEvent = SeerInvestigateEvent(
+        target: target,
+        investigationResult: target.role.name,
+      );
+      state.handleEvent(investigateEvent);
+      await observer?.onGameEvent(investigateEvent);
+      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+        announcement: '${target.formattedName}是${target.role.name}',
+      );
+      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+      state.handleEvent(judgeAnnouncementEvent);
+    }
+    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请闭眼');
+    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+    state.handleEvent(judgeAnnouncementEvent);
+    await observer?.onGameEvent(judgeAnnouncementEvent);
   }
 
   Future<void> _processWerewolfDiscussion(
@@ -165,45 +332,6 @@ class NightPhaseProcessor implements GameProcessor {
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
     return target;
-  }
-
-  Future<void> _processSeerInvestigate(
-    GameState state, {
-    GameObserver? observer,
-  }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请睁眼');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-    final seer = state.alivePlayers
-        .where((player) => player.role is SeerRole)
-        .first;
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要查验的玩家是谁');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
-    final result = await seer.cast(
-      seer.role.skills.whereType<InvestigateSkill>().first,
-      state,
-    );
-    final target = state.getPlayerByName(result.target ?? '');
-    if (target != null) {
-      final investigateEvent = SeerInvestigateEvent(
-        target: target,
-        investigationResult: target.role.name,
-      );
-      state.handleEvent(investigateEvent);
-      await observer?.onGameEvent(investigateEvent);
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(
-        announcement: '${target.formattedName}是${target.role.name}',
-      );
-      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-      state.handleEvent(judgeAnnouncementEvent);
-    }
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请闭眼');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
   }
 
   Future<GamePlayer?> _processWitchHeal(

@@ -1,13 +1,11 @@
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
 
 /// 玩家死亡事件 - 公开可见
 class DeadEvent extends GameEvent {
   final GamePlayer victim;
-  final DeathCause cause;
 
-  DeadEvent({required this.victim, required this.cause})
+  DeadEvent({required this.victim})
     : super(
         id: 'death_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
