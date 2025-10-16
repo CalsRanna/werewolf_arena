@@ -132,7 +132,7 @@ class NightPhaseProcessor implements GameProcessor {
     final deadPlayers = lastAlivePlayers
         .where((player) => !player.isAlive)
         .toList();
-    if (deadPlayers.isNotEmpty) {
+    if (deadPlayers.isEmpty) {
       var judgeAnnouncementEvent = JudgeAnnouncementEvent(
         announcement: '昨晚是平安夜',
       );
