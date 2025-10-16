@@ -17,7 +17,6 @@ import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 /// 狼人杀竞技场 - 控制台模式入口
 ///
 /// 基于新架构的控制台应用：
-/// - 使用GameAssembler创建游戏引擎
 /// - 简化启动流程，移除复杂的参数管理
 /// - 保持控制台友好的用户体验
 Future<void> main(List<String> arguments) async {

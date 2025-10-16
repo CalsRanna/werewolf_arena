@@ -10,7 +10,6 @@ import 'package:werewolf_arena/services/config_service.dart';
 /// 依赖注入配置
 ///
 /// 基于新架构的依赖注入配置：
-/// - 使用GameAssembler外部组装游戏，而不是在DI中管理GameEngine
 /// - 保持原有的服务层和ViewModel注册
 /// - 简化配置，专注于真正需要全局管理的组件
 class DI {
@@ -18,7 +17,6 @@ class DI {
   ///
   /// 注册所有需要依赖注入的服务和ViewModel：
   /// - ConfigService: 配置管理服务（单例）
-  /// - GameService: 游戏服务（单例，使用GameAssembler）
   /// - ViewModel: 页面视图模型（工厂模式）
   static void ensureInitialized() {
     // 注册核心服务（单例）

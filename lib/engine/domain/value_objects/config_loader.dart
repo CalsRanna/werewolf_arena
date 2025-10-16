@@ -168,16 +168,12 @@ class ConfigLoader {
   }
 
   /// 从文件加载配置（与loadGameConfig方法兼容）
-  ///
-  /// GameAssembler需要的方法接口
   static Future<GameConfig> loadFromFile(String configPath) async {
     final loader = ConfigLoader();
     return await loader.loadGameConfig(configPath);
   }
 
   /// 加载默认配置（与loadGameConfig方法兼容）
-  ///
-  /// GameAssembler需要的方法接口
   static Future<GameConfig> loadDefaultConfig() async {
     final loader = ConfigLoader();
     return await loader.loadGameConfig(); // 不传路径即为默认配置
