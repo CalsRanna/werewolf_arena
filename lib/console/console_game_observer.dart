@@ -3,6 +3,7 @@ import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/events/game_log_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/speak_event.dart';
+import 'package:werewolf_arena/engine/events/speech_order_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/vote_event.dart';
 import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -28,6 +29,8 @@ class ConsoleGameObserver extends GameObserver {
       _console.printEvent(
         '${event.voter.formattedName}投票给${event.candidate.formattedName}',
       );
+    } else if (event is SpeechOrderAnnouncementEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
     } else {
       _console.printEvent(event.toString());
     }

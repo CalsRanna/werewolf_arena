@@ -54,10 +54,10 @@ class NightPhaseProcessor implements GameProcessor {
     final poisonTarget = await _processWitchPoison(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
     // 守卫守护
-    final guardTarget = await _processGuardProtect(state, observer: observer);
+    final protectTarget = await _processGuardProtect(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
     // 猎人杀人
-    final shootTarget = await _processHunterKill(state, observer: observer);
+    final shootTarget = await _processHunterShoot(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
     // 夜晚结算
     await _processNightSettlement(
@@ -66,7 +66,7 @@ class NightPhaseProcessor implements GameProcessor {
       killTarget: killTarget,
       healTarget: healTarget,
       poisonTarget: poisonTarget,
-      guardTarget: guardTarget,
+      guardTarget: protectTarget,
       shootTarget: shootTarget,
     );
     await Future.delayed(const Duration(seconds: 1));
@@ -173,7 +173,7 @@ class NightPhaseProcessor implements GameProcessor {
     return state.getPlayerByName(targetPlayerName);
   }
 
-  Future<GamePlayer?> _processHunterKill(
+  Future<GamePlayer?> _processHunterShoot(
     GameState state, {
     GameObserver? observer,
   }) async {
@@ -183,7 +183,8 @@ class NightPhaseProcessor implements GameProcessor {
     await observer?.onGameEvent(judgeAnnouncementEvent);
     final hunter = state.alivePlayers
         .where((player) => player.role is HunterRole)
-        .first;
+        .firstOrNull;
+    if (hunter == null) return null;
     // TODO
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
@@ -200,13 +201,14 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    final guard = state.alivePlayers
-        .where((player) => player.role is GuardRole)
-        .first;
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要守护的玩家是谁');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+    final guard = state.alivePlayers
+        .where((player) => player.role is GuardRole)
+        .firstOrNull;
+    if (guard == null) return null;
     final result = await guard.cast(
       guard.role.skills.whereType<ProtectSkill>().first,
       state,
@@ -237,13 +239,14 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    final seer = state.alivePlayers
-        .where((player) => player.role is SeerRole)
-        .first;
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要查验的玩家是谁');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+    final seer = state.alivePlayers
+        .where((player) => player.role is SeerRole)
+        .firstOrNull;
+    if (seer == null) return;
     final result = await seer.cast(
       seer.role.skills.whereType<InvestigateSkill>().first,
       state,
@@ -342,14 +345,16 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    final witch = state.alivePlayers
-        .where((player) => player.role is WitchRole)
-        .first;
     judgeAnnouncementEvent = JudgeAnnouncementEvent(
       announcement: '你有一瓶解药，你要用吗',
     );
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+    if (!state.canUserHeal) return null;
+    final witch = state.alivePlayers
+        .where((player) => player.role is WitchRole)
+        .firstOrNull;
+    if (witch == null) return null;
     final result = await witch.cast(
       witch.role.skills.whereType<HealSkill>().first,
       state,
@@ -378,9 +383,11 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+    if (!state.canUserPoison) return null;
     final witch = state.alivePlayers
         .where((player) => player.role is WitchRole)
-        .first;
+        .firstOrNull;
+    if (witch == null) return null;
     final result = await witch.cast(
       witch.role.skills.whereType<PoisonSkill>().first,
       state,

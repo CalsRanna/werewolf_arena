@@ -23,7 +23,7 @@ class SpeechOrderAnnouncementEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，发言顺序公告：${speakingOrder.map((p) => p.name).join(", ")}$direction';
+    return '第$dayNumber天${phase?.displayName}，发言顺序公告：${speakingOrder.map((p) => p.name).join(", ")}，$direction发言';
   }
 
   @override

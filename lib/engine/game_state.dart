@@ -32,6 +32,9 @@ class GameState {
   DateTime? lastUpdateTime;
   String? winner;
 
+  bool canUserHeal = true;
+  bool canUserPoison = true;
+
   // 技能效果管理（替代NightActionState和VotingState）
   final Map<String, dynamic> skillEffects; // 存储技能效果状态
   final Map<String, int> skillUsageCounts; // 跟踪技能使用次数

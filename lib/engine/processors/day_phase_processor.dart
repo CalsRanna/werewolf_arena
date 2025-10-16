@@ -2,6 +2,7 @@ import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/speak_event.dart';
+import 'package:werewolf_arena/engine/events/speech_order_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -29,6 +30,13 @@ class DayPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+    var speakingOrder = SpeechOrderAnnouncementEvent(
+      speakingOrder: state.alivePlayers,
+      direction: '顺序',
+    );
+    GameEngineLogger.instance.d(speakingOrder.toString());
+    state.handleEvent(speakingOrder);
+    await observer?.onGameEvent(speakingOrder);
     for (var player in players) {
       var result = await player.cast(
         player.role.skills.whereType<SpeakSkill>().first,
