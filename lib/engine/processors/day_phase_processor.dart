@@ -71,7 +71,7 @@ class DayPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d('公布夜晚结果');
 
     // 筛选出今晚的死亡事件
-    final deathEvents = state.eventHistory.whereType<DeadEvent>().toList();
+    final deathEvents = state.events.whereType<DeadEvent>().toList();
 
     final isPeacefulNight = deathEvents.isEmpty;
 

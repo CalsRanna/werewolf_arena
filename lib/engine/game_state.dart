@@ -27,7 +27,7 @@ class GameState {
   int dayNumber;
 
   List<GamePlayer> players;
-  final List<GameEvent> eventHistory;
+  final List<GameEvent> events;
 
   DateTime? lastUpdateTime;
   String? winner;
@@ -53,7 +53,7 @@ class GameState {
     Map<String, dynamic>? metadata,
     Map<String, dynamic>? skillEffects,
     Map<String, int>? skillUsageCounts,
-  }) : eventHistory = eventHistory ?? [],
+  }) : events = eventHistory ?? [],
        startTime = DateTime.now(),
        skillEffects = skillEffects ?? {},
        skillUsageCounts = skillUsageCounts ?? {};
@@ -78,7 +78,7 @@ class GameState {
 
   // Methods
   Future<void> handleEvent(GameEvent event) async {
-    eventHistory.add(event);
+    events.add(event);
     lastUpdateTime = DateTime.now();
     _controller.add(event);
   }

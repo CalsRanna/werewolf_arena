@@ -35,7 +35,7 @@ class AIPlayerDriver implements PlayerDriver {
     required GameSkill skill,
   }) async {
     // 构建完整的提示词
-    final fullPrompt =
+    final userPrompt =
         '''
 ${skill.prompt}
 
@@ -52,8 +52,9 @@ ${_buildGameContext(player, state)}
     try {
       // 调用LLM服务生成响应
       final response = await _service.generateResponse(
-        systemPrompt: '你是狼人杀游戏中的骨灰级玩家，你的终极任务是帮助你的阵营赢得游戏胜利，为此你可以使用任何手段和战术。',
-        userPrompt: fullPrompt,
+        systemPrompt:
+            '你是狼人杀游戏中的骨灰级玩家，你的终极任务是帮助你的阵营赢得游戏胜利，为此你可以使用任何手段和战术，但不能盘场外。',
+        userPrompt: userPrompt,
         context: {
           'phase': state.currentPhase.name,
           'day': state.dayNumber,
@@ -81,10 +82,10 @@ ${_buildGameContext(player, state)}
     final playerName = player?.name ?? 'Unknown';
     final playerRole = player?.role?.name ?? 'Unknown';
     final isAlive = player?.isAlive ?? false;
-    final events = state.eventHistory
+    final visibleEvents = state.events
         .where((event) => event.isVisibleTo(player))
         .toList();
-
+    print(visibleEvents.map((event) => event.toString()).join(', '));
     return '''
 游戏状态：
 - 第${state.dayNumber}天
@@ -94,8 +95,9 @@ ${_buildGameContext(player, state)}
 - 你的状态：${isAlive ? '存活' : '死亡'}
 - 你的角色：$playerRole
 - 你的名字：$playerName,
+
 事件历史：
-${events.map((event) => event.toJson()).join('\n')}
+${visibleEvents.map((event) => event.toJson()).join('\n')}
 ''';
   }
 

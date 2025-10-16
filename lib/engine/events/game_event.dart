@@ -20,7 +20,7 @@ abstract class GameEvent {
   ///
   /// 根据可见性规则判断玩家是否能看到此事件
   bool isVisibleTo(GamePlayer player) {
-    return visibility.contains(player.role.name);
+    return visibility.contains(player.role.roleId);
   }
 
   @override
