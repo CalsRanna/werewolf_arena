@@ -39,7 +39,7 @@ class DayPhaseProcessor implements GameProcessor {
       );
       var speakEvent = SpeakEvent(
         speaker: player,
-        message: result?.message ?? '',
+        message: result.message ?? '',
       );
       state.handleEvent(speakEvent);
       await observer?.onGameEvent(speakEvent);

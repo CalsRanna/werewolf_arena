@@ -209,8 +209,6 @@ class AIPlayer extends GamePlayer {
   @override
   void die(DeathCause cause, GameState state) {
     onDeath(cause);
-    // 注意：GameState.playerDeath需要Player类型，这里需要在后续重构中统一
-    // state.playerDeath(this, cause);
   }
 
   @override

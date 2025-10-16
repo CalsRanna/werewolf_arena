@@ -65,8 +65,10 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.info_outline,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    Icon(
+                      Icons.info_outline,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
                     SizedBox(width: 8),
                     Text(
                       '关于 LLM 配置',
@@ -135,7 +137,7 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
               children: [
                 ...playerConfigs.entries.map((entry) {
                   return _buildPlayerConfigCard(entry.key, entry.value);
-                }).toList(),
+                }),
                 SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: () => _showAddPlayerConfigDialog(),
@@ -176,16 +178,12 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
           padding: EdgeInsets.only(bottom: 12),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        Card(
-          child: Column(
-            children: children,
-          ),
-        ),
+        Card(child: Column(children: children)),
       ],
     );
   }
@@ -215,11 +213,7 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
     );
   }
 
-  Widget _buildNumberField(
-    String label,
-    int value,
-    Function(int) onChanged,
-  ) {
+  Widget _buildNumberField(String label, int value, Function(int) onChanged) {
     return Padding(
       padding: EdgeInsets.all(16),
       child: TextField(
@@ -243,9 +237,7 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
     return Card(
       margin: EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: CircleAvatar(
-          child: Text(playerId),
-        ),
+        leading: CircleAvatar(child: Text(playerId)),
         title: Text('玩家 $playerId'),
         subtitle: Text(config.model.isEmpty ? '未设置模型' : config.model),
         trailing: Row(
@@ -347,9 +339,21 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
           ),
           TextButton(
             onPressed: () {
-              viewModel.updatePlayerConfig(playerId, 'model', modelController.text);
-              viewModel.updatePlayerConfig(playerId, 'apiKey', apiKeyController.text);
-              viewModel.updatePlayerConfig(playerId, 'baseUrl', baseUrlController.text);
+              viewModel.updatePlayerConfig(
+                playerId,
+                'model',
+                modelController.text,
+              );
+              viewModel.updatePlayerConfig(
+                playerId,
+                'apiKey',
+                apiKeyController.text,
+              );
+              viewModel.updatePlayerConfig(
+                playerId,
+                'baseUrl',
+                baseUrlController.text,
+              );
               Navigator.pop(context);
             },
             child: Text('保存'),
@@ -374,9 +378,9 @@ class _LLMConfigPageState extends State<LLMConfigPage> {
             onPressed: () {
               Navigator.pop(context);
               viewModel.resetToDefaults();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('配置已重置')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('配置已重置')));
             },
             child: Text('确定'),
           ),

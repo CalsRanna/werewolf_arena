@@ -65,10 +65,10 @@ Future<void> main(List<String> arguments) async {
     final observer = ConsoleGameObserver();
 
     final gameEngine = await _createGameEngine(observer);
-    await gameEngine.initializeGame();
+    await gameEngine.ensureInitialized();
 
     while (!gameEngine.isGameEnded) {
-      await gameEngine.executeGameStep();
+      await gameEngine.loop();
 
       // 添加小延迟，让用户有时间阅读输出
       await Future.delayed(const Duration(milliseconds: 500));

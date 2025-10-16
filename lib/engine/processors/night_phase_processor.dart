@@ -43,7 +43,7 @@ class NightPhaseProcessor implements GameProcessor {
       );
       var werewolfDiscussionEvent = WerewolfDiscussionEvent(
         speaker: werewolf,
-        message: result?.message ?? '',
+        message: result.message ?? '',
       );
       state.handleEvent(werewolfDiscussionEvent);
       await observer?.onGameEvent(werewolfDiscussionEvent);

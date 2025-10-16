@@ -33,7 +33,8 @@ class GameLogEvent extends GameEvent {
 
   @override
   String toString() {
-    return '[$timestamp][$level] $message';
+    var now = DateTime.now();
+    return '[$now][$level] $message';
   }
 
   @override

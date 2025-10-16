@@ -1,18 +1,13 @@
 import 'dart:async';
 
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/events/game_end_event.dart';
 import 'package:werewolf_arena/engine/events/game_start_event.dart';
 import 'package:werewolf_arena/engine/events/phase_change_event.dart';
-// import 'package:werewolf_arena/services/config/config.dart'; // 移除Flutter依赖
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart'; // 重新导入新的场景类
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/game_event_type.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 
 /// 简化后的游戏状态类 - 专注于纯游戏逻辑状态
 ///
@@ -34,7 +29,6 @@ class GameState {
 
   List<GamePlayer> players;
   final List<GameEvent> eventHistory;
-  final Map<String, dynamic> metadata;
 
   DateTime? lastUpdateTime;
   String? winner;
@@ -62,7 +56,6 @@ class GameState {
     Map<String, int>? skillUsageCounts,
   }) : eventHistory = eventHistory ?? [],
        startTime = DateTime.now(),
-       metadata = metadata ?? {},
        skillEffects = skillEffects ?? {},
        skillUsageCounts = skillUsageCounts ?? {};
 
@@ -84,88 +77,11 @@ class GameState {
   int get aliveVillagers => villagers.where((p) => p.isAlive).length;
   int get aliveGoodGuys => alivePlayers.where((p) => !p.role.isWerewolf).length;
 
-  // 技能效果管理方法
-  /// 设置技能效果
-  void setSkillEffect(String effectKey, dynamic value) {
-    skillEffects[effectKey] = value;
-    lastUpdateTime = DateTime.now();
-  }
-
-  /// 获取技能效果
-  T? getSkillEffect<T>(String effectKey) {
-    return skillEffects[effectKey] as T?;
-  }
-
-  /// 移除技能效果
-  void removeSkillEffect(String effectKey) {
-    skillEffects.remove(effectKey);
-    lastUpdateTime = DateTime.now();
-  }
-
-  /// 检查技能效果是否存在
-  bool hasSkillEffect(String effectKey) {
-    return skillEffects.containsKey(effectKey);
-  }
-
-  /// 增加技能使用次数
-  void incrementSkillUsage(String skillId) {
-    skillUsageCounts[skillId] = (skillUsageCounts[skillId] ?? 0) + 1;
-    lastUpdateTime = DateTime.now();
-  }
-
-  /// 获取技能使用次数
-  int getSkillUsageCount(String skillId) {
-    return skillUsageCounts[skillId] ?? 0;
-  }
-
-  /// 重置技能使用次数
-  void resetSkillUsage(String skillId) {
-    skillUsageCounts.remove(skillId);
-    lastUpdateTime = DateTime.now();
-  }
-
-  /// 清空所有技能效果（通常在阶段转换时使用）
-  void clearSkillEffects() {
-    skillEffects.clear();
-    lastUpdateTime = DateTime.now();
-  }
-
   // Methods
   Future<void> handleEvent(GameEvent event) async {
     eventHistory.add(event);
     lastUpdateTime = DateTime.now();
     _controller.add(event);
-  }
-
-  /// Get all events visible to a specific player
-  List<GameEvent> getEventsForPlayer(GamePlayer player) {
-    return eventHistory.where((event) => event.isVisibleTo(player)).toList();
-  }
-
-  /// Get recent events visible to a specific player
-  /// Get events visible to a specific player
-  List<GameEvent> getEventsForGamePlayer(GamePlayer player) {
-    return eventHistory.where((event) => event.isVisibleTo(player)).toList();
-  }
-
-  List<GameEvent> getRecentEventsForPlayer(
-    GamePlayer player, {
-    Duration timeWindow = const Duration(minutes: 5),
-  }) {
-    final cutoffTime = DateTime.now().subtract(timeWindow);
-    return eventHistory
-        .where(
-          (event) =>
-              event.timestamp.isAfter(cutoffTime) && event.isVisibleTo(player),
-        )
-        .toList();
-  }
-
-  /// Get events of a specific type visible to a player
-  List<GameEvent> getEventsByType(GamePlayer player, GameEventType type) {
-    return eventHistory
-        .where((event) => event.type == type && event.isVisibleTo(player))
-        .toList();
   }
 
   Future<void> changePhase(GamePhase newPhase) async {
@@ -182,7 +98,6 @@ class GameState {
   }
 
   void startGame() {
-    // 移除status设置，由GameEngine管理
     dayNumber = 1;
     currentPhase = GamePhase.night;
 
@@ -195,7 +110,6 @@ class GameState {
   }
 
   void endGame(String winner) {
-    // 移除status设置，由GameEngine管理
     this.winner = winner;
 
     final event = GameEndEvent(
@@ -203,19 +117,6 @@ class GameState {
       totalDays: dayNumber,
       finalPlayerCount: alivePlayers.length,
       gameStartTime: startTime,
-    );
-    logger.d(event.toString());
-    handleEvent(event);
-  }
-
-  void playerDeath(GamePlayer player, DeathCause cause) {
-    player.setAlive(false);
-
-    final event = DeadEvent(
-      victim: player,
-      cause: cause,
-      dayNumber: dayNumber,
-      phase: currentPhase,
     );
     logger.d(event.toString());
     handleEvent(event);
@@ -231,7 +132,7 @@ class GameState {
       return true;
     }
 
-    final winner = check();
+    final winner = _checkWinner();
 
     if (winner != null) {
       endGame(winner);
@@ -250,10 +151,6 @@ class GameState {
     }
   }
 
-  List<GamePlayer> getPlayersByRole(String roleId) {
-    return players.where((p) => p.role.roleId == roleId).toList();
-  }
-
   Map<String, int> _getRoleDistribution() {
     final distribution = <String, int>{};
     for (final player in players) {
@@ -263,63 +160,11 @@ class GameState {
     return distribution;
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'gameId': gameId,
-      'startTime': startTime.toIso8601String(),
-      // 'config': config.toJson(), // 移除Flutter依赖
-      'scenario': {
-        'id': scenario.id,
-        'name': scenario.name,
-        'description': scenario.description,
-        'playerCount': scenario.playerCount,
-      },
-      'currentPhase': currentPhase.name,
-      'dayNumber': dayNumber,
-      'players': players.map((p) => p.toJson()).toList(),
-      'eventHistory': eventHistory.map((e) => e.toJson()).toList(),
-      'metadata': metadata,
-      'lastUpdateTime': lastUpdateTime?.toIso8601String(),
-      'winner': winner,
-      'skillEffects': skillEffects,
-      'skillUsageCounts': skillUsageCounts,
-    };
-  }
-
-  factory GameState.fromJson(Map<String, dynamic> json) {
-    // TODO: 实现GamePlayer的序列化/反序列化
-    // final config = AppConfig.fromJson(json['config']); // 移除Flutter依赖
-    // final players = (json['players'] as List)
-    //     .map((p) => GamePlayer.fromJson(p))
-    //     .toList();
-
-    final eventHistory = <GameEvent>[];
-
-    return GameState(
-        gameId: json['gameId'],
-        // config: config, // 移除Flutter依赖
-        scenario: Scenario9Players(), // Placeholder - 使用新的场景类
-        players: [], // TODO: 实现玩家序列化
-        currentPhase: GamePhase.values.firstWhere(
-          (p) => p.name == json['currentPhase'],
-        ),
-        dayNumber: json['dayNumber'],
-        eventHistory: eventHistory,
-        metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
-        skillEffects: Map<String, dynamic>.from(json['skillEffects'] ?? {}),
-        skillUsageCounts: Map<String, int>.from(json['skillUsageCounts'] ?? {}),
-      )
-      ..lastUpdateTime = json['lastUpdateTime'] != null
-          ? DateTime.parse(json['lastUpdateTime'])
-          : null
-      ..winner = json['winner'];
-  }
-
   void dispose() {
     _controller.close();
   }
 
-  String? check() {
+  String? _checkWinner() {
     // Good guys win: all werewolves are dead.
     if (aliveWerewolves == 0) {
       GameEngineLogger.instance.i('好人阵营获胜！所有狼人已出局');

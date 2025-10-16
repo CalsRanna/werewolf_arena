@@ -25,9 +25,9 @@ class DebugViewModel {
 
   Future<void> startGame() async {
     running.value = true;
-    await gameEngine.initializeGame();
+    await gameEngine.ensureInitialized();
     while (!gameEngine.isGameEnded) {
-      await gameEngine.executeGameStep();
+      await gameEngine.loop();
     }
     running.value = false;
   }

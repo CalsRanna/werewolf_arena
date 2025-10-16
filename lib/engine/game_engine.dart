@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_engine_status.dart';
-import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
-import 'package:werewolf_arena/engine/processors/night_phase_processor.dart';
-import 'package:werewolf_arena/engine/processors/day_phase_processor.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/processors/day_phase_processor.dart';
+import 'package:werewolf_arena/engine/processors/night_phase_processor.dart';
+import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
 
 /// 简化版游戏引擎 - 只需要4个参数的构造函数，内部创建阶段处理器和工具类
 class GameEngine {
@@ -38,14 +38,20 @@ class GameEngine {
 
   // === 状态查询 ===
   GameState? get currentState => _currentState;
-  GameEngineStatus get status => _status;
   bool get hasGameStarted => _currentState != null;
+  bool get isGameEnded => hasGameStarted && _status == GameEngineStatus.ended;
   bool get isGameRunning =>
       hasGameStarted && _status == GameEngineStatus.playing;
-  bool get isGameEnded => hasGameStarted && _status == GameEngineStatus.ended;
+  GameEngineStatus get status => _status;
+
+  /// 清理资源
+  void dispose() {
+    _currentState?.dispose();
+    GameEngineLogger.instance.d('游戏引擎资源清理完成');
+  }
 
   /// 初始化游戏
-  Future<void> initializeGame() async {
+  Future<void> ensureInitialized() async {
     try {
       // 设置日志器的观察者
       GameEngineLogger.instance.setObserver(_observer);
@@ -69,25 +75,9 @@ class GameEngine {
     }
   }
 
-  /// 开始游戏
-  Future<void> startGame() async {
-    if (!hasGameStarted) {
-      await initializeGame();
-    }
-
-    if (isGameRunning) {
-      GameEngineLogger.instance.d('游戏已在运行中');
-      return;
-    }
-
-    _status = GameEngineStatus.playing;
-
-    GameEngineLogger.instance.i('游戏开始');
-  }
-
   /// 执行游戏步骤
   /// 返回bool表示是否还有下一步骤可执行
-  Future<bool> executeGameStep() async {
+  Future<bool> loop() async {
     if (!isGameRunning || isGameEnded) return false;
 
     try {
@@ -139,11 +129,5 @@ class GameEngine {
 
     // 不停止游戏，只记录错误并继续
     GameEngineLogger.instance.d('游戏继续运行，错误已记录');
-  }
-
-  /// 清理资源
-  void dispose() {
-    _currentState?.dispose();
-    GameEngineLogger.instance.d('游戏引擎资源清理完成');
   }
 }

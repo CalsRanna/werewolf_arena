@@ -1,6 +1,5 @@
 import 'package:werewolf_arena/engine/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/event_visibility.dart';
-import 'package:werewolf_arena/engine/domain/entities/game_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 
@@ -11,9 +10,6 @@ import 'package:werewolf_arena/engine/game_state.dart';
 abstract class GameEvent {
   /// 事件唯一标识
   final String eventId;
-
-  /// 事件发生时间
-  final DateTime timestamp;
 
   /// 事件类型
   final GameEventType type;
@@ -33,9 +29,6 @@ abstract class GameEvent {
   /// 可见角色ID(当visibility为roleSpecific时使用)
   final String? visibleToGameRole;
 
-  /// 事件元数据
-  final Map<String, dynamic> metadata;
-
   GameEvent({
     required this.eventId,
     required this.type,
@@ -45,8 +38,7 @@ abstract class GameEvent {
     this.visibleToPlayerNames = const [],
     this.visibleToGameRole,
     Map<String, dynamic>? metadata,
-  }) : timestamp = DateTime.now(),
-       metadata = metadata ?? {};
+  });
 
   /// 执行事件逻辑
   ///
@@ -56,28 +48,17 @@ abstract class GameEvent {
   /// 检查事件对指定玩家是否可见
   ///
   /// 根据可见性规则判断玩家是否能看到此事件
-  bool isVisibleTo(dynamic player) {
-    // Extract player properties (support both Player and test objects)
-    final playerName = player.name as String;
-    final role = player.role as GameRole;
-    final isAlive = player.isAlive as bool;
-
-    switch (visibility) {
-      case EventVisibility.public:
-        return true;
-
-      case EventVisibility.allWerewolves:
-        return role.isWerewolf;
-
-      case EventVisibility.roleSpecific:
-        return visibleToGameRole != null && role.roleId == visibleToGameRole;
-
-      case EventVisibility.playerSpecific:
-        return visibleToPlayerNames.contains(playerName);
-
-      case EventVisibility.dead:
-        return !isAlive;
-    }
+  bool isVisibleTo(GamePlayer player) {
+    return switch (visibility) {
+      EventVisibility.public => true,
+      EventVisibility.allWerewolves => player.role.isWerewolf,
+      EventVisibility.roleSpecific =>
+        visibleToGameRole != null && player.role.roleId == visibleToGameRole,
+      EventVisibility.playerSpecific => visibleToPlayerNames.contains(
+        player.name,
+      ),
+      EventVisibility.dead => !player.isAlive,
+    };
   }
 
   @override
@@ -89,14 +70,12 @@ abstract class GameEvent {
   Map<String, dynamic> toJson() {
     return {
       'eventId': eventId,
-      'timestamp': timestamp.toIso8601String(),
       'type': type.name,
       'initiator': initiator?.name,
       'target': target?.name,
       'visibility': visibility.name,
       'visibleToPlayerNames': visibleToPlayerNames,
       'visibleToGameRole': visibleToGameRole,
-      'metadata': metadata,
     };
   }
 }
