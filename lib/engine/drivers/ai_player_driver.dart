@@ -61,8 +61,6 @@ ${skill.prompt}
 ${PlayerDriverResponse.formatPrompt}
 ''';
 
-    print('AI玩家决策: $_playerPrompt\n$userPrompt');
-
     try {
       // 调用LLM服务生成响应
       final response = await _service.generateResponse(
@@ -77,7 +75,6 @@ ${PlayerDriverResponse.formatPrompt}
         return PlayerDriverResponse();
       }
     } catch (e) {
-      print('AI玩家决策失败: $e');
       return PlayerDriverResponse();
     }
   }
@@ -101,8 +98,8 @@ ${PlayerDriverResponse.formatPrompt}
 - **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
 
 ## **你的身份信息**
-- **我的代号**: ${player.seatNumber}号 (${player.name})
-- **我的底牌**: $player.role.name
+- **我的名字**: ${player.name}
+- **我的底牌**: ${player.role.name}
 - **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
 
 # **过往回合全记录**
