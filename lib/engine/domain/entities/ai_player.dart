@@ -4,7 +4,6 @@ import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/death_cause.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/engine/drivers/player_driver.dart';
 import 'package:werewolf_arena/engine/drivers/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
@@ -49,6 +48,8 @@ class AIPlayer extends GamePlayer {
   @override
   final List<GameEvent> actionHistory = [];
 
+  final PlayerIntelligence _intelligence;
+
   AIPlayer({
     required String id,
     required String name,
@@ -59,7 +60,8 @@ class AIPlayer extends GamePlayer {
        _name = name,
        _index = index,
        _role = role,
-       driver = AIPlayerDriver(intelligence: intelligence);
+       driver = AIPlayerDriver(intelligence: intelligence),
+       _intelligence = intelligence;
 
   @override
   Future<SkillResult> cast(GameSkill skill, GameState state) async {
@@ -79,12 +81,6 @@ class AIPlayer extends GamePlayer {
     } catch (e) {
       return SkillResult(caster: name);
     }
-  }
-
-  @override
-  void onGameEvent(GameEvent event) {
-    // AI处理游戏事件，更新知识库
-    _updateKnowledgeFromEvent(event);
   }
 
   @override
@@ -204,7 +200,7 @@ class AIPlayer extends GamePlayer {
   }
 
   @override
-  String get formattedName => '[${name.padLeft(5)}|${role.name.padLeft(4)}|AI]';
+  String get formattedName => '[$name|${role.name}|${_intelligence.modelId}]';
 
   @override
   void die(DeathCause cause, GameState state) {
@@ -225,26 +221,5 @@ class AIPlayer extends GamePlayer {
       'privateData': Map<String, dynamic>.from(privateData),
       'actionHistory': actionHistory.map((e) => e.toJson()).toList(),
     };
-  }
-
-  /// 从事件更新知识库
-  void _updateKnowledgeFromEvent(GameEvent event) {
-    // 更新AI的知识基于收到的事件
-    addKnowledge('last_event_type', event.type);
-    addKnowledge('event_count', (getKnowledge<int>('event_count') ?? 0) + 1);
-
-    // 根据事件类型更新特定知识
-    switch (event.type) {
-      case GameEventType.playerDeath:
-        final deadPlayerCount = getKnowledge<int>('dead_player_count') ?? 0;
-        addKnowledge('dead_player_count', deadPlayerCount + 1);
-        break;
-      case GameEventType.phaseChange:
-        addKnowledge('last_phase_change', event.type);
-        break;
-      default:
-        // 记录其他类型事件的发生
-        break;
-    }
   }
 }

@@ -1,6 +1,4 @@
-import 'package:werewolf_arena/engine/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 游戏引擎日志级别
 enum GameLogLevel { debug, info, warning, error }
@@ -17,7 +15,7 @@ class GameLogEvent extends GameEvent {
   final String message;
 
   GameLogEvent({required this.level, required this.message})
-    : super(eventId: 'debug', type: GameEventType.log);
+    : super(eventId: 'debug');
 
   GameLogEvent.debug(String message)
     : this(level: GameLogLevel.debug, message: message);
@@ -36,7 +34,4 @@ class GameLogEvent extends GameEvent {
     var now = DateTime.now();
     return '[$now][$level] $message';
   }
-
-  @override
-  void execute(GameState state) {}
 }

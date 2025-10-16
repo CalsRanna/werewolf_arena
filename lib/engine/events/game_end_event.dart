@@ -1,7 +1,4 @@
-import 'package:werewolf_arena/engine/domain/value_objects/event_visibility.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/game_event_type.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 游戏结束事件 - 公开可见
 class GameEndEvent extends GameEvent {
@@ -17,12 +14,13 @@ class GameEndEvent extends GameEvent {
     required this.gameStartTime,
   }) : super(
          eventId: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
-         type: GameEventType.gameEnd,
-         visibility: EventVisibility.public,
+         visibility: [
+           'villager',
+           'werewolf',
+           'seer',
+           'witch',
+           'hunter',
+           'guardian',
+         ],
        );
-
-  @override
-  void execute(GameState state) {
-    // Game end logic is handled by GameState
-  }
 }

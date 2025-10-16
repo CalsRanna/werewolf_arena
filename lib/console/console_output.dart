@@ -11,13 +11,13 @@ import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
 ///
 /// 专注于游戏相关的控制台输出和格式化显示
 /// 不包含任何日志记录功能,仅负责控制台界面的美化
-class GameConsole {
-  static GameConsole? _instance;
+class ConsoleGameOutput {
+  static ConsoleGameOutput? _instance;
 
-  GameConsole._internal();
+  ConsoleGameOutput._internal();
 
-  static GameConsole get instance {
-    _instance ??= GameConsole._internal();
+  static ConsoleGameOutput get instance {
+    _instance ??= ConsoleGameOutput._internal();
     return _instance!;
   }
 

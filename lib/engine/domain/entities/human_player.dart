@@ -95,12 +95,6 @@ class HumanPlayer extends GamePlayer {
   }
 
   @override
-  void onGameEvent(GameEvent event) {
-    // 人类玩家处理游戏事件，通常用于UI更新
-    // 可以在这里触发UI更新事件
-  }
-
-  @override
   void onDeath(DeathCause cause) {
     _isAlive = false;
     setPrivateData('death_cause', cause);

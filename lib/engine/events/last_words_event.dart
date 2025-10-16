@@ -1,12 +1,28 @@
-import 'package:werewolf_arena/engine/domain/value_objects/speech_type.dart';
-import 'package:werewolf_arena/engine/events/speak_event.dart';
+import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/events/game_event.dart';
 
 /// 遗言事件 - 公开可见
-class LastWordsEvent extends SpeakEvent {
+class LastWordsEvent extends GameEvent {
+  final GamePlayer speaker;
+  final String message;
+  final int? dayNumber;
+  final GamePhase? phase;
+
   LastWordsEvent({
-    required super.speaker,
-    required super.message,
-    super.dayNumber,
-    super.phase,
-  }) : super(speechType: SpeechType.lastWords);
+    required this.speaker,
+    required this.message,
+    this.dayNumber,
+    this.phase,
+  }) : super(
+         eventId: 'speak_${DateTime.now().millisecondsSinceEpoch}',
+         visibility: [
+           'villager',
+           'werewolf',
+           'seer',
+           'witch',
+           'hunter',
+           'guardian',
+         ],
+       );
 }

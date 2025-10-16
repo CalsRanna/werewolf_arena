@@ -3,6 +3,9 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:werewolf_arena/console/console_config_loader.dart';
+import 'package:werewolf_arena/console/console_game_observer.dart';
+import 'package:werewolf_arena/console/console_output.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
@@ -11,10 +14,6 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_random.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 
-import 'config_loader.dart';
-import 'console_game_observer.dart';
-import 'console_output.dart';
-
 /// 狼人杀竞技场 - 控制台模式入口
 ///
 /// 基于新架构的控制台应用：
@@ -22,7 +21,7 @@ import 'console_output.dart';
 /// - 简化启动流程，移除复杂的参数管理
 /// - 保持控制台友好的用户体验
 Future<void> main(List<String> arguments) async {
-  final console = GameConsole.instance;
+  final console = ConsoleGameOutput.instance;
 
   try {
     // 解析命令行参数

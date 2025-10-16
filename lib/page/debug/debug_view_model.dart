@@ -60,7 +60,7 @@ class DebugViewModel {
           SpeakEvent() => event.message,
           _ => event.toString(),
         };
-        await DialogUtil.instance.show(message, title: event.initiator?.name);
+        await DialogUtil.instance.show(message);
         logs.value = [...logs.value, message];
       },
     );

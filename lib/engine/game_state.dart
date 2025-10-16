@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/events/game_end_event.dart';
 import 'package:werewolf_arena/engine/events/game_start_event.dart';
-import 'package:werewolf_arena/engine/events/phase_change_event.dart';
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
@@ -85,16 +84,7 @@ class GameState {
   }
 
   Future<void> changePhase(GamePhase newPhase) async {
-    final oldPhase = currentPhase;
     currentPhase = newPhase;
-
-    final event = PhaseChangeEvent(
-      oldPhase: oldPhase,
-      newPhase: newPhase,
-      dayNumber: dayNumber,
-    );
-    logger.d(event.toString());
-    handleEvent(event);
   }
 
   void startGame() {

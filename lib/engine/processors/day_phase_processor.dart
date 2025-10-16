@@ -1,6 +1,5 @@
 import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
-import 'package:werewolf_arena/engine/events/night_result_event.dart';
 import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
@@ -75,15 +74,6 @@ class DayPhaseProcessor implements GameProcessor {
     final deathEvents = state.eventHistory.whereType<DeadEvent>().toList();
 
     final isPeacefulNight = deathEvents.isEmpty;
-
-    // 创建夜晚结果事件
-    final nightResultEvent = NightResultEvent(
-      deathEvents: deathEvents,
-      isPeacefulNight: isPeacefulNight,
-      dayNumber: state.dayNumber,
-    );
-    state.handleEvent(nightResultEvent);
-    await observer?.onGameEvent(nightResultEvent);
 
     // 记录夜晚结果
     if (isPeacefulNight) {

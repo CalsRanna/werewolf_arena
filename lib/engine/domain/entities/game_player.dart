@@ -47,7 +47,6 @@ abstract class GamePlayer {
   Future<SkillResult> cast(GameSkill skill, GameState state);
 
   // 事件处理
-  void onGameEvent(GameEvent event);
   void onDeath(DeathCause cause);
   void onPhaseChange(GamePhase oldPhase, GamePhase newPhase);
 

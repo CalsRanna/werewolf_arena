@@ -14,9 +14,9 @@ class ConsoleConfigLoader {
       final filePath = path.join(currentDirectory.path, 'werewolf_config.yaml');
       final file = File(filePath);
       if (!file.existsSync()) {
-        GameConsole.instance.printLine('配置文件不存在: $filePath');
+        ConsoleGameOutput.instance.printLine('配置文件不存在: $filePath');
         await _createDefaultConfigFile(filePath);
-        GameConsole.instance.printLine('已自动创建默认配置文件: $filePath');
+        ConsoleGameOutput.instance.printLine('已自动创建默认配置文件: $filePath');
       }
 
       final yamlString = file.readAsStringSync();
@@ -24,7 +24,7 @@ class ConsoleConfigLoader {
 
       return _parseGameConfigFromYaml(yamlMap);
     } catch (e) {
-      GameConsole.instance.printLine('配置文件加载失败: $e，使用默认配置');
+      ConsoleGameOutput.instance.printLine('配置文件加载失败: $e，使用默认配置');
       return _createDefaultGameConfig();
     }
   }
@@ -42,7 +42,7 @@ class ConsoleConfigLoader {
       // 写入文件
       await file.writeAsString(defaultContent);
     } catch (e) {
-      GameConsole.instance.printLine('创建默认配置文件失败: $e');
+      ConsoleGameOutput.instance.printLine('创建默认配置文件失败: $e');
       // 如果创建失败，继续使用内存中的默认配置
     }
   }
