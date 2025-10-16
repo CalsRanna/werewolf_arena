@@ -70,6 +70,7 @@ class DayPhaseProcessor implements GameProcessor {
     await observer?.onGameEvent(judgeAnnouncementEvent);
 
     for (var result in results) {
+      if (result.target == null) continue;
       var voteEvent = VoteEvent(
         voter: state.getPlayerByName(result.caster)!,
         candidate: state.getPlayerByName(result.target!)!,
