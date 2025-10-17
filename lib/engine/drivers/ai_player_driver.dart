@@ -1,10 +1,11 @@
 import 'dart:convert';
+
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
+import 'package:werewolf_arena/engine/drivers/json_cleaner.dart';
+import 'package:werewolf_arena/engine/drivers/llm_service.dart';
 import 'package:werewolf_arena/engine/drivers/player_driver.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/drivers/llm_service.dart';
-import 'package:werewolf_arena/engine/drivers/json_cleaner.dart';
 import 'package:werewolf_arena/engine/skills/game_skill.dart';
 import 'package:werewolf_arena/engine/skills/werewolf_discuss_skill.dart';
 
@@ -92,9 +93,6 @@ ${skill is WerewolfDiscussSkill ? skill.formatPrompt : PlayerDriverResponse.form
         .join('\n');
     final teammates = state.werewolves.map((p) => p.name).join(', ');
 
-    // 添加角色特定的私有信息
-    final privateInfo = _buildPrivateInfo(player);
-
     return '''
 # **战场情报**
 
@@ -107,7 +105,6 @@ ${skill is WerewolfDiscussSkill ? skill.formatPrompt : PlayerDriverResponse.form
 - **我的名字**: ${player.name}
 - **我的底牌**: ${player.role.name}
 - **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
-${privateInfo.isNotEmpty ? '\n## **重要提示**\n$privateInfo' : ''}
 
 # **【核心任务简报】**
 ${player.role.prompt.replaceAll("{teammates}", teammates)}
@@ -115,25 +112,6 @@ ${player.role.prompt.replaceAll("{teammates}", teammates)}
 # **过往回合全记录**
 ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
 ''';
-  }
-
-  /// 构建玩家的私有信息提示
-  ///
-  /// 根据玩家角色提供特定的私有数据信息
-  String _buildPrivateInfo(GamePlayer player) {
-    final info = <String>[];
-
-    // 守卫：上次保护的目标
-    if (player.role.roleId == 'guard') {
-      final lastProtectedTarget = player.getPrivateData<String>('last_protected_target');
-      if (lastProtectedTarget != null) {
-        info.add('- **上次守护目标**: $lastProtectedTarget（你不能连续两次守护同一人）');
-      } else {
-        info.add('- 这是你第一次守护，可以守护任何存活玩家');
-      }
-    }
-
-    return info.join('\n');
   }
 
   /// 使用JsonCleaner解析JSON响应

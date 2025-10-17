@@ -1,4 +1,3 @@
-import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 
@@ -7,9 +6,6 @@ import 'package:werewolf_arena/engine/game_state.dart';
 /// A phase processor is responsible for handling the logic of a specific game phase
 /// (e.g., night, day, voting).
 abstract class GameProcessor {
-  /// The game phase this processor handles.
-  GamePhase get supportedPhase;
-
   /// Processes the current game phase.
   ///
   /// This method contains the core logic for the phase, such as collecting actions,

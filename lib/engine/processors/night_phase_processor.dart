@@ -2,6 +2,7 @@ import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/guard_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/hunter_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/seer_role.dart';
+import 'package:werewolf_arena/engine/domain/entities/werewolf_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/witch_role.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/events/dead_event.dart';
@@ -29,9 +30,6 @@ import 'game_processor.dart';
 ///
 /// 负责处理游戏中的夜晚阶段，通过技能系统统一处理所有夜晚行动
 class NightPhaseProcessor implements GameProcessor {
-  @override
-  GamePhase get supportedPhase => GamePhase.night;
-
   @override
   Future<void> process(GameState state, {GameObserver? observer}) async {
     var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天黑请闭眼');
@@ -83,13 +81,8 @@ class NightPhaseProcessor implements GameProcessor {
   }) async {
     final deadPlayers = <GamePlayer>[];
 
-    // 1. 守卫保护（优先级最高，可以阻止狼人击杀）
-    if (guardTarget != null) {
-      guardTarget.setProtected(true);
-    }
-
     // 2. 狼人击杀（会被守卫保护阻止）
-    if (killTarget != null && !killTarget.isProtected) {
+    if (killTarget != null) {
       // 只有未被守卫保护的玩家才会死亡
       final wasHealed =
           healTarget != null && healTarget.name == killTarget.name;
@@ -98,7 +91,7 @@ class NightPhaseProcessor implements GameProcessor {
         killTarget.setAlive(false);
         deadPlayers.add(killTarget);
       }
-    } else if (killTarget != null && killTarget.isProtected) {
+    } else if (killTarget != null) {
       // 被守卫保护，击杀无效
       GameEngineLogger.instance.d('${killTarget.formattedName}被守卫保护，免于狼人击杀');
     }
@@ -199,11 +192,6 @@ class NightPhaseProcessor implements GameProcessor {
         .firstOrNull;
     if (guard == null) return null;
 
-    // 获取上一次保护的目标
-    final lastProtectedTarget = guard.getPrivateData<String>(
-      'last_protected_target',
-    );
-
     final result = await guard.cast(
       guard.role.skills.whereType<ProtectSkill>().first,
       state,
@@ -211,9 +199,7 @@ class NightPhaseProcessor implements GameProcessor {
     final target = state.getPlayerByName(result.target ?? '');
 
     // 检查是否违反了"不能连续两次保护同一人"的规则
-    if (target != null &&
-        lastProtectedTarget != null &&
-        target.name == lastProtectedTarget) {
+    if (target != null) {
       // 守卫试图连续保护同一人，规则不允许
       GameEngineLogger.instance.d('守卫不能连续两次保护${target.formattedName}，保护失败');
       judgeAnnouncementEvent = JudgeAnnouncementEvent(
@@ -232,9 +218,6 @@ class NightPhaseProcessor implements GameProcessor {
       final protectEvent = GuardProtectEvent(target: target);
       state.handleEvent(protectEvent);
       await observer?.onGameEvent(protectEvent);
-
-      // 记录本次保护的目标，用于下次检查
-      guard.setPrivateData('last_protected_target', target.name);
 
       judgeAnnouncementEvent = JudgeAnnouncementEvent(
         announcement: '守卫对${target.formattedName}使用了保护',
@@ -299,7 +282,7 @@ class NightPhaseProcessor implements GameProcessor {
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
     final werewolves = state.alivePlayers
-        .where((player) => player.role.isWerewolf)
+        .where((player) => player.role is WerewolfRole)
         .toList();
     for (final werewolf in werewolves) {
       var result = await werewolf.cast(
@@ -326,7 +309,7 @@ class NightPhaseProcessor implements GameProcessor {
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
     final werewolves = state.alivePlayers
-        .where((player) => player.role.isWerewolf)
+        .where((player) => player.role is WerewolfRole)
         .toList();
     List<Future<SkillResult>> futures = [];
     for (final werewolf in werewolves) {
@@ -343,7 +326,7 @@ class NightPhaseProcessor implements GameProcessor {
     var werewolfKillEvent = WerewolfKillEvent(target: target);
     state.handleEvent(werewolfKillEvent);
     await observer?.onGameEvent(werewolfKillEvent);
-    if (target.role.roleId == 'witch') {
+    if (target.role.id == 'witch') {
       state.canUserHeal = false;
     }
     judgeAnnouncementEvent = JudgeAnnouncementEvent(

@@ -9,6 +9,7 @@ import 'package:werewolf_arena/console/console_output.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
+import 'package:werewolf_arena/engine/drivers/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_random.dart';
@@ -105,7 +106,7 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
       name: '$playerIndex号玩家',
       index: playerIndex,
       role: role,
-      intelligence: intelligence,
+      driver: AIPlayerDriver(intelligence: intelligence),
     );
     players.add(player);
   }

@@ -336,7 +336,7 @@ class ConsoleGameOutput {
       '${_colorize('✅ 最终存活: ', ConsoleColor.green)}$finalGamePlayerCount人',
     );
     for (final player in state.alivePlayers) {
-      final camp = player.role.isWerewolf ? '狼人' : '好人';
+      final camp = player.role.id == 'werewolf' ? '狼人' : '好人';
       printLine('  ✓ ${player.name} - ${player.role.name} ($camp)');
     }
 
@@ -347,7 +347,7 @@ class ConsoleGameOutput {
         '${_colorize('❌ 已出局: ', ConsoleColor.red)}${state.deadPlayers.length}人',
       );
       for (final player in state.deadPlayers) {
-        final camp = player.role.isWerewolf ? '狼人' : '好人';
+        final camp = player.role.id == 'werewolf' ? '狼人' : '好人';
         printLine('  ✗ ${player.name} - ${player.role.name} ($camp)');
       }
     }
@@ -358,7 +358,9 @@ class ConsoleGameOutput {
     printLine(_colorize('🔍 身份揭晓:', ConsoleColor.blue));
 
     // 狼人阵营
-    final werewolves = state.players.where((p) => p.role.isWerewolf).toList();
+    final werewolves = state.players
+        .where((p) => p.role.id == 'werewolf')
+        .toList();
     printLine(
       _colorize('  🐺 狼人阵营 (${werewolves.length}人):', ConsoleColor.red),
     );
@@ -368,10 +370,10 @@ class ConsoleGameOutput {
     }
 
     // 好人阵营
-    final goods = state.players.where((p) => !p.role.isWerewolf).toList();
+    final goods = state.players.where((p) => p.role.id != 'werewolf').toList();
     printLine(_colorize('  👼 好人阵营 (${goods.length}人):', ConsoleColor.green));
 
-    final gods = goods.where((p) => p.role.isGod).toList();
+    final gods = goods.where((p) => p.role.id == 'god').toList();
     if (gods.isNotEmpty) {
       printLine('     神职:');
       for (final god in gods) {
@@ -380,7 +382,7 @@ class ConsoleGameOutput {
       }
     }
 
-    final villagers = goods.where((p) => p.role.isVillager).toList();
+    final villagers = goods.where((p) => p.role.id == 'villager').toList();
     if (villagers.isNotEmpty) {
       printLine('     平民:');
       for (final villager in villagers) {

@@ -21,9 +21,6 @@ import 'game_processor.dart';
 /// - 投票出局（合并原投票阶段）
 class DayPhaseProcessor implements GameProcessor {
   @override
-  GamePhase get supportedPhase => GamePhase.day;
-
-  @override
   Future<void> process(GameState state, {GameObserver? observer}) async {
     var players = state.alivePlayers;
     var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '开始讨论');

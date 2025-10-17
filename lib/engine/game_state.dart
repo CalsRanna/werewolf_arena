@@ -70,14 +70,16 @@ class GameState {
   List<GamePlayer> get deadPlayers => players.where((p) => !p.isAlive).toList();
 
   List<GamePlayer> get werewolves =>
-      players.where((p) => p.role.isWerewolf).toList();
+      players.where((p) => p.role.id == 'werewolf').toList();
   List<GamePlayer> get villagers =>
-      players.where((p) => p.role.isVillager).toList();
-  List<GamePlayer> get gods => players.where((p) => p.role.isGod).toList();
+      players.where((p) => p.role.id == 'villager').toList();
+  List<GamePlayer> get gods =>
+      players.where((p) => p.role.id == 'god').toList();
 
   int get aliveWerewolves => werewolves.where((p) => p.isAlive).length;
   int get aliveVillagers => villagers.where((p) => p.isAlive).length;
-  int get aliveGoodGuys => alivePlayers.where((p) => !p.role.isWerewolf).length;
+  int get aliveGoodGuys =>
+      alivePlayers.where((p) => p.role.id != 'werewolf').length;
 
   // Methods
   Future<void> handleEvent(GameEvent event) async {
@@ -87,13 +89,7 @@ class GameState {
   }
 
   Future<void> changePhase(GamePhase newPhase) async {
-    final oldPhase = currentPhase;
     currentPhase = newPhase;
-
-    // 通知所有玩家阶段变化
-    for (final player in players) {
-      player.onPhaseChange(oldPhase, newPhase);
-    }
   }
 
   void startGame() {
@@ -153,8 +149,7 @@ class GameState {
   Map<String, int> _getRoleDistribution() {
     final distribution = <String, int>{};
     for (final player in players) {
-      distribution[player.role.roleId] =
-          (distribution[player.role.roleId] ?? 0) + 1;
+      distribution[player.role.id] = (distribution[player.role.id] ?? 0) + 1;
     }
     return distribution;
   }

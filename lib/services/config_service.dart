@@ -1,5 +1,6 @@
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/config_loader.dart';
+import 'package:werewolf_arena/engine/drivers/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_9_players.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
@@ -119,7 +120,7 @@ class ConfigService {
 
     for (int i = 0; i < shuffledRoles.length; i++) {
       final playerNumber = i + 1;
-      final playerName = '${playerNumber}号玩家';
+      final playerName = '$playerNumber号玩家';
       final roleType = shuffledRoles[i];
 
       // 创建角色实例
@@ -136,7 +137,7 @@ class ConfigService {
         name: playerName,
         index: playerNumber,
         role: role,
-        intelligence: intelligence,
+        driver: AIPlayerDriver(intelligence: intelligence),
       );
 
       players.add(player);

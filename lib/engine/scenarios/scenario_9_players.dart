@@ -95,11 +95,11 @@ class Scenario9Players extends GameScenario {
   @override
   VictoryResult checkVictoryCondition(GameState state) {
     final aliveWerewolves = state.players
-        .where((p) => p.isAlive && p.role.isWerewolf)
+        .where((p) => p.isAlive && p.role.id == 'werewolf')
         .length;
 
     final aliveGoodGuys = state.players
-        .where((p) => p.isAlive && !p.role.isWerewolf)
+        .where((p) => p.isAlive && p.role.id != 'werewolf')
         .length;
 
     if (aliveWerewolves == 0) {
