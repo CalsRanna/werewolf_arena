@@ -162,7 +162,7 @@ class OpenAIService {
         if (attempt == retryConfig.maxAttempts) {
           // 最后一次尝试失败，记录错误日志
           GameEngineLogger.instance.e(
-            '$e, attempts ${retryConfig.maxAttempts}',
+            '$e, attempts $attempt/${retryConfig.maxAttempts}',
           );
           break;
         }
@@ -170,7 +170,7 @@ class OpenAIService {
         // 记录重试日志
         final delay = _calculateBackoffDelay(attempt);
         GameEngineLogger.instance.w(
-          '$e, attempt $attempt/${retryConfig.maxAttempts}, retrying in ${delay.inMilliseconds}ms',
+          '$e, attempt $attempt/${retryConfig.maxAttempts}',
         );
 
         // 计算退避延迟时间

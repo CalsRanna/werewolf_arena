@@ -17,7 +17,8 @@ class AIPlayer extends GamePlayer {
   }) : super(driver: driver);
 
   @override
-  String get formattedName => '[$name|${role.name}}]';
+  String get formattedName =>
+      '[$name|${role.name}|${(driver as AIPlayerDriver).intelligence.modelId}]';
 
   @override
   Future<SkillResult> cast(GameSkill skill, GameState state) async {

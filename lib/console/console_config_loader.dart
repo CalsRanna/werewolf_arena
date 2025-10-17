@@ -84,7 +84,7 @@ default_llm:
 
 # 玩家专属模型配置
 player_models:
-  - gpt-3.5-turbo
+  - deepseek/deepseek-v3.2-exp
 
 # 日志配置（暂时保留兼容性，未来可能移除）
 logging:
@@ -106,7 +106,8 @@ logging:
     // 解析玩家专属配置
     final playerModels = yaml['player_models'] as YamlList?;
     if (playerModels != null) {
-      for (final model in playerModels) {
+      for (var i = 0; i < 12; i++) {
+        final model = playerModels[i % playerModels.length];
         final intelligence = defaultIntelligence.copyWith(modelId: model);
         playerIntelligences.add(intelligence);
       }
