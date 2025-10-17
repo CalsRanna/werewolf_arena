@@ -18,7 +18,7 @@ class ConsoleGameObserver extends GameObserver {
   @override
   Future<void> onGameEvent(GameEvent event) async {
     if (event is GameLogEvent) {
-      _console.printLine(event.toNarrative());
+      _console.printLog(event.toNarrative());
     } else if (event is JudgeAnnouncementEvent) {
       _console.printEvent('[法官]：${event.announcement}');
     } else if (event is WerewolfDiscussionEvent) {

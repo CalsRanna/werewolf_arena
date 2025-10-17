@@ -81,6 +81,10 @@ class ConsoleGameOutput {
     }
   }
 
+  void printLog(String text) {
+    stdout.writeln(text);
+  }
+
   void printHeader(String title, {ConsoleColor color = ConsoleColor.cyan}) {
     final border = '=' * 60;
     printLine(_colorize(border, color));
