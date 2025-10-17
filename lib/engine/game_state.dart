@@ -87,7 +87,13 @@ class GameState {
   }
 
   Future<void> changePhase(GamePhase newPhase) async {
+    final oldPhase = currentPhase;
     currentPhase = newPhase;
+
+    // 通知所有玩家阶段变化
+    for (final player in players) {
+      player.onPhaseChange(oldPhase, newPhase);
+    }
   }
 
   void startGame() {

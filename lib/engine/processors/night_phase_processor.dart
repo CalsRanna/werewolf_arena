@@ -6,7 +6,6 @@ import 'package:werewolf_arena/engine/domain/entities/witch_role.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
 import 'package:werewolf_arena/engine/events/dead_event.dart';
 import 'package:werewolf_arena/engine/events/guard_protect_event.dart';
-import 'package:werewolf_arena/engine/events/hunter_shoot_event.dart';
 import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
 import 'package:werewolf_arena/engine/events/seer_investigate_event.dart';
 import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
@@ -82,56 +81,45 @@ class NightPhaseProcessor implements GameProcessor {
     GamePlayer? guardTarget,
     GamePlayer? shootTarget,
   }) async {
-    final lastAlivePlayers = state.alivePlayers;
-    if (killTarget != null) {
-      final killEvent = WerewolfKillEvent(target: killTarget);
-      state.handleEvent(killEvent);
-      await observer?.onGameEvent(killEvent);
-      final player = state.getPlayerByName(killTarget.name);
-      if (player != null) {
-        player.setAlive(false);
-      }
-    }
-    if (healTarget != null) {
-      final healEvent = WitchHealEvent(target: healTarget);
-      state.handleEvent(healEvent);
-      await observer?.onGameEvent(healEvent);
-      final player = state.getPlayerByName(healTarget.name);
-      if (player != null) {
-        player.setAlive(true);
-      }
-    }
-    if (poisonTarget != null) {
-      final poisonEvent = WitchPoisonEvent(target: poisonTarget);
-      state.handleEvent(poisonEvent);
-      await observer?.onGameEvent(poisonEvent);
-      final player = state.getPlayerByName(poisonTarget.name);
-      if (player != null) {
-        player.setAlive(false);
-      }
-    }
+    final deadPlayers = <GamePlayer>[];
+
+    // 1. 守卫保护（优先级最高，可以阻止狼人击杀）
     if (guardTarget != null) {
-      final guardEvent = GuardProtectEvent(target: guardTarget);
-      state.handleEvent(guardEvent);
-      await observer?.onGameEvent(guardEvent);
-      final player = state.getPlayerByName(guardTarget.name);
-      if (player != null) {
-        player.setProtected(true);
-        player.setAlive(true);
+      guardTarget.setProtected(true);
+    }
+
+    // 2. 狼人击杀（会被守卫保护阻止）
+    if (killTarget != null && !killTarget.isProtected) {
+      // 只有未被守卫保护的玩家才会死亡
+      final wasHealed =
+          healTarget != null && healTarget.name == killTarget.name;
+      if (!wasHealed) {
+        // 未被女巫救，确认死亡
+        killTarget.setAlive(false);
+        deadPlayers.add(killTarget);
+      }
+    } else if (killTarget != null && killTarget.isProtected) {
+      // 被守卫保护，击杀无效
+      GameEngineLogger.instance.d('${killTarget.formattedName}被守卫保护，免于狼人击杀');
+    }
+
+    // 3. 女巫毒药（独立击杀）
+    if (poisonTarget != null) {
+      poisonTarget.setAlive(false);
+      if (!deadPlayers.contains(poisonTarget)) {
+        deadPlayers.add(poisonTarget);
       }
     }
+
+    // 4. 猎人开枪（如果有的话）
     if (shootTarget != null) {
-      final hunterEvent = HunterShootEvent(target: shootTarget);
-      state.handleEvent(hunterEvent);
-      await observer?.onGameEvent(hunterEvent);
-      final player = state.getPlayerByName(shootTarget.name);
-      if (player != null) {
-        player.setAlive(false);
+      shootTarget.setAlive(false);
+      if (!deadPlayers.contains(shootTarget)) {
+        deadPlayers.add(shootTarget);
       }
     }
-    final deadPlayers = lastAlivePlayers
-        .where((player) => !player.isAlive)
-        .toList();
+
+    // 发布死亡公告
     if (deadPlayers.isEmpty) {
       var judgeAnnouncementEvent = JudgeAnnouncementEvent(
         announcement: '昨晚是平安夜',
@@ -205,25 +193,56 @@ class NightPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+
     final guard = state.alivePlayers
         .where((player) => player.role is GuardRole)
         .firstOrNull;
     if (guard == null) return null;
+
+    // 获取上一次保护的目标
+    final lastProtectedTarget = guard.getPrivateData<String>(
+      'last_protected_target',
+    );
+
     final result = await guard.cast(
       guard.role.skills.whereType<ProtectSkill>().first,
       state,
     );
     final target = state.getPlayerByName(result.target ?? '');
+
+    // 检查是否违反了"不能连续两次保护同一人"的规则
+    if (target != null &&
+        lastProtectedTarget != null &&
+        target.name == lastProtectedTarget) {
+      // 守卫试图连续保护同一人，规则不允许
+      GameEngineLogger.instance.d('守卫不能连续两次保护${target.formattedName}，保护失败');
+      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+        announcement: '守卫试图连续保护${target.formattedName}，但规则不允许',
+      );
+      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+      state.handleEvent(judgeAnnouncementEvent);
+      judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
+      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+      state.handleEvent(judgeAnnouncementEvent);
+      await observer?.onGameEvent(judgeAnnouncementEvent);
+      return null;
+    }
+
     if (target != null) {
       final protectEvent = GuardProtectEvent(target: target);
       state.handleEvent(protectEvent);
       await observer?.onGameEvent(protectEvent);
+
+      // 记录本次保护的目标，用于下次检查
+      guard.setPrivateData('last_protected_target', target.name);
+
       judgeAnnouncementEvent = JudgeAnnouncementEvent(
         announcement: '守卫对${target.formattedName}使用了保护',
       );
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
     }
+
     judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
@@ -353,17 +372,23 @@ class NightPhaseProcessor implements GameProcessor {
     );
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
+
+    // 检查女巫是否还能使用解药
     if (!state.canUserHeal) return null;
+
     final witch = state.alivePlayers
         .where((player) => player.role is WitchRole)
         .firstOrNull;
     if (witch == null) return null;
+
     final result = await witch.cast(
       witch.role.skills.whereType<HealSkill>().first,
       state,
     );
     final target = state.getPlayerByName(result.target ?? '');
-    if (target != null) {
+
+    // 女巫不能救自己 - 如果目标是女巫自己，忽略这次救人
+    if (target != null && target.name != witch.name) {
       final healEvent = WitchHealEvent(target: target);
       state.handleEvent(healEvent);
       await observer?.onGameEvent(healEvent);
@@ -373,8 +398,18 @@ class NightPhaseProcessor implements GameProcessor {
       );
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
+      return target;
+    } else if (target != null && target.name == witch.name) {
+      // 女巫试图救自己，记录日志但不执行
+      GameEngineLogger.instance.d('女巫不能救自己，解药使用失败');
+      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+        announcement: '女巫试图救自己，但规则不允许',
+      );
+      GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
+      state.handleEvent(judgeAnnouncementEvent);
     }
-    return target;
+
+    return null;
   }
 
   Future<GamePlayer?> _processWitchPoison(

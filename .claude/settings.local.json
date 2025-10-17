@@ -30,7 +30,8 @@
       "Bash(rm:*)",
       "Bash(mv:*)",
       "Bash(grep:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
