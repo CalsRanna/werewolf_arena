@@ -6,7 +6,7 @@ class OrderEvent extends GameEvent {
   final List<GamePlayer> players;
   final String direction; // "顺序" 或 "逆序"
 
-  OrderEvent({required this.players, required this.direction})
+  OrderEvent({required this.players, required this.direction, super.dayNumber})
     : super(
         id: 'order_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
@@ -21,7 +21,7 @@ class OrderEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，发言顺序公告：${players.map((p) => p.name).join(", ")}，$direction发言';
+    return '第$dayNumber天，发言顺序为${players.map((p) => p.name).join(", ")}，$direction发言';
   }
 
   @override

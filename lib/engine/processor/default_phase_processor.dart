@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
@@ -61,7 +63,7 @@ class DefaultPhaseProcessor implements GameProcessor {
     final poisonTarget = await _processPoison(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
     // 夜晚结算
-    await _processNightSettlement(
+    final lastNightDeadPlayers = await _processNightSettlement(
       state,
       observer: observer,
       killTarget: killTarget,
@@ -71,7 +73,11 @@ class DefaultPhaseProcessor implements GameProcessor {
     );
     await Future.delayed(const Duration(seconds: 1));
     // 公开讨论
-    await _processDiscuss(state, observer: observer);
+    await _processDiscuss(
+      state,
+      observer: observer,
+      lastNightDeadPlayers: lastNightDeadPlayers,
+    );
     await Future.delayed(const Duration(seconds: 1));
     // 投票
     var voteTarget = await _processVote(state, observer: observer);
@@ -95,7 +101,98 @@ class DefaultPhaseProcessor implements GameProcessor {
         canShoot: true, // 白天投票出局的猎人可以开枪
       );
     }
+    await Future.delayed(const Duration(seconds: 1));
+    // 白天结算 - 检查游戏是否结束
+    await _processDaySettlement(state, observer: observer);
     state.dayNumber++;
+  }
+
+  /// 生成白天发言顺序
+  /// 规则：
+  /// 1. 如果昨晚有人死亡，以死亡玩家位置为锚点，从其下一个存活玩家开始（随机选择顺序或逆序）
+  /// 2. 如果是平安夜或第一天，随机选择一个存活玩家开始
+  /// 3. 死亡玩家不在发言列表中
+  List<GamePlayer> _generateSpeakOrder(
+    GameState state,
+    List<GamePlayer> lastNightDeadPlayers,
+  ) {
+    final alivePlayers = state.alivePlayers;
+    if (alivePlayers.isEmpty) return [];
+
+    final random = Random();
+    final allPlayers = state.players;
+    int startIndex;
+
+    // 确定发言起点索引
+    if (lastNightDeadPlayers.isNotEmpty) {
+      // 如果昨晚有人死亡，以死亡玩家位置为锚点
+      final deadPlayer = lastNightDeadPlayers.first;
+      final anchorIndex = allPlayers.indexOf(deadPlayer);
+
+      // 随机决定顺序或逆序
+      final isClockwise = random.nextBool();
+
+      // 从锚点的下一个位置开始（顺序或逆序）
+      if (isClockwise) {
+        startIndex = (anchorIndex + 1) % allPlayers.length;
+      } else {
+        startIndex = (anchorIndex - 1 + allPlayers.length) % allPlayers.length;
+      }
+
+      // 找到第一个存活玩家作为实际起点
+      int attempts = 0;
+      while (!allPlayers[startIndex].isAlive && attempts < allPlayers.length) {
+        if (isClockwise) {
+          startIndex = (startIndex + 1) % allPlayers.length;
+        } else {
+          startIndex = (startIndex - 1 + allPlayers.length) % allPlayers.length;
+        }
+        attempts++;
+      }
+
+      // 生成发言顺序
+      final speakOrder = <GamePlayer>[];
+      int currentIndex = startIndex;
+      for (int i = 0; i < allPlayers.length; i++) {
+        final player = allPlayers[currentIndex];
+        if (player.isAlive) {
+          speakOrder.add(player);
+        }
+        if (isClockwise) {
+          currentIndex = (currentIndex + 1) % allPlayers.length;
+        } else {
+          currentIndex =
+              (currentIndex - 1 + allPlayers.length) % allPlayers.length;
+        }
+      }
+
+      return speakOrder;
+    } else {
+      // 平安夜或第一天，随机选择一个存活玩家作为起点
+      final startPlayer = alivePlayers[random.nextInt(alivePlayers.length)];
+      startIndex = allPlayers.indexOf(startPlayer);
+
+      // 随机决定顺序或逆序
+      final isClockwise = random.nextBool();
+
+      // 生成发言顺序
+      final speakOrder = <GamePlayer>[];
+      int currentIndex = startIndex;
+      for (int i = 0; i < allPlayers.length; i++) {
+        final player = allPlayers[currentIndex];
+        if (player.isAlive) {
+          speakOrder.add(player);
+        }
+        if (isClockwise) {
+          currentIndex = (currentIndex + 1) % allPlayers.length;
+        } else {
+          currentIndex =
+              (currentIndex - 1 + allPlayers.length) % allPlayers.length;
+        }
+      }
+
+      return speakOrder;
+    }
   }
 
   GamePlayer? _getTargetGamePlayer(GameState state, List<String?> names) {
@@ -137,19 +234,49 @@ class DefaultPhaseProcessor implements GameProcessor {
     }
   }
 
+  /// 白天结算 - 处理投票出局后的游戏状态检查
+  Future<void> _processDaySettlement(
+    GameState state, {
+    GameObserver? observer,
+  }) async {
+    // 检查游戏是否结束
+    if (state.checkGameEnd()) {
+      GameEngineLogger.instance.i('游戏在白天阶段结束');
+    }
+  }
+
   Future<void> _processDiscuss(
     GameState state, {
     GameObserver? observer,
+    required List<GamePlayer> lastNightDeadPlayers,
   }) async {
     var announceEvent = AnnounceEvent('所有人请睁眼');
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
     await observer?.onGameEvent(announceEvent);
-    var orderEvent = OrderEvent(players: state.alivePlayers, direction: '顺序');
+
+    // 生成发言顺序
+    final speakOrder = _generateSpeakOrder(state, lastNightDeadPlayers);
+
+    // 确定发言方向描述
+    String direction;
+    if (lastNightDeadPlayers.isNotEmpty) {
+      final deadPlayer = lastNightDeadPlayers.first;
+      direction = '以${deadPlayer.formattedName}为锚点';
+    } else {
+      direction = '随机顺序';
+    }
+
+    var orderEvent = OrderEvent(
+      players: speakOrder,
+      direction: direction,
+      dayNumber: state.dayNumber,
+    );
     GameEngineLogger.instance.d(orderEvent.toString());
     state.handleEvent(orderEvent);
     await observer?.onGameEvent(orderEvent);
-    for (var player in state.alivePlayers) {
+
+    for (var player in speakOrder) {
       var result = await player.cast(
         player.role.skills.whereType<DiscussSkill>().first,
         state,
@@ -290,7 +417,7 @@ class DefaultPhaseProcessor implements GameProcessor {
     return target;
   }
 
-  Future<void> _processNightSettlement(
+  Future<List<GamePlayer>> _processNightSettlement(
     GameState state, {
     GameObserver? observer,
     GamePlayer? killTarget,
@@ -359,6 +486,13 @@ class DefaultPhaseProcessor implements GameProcessor {
         );
       }
     }
+
+    // 检查游戏是否结束
+    if (state.checkGameEnd()) {
+      GameEngineLogger.instance.i('游戏在夜晚阶段结束');
+    }
+
+    return deadPlayers;
   }
 
   Future<GamePlayer?> _processPoison(
