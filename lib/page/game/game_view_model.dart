@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
-import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 
 class GameViewModel {

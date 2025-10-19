@@ -3,15 +3,15 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:werewolf_arena/console/console_config_loader.dart';
+import 'package:werewolf_arena/console/console_game_config_loader.dart';
 import 'package:werewolf_arena/console/console_game_observer.dart';
-import 'package:werewolf_arena/console/console_output.dart';
-import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
-import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/drivers/ai_player_driver.dart';
+import 'package:werewolf_arena/console/console_game_ui.dart';
+import 'package:werewolf_arena/engine/player/ai_player.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
+import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
+import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
 ///
@@ -19,7 +19,7 @@ import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 /// - 简化启动流程，移除复杂的参数管理
 /// - 保持控制台友好的用户体验
 Future<void> main(List<String> arguments) async {
-  final console = ConsoleGameOutput.instance;
+  final ui = ConsoleGameUI.instance;
 
   try {
     // 解析命令行参数
@@ -45,8 +45,8 @@ Future<void> main(List<String> arguments) async {
     }
 
     // 初始化控制台
-    console.initialize(useColors: true);
-    console.printHeader('狼人杀竞技场', color: ConsoleColor.green);
+    ui.initialize(useColors: true);
+    ui.printHeader('狼人杀竞技场', color: ConsoleColor.green);
 
     final playerCountStr = argResults['players'] as String?;
 
@@ -54,7 +54,7 @@ Future<void> main(List<String> arguments) async {
     if (playerCountStr != null) {
       playerCount = int.tryParse(playerCountStr);
       if (playerCount == null || (playerCount != 9 && playerCount != 12)) {
-        console.displayError('无效的玩家数量: $playerCountStr (支持9或12人)');
+        ui.displayError('无效的玩家数量: $playerCountStr (支持9或12人)');
         exit(1);
       }
     }
@@ -71,24 +71,24 @@ Future<void> main(List<String> arguments) async {
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
-    console.printLine();
-    console.printSeparator('=', 60);
-    console.printLine('✅ 游戏已结束');
+    ui.printLine();
+    ui.printSeparator('=', 60);
+    ui.printLine('✅ 游戏已结束');
 
     final finalState = gameEngine.currentState;
     if (finalState != null && finalState.winner != null) {
-      console.printLine('🏆 获胜者: ${finalState.winner}');
-      console.printLine('🕐 游戏时长: ${finalState.dayNumber} 天');
-      console.printLine('⚰️ 存活玩家: ${finalState.alivePlayers.length}');
+      ui.printLine('🏆 获胜者: ${finalState.winner}');
+      ui.printLine('🕐 游戏时长: ${finalState.dayNumber} 天');
+      ui.printLine('⚰️ 存活玩家: ${finalState.alivePlayers.length}');
     }
   } catch (e, stackTrace) {
-    console.displayError('运行错误: $e', errorDetails: stackTrace);
+    ui.displayError('运行错误: $e', errorDetails: stackTrace);
     exit(1);
   }
 }
 
 Future<GameEngine> _createGameEngine(GameObserver observer) async {
-  final config = await ConsoleConfigLoader().loadGameConfig();
+  final config = await ConsoleGameConfigLoader().loadGameConfig();
   final scenario = Scenario12Players();
   final players = <GamePlayer>[];
   final roles = scenario.roles;

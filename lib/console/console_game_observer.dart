@@ -1,11 +1,11 @@
-import 'package:werewolf_arena/console/console_output.dart';
-import 'package:werewolf_arena/engine/events/game_event.dart';
-import 'package:werewolf_arena/engine/events/game_log_event.dart';
-import 'package:werewolf_arena/engine/events/judge_announcement_event.dart';
-import 'package:werewolf_arena/engine/events/speak_event.dart';
-import 'package:werewolf_arena/engine/events/speech_order_announcement_event.dart';
-import 'package:werewolf_arena/engine/events/vote_event.dart';
-import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
+import 'package:werewolf_arena/console/console_game_ui.dart';
+import 'package:werewolf_arena/engine/event/game_event.dart';
+import 'package:werewolf_arena/engine/event/game_log_event.dart';
+import 'package:werewolf_arena/engine/event/judge_announcement_event.dart';
+import 'package:werewolf_arena/engine/event/speak_event.dart';
+import 'package:werewolf_arena/engine/event/speech_order_announcement_event.dart';
+import 'package:werewolf_arena/engine/event/vote_event.dart';
+import 'package:werewolf_arena/engine/event/werewolf_discussion_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 
 /// 控制台游戏观察者
@@ -13,7 +13,7 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 /// 实现 GameObserver 接口，将游戏事件转换为控制台输出。
 /// 这是游戏引擎与控制台显示之间的桥梁。
 class ConsoleGameObserver extends GameObserver {
-  final ConsoleGameOutput _console = ConsoleGameOutput.instance;
+  final ConsoleGameUI _console = ConsoleGameUI.instance;
 
   @override
   Future<void> onGameEvent(GameEvent event) async {

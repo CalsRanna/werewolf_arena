@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/events/game_log_event.dart';
+import 'package:werewolf_arena/engine/event/game_log_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 
 /// 游戏引擎内部日志器单例

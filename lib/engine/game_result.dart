@@ -1,0 +1,55 @@
+/// 胜利结果类
+///
+/// 用于表示游戏胜利条件检查的结果
+class GameResult {
+  /// 获胜方，null表示游戏继续
+  final String? winner;
+
+  /// 胜利原因
+  final String reason;
+
+  const GameResult({required this.winner, required this.reason});
+
+  /// 游戏继续（没有胜利方）
+  factory GameResult.gameContinues() {
+    return const GameResult(winner: null, reason: '游戏继续');
+  }
+
+  /// 好人阵营胜利
+  factory GameResult.goodWins(String reason) {
+    return GameResult(winner: '好人阵营', reason: reason);
+  }
+
+  /// 狼人阵营胜利
+  factory GameResult.evilWins(String reason) {
+    return GameResult(winner: '狼人阵营', reason: reason);
+  }
+
+  /// 游戏是否已结束
+  bool get isGameEnded => winner != null;
+
+  /// 游戏是否继续
+  bool get isGameContinues => winner == null;
+
+  /// 好人阵营是否胜利
+  bool get isGoodWins => winner == '好人阵营';
+
+  /// 狼人阵营是否胜利
+  bool get isEvilWins => winner == '狼人阵营';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GameResult &&
+          runtimeType == other.runtimeType &&
+          winner == other.winner &&
+          reason == other.reason;
+
+  @override
+  int get hashCode => winner.hashCode ^ reason.hashCode;
+
+  @override
+  String toString() {
+    return 'VictoryResult{winner: $winner, reason: $reason}';
+  }
+}

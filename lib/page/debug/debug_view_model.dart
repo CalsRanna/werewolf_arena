@@ -1,15 +1,15 @@
 import 'package:signals/signals_flutter.dart';
-import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
-import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
-import 'package:werewolf_arena/engine/drivers/ai_player_driver.dart';
-import 'package:werewolf_arena/engine/events/game_event.dart';
-import 'package:werewolf_arena/engine/events/game_log_event.dart';
-import 'package:werewolf_arena/engine/events/speak_event.dart';
-import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
+import 'package:werewolf_arena/engine/player/ai_player.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
+import 'package:werewolf_arena/engine/game_config.dart';
+import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
+import 'package:werewolf_arena/engine/event/game_event.dart';
+import 'package:werewolf_arena/engine/event/game_log_event.dart';
+import 'package:werewolf_arena/engine/event/speak_event.dart';
+import 'package:werewolf_arena/engine/event/werewolf_discussion_event.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
+import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 import 'package:werewolf_arena/util/dialog_util.dart';
 import 'package:werewolf_arena/util/logger_util.dart';
 

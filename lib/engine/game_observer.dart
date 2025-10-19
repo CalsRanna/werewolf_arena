@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/events/game_event.dart';
+import 'package:werewolf_arena/engine/event/game_event.dart';
 
 abstract class GameObserver {
   Future<void> onGameEvent(GameEvent event);

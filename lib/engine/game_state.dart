@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/events/game_end_event.dart';
-import 'package:werewolf_arena/engine/events/game_start_event.dart';
-import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
+import 'package:werewolf_arena/engine/event/game_end_event.dart';
+import 'package:werewolf_arena/engine/event/game_start_event.dart';
+import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
-import 'package:werewolf_arena/engine/events/game_event.dart';
-import 'package:werewolf_arena/engine/domain/value_objects/game_phase.dart';
+import 'package:werewolf_arena/engine/event/game_event.dart';
+import 'package:werewolf_arena/engine/game_phase.dart';
 
 /// 简化后的游戏状态类 - 专注于纯游戏逻辑状态
 ///

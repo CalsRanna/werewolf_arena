@@ -1,0 +1,30 @@
+import 'package:werewolf_arena/engine/event/game_event.dart';
+
+/// 游戏开始事件 - 公开可见
+class GameStartEvent extends GameEvent {
+  final int playerCount;
+  final Map<String, int> roleDistribution;
+
+  GameStartEvent({required this.playerCount, required this.roleDistribution})
+    : super(
+        id: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
+        visibility: [
+          'villager',
+          'werewolf',
+          'seer',
+          'witch',
+          'hunter',
+          'guard',
+        ],
+      );
+
+  @override
+  String toNarrative() {
+    return '第$dayNumber天${phase?.displayName}，游戏开始';
+  }
+
+  @override
+  String toString() {
+    return 'GameStartEvent($id)';
+  }
+}
