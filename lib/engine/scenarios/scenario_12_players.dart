@@ -5,7 +5,6 @@ import 'package:werewolf_arena/engine/domain/entities/seer_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/villager_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/werewolf_role.dart';
 import 'package:werewolf_arena/engine/domain/entities/witch_role.dart';
-import 'package:werewolf_arena/engine/domain/enums/role_type.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/victory_result.dart';
 import 'package:werewolf_arena/engine/scenarios/game_scenario.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
@@ -21,9 +20,6 @@ class Scenario12Players extends GameScenario {
 
   @override
   String get description => '经典4狼4民4神配置，无警长';
-
-  @override
-  int get playerCount => 12;
 
   @override
   String get rule => '''
@@ -55,45 +51,6 @@ class Scenario12Players extends GameScenario {
 ''';
 
   @override
-  Map<RoleType, int> get roleDistribution => {
-    RoleType.werewolf: 4,
-    RoleType.villager: 4,
-    RoleType.seer: 1,
-    RoleType.witch: 1,
-    RoleType.guard: 1,
-    RoleType.hunter: 1,
-  };
-
-  @override
-  List<RoleType> getExpandedGameRoles() {
-    final roles = <RoleType>[];
-    roleDistribution.forEach((role, count) {
-      for (int i = 0; i < count; i++) {
-        roles.add(role);
-      }
-    });
-    return roles;
-  }
-
-  @override
-  GameRole createGameRole(RoleType roleType) {
-    switch (roleType) {
-      case RoleType.werewolf:
-        return WerewolfRole();
-      case RoleType.villager:
-        return VillagerRole();
-      case RoleType.seer:
-        return SeerRole();
-      case RoleType.witch:
-        return WitchRole();
-      case RoleType.guard:
-        return GuardRole();
-      case RoleType.hunter:
-        return HunterRole();
-    }
-  }
-
-  @override
   VictoryResult checkVictoryCondition(GameState state) {
     final aliveWerewolves = state.players
         .where((p) => p.isAlive && p.role.id == 'werewolf')
@@ -113,4 +70,20 @@ class Scenario12Players extends GameScenario {
 
     return VictoryResult.gameContinues();
   }
+
+  @override
+  List<GameRole> get roles => [
+    WerewolfRole(),
+    WerewolfRole(),
+    WerewolfRole(),
+    WerewolfRole(),
+    VillagerRole(),
+    VillagerRole(),
+    VillagerRole(),
+    VillagerRole(),
+    SeerRole(),
+    WitchRole(),
+    GuardRole(),
+    HunterRole(),
+  ];
 }

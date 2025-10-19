@@ -1,7 +1,6 @@
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
 import 'package:werewolf_arena/engine/domain/value_objects/game_config.dart';
 import 'package:werewolf_arena/engine/drivers/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/events/game_event.dart';
@@ -69,20 +68,18 @@ class DebugViewModel {
     final random = GameRandom();
 
     // 获取角色列表并随机分配
-    final roleTypes = scenario.getExpandedGameRoles();
-    roleTypes.shuffle(random.generator);
+    final roles = scenario.roles;
+    roles.shuffle(random.generator);
 
     // 创建玩家
-    for (int i = 0; i < scenario.playerCount; i++) {
+    for (int i = 0; i < roles.length; i++) {
       final playerIndex = i + 1; // 玩家编号从1开始
-      final roleType = roleTypes[i];
-      final role = GameRoleFactory.createRoleFromType(roleType);
 
       final player = AIPlayer(
         id: 'player_$playerIndex',
         name: '$playerIndex号玩家',
         index: playerIndex,
-        role: role,
+        role: roles[i],
         driver: AIPlayerDriver(intelligence: intelligence),
       );
 

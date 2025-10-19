@@ -5,7 +5,6 @@ import 'package:werewolf_arena/page/home/home_view_model.dart';
 import 'package:werewolf_arena/page/game/game_view_model.dart';
 import 'package:werewolf_arena/page/settings/settings_view_model.dart';
 import 'package:werewolf_arena/page/settings/llm_config_view_model.dart';
-import 'package:werewolf_arena/services/config_service.dart';
 
 /// 依赖注入配置
 ///
@@ -19,9 +18,6 @@ class DI {
   /// - ConfigService: 配置管理服务（单例）
   /// - ViewModel: 页面视图模型（工厂模式）
   static void ensureInitialized() {
-    // 注册核心服务（单例）
-    GetIt.instance.registerLazySingleton<ConfigService>(() => ConfigService());
-
     // 注册页面ViewModel（工厂模式）
     GetIt.instance.registerLazySingleton<BootstrapViewModel>(
       () => BootstrapViewModel(),

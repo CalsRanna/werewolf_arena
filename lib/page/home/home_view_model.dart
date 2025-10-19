@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:signals/signals.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
-import 'package:werewolf_arena/services/config_service.dart';
 
 class HomeViewModel {
-  // 依赖注入的服务
-  final ConfigService _configService = GetIt.instance.get<ConfigService>();
-
   // Signals 状态管理
   final Signal<String> currentScenarioName = signal('');
   final Signal<int> availableScenarioCount = signal(0);
@@ -16,8 +11,8 @@ class HomeViewModel {
   // 计算属性 - 是否可以开始游戏
   late final canStartGame = computed(() {
     return currentScenarioName.value.isNotEmpty &&
-           currentScenarioName.value != '未知' &&
-           currentScenarioName.value != '未设置场景';
+        currentScenarioName.value != '未知' &&
+        currentScenarioName.value != '未设置场景';
   });
 
   /// 初始化
@@ -62,13 +57,12 @@ class HomeViewModel {
                 '狼人杀是一款经典的社交推理游戏。\n',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text('游戏中，玩家分为狼人阵营和好人阵营。\n'
-                  '狼人需要在夜晚杀人，好人需要在白天投票找出狼人。\n'),
-              SizedBox(height: 8),
               Text(
-                '特殊角色：',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                '游戏中，玩家分为狼人阵营和好人阵营。\n'
+                '狼人需要在夜晚杀人，好人需要在白天投票找出狼人。\n',
               ),
+              SizedBox(height: 8),
+              Text('特殊角色：', style: TextStyle(fontWeight: FontWeight.bold)),
               Text('• 预言家：每晚可以查验一人身份'),
               Text('• 女巫：拥有一瓶解药和毒药'),
               Text('• 猎人：死亡时可以带走一人'),
@@ -87,61 +81,10 @@ class HomeViewModel {
   }
 
   /// 显示场景选择对话框
-  void showScenarioSelection(BuildContext context) {
-    final scenarios = _configService.availableScenarios;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('选择游戏场景'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: scenarios.length,
-            itemBuilder: (context, index) {
-              final scenario = scenarios[index];
-              final isCurrent = scenario.name == currentScenarioName.value;
-
-              return ListTile(
-                leading: Icon(
-                  isCurrent ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: isCurrent ? Theme.of(context).colorScheme.primary : null,
-                ),
-                title: Text(scenario.name),
-                subtitle: Text('${scenario.playerCount}人局 - ${scenario.description}'),
-                onTap: () async {
-                  await _configService.setScenario(scenario.id);
-                  await _loadScenarioInfo();
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
+  void showScenarioSelection(BuildContext context) {}
 
   /// 加载场景信息
-  Future<void> _loadScenarioInfo() async {
-    try {
-      currentScenarioName.value = _configService.currentScenarioName;
-      availableScenarioCount.value = _configService.availableScenarios.length;
-    } catch (e) {
-      print('加载场景信息失败: $e');
-      currentScenarioName.value = '未知';
-      availableScenarioCount.value = 0;
-    }
-  }
+  Future<void> _loadScenarioInfo() async {}
 
   /// 显示未选择场景的对话框
   void _showNoScenarioDialog(BuildContext context) {

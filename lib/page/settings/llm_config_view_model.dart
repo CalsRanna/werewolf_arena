@@ -1,13 +1,9 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:signals/signals.dart';
-import 'package:werewolf_arena/services/config_service.dart';
 import 'package:werewolf_arena/services/config/config.dart';
 
 class LLMConfigViewModel {
-  final ConfigService _configService = GetIt.instance.get<ConfigService>();
-
   // 默认配置 Signals
   final Signal<String> defaultModel = signal('gpt-3.5-turbo');
   final Signal<String> defaultApiKey = signal('');
@@ -34,54 +30,13 @@ class LLMConfigViewModel {
   }
 
   /// 保存配置
-  Future<void> saveConfig(BuildContext context) async {
-    try {
-      isLoading.value = true;
-
-      // 构建新的 AppConfig
-      final currentConfig = _configService.appConfig;
-      final newConfig = AppConfig(
-        defaultModel: defaultModel.value,
-        defaultApiKey: defaultApiKey.value,
-        defaultBaseUrl: defaultBaseUrl.value.isEmpty ? null : defaultBaseUrl.value,
-        timeoutSeconds: defaultTimeout.value,
-        maxRetries: defaultMaxRetries.value,
-        playerModels: playerConfigs.value,
-        logging: currentConfig.logging,  // 保留现有日志配置
-      );
-
-      // 保存到游戏参数
-      await _configService.gameParameters!.saveConfig(newConfig);
-
-      isLoading.value = false;
-
-      // 显示成功提示
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('配置已保存'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      isLoading.value = false;
-
-      // 显示错误提示
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('保存失败: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  Future<void> saveConfig(BuildContext context) async {}
 
   /// 添加玩家配置
   void addPlayerConfig(String playerId) {
-    final currentConfigs = Map<String, PlayerLLMConfig>.from(playerConfigs.value);
+    final currentConfigs = Map<String, PlayerLLMConfig>.from(
+      playerConfigs.value,
+    );
     currentConfigs[playerId] = PlayerLLMConfig(
       model: '',
       apiKey: '',
@@ -92,7 +47,9 @@ class LLMConfigViewModel {
 
   /// 更新玩家配置
   void updatePlayerConfig(String playerId, String field, String value) {
-    final currentConfigs = Map<String, PlayerLLMConfig>.from(playerConfigs.value);
+    final currentConfigs = Map<String, PlayerLLMConfig>.from(
+      playerConfigs.value,
+    );
     final existing = currentConfigs[playerId];
     if (existing == null) return;
 
@@ -124,7 +81,9 @@ class LLMConfigViewModel {
 
   /// 删除玩家配置
   void removePlayerConfig(String playerId) {
-    final currentConfigs = Map<String, PlayerLLMConfig>.from(playerConfigs.value);
+    final currentConfigs = Map<String, PlayerLLMConfig>.from(
+      playerConfigs.value,
+    );
     currentConfigs.remove(playerId);
     playerConfigs.value = currentConfigs;
   }
@@ -140,25 +99,7 @@ class LLMConfigViewModel {
   }
 
   /// 加载配置
-  Future<void> _loadConfig() async {
-    try {
-      await _configService.ensureInitialized();
-      final appConfig = _configService.appConfig;
-
-      // 加载默认配置
-      defaultModel.value = appConfig.defaultModel;
-      defaultApiKey.value = appConfig.defaultApiKey;
-      defaultBaseUrl.value = appConfig.defaultBaseUrl ?? 'https://api.openai.com/v1';
-      defaultTimeout.value = appConfig.timeoutSeconds;
-      defaultMaxRetries.value = appConfig.maxRetries;
-
-      // 加载玩家配置
-      playerConfigs.value = Map<String, PlayerLLMConfig>.from(appConfig.playerModels);
-    } catch (e) {
-      print('加载 LLM 配置失败: $e');
-      // 使用默认值
-    }
-  }
+  Future<void> _loadConfig() async {}
 
   /// 清理资源
   void dispose() {

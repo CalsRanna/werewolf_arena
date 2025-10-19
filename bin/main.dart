@@ -8,7 +8,6 @@ import 'package:werewolf_arena/console/console_game_observer.dart';
 import 'package:werewolf_arena/console/console_output.dart';
 import 'package:werewolf_arena/engine/domain/entities/ai_player.dart';
 import 'package:werewolf_arena/engine/domain/entities/game_player.dart';
-import 'package:werewolf_arena/engine/domain/entities/game_role_factory.dart';
 import 'package:werewolf_arena/engine/drivers/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -94,12 +93,11 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
   final scenario = Scenario12Players();
   final players = <GamePlayer>[];
   final random = GameRandom();
-  final roleTypes = scenario.getExpandedGameRoles();
-  roleTypes.shuffle(random.generator);
-  for (int i = 0; i < scenario.playerCount; i++) {
+  final roles = scenario.roles;
+  roles.shuffle(random.generator);
+  for (int i = 0; i < roles.length; i++) {
     final playerIndex = i + 1;
-    final roleType = roleTypes[i];
-    final role = GameRoleFactory.createRoleFromType(roleType);
+    final role = roles[i];
     final intelligence = config.playerIntelligences[i];
     final player = AIPlayer(
       id: 'player_$playerIndex',

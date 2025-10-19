@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:signals/signals.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
-import 'package:werewolf_arena/services/config_service.dart';
 
 class BootstrapViewModel {
-  // 依赖注入的服务
-  final ConfigService _configService = GetIt.instance.get<ConfigService>();
-
   // Signals 状态管理
   final Signal<bool> isInitialized = signal(false);
   final Signal<String> initializationMessage = signal('正在初始化游戏引擎...');
@@ -22,7 +17,6 @@ class BootstrapViewModel {
       // 步骤 1: 初始化配置服务
       initializationMessage.value = '正在加载配置...';
       initializationProgress.value = 0.2;
-      await _configService.ensureInitialized();
       await Future.delayed(Duration(milliseconds: 300));
 
       // 步骤 2: 初始化游戏服务
@@ -33,10 +27,6 @@ class BootstrapViewModel {
       // 步骤 3: 预加载场景
       initializationMessage.value = '正在加载游戏场景...';
       initializationProgress.value = 0.8;
-      final scenarios = _configService.availableScenarios;
-      if (scenarios.isNotEmpty) {
-        await _configService.setScenario(scenarios.first.id);
-      }
       await Future.delayed(Duration(milliseconds: 300));
 
       // 完成初始化
@@ -45,11 +35,8 @@ class BootstrapViewModel {
       await Future.delayed(Duration(milliseconds: 500));
 
       isInitialized.value = true;
-    } catch (e, stackTrace) {
+    } catch (e) {
       errorMessage.value = '初始化失败: $e';
-      // 记录错误日志
-      print('Bootstrap initialization error: $e');
-      print('Stack trace: $stackTrace');
 
       // 即使失败也标记为已初始化，让用户可以进入应用尝试手动修复
       isInitialized.value = true;

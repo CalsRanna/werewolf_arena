@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:signals/signals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:get_it/get_it.dart';
-import 'package:werewolf_arena/services/config_service.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 
 class SettingsViewModel {
-  final ConfigService _configService = GetIt.instance.get<ConfigService>();
-
   // Signals 状态管理 - UI设置
   final Signal<bool> soundEnabled = signal(true);
   final Signal<bool> animationsEnabled = signal(true);
@@ -133,9 +129,7 @@ class SettingsViewModel {
   /// 保存设置
   Future<void> _saveSettings() async {
     try {
-      if (_prefs == null) {
-        _prefs = await SharedPreferences.getInstance();
-      }
+      _prefs ??= await SharedPreferences.getInstance();
 
       await _prefs!.setBool(_keySoundEnabled, soundEnabled.value);
       await _prefs!.setBool(_keyAnimationsEnabled, animationsEnabled.value);
@@ -147,30 +141,10 @@ class SettingsViewModel {
   }
 
   /// 加载游戏配置
-  Future<void> _loadGameConfig() async {
-    try {
-      await _configService.ensureInitialized();
-      final appConfig = _configService.appConfig;
-
-      logLevel.value = appConfig.logging.level;
-      defaultLLMModel.value = appConfig.defaultModel;
-      llmApiKey.value = appConfig.defaultApiKey;
-      llmBaseUrl.value = appConfig.defaultBaseUrl ?? '';
-    } catch (e) {
-      print('加载游戏配置失败: $e');
-    }
-  }
+  Future<void> _loadGameConfig() async {}
 
   /// 保存游戏配置
-  Future<void> _saveGameConfig() async {
-    try {
-      await _configService.ensureInitialized();
-      // 游戏配置已经通过ConfigLoader自动保存到SharedPreferences
-      // 这里只需要触发ConfigManager更新即可
-    } catch (e) {
-      print('保存游戏配置失败: $e');
-    }
-  }
+  Future<void> _saveGameConfig() async {}
 
   /// 设置日志级别
   Future<void> setLogLevel(String level) async {
