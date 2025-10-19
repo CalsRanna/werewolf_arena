@@ -34,6 +34,7 @@ class GameState {
 
   bool canUserHeal = true;
   bool canUserPoison = true;
+  String lastProtectedPlayer = '';
 
   // 技能效果管理（替代NightActionState和VotingState）
   final Map<String, dynamic> skillEffects; // 存储技能效果状态

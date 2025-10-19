@@ -37,6 +37,9 @@ class DefaultPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
     await Future.delayed(const Duration(seconds: 1));
+    // 守卫守护
+    final protectTarget = await _processProtect(state, observer: observer);
+    await Future.delayed(const Duration(seconds: 1));
     // 狼人讨论战术
     await _processConspire(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
@@ -51,9 +54,6 @@ class DefaultPhaseProcessor implements GameProcessor {
     await Future.delayed(const Duration(seconds: 1));
     // 女巫下毒
     final poisonTarget = await _processPoison(state, observer: observer);
-    await Future.delayed(const Duration(seconds: 1));
-    // 守卫守护
-    final protectTarget = await _processProtect(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
     // 猎人杀人
     final shootTarget = await _processShoot(state, observer: observer);
@@ -286,19 +286,24 @@ class DefaultPhaseProcessor implements GameProcessor {
   }) async {
     final deadPlayers = <GamePlayer>[];
 
-    // 2. 狼人击杀（会被守卫保护阻止）
+    // 2. 狼人击杀（会被守卫保护和女巫解药阻止）
     if (killTarget != null) {
-      // 只有未被守卫保护的玩家才会死亡
+      final wasProtected =
+          guardTarget != null && guardTarget.name == killTarget.name;
       final wasHealed =
           healTarget != null && healTarget.name == killTarget.name;
-      if (!wasHealed) {
-        // 未被女巫救，确认死亡
+
+      if (wasProtected) {
+        // 被守卫保护，击杀无效
+        GameEngineLogger.instance.d('${killTarget.formattedName}被守卫保护，免于狼人击杀');
+      } else if (wasHealed) {
+        // 被女巫救，免于死亡
+        GameEngineLogger.instance.d('${killTarget.formattedName}被女巫解药救活');
+      } else {
+        // 未被保护也未被救，确认死亡
         killTarget.setAlive(false);
         deadPlayers.add(killTarget);
       }
-    } else if (killTarget != null) {
-      // 被守卫保护，击杀无效
-      GameEngineLogger.instance.d('${killTarget.formattedName}被守卫保护，免于狼人击杀');
     }
 
     // 3. 女巫毒药（独立击杀）
@@ -401,7 +406,7 @@ class DefaultPhaseProcessor implements GameProcessor {
     final target = state.getPlayerByName(result.target ?? '');
 
     // 检查是否违反了"不能连续两次保护同一人"的规则
-    if (target != null) {
+    if (target != null && state.lastProtectedPlayer == target.name) {
       // 守卫试图连续保护同一人，规则不允许
       GameEngineLogger.instance.d('守卫不能连续两次保护${target.formattedName}，保护失败');
       announceEvent = AnnounceEvent('守卫试图连续保护${target.formattedName}，但规则不允许');
@@ -415,13 +420,15 @@ class DefaultPhaseProcessor implements GameProcessor {
     }
 
     if (target != null) {
+      // 更新上一次守护的玩家
+      state.lastProtectedPlayer = target.name;
+
       final protectEvent = ProtectEvent(target: target);
       state.handleEvent(protectEvent);
       await observer?.onGameEvent(protectEvent);
 
-      announceEvent = AnnounceEvent('守卫对${target.formattedName}使用了保护');
-      GameEngineLogger.instance.d(announceEvent.toString());
-      state.handleEvent(announceEvent);
+      // 注意：不在这里公布守护结果，具体是否成功阻止击杀将在夜晚结算中判断
+      GameEngineLogger.instance.d('守卫选择守护${target.formattedName}');
     }
 
     announceEvent = AnnounceEvent('守卫请闭眼');
