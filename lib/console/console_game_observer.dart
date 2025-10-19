@@ -1,9 +1,14 @@
 import 'package:werewolf_arena/console/console_game_ui.dart';
+import 'package:werewolf_arena/engine/event/exile_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
+import 'package:werewolf_arena/engine/event/investigate_event.dart';
+import 'package:werewolf_arena/engine/event/kill_event.dart';
 import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/order_event.dart';
+import 'package:werewolf_arena/engine/event/protect_event.dart';
+import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -18,7 +23,7 @@ class ConsoleGameObserver extends GameObserver {
   @override
   Future<void> onGameEvent(GameEvent event) async {
     if (event is LogEvent) {
-      _console.printLog(event.toNarrative());
+      // _console.printLog(event.toNarrative());
     } else if (event is AnnounceEvent) {
       _console.printEvent('[法官]：${event.announcement}');
     } else if (event is ConspireEvent) {
@@ -31,6 +36,16 @@ class ConsoleGameObserver extends GameObserver {
       );
     } else if (event is OrderEvent) {
       _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is ProtectEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is KillEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is InvestigateEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is ExileEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is TestamentEvent) {
+      _console.printEvent('${event.speaker.formattedName}：${event.message}');
     } else {
       _console.printEvent(event.toString());
     }

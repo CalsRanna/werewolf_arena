@@ -75,7 +75,7 @@ class GameState {
   List<GamePlayer> get villagers =>
       players.where((p) => p.role.id == 'villager').toList();
   List<GamePlayer> get gods =>
-      players.where((p) => p.role.id == 'god').toList();
+      players.where((p) => p.role.id != 'werewolf' && p.role.id != 'villager').toList();
 
   int get aliveWerewolves => werewolves.where((p) => p.isAlive).length;
   int get aliveVillagers => villagers.where((p) => p.isAlive).length;

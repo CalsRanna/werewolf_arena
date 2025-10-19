@@ -71,6 +71,7 @@ class DefaultPhaseProcessor implements GameProcessor {
       poisonTarget: poisonTarget,
       guardTarget: protectTarget,
     );
+
     await Future.delayed(const Duration(seconds: 1));
     // 公开讨论
     await _processDiscuss(
@@ -359,10 +360,7 @@ class DefaultPhaseProcessor implements GameProcessor {
     );
     final target = state.getPlayerByName(result.target ?? '');
     if (target != null) {
-      final investigateEvent = InvestigateEvent(
-        target: target,
-        investigationResult: target.role.name,
-      );
+      final investigateEvent = InvestigateEvent(target: target);
       state.handleEvent(investigateEvent);
       await observer?.onGameEvent(investigateEvent);
       announceEvent = AnnounceEvent(
@@ -406,10 +404,6 @@ class DefaultPhaseProcessor implements GameProcessor {
     if (target.role.id == 'witch') {
       state.canUserHeal = false;
     }
-    announceEvent = AnnounceEvent('狼人选择击杀${target.formattedName}');
-    GameEngineLogger.instance.d(announceEvent.toString());
-    state.handleEvent(announceEvent);
-    await observer?.onGameEvent(announceEvent);
     announceEvent = AnnounceEvent('狼人请闭眼');
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
