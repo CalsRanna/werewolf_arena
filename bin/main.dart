@@ -103,7 +103,10 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
       name: '$playerIndex号玩家',
       index: playerIndex,
       role: role,
-      driver: AIPlayerDriver(intelligence: intelligence),
+      driver: AIPlayerDriver(
+        intelligence: intelligence,
+        maxRetries: config.maxRetries,
+      ),
     );
     players.add(player);
   }

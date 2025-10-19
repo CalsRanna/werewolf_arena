@@ -15,7 +15,7 @@ class RetryConfig {
     this.maxAttempts = 10,
     this.initialDelay = const Duration(seconds: 1),
     this.backoffMultiplier = 2.0,
-    this.maxDelay = const Duration(seconds: 10),
+    this.maxDelay = const Duration(seconds: 30),
   });
 }
 
@@ -178,15 +178,27 @@ class OpenAIService {
   }
 
   /// 计算指数退避延迟时间
+  ///
+  /// 使用改进的指数退避算法，避免延迟时间增长过快：
+  /// - 使用 min(maxDelay, initialDelay * multiplier^attempt) 来限制增长
+  /// - 添加抖动（jitter）来避免雷鸣羊群效应
   Duration _calculateBackoffDelay(int attempt) {
-    final multiplier = math.pow(retryConfig.backoffMultiplier, attempt - 1);
-    final delay = retryConfig.initialDelay * multiplier;
-    return Duration(
-      milliseconds: delay.inMilliseconds.clamp(
-        0,
-        retryConfig.maxDelay.inMilliseconds,
-      ),
+    // 计算基础延迟，使用 attempt 而不是 attempt - 1，这样第一次重试就有延迟
+    final baseDelayMs =
+        retryConfig.initialDelay.inMilliseconds *
+        math.pow(retryConfig.backoffMultiplier, attempt - 1);
+
+    // 限制最大延迟时间
+    final cappedDelayMs = math.min(
+      baseDelayMs.toDouble(),
+      retryConfig.maxDelay.inMilliseconds.toDouble(),
     );
+
+    // 添加随机抖动（0.5 ~ 1.0 倍的延迟），避免所有请求同时重试
+    final jitter = 0.5 + math.Random().nextDouble() * 0.5;
+    final finalDelayMs = (cappedDelayMs * jitter).toInt();
+
+    return Duration(milliseconds: finalDelayMs);
   }
 
   Future<Map<String, dynamic>> _makeChatCompletionRequest({

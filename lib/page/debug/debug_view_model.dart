@@ -79,7 +79,10 @@ class DebugViewModel {
         name: '$playerIndex号玩家',
         index: playerIndex,
         role: roles[i],
-        driver: AIPlayerDriver(intelligence: intelligence),
+        driver: AIPlayerDriver(
+          intelligence: intelligence,
+          maxRetries: config.maxRetries,
+        ),
       );
 
       players.add(player);

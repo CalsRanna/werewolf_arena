@@ -16,6 +16,9 @@ class AIPlayerDriver implements PlayerDriver {
   /// 玩家智能配置
   final PlayerIntelligence intelligence;
 
+  /// 最大重试次数
+  final int maxRetries;
+
   /// OpenAI服务实例
   final OpenAIService _service;
 
@@ -51,13 +54,16 @@ class AIPlayerDriver implements PlayerDriver {
   /// 构造函数
   ///
   /// [intelligence] 玩家的AI配置，包含API密钥、模型ID等信息
-  AIPlayerDriver({required this.intelligence})
-    : _service = OpenAIService(
-        baseUrl: intelligence.baseUrl,
-        apiKey: intelligence.apiKey,
-        model: intelligence.modelId,
-        retryConfig: const RetryConfig(maxAttempts: 3),
-      );
+  /// [maxRetries] 最大重试次数，默认为3
+  AIPlayerDriver({
+    required this.intelligence,
+    this.maxRetries = 3,
+  }) : _service = OpenAIService(
+          baseUrl: intelligence.baseUrl,
+          apiKey: intelligence.apiKey,
+          model: intelligence.modelId,
+          retryConfig: RetryConfig(maxAttempts: maxRetries),
+        );
 
   @override
   Future<PlayerDriverResponse> request({
