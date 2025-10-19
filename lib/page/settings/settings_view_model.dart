@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:signals/signals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:werewolf_arena/router/router.gr.dart';
 
 class SettingsViewModel {
   // Signals 状态管理 - UI设置
@@ -40,9 +39,7 @@ class SettingsViewModel {
   }
 
   /// 导航到 LLM 配置页面
-  void navigateToLLMConfig(BuildContext context) {
-    LLMConfigRoute().push(context);
-  }
+  void navigateToLLMConfig(BuildContext context) {}
 
   /// 切换音效
   Future<void> toggleSound(bool value) async {

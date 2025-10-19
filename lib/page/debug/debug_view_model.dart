@@ -9,7 +9,6 @@ import 'package:werewolf_arena/engine/events/speak_event.dart';
 import 'package:werewolf_arena/engine/events/werewolf_discussion_event.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/game_random.dart';
 import 'package:werewolf_arena/engine/scenarios/scenario_12_players.dart';
 import 'package:werewolf_arena/util/dialog_util.dart';
 import 'package:werewolf_arena/util/logger_util.dart';
@@ -65,11 +64,10 @@ class DebugViewModel {
       },
     );
     final players = <GamePlayer>[];
-    final random = GameRandom();
 
     // 获取角色列表并随机分配
     final roles = scenario.roles;
-    roles.shuffle(random.generator);
+    roles.shuffle();
 
     // 创建玩家
     for (int i = 0; i < roles.length; i++) {
