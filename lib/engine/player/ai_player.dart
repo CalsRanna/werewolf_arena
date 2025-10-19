@@ -36,7 +36,6 @@ class AIPlayer extends GamePlayer {
         reasoning: response.reasoning,
       );
     } catch (e) {
-      print(e);
       return SkillResult(caster: name);
     }
   }

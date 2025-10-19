@@ -23,7 +23,7 @@ class SettingsViewModel {
   static const String _keySelectedTheme = 'selected_theme';
   static const String _keyTextSpeed = 'text_speed';
 
-  SharedPreferences? _prefs;
+  SharedPreferences? _preferences;
 
   /// 初始化设置
   Future<void> initSignals() async {
@@ -110,15 +110,16 @@ class SettingsViewModel {
   /// 加载设置
   Future<void> _loadSettings() async {
     try {
-      _prefs = await SharedPreferences.getInstance();
+      _preferences = await SharedPreferences.getInstance();
 
       // 从 SharedPreferences 加载设置
-      soundEnabled.value = _prefs?.getBool(_keySoundEnabled) ?? true;
-      animationsEnabled.value = _prefs?.getBool(_keyAnimationsEnabled) ?? true;
-      selectedTheme.value = _prefs?.getString(_keySelectedTheme) ?? 'dark';
-      textSpeed.value = _prefs?.getDouble(_keyTextSpeed) ?? 1.0;
+      soundEnabled.value = _preferences?.getBool(_keySoundEnabled) ?? true;
+      animationsEnabled.value =
+          _preferences?.getBool(_keyAnimationsEnabled) ?? true;
+      selectedTheme.value =
+          _preferences?.getString(_keySelectedTheme) ?? 'dark';
+      textSpeed.value = _preferences?.getDouble(_keyTextSpeed) ?? 1.0;
     } catch (e) {
-      print('加载设置失败: $e');
       // 使用默认值
     }
   }
@@ -126,14 +127,17 @@ class SettingsViewModel {
   /// 保存设置
   Future<void> _saveSettings() async {
     try {
-      _prefs ??= await SharedPreferences.getInstance();
+      _preferences ??= await SharedPreferences.getInstance();
 
-      await _prefs!.setBool(_keySoundEnabled, soundEnabled.value);
-      await _prefs!.setBool(_keyAnimationsEnabled, animationsEnabled.value);
-      await _prefs!.setString(_keySelectedTheme, selectedTheme.value);
-      await _prefs!.setDouble(_keyTextSpeed, textSpeed.value);
+      await _preferences!.setBool(_keySoundEnabled, soundEnabled.value);
+      await _preferences!.setBool(
+        _keyAnimationsEnabled,
+        animationsEnabled.value,
+      );
+      await _preferences!.setString(_keySelectedTheme, selectedTheme.value);
+      await _preferences!.setDouble(_keyTextSpeed, textSpeed.value);
     } catch (e) {
-      print('保存设置失败: $e');
+      // 使用默认值
     }
   }
 
