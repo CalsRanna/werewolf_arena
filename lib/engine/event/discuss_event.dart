@@ -2,13 +2,13 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 发言事件 - 所有人可见
-class SpeakEvent extends GameEvent {
+class DiscussEvent extends GameEvent {
   final GamePlayer speaker;
   final String message;
 
-  SpeakEvent({required this.speaker, required this.message})
+  DiscussEvent({required this.speaker, required this.message})
     : super(
-        id: 'speak_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'discuss_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
           'villager',
           'werewolf',

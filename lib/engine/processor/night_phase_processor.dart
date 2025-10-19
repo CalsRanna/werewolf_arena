@@ -6,13 +6,13 @@ import 'package:werewolf_arena/engine/role/werewolf_role.dart';
 import 'package:werewolf_arena/engine/role/witch_role.dart';
 import 'package:werewolf_arena/engine/game_phase.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
-import 'package:werewolf_arena/engine/event/guard_protect_event.dart';
+import 'package:werewolf_arena/engine/event/protect_event.dart';
 import 'package:werewolf_arena/engine/event/judge_announcement_event.dart';
-import 'package:werewolf_arena/engine/event/seer_investigate_event.dart';
-import 'package:werewolf_arena/engine/event/werewolf_discussion_event.dart';
-import 'package:werewolf_arena/engine/event/werewolf_kill_event.dart';
-import 'package:werewolf_arena/engine/event/witch_heal_event.dart';
-import 'package:werewolf_arena/engine/event/witch_poison_event.dart';
+import 'package:werewolf_arena/engine/event/investigate_event.dart';
+import 'package:werewolf_arena/engine/event/conspire_event.dart';
+import 'package:werewolf_arena/engine/event/kill_event.dart';
+import 'package:werewolf_arena/engine/event/heal_event.dart';
+import 'package:werewolf_arena/engine/event/poison_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
@@ -215,7 +215,7 @@ class NightPhaseProcessor implements GameProcessor {
     }
 
     if (target != null) {
-      final protectEvent = GuardProtectEvent(target: target);
+      final protectEvent = ProtectEvent(target: target);
       state.handleEvent(protectEvent);
       await observer?.onGameEvent(protectEvent);
 
@@ -255,7 +255,7 @@ class NightPhaseProcessor implements GameProcessor {
     );
     final target = state.getPlayerByName(result.target ?? '');
     if (target != null) {
-      final investigateEvent = SeerInvestigateEvent(
+      final investigateEvent = InvestigateEvent(
         target: target,
         investigationResult: target.role.name,
       );
@@ -289,7 +289,7 @@ class NightPhaseProcessor implements GameProcessor {
         werewolf.role.skills.whereType<ConspireSkill>().first,
         state,
       );
-      var werewolfDiscussionEvent = WerewolfDiscussionEvent(
+      var werewolfDiscussionEvent = ConspireEvent(
         speaker: werewolf,
         message: result.message ?? '',
       );
@@ -323,7 +323,7 @@ class NightPhaseProcessor implements GameProcessor {
     final names = results.map((result) => result.target).toList();
     var target = _getTargetGamePlayer(state, names);
     if (target == null) return null;
-    var werewolfKillEvent = WerewolfKillEvent(target: target);
+    var werewolfKillEvent = KillEvent(target: target);
     state.handleEvent(werewolfKillEvent);
     await observer?.onGameEvent(werewolfKillEvent);
     if (target.role.id == 'witch') {
@@ -372,7 +372,7 @@ class NightPhaseProcessor implements GameProcessor {
 
     // 女巫不能救自己 - 如果目标是女巫自己，忽略这次救人
     if (target != null && target.name != witch.name) {
-      final healEvent = WitchHealEvent(target: target);
+      final healEvent = HealEvent(target: target);
       state.handleEvent(healEvent);
       await observer?.onGameEvent(healEvent);
       state.canUserHeal = false;
@@ -416,7 +416,7 @@ class NightPhaseProcessor implements GameProcessor {
     );
     final target = state.getPlayerByName(result.target ?? '');
     if (target != null) {
-      final poisonEvent = WitchPoisonEvent(target: target);
+      final poisonEvent = PoisonEvent(target: target);
       state.handleEvent(poisonEvent);
       await observer?.onGameEvent(poisonEvent);
       state.canUserPoison = false;

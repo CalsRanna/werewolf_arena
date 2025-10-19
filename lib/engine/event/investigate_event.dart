@@ -2,10 +2,10 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 预言家查验事件 - 仅预言家可见
-class SeerInvestigateEvent extends GameEvent {
+class InvestigateEvent extends GameEvent {
   final String investigationResult;
 
-  SeerInvestigateEvent({
+  InvestigateEvent({
     required GamePlayer target,
     required this.investigationResult,
   }) : super(

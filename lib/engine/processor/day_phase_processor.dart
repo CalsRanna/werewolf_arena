@@ -1,7 +1,7 @@
 import 'package:werewolf_arena/engine/game_phase.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
 import 'package:werewolf_arena/engine/event/judge_announcement_event.dart';
-import 'package:werewolf_arena/engine/event/speak_event.dart';
+import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/speech_order_announcement_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
@@ -39,7 +39,7 @@ class DayPhaseProcessor implements GameProcessor {
         player.role.skills.whereType<DiscussSkill>().first,
         state,
       );
-      var speakEvent = SpeakEvent(
+      var speakEvent = DiscussEvent(
         speaker: player,
         message: result.message ?? '',
       );

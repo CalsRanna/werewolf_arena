@@ -2,8 +2,8 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 女巫救人事件 - 仅女巫可见
-class WitchHealEvent extends GameEvent {
-  WitchHealEvent({required GamePlayer target})
+class HealEvent extends GameEvent {
+  HealEvent({required GamePlayer target})
     : super(
         id: 'heal_${DateTime.now().millisecondsSinceEpoch}',
         target: target,

@@ -5,8 +5,8 @@ import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/event/game_log_event.dart';
-import 'package:werewolf_arena/engine/event/speak_event.dart';
-import 'package:werewolf_arena/engine/event/werewolf_discussion_event.dart';
+import 'package:werewolf_arena/engine/event/discuss_event.dart';
+import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
@@ -55,8 +55,8 @@ class DebugViewModel {
           return;
         }
         var message = switch (event) {
-          WerewolfDiscussionEvent() => event.message,
-          SpeakEvent() => event.message,
+          ConspireEvent() => event.message,
+          DiscussEvent() => event.message,
           _ => event.toString(),
         };
         await DialogUtil.instance.show(message);

@@ -2,8 +2,8 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 猎人开枪事件 - 公开可见
-class HunterShootEvent extends GameEvent {
-  HunterShootEvent({required GamePlayer target})
+class ShootEvent extends GameEvent {
+  ShootEvent({required GamePlayer target})
     : super(
         id: 'hunter_shoot_${DateTime.now().millisecondsSinceEpoch}',
         target: target,

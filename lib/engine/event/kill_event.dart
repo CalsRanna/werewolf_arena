@@ -2,8 +2,8 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 狼人击杀事件 - 仅狼人可见
-class WerewolfKillEvent extends GameEvent {
-  WerewolfKillEvent({required GamePlayer target})
+class KillEvent extends GameEvent {
+  KillEvent({required GamePlayer target})
     : super(
         id: 'kill_${DateTime.now().millisecondsSinceEpoch}',
         target: target,

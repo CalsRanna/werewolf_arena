@@ -2,10 +2,10 @@ import 'package:werewolf_arena/console/console_game_ui.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/event/game_log_event.dart';
 import 'package:werewolf_arena/engine/event/judge_announcement_event.dart';
-import 'package:werewolf_arena/engine/event/speak_event.dart';
+import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/speech_order_announcement_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
-import 'package:werewolf_arena/engine/event/werewolf_discussion_event.dart';
+import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 
 /// 控制台游戏观察者
@@ -21,9 +21,9 @@ class ConsoleGameObserver extends GameObserver {
       _console.printLog(event.toNarrative());
     } else if (event is JudgeAnnouncementEvent) {
       _console.printEvent('[法官]：${event.announcement}');
-    } else if (event is WerewolfDiscussionEvent) {
+    } else if (event is ConspireEvent) {
       _console.printEvent('${event.speaker.formattedName}：${event.message}');
-    } else if (event is SpeakEvent) {
+    } else if (event is DiscussEvent) {
       _console.printEvent('${event.speaker.formattedName}：${event.message}');
     } else if (event is VoteEvent) {
       _console.printEvent(
