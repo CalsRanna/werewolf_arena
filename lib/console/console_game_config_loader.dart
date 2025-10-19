@@ -101,21 +101,21 @@ logging:
     // 解析默认LLM配置
     final defaultLLM = yaml['default_llm'] as YamlMap;
     final defaultIntelligence = _parsePlayerIntelligenceFromYaml(defaultLLM);
-    playerIntelligences.add(defaultIntelligence);
 
     // 解析玩家专属配置
     final playerModels = yaml['player_models'] as YamlList?;
-    if (playerModels != null) {
+    if (playerModels != null && playerModels.isNotEmpty) {
+      // 为12个玩家循环使用player_models中的模型
       for (var i = 0; i < 12; i++) {
         final model = playerModels[i % playerModels.length];
         final intelligence = defaultIntelligence.copyWith(modelId: model);
         playerIntelligences.add(intelligence);
       }
-    }
-
-    // 如果没有任何配置，添加默认配置
-    if (playerIntelligences.isEmpty) {
-      playerIntelligences.add(_createDefaultPlayerIntelligence());
+    } else {
+      // 如果没有player_models配置，所有玩家都使用默认配置
+      for (var i = 0; i < 12; i++) {
+        playerIntelligences.add(defaultIntelligence);
+      }
     }
 
     // 解析maxRetries
