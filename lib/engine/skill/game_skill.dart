@@ -17,6 +17,5 @@ abstract class GameSkill {
   /// 为AI玩家提供该技能的具体行动指导，包括：
   /// - 技能的使用时机和条件
   /// - 需要考虑的策略因素
-  /// - 预期的决策格式
   String get prompt;
 }

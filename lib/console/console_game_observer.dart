@@ -11,6 +11,7 @@ import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/order_event.dart';
 import 'package:werewolf_arena/engine/event/poison_event.dart';
 import 'package:werewolf_arena/engine/event/protect_event.dart';
+import 'package:werewolf_arena/engine/event/shoot_event.dart';
 import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
@@ -42,6 +43,8 @@ class ConsoleGameObserver extends GameObserver {
     } else if (event is HealEvent) {
       _console.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is PoisonEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is ShootEvent) {
       _console.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ConspireEvent) {
       _console.printEvent('${event.speaker.formattedName}：${event.message}');
