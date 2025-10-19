@@ -1,8 +1,8 @@
 import 'package:werewolf_arena/engine/game_phase.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
-import 'package:werewolf_arena/engine/event/judge_announcement_event.dart';
+import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
-import 'package:werewolf_arena/engine/event/speech_order_announcement_event.dart';
+import 'package:werewolf_arena/engine/event/order_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -23,11 +23,11 @@ class DayPhaseProcessor implements GameProcessor {
   @override
   Future<void> process(GameState state, {GameObserver? observer}) async {
     var players = state.alivePlayers;
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '开始讨论');
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '开始讨论');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    var speakingOrder = SpeechOrderAnnouncementEvent(
+    var speakingOrder = OrderEvent(
       speakingOrder: state.alivePlayers,
       direction: '顺序',
     );
@@ -46,9 +46,7 @@ class DayPhaseProcessor implements GameProcessor {
       state.handleEvent(speakEvent);
       await observer?.onGameEvent(speakEvent);
     }
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(
-      announcement: '所有玩家讨论结束，开始投票',
-    );
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '所有玩家讨论结束，开始投票');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -59,9 +57,7 @@ class DayPhaseProcessor implements GameProcessor {
       );
     }
     var results = await Future.wait(futures);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(
-      announcement: '所有玩家投票结束，开始结算',
-    );
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '所有玩家投票结束，开始结算');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);

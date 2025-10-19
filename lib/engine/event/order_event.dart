@@ -2,24 +2,22 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 发言顺序公告事件 - 公开可见
-class SpeechOrderAnnouncementEvent extends GameEvent {
+class OrderEvent extends GameEvent {
   final List<GamePlayer> speakingOrder;
   final String direction; // "顺序" 或 "逆序"
 
-  SpeechOrderAnnouncementEvent({
-    required this.speakingOrder,
-    required this.direction,
-  }) : super(
-         id: 'speech_order_${DateTime.now().millisecondsSinceEpoch}',
-         visibility: [
-           'villager',
-           'werewolf',
-           'seer',
-           'witch',
-           'hunter',
-           'guard',
-         ],
-       );
+  OrderEvent({required this.speakingOrder, required this.direction})
+    : super(
+        id: 'speech_order_${DateTime.now().millisecondsSinceEpoch}',
+        visibility: [
+          'villager',
+          'werewolf',
+          'seer',
+          'witch',
+          'hunter',
+          'guard',
+        ],
+      );
 
   @override
   String toNarrative() {

@@ -1,10 +1,10 @@
 import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 法官公告事件 - 不可见
-class JudgeAnnouncementEvent extends GameEvent {
+class AnnounceEvent extends GameEvent {
   final String announcement;
 
-  JudgeAnnouncementEvent({required this.announcement})
+  AnnounceEvent({required this.announcement})
     : super(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
 
   @override

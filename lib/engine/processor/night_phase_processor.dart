@@ -7,7 +7,7 @@ import 'package:werewolf_arena/engine/role/witch_role.dart';
 import 'package:werewolf_arena/engine/game_phase.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
 import 'package:werewolf_arena/engine/event/protect_event.dart';
-import 'package:werewolf_arena/engine/event/judge_announcement_event.dart';
+import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/investigate_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/kill_event.dart';
@@ -32,9 +32,9 @@ import 'game_processor.dart';
 class NightPhaseProcessor implements GameProcessor {
   @override
   Future<void> process(GameState state, {GameObserver? observer}) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天黑请闭眼');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
+    var announceEvent = AnnounceEvent(announcement: '天黑请闭眼');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
     // 狼人讨论战术
     await _processWerewolfDiscussion(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
@@ -114,9 +114,7 @@ class NightPhaseProcessor implements GameProcessor {
 
     // 发布死亡公告
     if (deadPlayers.isEmpty) {
-      var judgeAnnouncementEvent = JudgeAnnouncementEvent(
-        announcement: '昨晚是平安夜',
-      );
+      var judgeAnnouncementEvent = AnnounceEvent(announcement: '昨晚是平安夜');
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
       await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -126,7 +124,7 @@ class NightPhaseProcessor implements GameProcessor {
         state.handleEvent(deadEvent);
         await observer?.onGameEvent(deadEvent);
       }
-      var judgeAnnouncementEvent = JudgeAnnouncementEvent(
+      var judgeAnnouncementEvent = AnnounceEvent(
         announcement:
             '昨晚${deadPlayers.map((player) => player.formattedName).join('、')}死亡',
       );
@@ -134,7 +132,7 @@ class NightPhaseProcessor implements GameProcessor {
       state.handleEvent(judgeAnnouncementEvent);
       await observer?.onGameEvent(judgeAnnouncementEvent);
     }
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '天亮了');
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '天亮了');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -158,7 +156,7 @@ class NightPhaseProcessor implements GameProcessor {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请睁眼');
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '猎人请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -167,7 +165,7 @@ class NightPhaseProcessor implements GameProcessor {
         .firstOrNull;
     if (hunter == null) return null;
     // TODO
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '猎人请闭眼');
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '猎人请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -178,11 +176,11 @@ class NightPhaseProcessor implements GameProcessor {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请睁眼');
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '守卫请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要守护的玩家是谁');
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '你要守护的玩家是谁');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -202,12 +200,12 @@ class NightPhaseProcessor implements GameProcessor {
     if (target != null) {
       // 守卫试图连续保护同一人，规则不允许
       GameEngineLogger.instance.d('守卫不能连续两次保护${target.formattedName}，保护失败');
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+      judgeAnnouncementEvent = AnnounceEvent(
         announcement: '守卫试图连续保护${target.formattedName}，但规则不允许',
       );
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
+      judgeAnnouncementEvent = AnnounceEvent(announcement: '守卫请闭眼');
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
       await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -219,14 +217,14 @@ class NightPhaseProcessor implements GameProcessor {
       state.handleEvent(protectEvent);
       await observer?.onGameEvent(protectEvent);
 
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+      judgeAnnouncementEvent = AnnounceEvent(
         announcement: '守卫对${target.formattedName}使用了保护',
       );
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
     }
 
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '守卫请闭眼');
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '守卫请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -237,11 +235,11 @@ class NightPhaseProcessor implements GameProcessor {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请睁眼');
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '预言家请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '你要查验的玩家是谁');
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '你要查验的玩家是谁');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -261,13 +259,13 @@ class NightPhaseProcessor implements GameProcessor {
       );
       state.handleEvent(investigateEvent);
       await observer?.onGameEvent(investigateEvent);
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+      judgeAnnouncementEvent = AnnounceEvent(
         announcement: '${target.formattedName}是${target.role.name}',
       );
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
     }
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '预言家请闭眼');
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '预言家请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -277,7 +275,7 @@ class NightPhaseProcessor implements GameProcessor {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '狼人请睁眼');
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '狼人请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -302,9 +300,7 @@ class NightPhaseProcessor implements GameProcessor {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(
-      announcement: '请选择你们要击杀的玩家',
-    );
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '请选择你们要击杀的玩家');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -329,13 +325,13 @@ class NightPhaseProcessor implements GameProcessor {
     if (target.role.id == 'witch') {
       state.canUserHeal = false;
     }
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(
+    judgeAnnouncementEvent = AnnounceEvent(
       announcement: '狼人选择击杀${target.formattedName}',
     );
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '狼人请闭眼');
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '狼人请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -346,13 +342,11 @@ class NightPhaseProcessor implements GameProcessor {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '女巫请睁眼');
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '女巫请睁眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(
-      announcement: '你有一瓶解药，你要用吗',
-    );
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '你有一瓶解药，你要用吗');
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
 
@@ -376,7 +370,7 @@ class NightPhaseProcessor implements GameProcessor {
       state.handleEvent(healEvent);
       await observer?.onGameEvent(healEvent);
       state.canUserHeal = false;
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+      judgeAnnouncementEvent = AnnounceEvent(
         announcement: '女巫对${target.formattedName}使用解药',
       );
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
@@ -385,9 +379,7 @@ class NightPhaseProcessor implements GameProcessor {
     } else if (target != null && target.name == witch.name) {
       // 女巫试图救自己，记录日志但不执行
       GameEngineLogger.instance.d('女巫不能救自己，解药使用失败');
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(
-        announcement: '女巫试图救自己，但规则不允许',
-      );
+      judgeAnnouncementEvent = AnnounceEvent(announcement: '女巫试图救自己，但规则不允许');
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
     }
@@ -399,9 +391,7 @@ class NightPhaseProcessor implements GameProcessor {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var judgeAnnouncementEvent = JudgeAnnouncementEvent(
-      announcement: '你有一瓶毒药，你要用吗',
-    );
+    var judgeAnnouncementEvent = AnnounceEvent(announcement: '你有一瓶毒药，你要用吗');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
@@ -420,13 +410,13 @@ class NightPhaseProcessor implements GameProcessor {
       state.handleEvent(poisonEvent);
       await observer?.onGameEvent(poisonEvent);
       state.canUserPoison = false;
-      judgeAnnouncementEvent = JudgeAnnouncementEvent(
+      judgeAnnouncementEvent = AnnounceEvent(
         announcement: '女巫对${target.formattedName}使用毒药',
       );
       GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
       state.handleEvent(judgeAnnouncementEvent);
     }
-    judgeAnnouncementEvent = JudgeAnnouncementEvent(announcement: '女巫请闭眼');
+    judgeAnnouncementEvent = AnnounceEvent(announcement: '女巫请闭眼');
     GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
     state.handleEvent(judgeAnnouncementEvent);
     await observer?.onGameEvent(judgeAnnouncementEvent);
