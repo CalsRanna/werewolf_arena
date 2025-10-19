@@ -26,6 +26,6 @@ class DiscussEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'SpeakEvent($id)';
+    return 'DiscussEvent($id)';
   }
 }

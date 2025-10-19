@@ -17,6 +17,6 @@ class ProtectEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'GuardProtectEvent($id)';
+    return 'ProtectEvent($id)';
   }
 }

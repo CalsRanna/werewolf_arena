@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/console/console_game_ui.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
-import 'package:werewolf_arena/engine/event/game_log_event.dart';
+import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/order_event.dart';
@@ -17,7 +17,7 @@ class ConsoleGameObserver extends GameObserver {
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
-    if (event is GameLogEvent) {
+    if (event is LogEvent) {
       _console.printLog(event.toNarrative());
     } else if (event is AnnounceEvent) {
       _console.printEvent('[法官]：${event.announcement}');

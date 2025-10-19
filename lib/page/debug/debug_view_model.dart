@@ -4,7 +4,7 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
-import 'package:werewolf_arena/engine/event/game_log_event.dart';
+import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
@@ -50,7 +50,7 @@ class DebugViewModel {
     final scenario = Scenario12Players();
     final observer = _Observer(
       handleGameEvent: (GameEvent event) async {
-        if (event is GameLogEvent) {
+        if (event is LogEvent) {
           LoggerUtil.instance.d(event.message);
           return;
         }

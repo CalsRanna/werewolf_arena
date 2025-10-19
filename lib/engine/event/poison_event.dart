@@ -17,6 +17,6 @@ class PoisonEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'WitchPoisonEvent($id)';
+    return 'PoisonEvent($id)';
   }
 }

@@ -21,6 +21,6 @@ class InvestigateEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'SeerInvestigateEvent($id)';
+    return 'InvestigateEvent($id)';
   }
 }

@@ -26,6 +26,6 @@ class TestamentEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'LastWordsEvent($id)';
+    return 'TestamentEvent($id)';
   }
 }

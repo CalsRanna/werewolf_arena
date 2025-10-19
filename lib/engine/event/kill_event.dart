@@ -17,6 +17,6 @@ class KillEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'WerewolfKillEvent($id)';
+    return 'KillEvent($id)';
   }
 }

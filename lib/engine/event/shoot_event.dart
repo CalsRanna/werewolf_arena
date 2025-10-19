@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class ShootEvent extends GameEvent {
   ShootEvent({required GamePlayer target})
     : super(
-        id: 'hunter_shoot_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'shoot_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
         visibility: ['hunter'],
       );
@@ -17,6 +17,6 @@ class ShootEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'HunterShootEvent($id)';
+    return 'ShootEvent($id)';
   }
 }

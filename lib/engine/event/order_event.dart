@@ -8,7 +8,7 @@ class OrderEvent extends GameEvent {
 
   OrderEvent({required this.speakingOrder, required this.direction})
     : super(
-        id: 'speech_order_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'order_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
           'villager',
           'werewolf',
@@ -26,6 +26,6 @@ class OrderEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'SpeechOrderAnnouncementEvent($id)';
+    return 'OrderEvent($id)';
   }
 }

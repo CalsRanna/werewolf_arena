@@ -246,7 +246,7 @@ class OpenAIService {
         final message = response.choices.first.message;
         final content = message.content ?? '';
         final tokensUsed = response.usage?.totalTokens ?? 0;
-        GameEngineLogger.instance.d('[API] Response: $content');
+        GameEngineLogger.instance.d(content);
         return {
           'content': content,
           'tokensUsed': tokensUsed,

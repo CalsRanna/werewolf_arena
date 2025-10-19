@@ -14,6 +14,6 @@ class AnnounceEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'JudgeAnnouncementEvent($id)';
+    return 'AnnounceEvent($id)';
   }
 }

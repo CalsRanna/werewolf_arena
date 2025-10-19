@@ -19,6 +19,6 @@ class ConspireEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'WerewolfDiscussionEvent($id)';
+    return 'ConspireEvent($id)';
   }
 }

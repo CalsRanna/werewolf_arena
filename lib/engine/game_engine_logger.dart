@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/event/game_log_event.dart';
+import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 
 /// 游戏引擎内部日志器单例
@@ -24,21 +24,21 @@ class GameEngineLogger {
 
   /// 记录调试信息
   void d(String message) {
-    _observer?.onGameEvent(GameLogEvent.debug(message));
+    _observer?.onGameEvent(LogEvent.debug(message));
   }
 
   /// 记录一般信息
   void i(String message) {
-    _observer?.onGameEvent(GameLogEvent.info(message));
+    _observer?.onGameEvent(LogEvent.info(message));
   }
 
   /// 记录警告信息
   void w(String message) {
-    _observer?.onGameEvent(GameLogEvent.warning(message));
+    _observer?.onGameEvent(LogEvent.warning(message));
   }
 
   /// 记录错误信息
   void e(String message) {
-    _observer?.onGameEvent(GameLogEvent.error(message));
+    _observer?.onGameEvent(LogEvent.error(message));
   }
 }
