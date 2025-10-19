@@ -2,12 +2,15 @@ import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
+import 'package:werewolf_arena/engine/event/exile_event.dart';
 import 'package:werewolf_arena/engine/event/heal_event.dart';
 import 'package:werewolf_arena/engine/event/investigate_event.dart';
 import 'package:werewolf_arena/engine/event/kill_event.dart';
 import 'package:werewolf_arena/engine/event/order_event.dart';
 import 'package:werewolf_arena/engine/event/poison_event.dart';
 import 'package:werewolf_arena/engine/event/protect_event.dart';
+import 'package:werewolf_arena/engine/event/shoot_event.dart';
+import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -26,7 +29,9 @@ import 'package:werewolf_arena/engine/skill/investigate_skill.dart';
 import 'package:werewolf_arena/engine/skill/kill_skill.dart';
 import 'package:werewolf_arena/engine/skill/poison_skill.dart';
 import 'package:werewolf_arena/engine/skill/protect_skill.dart';
+import 'package:werewolf_arena/engine/skill/shoot_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
+import 'package:werewolf_arena/engine/skill/testament_skill.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 
 /// 默认阶段处理器（基于技能系统重构）
@@ -55,9 +60,6 @@ class DefaultPhaseProcessor implements GameProcessor {
     // 女巫下毒
     final poisonTarget = await _processPoison(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
-    // 猎人杀人
-    final shootTarget = await _processShoot(state, observer: observer);
-    await Future.delayed(const Duration(seconds: 1));
     // 夜晚结算
     await _processNightSettlement(
       state,
@@ -66,20 +68,33 @@ class DefaultPhaseProcessor implements GameProcessor {
       healTarget: healTarget,
       poisonTarget: poisonTarget,
       guardTarget: protectTarget,
-      shootTarget: shootTarget,
     );
-    await Future.delayed(const Duration(seconds: 1));
-    announceEvent = AnnounceEvent('天亮了');
-    GameEngineLogger.instance.d(announceEvent.toString());
-    state.handleEvent(announceEvent);
-    await observer?.onGameEvent(announceEvent);
     await Future.delayed(const Duration(seconds: 1));
     // 公开讨论
     await _processDiscuss(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
     // 投票
-    await _processVote(state, observer: observer);
+    var voteTarget = await _processVote(state, observer: observer);
     await Future.delayed(const Duration(seconds: 1));
+    // 遗言
+    if (voteTarget != null) {
+      await _processTestament(
+        state,
+        observer: observer,
+        voteTarget: voteTarget,
+      );
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    // 检查被投票出局的玩家是否是猎人，如果是则触发开枪
+    if (voteTarget?.role is HunterRole) {
+      await Future.delayed(const Duration(seconds: 1));
+      await _processShoot(
+        state,
+        observer: observer,
+        hunter: voteTarget!,
+        canShoot: true, // 白天投票出局的猎人可以开枪
+      );
+    }
     state.dayNumber++;
   }
 
@@ -282,43 +297,26 @@ class DefaultPhaseProcessor implements GameProcessor {
     GamePlayer? healTarget,
     GamePlayer? poisonTarget,
     GamePlayer? guardTarget,
-    GamePlayer? shootTarget,
   }) async {
     final deadPlayers = <GamePlayer>[];
-
-    // 2. 狼人击杀（会被守卫保护和女巫解药阻止）
     if (killTarget != null) {
       final wasProtected =
           guardTarget != null && guardTarget.name == killTarget.name;
       final wasHealed =
           healTarget != null && healTarget.name == killTarget.name;
-
       if (wasProtected) {
-        // 被守卫保护，击杀无效
         GameEngineLogger.instance.d('${killTarget.formattedName}被守卫保护，免于狼人击杀');
       } else if (wasHealed) {
-        // 被女巫救，免于死亡
         GameEngineLogger.instance.d('${killTarget.formattedName}被女巫解药救活');
       } else {
-        // 未被保护也未被救，确认死亡
         killTarget.setAlive(false);
         deadPlayers.add(killTarget);
       }
     }
-
-    // 3. 女巫毒药（独立击杀）
     if (poisonTarget != null) {
       poisonTarget.setAlive(false);
       if (!deadPlayers.contains(poisonTarget)) {
         deadPlayers.add(poisonTarget);
-      }
-    }
-
-    // 4. 猎人开枪（如果有的话）
-    if (shootTarget != null) {
-      shootTarget.setAlive(false);
-      if (!deadPlayers.contains(shootTarget)) {
-        deadPlayers.add(shootTarget);
       }
     }
 
@@ -345,6 +343,22 @@ class DefaultPhaseProcessor implements GameProcessor {
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
     await observer?.onGameEvent(announceEvent);
+
+    // 检查是否有猎人死亡，如果有则触发开枪
+    for (var player in deadPlayers) {
+      if (player.role is HunterRole) {
+        // 判断猎人是否可以开枪（被毒死不能开枪）
+        final wasPoisoned =
+            poisonTarget != null && poisonTarget.name == player.name;
+        await Future.delayed(const Duration(seconds: 1));
+        await _processShoot(
+          state,
+          observer: observer,
+          hunter: player,
+          canShoot: !wasPoisoned,
+        );
+      }
+    }
   }
 
   Future<GamePlayer?> _processPoison(
@@ -441,24 +455,59 @@ class DefaultPhaseProcessor implements GameProcessor {
   Future<GamePlayer?> _processShoot(
     GameState state, {
     GameObserver? observer,
+    required GamePlayer hunter,
+    required bool canShoot,
   }) async {
-    var announceEvent = AnnounceEvent('猎人请睁眼');
-    GameEngineLogger.instance.d(announceEvent.toString());
-    state.handleEvent(announceEvent);
-    await observer?.onGameEvent(announceEvent);
-    final hunter = state.alivePlayers
-        .where((player) => player.role is HunterRole)
-        .firstOrNull;
-    if (hunter == null) return null;
-    // TODO
-    announceEvent = AnnounceEvent('猎人请闭眼');
-    GameEngineLogger.instance.d(announceEvent.toString());
-    state.handleEvent(announceEvent);
-    await observer?.onGameEvent(announceEvent);
-    return null;
+    // 检查猎人是否可以开枪（被毒死不能开枪）
+    if (!canShoot) return null;
+    final result = await hunter.cast(
+      hunter.role.skills.whereType<ShootSkill>().first,
+      state,
+    );
+    final target = state.getPlayerByName(result.target ?? '');
+
+    if (target != null) {
+      final shootEvent = ShootEvent(target: target);
+      state.handleEvent(shootEvent);
+      await observer?.onGameEvent(shootEvent);
+
+      // 立即执行击杀
+      target.setAlive(false);
+      final deadEvent = DeadEvent(victim: target);
+      state.handleEvent(deadEvent);
+      await observer?.onGameEvent(deadEvent);
+      await Future.delayed(const Duration(seconds: 1));
+      var announceEvent = AnnounceEvent('猎人对${target.formattedName}开枪');
+      GameEngineLogger.instance.d(announceEvent.toString());
+      state.handleEvent(announceEvent);
+      await observer?.onGameEvent(announceEvent);
+    }
+    return target;
   }
 
-  Future<void> _processVote(GameState state, {GameObserver? observer}) async {
+  Future<void> _processTestament(
+    GameState state, {
+    GameObserver? observer,
+    required GamePlayer voteTarget,
+  }) async {
+    var announceEvent = AnnounceEvent('${voteTarget.formattedName}请发表遗言');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
+
+    var testamentResult = await voteTarget.cast(TestamentSkill(), state);
+    var testamentEvent = TestamentEvent(
+      speaker: voteTarget,
+      message: testamentResult.message ?? '',
+    );
+    state.handleEvent(testamentEvent);
+    await observer?.onGameEvent(testamentEvent);
+  }
+
+  Future<GamePlayer?> _processVote(
+    GameState state, {
+    GameObserver? observer,
+  }) async {
     var announceEvent = AnnounceEvent('所有玩家讨论结束，开始投票');
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
@@ -479,21 +528,17 @@ class DefaultPhaseProcessor implements GameProcessor {
       state.handleEvent(voteEvent);
       await observer?.onGameEvent(voteEvent);
     }
+    final names = results.map((result) => result.target).toList();
+    var targetPlayer = _getTargetGamePlayer(state, names);
 
-    var map = <String, int>{};
-    for (var result in results) {
-      if (result.target == null) continue;
-      map[result.target!] = (map[result.target!] ?? 0) + 1;
-    }
-    var targetPlayerName = map.entries
-        .reduce((a, b) => a.value > b.value ? a : b)
-        .key;
-    var targetPlayer = state.getPlayerByName(targetPlayerName);
+    // 设置玩家出局并发送 ExileEvent
     if (targetPlayer != null) {
       targetPlayer.setAlive(false);
+      var exileEvent = ExileEvent(victim: targetPlayer);
+      state.handleEvent(exileEvent);
+      await observer?.onGameEvent(exileEvent);
     }
-    var deadEvent = DeadEvent(victim: targetPlayer!);
-    state.handleEvent(deadEvent);
-    await observer?.onGameEvent(deadEvent);
+
+    return targetPlayer;
   }
 }
