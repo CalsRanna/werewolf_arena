@@ -3,9 +3,9 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 发言技能（白天专用）
 ///
 /// 玩家在白天阶段的正常发言
-class SpeakSkill extends GameSkill {
+class DiscussSkill extends GameSkill {
   @override
-  String get skillId => 'speak';
+  String get skillId => 'discuss';
 
   @override
   String get name => '发言';

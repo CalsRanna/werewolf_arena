@@ -7,7 +7,7 @@ import 'package:werewolf_arena/engine/driver/llm_service.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
-import 'package:werewolf_arena/engine/skill/werewolf_discuss_skill.dart';
+import 'package:werewolf_arena/engine/skill/conspire_skill.dart';
 
 /// AI玩家驱动器
 ///
@@ -59,8 +59,8 @@ class AIPlayerDriver implements PlayerDriver {
     final userPrompt =
         '''
 ${_buildGameContext(player, state)}
-${(state.dayNumber == 1 && skill is WerewolfDiscussSkill) ? skill.firstNightPrompt : skill.prompt}
-${skill is WerewolfDiscussSkill ? skill.formatPrompt : PlayerDriverResponse.formatPrompt}
+${(state.dayNumber == 1 && skill is ConspireSkill) ? skill.firstNightPrompt : skill.prompt}
+${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPrompt}
 ''';
 
     try {

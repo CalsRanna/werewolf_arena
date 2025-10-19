@@ -1,9 +1,9 @@
 import 'package:werewolf_arena/engine/role/game_role.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/kill_skill.dart';
-import 'package:werewolf_arena/engine/skill/speak_skill.dart';
+import 'package:werewolf_arena/engine/skill/discuss_skill.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
-import 'package:werewolf_arena/engine/skill/werewolf_discuss_skill.dart';
+import 'package:werewolf_arena/engine/skill/conspire_skill.dart';
 
 /// 狼人角色
 class WerewolfRole extends GameRole {
@@ -27,9 +27,9 @@ class WerewolfRole extends GameRole {
 
   @override
   List<GameSkill> get skills => [
-    WerewolfDiscussSkill(),
+    ConspireSkill(),
     KillSkill(),
-    SpeakSkill(),
+    DiscussSkill(),
     VoteSkill(),
   ];
 }

@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/engine/role/game_role.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
-import 'package:werewolf_arena/engine/skill/speak_skill.dart';
+import 'package:werewolf_arena/engine/skill/discuss_skill.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 
 /// 村民角色
@@ -22,5 +22,5 @@ class VillagerRole extends GameRole {
   String get id => 'villager';
 
   @override
-  List<GameSkill> get skills => [SpeakSkill(), VoteSkill()];
+  List<GameSkill> get skills => [DiscussSkill(), VoteSkill()];
 }

@@ -1,7 +1,7 @@
 import 'package:werewolf_arena/engine/role/game_role.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/investigate_skill.dart';
-import 'package:werewolf_arena/engine/skill/speak_skill.dart';
+import 'package:werewolf_arena/engine/skill/discuss_skill.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 
 /// 预言家角色
@@ -24,5 +24,9 @@ class SeerRole extends GameRole {
   String get id => 'seer';
 
   @override
-  List<GameSkill> get skills => [InvestigateSkill(), SpeakSkill(), VoteSkill()];
+  List<GameSkill> get skills => [
+    InvestigateSkill(),
+    DiscussSkill(),
+    VoteSkill(),
+  ];
 }

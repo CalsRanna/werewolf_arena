@@ -2,7 +2,7 @@ import 'package:werewolf_arena/engine/role/game_role.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/heal_skill.dart';
 import 'package:werewolf_arena/engine/skill/poison_skill.dart';
-import 'package:werewolf_arena/engine/skill/speak_skill.dart';
+import 'package:werewolf_arena/engine/skill/discuss_skill.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 
 /// 女巫角色
@@ -30,7 +30,7 @@ class WitchRole extends GameRole {
   List<GameSkill> get skills => [
     HealSkill(),
     PoisonSkill(),
-    SpeakSkill(),
+    DiscussSkill(),
     VoteSkill(),
   ];
 }

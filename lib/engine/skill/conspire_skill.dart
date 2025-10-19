@@ -3,9 +3,9 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 狼人讨论技能（夜晚专用）
 ///
 /// 狼人之间的私密讨论，只有狼人可见
-class WerewolfDiscussSkill extends GameSkill {
+class ConspireSkill extends GameSkill {
   @override
-  String get skillId => 'werewolf_discuss';
+  String get skillId => 'conspire';
 
   @override
   String get name => '狼人讨论';

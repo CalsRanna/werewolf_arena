@@ -22,7 +22,7 @@ import 'package:werewolf_arena/engine/skill/kill_skill.dart';
 import 'package:werewolf_arena/engine/skill/poison_skill.dart';
 import 'package:werewolf_arena/engine/skill/protect_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
-import 'package:werewolf_arena/engine/skill/werewolf_discuss_skill.dart';
+import 'package:werewolf_arena/engine/skill/conspire_skill.dart';
 
 import 'game_processor.dart';
 
@@ -286,7 +286,7 @@ class NightPhaseProcessor implements GameProcessor {
         .toList();
     for (final werewolf in werewolves) {
       var result = await werewolf.cast(
-        werewolf.role.skills.whereType<WerewolfDiscussSkill>().first,
+        werewolf.role.skills.whereType<ConspireSkill>().first,
         state,
       );
       var werewolfDiscussionEvent = WerewolfDiscussionEvent(
