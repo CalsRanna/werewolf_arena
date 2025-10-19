@@ -7,7 +7,7 @@ class HealEvent extends GameEvent {
     : super(
         id: 'heal_${DateTime.now().millisecondsSinceEpoch}',
         target: target,
-        visibility: ['witch', 'werewolf'],
+        visibility: ['witch'],
       );
 
   @override
@@ -17,6 +17,6 @@ class HealEvent extends GameEvent {
 
   @override
   String toString() {
-    return 'WitchHealEvent($id)';
+    return 'HealEvent($id)';
   }
 }

@@ -1,12 +1,15 @@
 import 'package:werewolf_arena/console/console_game_ui.dart';
+import 'package:werewolf_arena/engine/event/dead_event.dart';
 import 'package:werewolf_arena/engine/event/exile_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
+import 'package:werewolf_arena/engine/event/heal_event.dart';
 import 'package:werewolf_arena/engine/event/investigate_event.dart';
 import 'package:werewolf_arena/engine/event/kill_event.dart';
 import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/order_event.dart';
+import 'package:werewolf_arena/engine/event/poison_event.dart';
 import 'package:werewolf_arena/engine/event/protect_event.dart';
 import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
@@ -26,14 +29,6 @@ class ConsoleGameObserver extends GameObserver {
       // _console.printLog(event.toNarrative());
     } else if (event is AnnounceEvent) {
       _console.printEvent('[法官]：${event.announcement}');
-    } else if (event is ConspireEvent) {
-      _console.printEvent('${event.speaker.formattedName}：${event.message}');
-    } else if (event is DiscussEvent) {
-      _console.printEvent('${event.speaker.formattedName}：${event.message}');
-    } else if (event is VoteEvent) {
-      _console.printEvent(
-        '${event.voter.formattedName}投票给${event.candidate.formattedName}',
-      );
     } else if (event is OrderEvent) {
       _console.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ProtectEvent) {
@@ -44,8 +39,22 @@ class ConsoleGameObserver extends GameObserver {
       _console.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ExileEvent) {
       _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is HealEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is PoisonEvent) {
+      _console.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is ConspireEvent) {
+      _console.printEvent('${event.speaker.formattedName}：${event.message}');
+    } else if (event is DiscussEvent) {
+      _console.printEvent('${event.speaker.formattedName}：${event.message}');
+    } else if (event is VoteEvent) {
+      _console.printEvent(
+        '${event.voter.formattedName}投票给${event.candidate.formattedName}',
+      );
     } else if (event is TestamentEvent) {
       _console.printEvent('${event.speaker.formattedName}：${event.message}');
+    } else if (event is DeadEvent) {
+      // do nothing
     } else {
       _console.printEvent(event.toString());
     }
