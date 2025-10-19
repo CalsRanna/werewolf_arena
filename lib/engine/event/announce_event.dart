@@ -9,7 +9,7 @@ class AnnounceEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，法官宣布了$announcement';
+    return '第$dayNumber天，法官宣布了$announcement';
   }
 
   @override

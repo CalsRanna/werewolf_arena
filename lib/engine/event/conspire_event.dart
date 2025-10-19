@@ -14,7 +14,7 @@ class ConspireEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，狼人讨论：$message';
+    return '第$dayNumber天晚上，狼人讨论：$message';
   }
 
   @override

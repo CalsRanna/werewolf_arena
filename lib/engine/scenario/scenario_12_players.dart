@@ -5,9 +5,9 @@ import 'package:werewolf_arena/engine/role/seer_role.dart';
 import 'package:werewolf_arena/engine/role/villager_role.dart';
 import 'package:werewolf_arena/engine/role/werewolf_role.dart';
 import 'package:werewolf_arena/engine/role/witch_role.dart';
-import 'package:werewolf_arena/engine/game_result.dart';
 import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game_engine_logger.dart';
 
 /// 标准12人局场景
 /// 4狼4民+4神配置，无警长
@@ -50,24 +50,36 @@ class Scenario12Players extends GameScenario {
 ''';
 
   @override
-  GameResult checkVictoryCondition(GameState state) {
-    final aliveWerewolves = state.players
-        .where((p) => p.isAlive && p.role.id == 'werewolf')
-        .length;
+  String? checkVictoryCondition(GameState state) {
+    final aliveWerewolves = state.aliveWerewolves;
+    final aliveGods = state.gods.where((p) => p.isAlive).length;
+    final aliveVillagers = state.aliveVillagers;
 
-    final aliveGoodGuys = state.players
-        .where((p) => p.isAlive && p.role.id != 'werewolf')
-        .length;
-
+    // 好人胜利：所有狼人死亡
     if (aliveWerewolves == 0) {
-      return GameResult.goodWins('所有狼人已被消灭');
+      GameEngineLogger.instance.i('好人阵营获胜！所有狼人已出局');
+      return '好人阵营';
     }
 
-    if (aliveWerewolves >= aliveGoodGuys) {
-      return GameResult.evilWins('狼人数量≥好人数量');
+    // 狼人胜利（屠边规则）：
+    // 条件1：屠神边 - 所有神职死亡且狼人数量 >= 平民数量
+    if (state.gods.isNotEmpty && aliveGods == 0) {
+      if (aliveWerewolves >= aliveVillagers) {
+        GameEngineLogger.instance.i('狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）');
+        return '狼人阵营';
+      }
     }
 
-    return GameResult.gameContinues();
+    // 条件2：屠民边 - 所有平民死亡且狼人数量 >= 神职数量
+    if (state.villagers.isNotEmpty && aliveVillagers == 0) {
+      if (aliveWerewolves >= aliveGods) {
+        GameEngineLogger.instance.i('狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）');
+        return '狼人阵营';
+      }
+    }
+
+    // 游戏继续
+    return null;
   }
 
   @override

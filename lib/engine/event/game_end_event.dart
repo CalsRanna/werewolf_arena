@@ -26,7 +26,7 @@ class GameEndEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，游戏结束，$winner获胜';
+    return '第$dayNumber天，游戏结束，$winner获胜';
   }
 
   @override

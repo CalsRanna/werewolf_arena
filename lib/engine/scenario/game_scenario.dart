@@ -1,5 +1,4 @@
 import 'package:werewolf_arena/engine/role/game_role.dart';
-import 'package:werewolf_arena/engine/game_result.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 
 /// 游戏场景抽象类
@@ -21,5 +20,6 @@ abstract class GameScenario {
   List<GameRole> get roles;
 
   /// 检查胜利条件
-  GameResult checkVictoryCondition(GameState state);
+  /// 返回获胜方名称，null 表示游戏继续
+  String? checkVictoryCondition(GameState state);
 }

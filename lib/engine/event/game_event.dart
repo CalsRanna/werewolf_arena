@@ -1,5 +1,4 @@
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/game_phase.dart';
 
 /// 游戏事件基类
 ///
@@ -12,7 +11,6 @@ abstract class GameEvent {
   /// 事件目标
   final GamePlayer? target;
   final int? dayNumber;
-  final GamePhase? phase;
 
   /// 事件可见性
   final List<String> visibility;
@@ -22,7 +20,6 @@ abstract class GameEvent {
     this.target,
     this.visibility = const [],
     this.dayNumber,
-    this.phase,
   });
 
   /// 检查事件对指定玩家是否可见

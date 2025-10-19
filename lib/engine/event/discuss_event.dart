@@ -21,7 +21,7 @@ class DiscussEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，${speaker.name}发表了发言：$message';
+    return '第$dayNumber天，${speaker.name}发表了发言：$message';
   }
 
   @override

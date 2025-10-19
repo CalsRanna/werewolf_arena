@@ -21,7 +21,7 @@ class VoteEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，${voter.name}投票给了${candidate.name}';
+    return '第$dayNumber天，${voter.name}投票给了${candidate.name}';
   }
 
   @override

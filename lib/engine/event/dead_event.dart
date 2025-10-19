@@ -20,7 +20,7 @@ class DeadEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，玩家${victim.name}死亡';
+    return '第$dayNumber天，玩家${victim.name}死亡';
   }
 
   @override

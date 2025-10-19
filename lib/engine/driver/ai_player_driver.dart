@@ -108,7 +108,7 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
 # **战场情报**
 
 ## **当前局势**
-- **时间**: 第${state.dayNumber}天，${state.currentPhase.displayName}
+- **时间**: 第${state.dayNumber}天
 - **场上存活**: ${alivePlayers.isNotEmpty ? alivePlayers : '无'}
 - **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
 
