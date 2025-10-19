@@ -1,14 +1,14 @@
-import 'package:werewolf_arena/engine/game_phase.dart';
-import 'package:werewolf_arena/engine/event/dead_event.dart';
 import 'package:werewolf_arena/engine/event/announce_event.dart';
+import 'package:werewolf_arena/engine/event/dead_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/order_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/game_phase.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/skill/skill_result.dart';
 import 'package:werewolf_arena/engine/skill/discuss_skill.dart';
+import 'package:werewolf_arena/engine/skill/skill_result.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 
 import 'game_processor.dart';
@@ -23,10 +23,10 @@ class DayPhaseProcessor implements GameProcessor {
   @override
   Future<void> process(GameState state, {GameObserver? observer}) async {
     var players = state.alivePlayers;
-    var judgeAnnouncementEvent = AnnounceEvent(announcement: '开始讨论');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
+    var announceEvent = AnnounceEvent('开始讨论');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
     var speakingOrder = OrderEvent(
       speakingOrder: state.alivePlayers,
       direction: '顺序',
@@ -46,10 +46,10 @@ class DayPhaseProcessor implements GameProcessor {
       state.handleEvent(speakEvent);
       await observer?.onGameEvent(speakEvent);
     }
-    judgeAnnouncementEvent = AnnounceEvent(announcement: '所有玩家讨论结束，开始投票');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
+    announceEvent = AnnounceEvent('所有玩家讨论结束，开始投票');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
     List<Future<SkillResult>> futures = [];
     for (var player in players) {
       futures.add(
@@ -57,10 +57,10 @@ class DayPhaseProcessor implements GameProcessor {
       );
     }
     var results = await Future.wait(futures);
-    judgeAnnouncementEvent = AnnounceEvent(announcement: '所有玩家投票结束，开始结算');
-    GameEngineLogger.instance.d(judgeAnnouncementEvent.toString());
-    state.handleEvent(judgeAnnouncementEvent);
-    await observer?.onGameEvent(judgeAnnouncementEvent);
+    announceEvent = AnnounceEvent('所有玩家投票结束，开始结算');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
 
     for (var result in results) {
       if (result.target == null) continue;

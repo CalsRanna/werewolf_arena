@@ -4,7 +4,7 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class AnnounceEvent extends GameEvent {
   final String announcement;
 
-  AnnounceEvent({required this.announcement})
+  AnnounceEvent(this.announcement)
     : super(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
 
   @override
