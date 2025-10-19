@@ -12,7 +12,7 @@ class KillEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，狼人击杀：${target?.name}';
+    return '狼人选择击杀：${target?.name}';
   }
 
   @override

@@ -3,20 +3,16 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 预言家查验事件 - 仅预言家可见
 class InvestigateEvent extends GameEvent {
-  final String investigationResult;
-
-  InvestigateEvent({
-    required GamePlayer target,
-    required this.investigationResult,
-  }) : super(
-         id: 'investigate_${DateTime.now().millisecondsSinceEpoch}',
-         target: target,
-         visibility: ['seer'],
-       );
+  InvestigateEvent({required GamePlayer target})
+    : super(
+        id: 'investigate_${DateTime.now().millisecondsSinceEpoch}',
+        target: target,
+        visibility: ['seer'],
+      );
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，预言家查验了${target?.name}，结果是$investigationResult';
+    return '预言家选择查验${target?.name}，他是${target?.role.name}';
   }
 
   @override

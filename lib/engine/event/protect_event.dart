@@ -12,7 +12,7 @@ class ProtectEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，守卫保护了${target?.name}';
+    return '守卫选择保护${target?.name}';
   }
 
   @override

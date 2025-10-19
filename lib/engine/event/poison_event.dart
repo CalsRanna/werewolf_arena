@@ -12,7 +12,7 @@ class PoisonEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，女巫毒杀：${target?.name}';
+    return '女巫选择对${target?.name}使用毒药';
   }
 
   @override

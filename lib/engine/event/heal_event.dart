@@ -12,7 +12,7 @@ class HealEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，女巫救人：${target?.name}';
+    return '女巫选择对${target?.name}使用解药';
   }
 
   @override

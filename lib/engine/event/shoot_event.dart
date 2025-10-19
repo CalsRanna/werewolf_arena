@@ -12,7 +12,7 @@ class ShootEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，猎人开枪击杀了${target?.name}';
+    return '猎人选择击杀${target?.name}';
   }
 
   @override

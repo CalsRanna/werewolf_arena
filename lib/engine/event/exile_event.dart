@@ -20,7 +20,7 @@ class ExileEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天${phase?.displayName}，玩家${victim.name}被投票出局';
+    return '${victim.name}被投票出局';
   }
 
   @override
