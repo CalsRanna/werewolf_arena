@@ -22,44 +22,46 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 /// 实现 GameObserver 接口，将游戏事件转换为控制台输出。
 /// 这是游戏引擎与控制台显示之间的桥梁。
 class ConsoleGameObserver extends GameObserver {
-  final ConsoleGameUI _console = ConsoleGameUI.instance;
+  final ConsoleGameUI ui;
+
+  ConsoleGameObserver({required this.ui});
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
     if (event is LogEvent) {
-      _console.printLog(event.toNarrative());
+      ui.printLog(event.toNarrative());
     } else if (event is AnnounceEvent) {
-      _console.printEvent('[法官]：${event.announcement}');
+      ui.printEvent('[法官]：${event.announcement}');
     } else if (event is OrderEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ProtectEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is KillEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is InvestigateEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ExileEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is HealEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is PoisonEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ShootEvent) {
-      _console.printEvent('[法官]：${event.toNarrative()}');
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ConspireEvent) {
-      _console.printEvent('${event.speaker.formattedName}：${event.message}');
+      ui.printEvent('${event.speaker.formattedName}：${event.message}');
     } else if (event is DiscussEvent) {
-      _console.printEvent('${event.speaker.formattedName}：${event.message}');
+      ui.printEvent('${event.speaker.formattedName}：${event.message}');
     } else if (event is VoteEvent) {
-      _console.printEvent(
+      ui.printEvent(
         '${event.voter.formattedName}投票给${event.candidate.formattedName}',
       );
     } else if (event is TestamentEvent) {
-      _console.printEvent('${event.speaker.formattedName}：${event.message}');
+      ui.printEvent('${event.speaker.formattedName}：${event.message}');
     } else if (event is DeadEvent) {
       // do nothing
     } else {
-      _console.printEvent(event.toString());
+      ui.printEvent(event.toString());
     }
   }
 }

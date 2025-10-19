@@ -31,7 +31,8 @@
       "Bash(mv:*)",
       "Bash(grep:*)",
       "Bash(cp:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:pub.dev)"
     ],
     "deny": [],
     "ask": []

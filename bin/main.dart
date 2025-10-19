@@ -48,6 +48,7 @@ Future<void> main(List<String> arguments) async {
     // 初始化控制台
     ui.initialize(useColors: true);
     ui.printHeader('狼人杀竞技场', color: ConsoleColor.green);
+    ui.startSpinner();
 
     final playerCountStr = argResults['players'] as String?;
 
@@ -60,7 +61,7 @@ Future<void> main(List<String> arguments) async {
       }
     }
 
-    final observer = ConsoleGameObserver();
+    final observer = ConsoleGameObserver(ui: ui);
 
     final gameEngine = await _createGameEngine(observer);
     await gameEngine.ensureInitialized();
@@ -82,8 +83,11 @@ Future<void> main(List<String> arguments) async {
       ui.printLine('🕐 游戏时长: ${finalState.dayNumber} 天');
       ui.printLine('⚰️ 存活玩家: ${finalState.alivePlayers.length}');
     }
+    ui.dispose();
+    exit(0);
   } catch (e, stackTrace) {
     ui.displayError('运行错误: $e', errorDetails: stackTrace);
+    ui.dispose();
     exit(1);
   }
 }
