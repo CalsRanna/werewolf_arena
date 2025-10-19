@@ -46,7 +46,7 @@ class DebugViewModel {
     );
     final config = GameConfig(
       playerIntelligences: [intelligence],
-      maxRetries: 3,
+      maxRetries: 10,
     );
     final scenario = Scenario12Players();
     final observer = _Observer(

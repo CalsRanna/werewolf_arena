@@ -12,7 +12,7 @@ class RetryConfig {
   final Duration maxDelay;
 
   const RetryConfig({
-    this.maxAttempts = 3,
+    this.maxAttempts = 10,
     this.initialDelay = const Duration(seconds: 1),
     this.backoffMultiplier = 2.0,
     this.maxDelay = const Duration(seconds: 10),

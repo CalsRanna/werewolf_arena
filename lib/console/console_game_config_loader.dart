@@ -80,7 +80,7 @@ class ConsoleGameConfigLoader {
 default_llm:
   api_key: YOUR_KEY_HERE
   base_url: "https://api.openai.com/v1"
-  max_retries: 3
+  max_retries: 10
 
 # 玩家专属模型配置
 player_models:

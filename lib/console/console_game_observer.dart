@@ -27,7 +27,7 @@ class ConsoleGameObserver extends GameObserver {
   @override
   Future<void> onGameEvent(GameEvent event) async {
     if (event is LogEvent) {
-      // _console.printLog(event.toNarrative());
+      _console.printLog(event.toNarrative());
     } else if (event is AnnounceEvent) {
       _console.printEvent('[法官]：${event.announcement}');
     } else if (event is OrderEvent) {
