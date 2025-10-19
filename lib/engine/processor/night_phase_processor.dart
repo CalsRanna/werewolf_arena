@@ -1,14 +1,16 @@
 import 'package:werewolf_arena/engine/event/announce_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
+import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/heal_event.dart';
 import 'package:werewolf_arena/engine/event/investigate_event.dart';
 import 'package:werewolf_arena/engine/event/kill_event.dart';
+import 'package:werewolf_arena/engine/event/order_event.dart';
 import 'package:werewolf_arena/engine/event/poison_event.dart';
 import 'package:werewolf_arena/engine/event/protect_event.dart';
+import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/game_phase.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/processor/game_processor.dart';
@@ -18,17 +20,17 @@ import 'package:werewolf_arena/engine/role/seer_role.dart';
 import 'package:werewolf_arena/engine/role/werewolf_role.dart';
 import 'package:werewolf_arena/engine/role/witch_role.dart';
 import 'package:werewolf_arena/engine/skill/conspire_skill.dart';
+import 'package:werewolf_arena/engine/skill/discuss_skill.dart';
 import 'package:werewolf_arena/engine/skill/heal_skill.dart';
 import 'package:werewolf_arena/engine/skill/investigate_skill.dart';
 import 'package:werewolf_arena/engine/skill/kill_skill.dart';
 import 'package:werewolf_arena/engine/skill/poison_skill.dart';
 import 'package:werewolf_arena/engine/skill/protect_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
+import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 
-/// 夜晚阶段处理器（基于技能系统重构）
-///
-/// 负责处理游戏中的夜晚阶段，通过技能系统统一处理所有夜晚行动
-class NightPhaseProcessor implements GameProcessor {
+/// 默认阶段处理器（基于技能系统重构）
+class DefaultPhaseProcessor implements GameProcessor {
   @override
   Future<void> process(GameState state, {GameObserver? observer}) async {
     var announceEvent = AnnounceEvent('天黑请闭眼');
@@ -67,7 +69,18 @@ class NightPhaseProcessor implements GameProcessor {
       shootTarget: shootTarget,
     );
     await Future.delayed(const Duration(seconds: 1));
-    await state.changePhase(GamePhase.day);
+    announceEvent = AnnounceEvent('天亮了');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
+    await Future.delayed(const Duration(seconds: 1));
+    // 公开讨论
+    await _processDiscuss(state, observer: observer);
+    await Future.delayed(const Duration(seconds: 1));
+    // 投票
+    await _processVote(state, observer: observer);
+    await Future.delayed(const Duration(seconds: 1));
+    state.dayNumber++;
   }
 
   GamePlayer? _getTargetGamePlayer(GameState state, List<String?> names) {
@@ -106,6 +119,32 @@ class NightPhaseProcessor implements GameProcessor {
       );
       state.handleEvent(conspireEvent);
       await observer?.onGameEvent(conspireEvent);
+    }
+  }
+
+  Future<void> _processDiscuss(
+    GameState state, {
+    GameObserver? observer,
+  }) async {
+    var announceEvent = AnnounceEvent('所有人请睁眼');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
+    var orderEvent = OrderEvent(players: state.alivePlayers, direction: '顺序');
+    GameEngineLogger.instance.d(orderEvent.toString());
+    state.handleEvent(orderEvent);
+    await observer?.onGameEvent(orderEvent);
+    for (var player in state.alivePlayers) {
+      var result = await player.cast(
+        player.role.skills.whereType<DiscussSkill>().first,
+        state,
+      );
+      var discussEvent = DiscussEvent(
+        speaker: player,
+        message: result.message ?? '',
+      );
+      state.handleEvent(discussEvent);
+      await observer?.onGameEvent(discussEvent);
     }
   }
 
@@ -410,5 +449,44 @@ class NightPhaseProcessor implements GameProcessor {
     state.handleEvent(announceEvent);
     await observer?.onGameEvent(announceEvent);
     return null;
+  }
+
+  Future<void> _processVote(GameState state, {GameObserver? observer}) async {
+    var announceEvent = AnnounceEvent('所有玩家讨论结束，开始投票');
+    GameEngineLogger.instance.d(announceEvent.toString());
+    state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
+    List<Future<SkillResult>> futures = [];
+    for (var player in state.alivePlayers) {
+      futures.add(
+        player.cast(player.role.skills.whereType<VoteSkill>().first, state),
+      );
+    }
+    var results = await Future.wait(futures);
+    for (var result in results) {
+      if (result.target == null) continue;
+      var voteEvent = VoteEvent(
+        voter: state.getPlayerByName(result.caster)!,
+        candidate: state.getPlayerByName(result.target!)!,
+      );
+      state.handleEvent(voteEvent);
+      await observer?.onGameEvent(voteEvent);
+    }
+
+    var map = <String, int>{};
+    for (var result in results) {
+      if (result.target == null) continue;
+      map[result.target!] = (map[result.target!] ?? 0) + 1;
+    }
+    var targetPlayerName = map.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+    var targetPlayer = state.getPlayerByName(targetPlayerName);
+    if (targetPlayer != null) {
+      targetPlayer.setAlive(false);
+    }
+    var deadEvent = DeadEvent(victim: targetPlayer!);
+    state.handleEvent(deadEvent);
+    await observer?.onGameEvent(deadEvent);
   }
 }

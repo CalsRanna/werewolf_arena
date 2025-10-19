@@ -1,40 +1,32 @@
 import 'dart:async';
 
-import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
-import 'package:werewolf_arena/engine/game_engine_status.dart';
-import 'package:werewolf_arena/engine/game_phase.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_engine_status.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/processor/day_phase_processor.dart';
-import 'package:werewolf_arena/engine/processor/night_phase_processor.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
+import 'package:werewolf_arena/engine/processor/game_processor.dart';
 import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
 
 /// 简化版游戏引擎 - 只需要4个参数的构造函数，内部创建阶段处理器和工具类
 class GameEngine {
-  // === 外部输入 ===
   final GameConfig config;
   final GameScenario scenario;
   final List<GamePlayer> players;
   final GameObserver? _observer;
+  final GameProcessor processor;
 
-  // === 核心状态 ===
   GameState? _currentState;
   GameEngineStatus _status = GameEngineStatus.waiting;
-
-  // === 阶段处理器 ===
-  final NightPhaseProcessor _nightProcessor;
-  final DayPhaseProcessor _dayProcessor;
 
   GameEngine({
     required this.config,
     required this.scenario,
     required this.players,
     GameObserver? observer,
-  }) : _observer = observer,
-       _nightProcessor = NightPhaseProcessor(),
-       _dayProcessor = DayPhaseProcessor();
+    required this.processor,
+  }) : _observer = observer;
 
   // === 状态查询 ===
   GameState? get currentState => _currentState;
@@ -81,19 +73,6 @@ class GameEngine {
     if (!isGameRunning || isGameEnded) return false;
 
     try {
-      // 根据当前阶段选择对应的处理器
-      final processor = switch (_currentState!.currentPhase) {
-        GamePhase.night => _nightProcessor,
-        GamePhase.day => _dayProcessor,
-        GamePhase.voting => _dayProcessor, // 投票合并到白天阶段
-        GamePhase.ended => null, // 游戏结束时不需要处理器
-      };
-
-      // 如果游戏已结束，直接返回
-      if (processor == null) {
-        return false;
-      }
-
       // 执行阶段处理
       await processor.process(_currentState!, observer: _observer);
 

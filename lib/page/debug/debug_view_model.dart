@@ -9,6 +9,7 @@ import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/processor/night_phase_processor.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 import 'package:werewolf_arena/util/dialog_util.dart';
 import 'package:werewolf_arena/util/logger_util.dart';
@@ -88,6 +89,7 @@ class DebugViewModel {
       scenario: scenario,
       players: players,
       observer: observer,
+      processor: DefaultPhaseProcessor(),
     );
   }
 
