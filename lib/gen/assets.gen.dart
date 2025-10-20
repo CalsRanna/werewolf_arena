@@ -15,9 +15,10 @@ class Assets {
   const Assets._();
 
   static const AssetGenImage background = AssetGenImage('asset/background.png');
+  static const AssetGenImage icon = AssetGenImage('asset/icon.png');
 
   /// List of all assets
-  static List<AssetGenImage> get values => [background];
+  static List<AssetGenImage> get values => [background, icon];
 }
 
 class AssetGenImage {

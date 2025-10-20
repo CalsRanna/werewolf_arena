@@ -3,28 +3,32 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:werewolf_arena/gen/assets.gen.dart';
 import 'package:werewolf_arena/page/game/game_view_model.dart';
-import 'package:werewolf_arena/util/responsive.dart';
 
 @RoutePage()
 class GamePage extends StatefulWidget {
-  const GamePage({super.key});
+  const GamePage({super.key, @PathParam('scenarioId') this.scenarioId});
+
+  final String? scenarioId;
 
   @override
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage>
-    with SingleTickerProviderStateMixin {
+class _GamePageState extends State<GamePage> {
   final GameViewModel viewModel = GetIt.instance.get<GameViewModel>();
-  late TabController _tabController;
   StreamSubscription? _snackBarSubscription;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    viewModel.initSignals();
+    viewModel.initSignals(scenarioId: widget.scenarioId);
+
+    // 设置事件弹窗回调
+    viewModel.onShowEventDialog = (message) {
+      _showEventDialog(message);
+    };
 
     // 监听SnackBar消息
     _snackBarSubscription = viewModel.snackBarMessages.listen((message) {
@@ -32,15 +36,7 @@ class _GamePageState extends State<GamePage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
-            backgroundColor: Colors.red[700],
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: '关闭',
-              textColor: Colors.white,
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              },
-            ),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -49,532 +45,270 @@ class _GamePageState extends State<GamePage>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _snackBarSubscription?.cancel();
     viewModel.dispose();
     super.dispose();
   }
 
+  void _showEventDialog(String message) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.event, color: Theme.of(context).colorScheme.primary),
+            SizedBox(width: 8),
+            Text('游戏事件'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Text(
+            message,
+            style: TextStyle(fontSize: 14, height: 1.6),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('狼人杀竞技场'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () => viewModel.navigateSettingsPage(context),
-            tooltip: '设置',
-          ),
-        ],
-        bottom: Responsive.isMobile(context)
-            ? TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(icon: Icon(Icons.control_camera), text: '控制'),
-                  Tab(icon: Icon(Icons.people), text: '玩家'),
-                  Tab(icon: Icon(Icons.history), text: '日志'),
-                ],
-              )
-            : null,
-      ),
-      body: Watch((context) {
-        return _buildGameContent();
-      }),
-    );
-  }
-
-  Widget _buildGameContent() {
-    // 根据屏幕尺寸选择不同的布局
-    return ResponsiveBuilder(
-      mobile: _buildMobileLayout(),
-      tablet: _buildTabletLayout(),
-      desktop: _buildDesktopLayout(),
-    );
-  }
-
-  // 桌面布局: 三栏 (控制面板 + 游戏区 + 日志)
-  Widget _buildDesktopLayout() {
-    return Row(
-      children: [
-        // 左侧控制面板
-        SizedBox(width: 280, child: _buildControlPanel()),
-
-        // 中间游戏区域
-        Expanded(flex: 2, child: _buildGameArea()),
-
-        // 右侧事件日志
-        SizedBox(width: 320, child: _buildEventLogPanel()),
-      ],
-    );
-  }
-
-  // 平板布局: 游戏区在上方,底部用Tab切换控制和日志
-  Widget _buildTabletLayout() {
-    return Column(
-      children: [
-        // 上方游戏区域
-        Expanded(flex: 2, child: _buildGameArea()),
-
-        // 下方Tab区域
-        SizedBox(
-          height: 320,
-          child: Card(
-            margin: EdgeInsets.all(12),
-            elevation: 4,
-            child: Column(
-              children: [
-                TabBar(
-                  controller: _tabController,
-                  tabs: [
-                    Tab(icon: Icon(Icons.control_camera, size: 20), text: '控制'),
-                    Tab(icon: Icon(Icons.history, size: 20), text: '日志'),
-                    Tab(icon: Icon(Icons.info, size: 20), text: '状态'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildControlContent(),
-                      _buildEventLogContent(),
-                      _buildGameStatusContent(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 手机布局: 使用Tab切换所有视图
-  Widget _buildMobileLayout() {
-    return TabBarView(
-      controller: _tabController,
-      children: [_buildControlPanel(), _buildGameArea(), _buildEventLogPanel()],
-    );
-  }
-
-  // 控制面板
-  Widget _buildControlPanel() {
-    final isRunning = viewModel.isGameRunning.value;
-
-    return Card(
-      margin: Responsive.getResponsiveCardMargin(context),
-      elevation: 4,
-      child: Padding(
-        padding: Responsive.getResponsivePadding(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.control_camera,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  '游戏控制',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            Divider(height: 24),
-
-            // 游戏状态显示
-            _buildGameStatus(),
-
-            SizedBox(height: 24),
-
-            // 控制按钮
-            _buildControlButtons(),
-
-            Spacer(),
-
-            // 底部提示
-            if (!isRunning)
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '点击"开始游戏"启动，然后用"下一步"按钮推进游戏',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 游戏区域
-  Widget _buildGameArea() {
-    return Card(
-      margin: Responsive.getResponsiveCardMargin(context),
-      elevation: 4,
-      child: Padding(
-        padding: Responsive.getResponsivePadding(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.people,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          viewModel.formattedTime.value,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            Divider(height: 24),
-
-            // 玩家列表
-            Expanded(child: _buildPlayersGrid()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 事件日志面板
-  Widget _buildEventLogPanel() {
-    return Card(
-      margin: Responsive.getResponsiveCardMargin(context),
-      elevation: 4,
-      child: Padding(
-        padding: Responsive.getResponsivePadding(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.history,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  '事件日志',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            Divider(height: 24),
-
-            Expanded(child: _buildEventLog()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 控制内容(用于Tab)
-  Widget _buildControlContent() {
-    final isRunning = viewModel.isGameRunning.value;
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
+      body: Stack(
         children: [
-          _buildGameStatus(),
-          SizedBox(height: 16),
-          _buildControlButtons(),
-          if (!isRunning) ...[
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
+          // 背景图
+          Assets.background.image(
+            fit: BoxFit.cover,
+            height: double.infinity,
+            width: double.infinity,
+          ),
+          SafeArea(
+            child: Watch((context) {
+              final players = viewModel.players.value;
+              final isRunning = viewModel.isGameRunning.value;
+              final gameStatus = viewModel.gameStatus.value;
+
+              return Column(
+                spacing: 16,
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                  SizedBox(width: 8),
+                  // 顶部信息栏
+                  _buildTopBar(context, gameStatus, isRunning),
+
+                  // 玩家展示区域
                   Expanded(
-                    child: Text(
-                      '点击"开始游戏"启动，然后用"下一步"按钮推进游戏',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                    ),
+                    child: _buildPlayersArea(context, players),
                   ),
+
+                  // 底部操作按钮
+                  _buildBottomActions(context, isRunning),
                 ],
-              ),
-            ),
-          ],
+              );
+            }),
+          ),
         ],
       ),
     );
   }
 
-  // 事件日志内容(用于Tab)
-  Widget _buildEventLogContent() {
-    return Padding(padding: EdgeInsets.all(16), child: _buildEventLog());
-  }
-
-  // 游戏状态内容(用于Tab)
-  Widget _buildGameStatusContent() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: _buildGameStatus(),
-    );
-  }
-
-  Widget _buildGameStatus() {
-    final status = viewModel.gameStatus.value;
-    final aliveCount = viewModel.alivePlayersCount.value;
-
+  Widget _buildTopBar(BuildContext context, String status, bool isRunning) {
     return Container(
-      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        color: Colors.black.withValues(alpha: 0.5),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
         children: [
-          _buildStatusRow(Icons.info, '状态', status),
-          SizedBox(height: 8),
-          _buildStatusRow(Icons.favorite, '存活玩家', '$aliveCount 人'),
-          SizedBox(height: 8),
-          _buildStatusRow(
-            Icons.calendar_today,
-            '当前天数',
-            '${viewModel.currentDay.value} 天',
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => context.router.maybePop(),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '狼人杀竞技场',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  status,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.settings, color: Colors.white),
+            onPressed: () => viewModel.navigateSettingsPage(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
-        SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildControlButtons() {
-    final canStart = viewModel.canStartGame.value;
-
-    return Column(
-      children: [
-        // 开始游戏按钮
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton.icon(
-            onPressed: canStart ? () => viewModel.startGame() : null,
-            icon: Icon(Icons.play_arrow),
-            label: Text('开始游戏', style: TextStyle(fontSize: 16)),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlayersGrid() {
-    final players = viewModel.players.value;
-
+  Widget _buildPlayersArea(BuildContext context, List<dynamic> players) {
     if (players.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+            Icon(Icons.people_outline, size: 64, color: Colors.white70),
             SizedBox(height: 16),
-            Text('暂无玩家', style: TextStyle(color: Colors.grey[600])),
-            SizedBox(height: 8),
             Text(
-              '点击开始游戏创建AI玩家',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              '点击开��游戏创建玩家',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
           ],
         ),
       );
     }
 
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: Responsive.getGridCrossAxisCount(
-          context,
-          mobile: 2,
-          tablet: 3,
-          desktop: 4,
-        ),
-        childAspectRatio: Responsive.getGridChildAspectRatio(
-          context,
-          mobile: 1.2,
-          tablet: 1.4,
-          desktop: 1.6,
-        ),
-        crossAxisSpacing: Responsive.responsiveValue(
-          context,
-          mobile: 8.0,
-          tablet: 10.0,
-          desktop: 12.0,
-        ),
-        mainAxisSpacing: Responsive.responsiveValue(
-          context,
-          mobile: 8.0,
-          tablet: 10.0,
-          desktop: 12.0,
-        ),
-      ),
-      itemCount: players.length,
-      itemBuilder: (context, index) {
-        final player = players[index];
-        return _buildPlayerCard(player);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var height = (constraints.maxHeight - 16 * 5) / 6;
+        return Column(
+          spacing: 16,
+          children: [
+            for (int row = 0; row < 6; row++)
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: row * 2 < players.length
+                        ? _buildPlayerInformation(
+                            players[row * 2],
+                            _AvatarAlignment.start,
+                            size: height,
+                          )
+                        : SizedBox(),
+                  ),
+                  Expanded(flex: 1, child: SizedBox()),
+                  Expanded(
+                    flex: 2,
+                    child: row * 2 + 1 < players.length
+                        ? _buildPlayerInformation(
+                            players[row * 2 + 1],
+                            _AvatarAlignment.end,
+                            size: height,
+                          )
+                        : SizedBox(),
+                  ),
+                ],
+              ),
+          ],
+        );
       },
     );
   }
 
-  Widget _buildPlayerCard(dynamic player) {
+  Widget _buildPlayerInformation(
+    dynamic player,
+    _AvatarAlignment alignment, {
+    double size = 64,
+  }) {
     final isAlive = player.isAlive;
+    var radius = Radius.circular(size);
+    var borderRadius = BorderRadius.only(
+      topRight: alignment == _AvatarAlignment.end ? Radius.zero : radius,
+      bottomRight: alignment == _AvatarAlignment.end ? Radius.zero : radius,
+      topLeft: alignment == _AvatarAlignment.start ? Radius.zero : radius,
+      bottomLeft: alignment == _AvatarAlignment.start ? Radius.zero : radius,
+    );
+    var startColor = Colors.black.withValues(
+      alpha: alignment == _AvatarAlignment.start ? 0 : 0.5,
+    );
+    var endColor = Colors.black.withValues(
+      alpha: alignment == _AvatarAlignment.end ? 0 : 0.5,
+    );
+    var colors = [startColor, endColor];
+    var linearGradient = LinearGradient(
+      colors: colors,
+      begin: AlignmentDirectional.centerStart,
+      end: AlignmentDirectional.centerEnd,
+    );
+    var boxDecoration = BoxDecoration(
+      borderRadius: borderRadius,
+      gradient: linearGradient,
+    );
 
-    return Card(
-      elevation: isAlive ? 2 : 0,
-      color: isAlive
-          ? Theme.of(context).colorScheme.surface
-          : Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isAlive
-                ? Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)
-                : Colors.transparent,
-            width: 1,
+    var avatar = Container(
+      decoration: BoxDecoration(
+        color: isAlive ? Colors.white : Colors.grey,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isAlive ? Colors.green : Colors.red,
+          width: 2,
+        ),
+      ),
+      height: size - 16,
+      width: size - 16,
+      child: Center(
+        child: Text(
+          player.index.toString(),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
           ),
         ),
-        padding: EdgeInsets.all(12),
+      ),
+    );
+
+    var information = Expanded(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 8),
         child: Column(
+          crossAxisAlignment: alignment == _AvatarAlignment.start
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 玩家头像
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: isAlive
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Colors.grey[300],
-              child: Icon(
-                isAlive ? Icons.person : Icons.person_off,
-                color: isAlive
-                    ? Theme.of(context).colorScheme.onPrimaryContainer
-                    : Colors.grey[600],
-                size: 20,
-              ),
-            ),
-            SizedBox(height: 8),
-
-            // 玩家名称
             Text(
               player.name,
               style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: isAlive ? null : Colors.grey[600],
               ),
               overflow: TextOverflow.ellipsis,
             ),
-
             SizedBox(height: 4),
-
-            // 角色
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isAlive
-                    ? Theme.of(context).colorScheme.secondaryContainer
-                    : Colors.grey[200],
-                borderRadius: BorderRadius.circular(4),
+            Text(
+              player.role.name,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
               ),
-              child: Text(
-                player.role.name,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isAlive
-                      ? Theme.of(context).colorScheme.onSecondaryContainer
-                      : Colors.grey[600],
-                ),
-              ),
+              overflow: TextOverflow.ellipsis,
             ),
-
-            // 出局标记
             if (!isAlive) ...[
-              SizedBox(height: 4),
+              SizedBox(height: 2),
               Text(
                 '已出局',
                 style: TextStyle(
-                  fontSize: 10,
                   color: Colors.red,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -583,69 +317,39 @@ class _GamePageState extends State<GamePage>
         ),
       ),
     );
-  }
 
-  Widget _buildEventLog() {
-    final events = viewModel.eventLog.value;
-
-    if (events.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.message_outlined, size: 48, color: Colors.grey[400]),
-            SizedBox(height: 12),
-            Text('暂无事件', style: TextStyle(color: Colors.grey[600])),
-            SizedBox(height: 4),
-            Text(
-              '游戏事件将在此显示',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-            ),
-          ],
-        ),
-      );
-    }
+    var children = [
+      alignment == _AvatarAlignment.start ? information : avatar,
+      alignment == _AvatarAlignment.end ? information : avatar,
+    ];
 
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListView.builder(
-        reverse: true,
-        padding: EdgeInsets.all(12),
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          final event = events[events.length - 1 - index];
-          return Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: EdgeInsets.only(right: 8, top: 4),
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    event,
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.5,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+      decoration: boxDecoration,
+      height: size,
+      padding: EdgeInsets.all(8),
+      child: Row(spacing: 8, children: children),
+    );
+  }
+
+  Widget _buildBottomActions(BuildContext context, bool isRunning) {
+    final canStart = viewModel.canStartGame.value;
+
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: FilledButton.icon(
+        onPressed: (canStart && !isRunning) ? viewModel.startGame : null,
+        icon: Icon(isRunning ? Icons.hourglass_empty : Icons.play_arrow),
+        label: Text(
+          isRunning ? '游戏进行中...' : '开始游戏',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        style: FilledButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+          minimumSize: Size(200, 56),
+        ),
       ),
     );
   }
 }
+
+enum _AvatarAlignment { start, end }

@@ -10,6 +10,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i6;
+import 'package:flutter/material.dart' as _i7;
 import 'package:werewolf_arena/page/bootstrap/bootstrap_page.dart' as _i1;
 import 'package:werewolf_arena/page/debug/debug_page.dart' as _i2;
 import 'package:werewolf_arena/page/game/game_page.dart' as _i3;
@@ -50,18 +51,54 @@ class DebugRoute extends _i6.PageRouteInfo<void> {
 
 /// generated route for
 /// [_i3.GamePage]
-class GameRoute extends _i6.PageRouteInfo<void> {
-  const GameRoute({List<_i6.PageRouteInfo>? children})
-    : super(GameRoute.name, initialChildren: children);
+class GameRoute extends _i6.PageRouteInfo<GameRouteArgs> {
+  GameRoute({
+    _i7.Key? key,
+    String? scenarioId,
+    List<_i6.PageRouteInfo>? children,
+  }) : super(
+         GameRoute.name,
+         args: GameRouteArgs(key: key, scenarioId: scenarioId),
+         rawPathParams: {'scenarioId': scenarioId},
+         initialChildren: children,
+       );
 
   static const String name = 'GameRoute';
 
   static _i6.PageInfo page = _i6.PageInfo(
     name,
     builder: (data) {
-      return const _i3.GamePage();
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<GameRouteArgs>(
+        orElse: () =>
+            GameRouteArgs(scenarioId: pathParams.optString('scenarioId')),
+      );
+      return _i3.GamePage(key: args.key, scenarioId: args.scenarioId);
     },
   );
+}
+
+class GameRouteArgs {
+  const GameRouteArgs({this.key, this.scenarioId});
+
+  final _i7.Key? key;
+
+  final String? scenarioId;
+
+  @override
+  String toString() {
+    return 'GameRouteArgs{key: $key, scenarioId: $scenarioId}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! GameRouteArgs) return false;
+    return key == other.key && scenarioId == other.scenarioId;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ scenarioId.hashCode;
 }
 
 /// generated route for
