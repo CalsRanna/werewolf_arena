@@ -1,15 +1,14 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/game_config.dart';
-import 'package:werewolf_arena/engine/driver/json_cleaner.dart';
+import 'package:werewolf_arena/engine/driver/ai_player_driver_helper.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/skill/game_skill.dart';
-import 'package:werewolf_arena/engine/skill/conspire_skill.dart';
+import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
+import 'package:werewolf_arena/engine/skill/conspire_skill.dart';
+import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
 /// AI玩家驱动器
 ///
@@ -57,10 +56,7 @@ class AIPlayerDriver implements PlayerDriver {
   ///
   /// [intelligence] 玩家的AI配置，包含API密钥、模型ID等信息
   /// [maxRetries] 最大重试次数，默认为3
-  AIPlayerDriver({
-    required this.intelligence,
-    this.maxRetries = 10,
-  }) {
+  AIPlayerDriver({required this.intelligence, this.maxRetries = 10}) {
     _client = OpenAIClient(
       apiKey: intelligence.apiKey,
       baseUrl: intelligence.baseUrl,
@@ -78,7 +74,8 @@ class AIPlayerDriver implements PlayerDriver {
     required GameSkill skill,
   }) async {
     // 构建完整的提示词
-    final userPrompt = '''
+    final userPrompt =
+        '''
 ${state.scenario.rule},
 ${_buildGameContext(player, state)}
 ${(state.dayNumber == 1 && skill is ConspireSkill) ? skill.firstNightPrompt : skill.prompt}
@@ -101,48 +98,62 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
     }
   }
 
-  /// 生成LLM响应（带重试机制）
-  Future<String> _generateLLMResponse({
-    required String systemPrompt,
-    required String userPrompt,
-  }) async {
-    Exception? lastException;
+  /// 构建游戏上下文信息
+  ///
+  /// 为LLM提供当前游戏状态的关键信息
+  String _buildGameContext(dynamic player, GameState state) {
+    final alivePlayers = state.alivePlayers.map((p) => p.name).join(', ');
+    final deadPlayers = state.deadPlayers.map((p) => p.name).join(', ');
+    final eventNarratives = state.events
+        .where((event) => event.isVisibleTo(player))
+        .map((event) => event.toNarrative())
+        .join('\n');
+    final teammates = state.werewolves.map((p) => p.name).join(', ');
 
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final content = await _callLLMAPI(
-          systemPrompt: systemPrompt,
-          userPrompt: userPrompt,
-        );
+    return '''
+# **战场情报**
 
-        // 重试成功时记录日志
-        if (attempt > 1) {
-          GameEngineLogger.instance.d('LLM调用成功（第 $attempt 次尝试）');
-        }
+## **当前局势**
+- **时间**: 第${state.dayNumber}天
+- **场上存活**: ${alivePlayers.isNotEmpty ? alivePlayers : '无'}
+- **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
 
-        return content;
-      } catch (e) {
-        lastException = e is Exception ? e : Exception(e.toString());
+## **你的身份信息**
+- **我的名字**: ${player.name}
+- **我的底牌**: ${player.role.name}
+- **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
 
-        if (attempt == maxRetries) {
-          // 最后一次尝试失败
-          GameEngineLogger.instance.e(
-            'LLM调用失败（$attempt/$maxRetries）: $e',
-          );
-          break;
-        }
+# **【核心任务简报】**
+${player.role.prompt.replaceAll("{teammates}", teammates)}
 
-        // 计算退避延迟
-        final delay = _calculateBackoffDelay(attempt);
-        GameEngineLogger.instance.w(
-          'LLM调用失败（$attempt/$maxRetries），${delay.inMilliseconds}ms后重试: $e',
-        );
+# **过往回合全记录**
+${eventNarratives.isNotEmpty ? eventNarratives : '无'}
+''';
+  }
 
-        await Future.delayed(delay);
-      }
-    }
+  /// 计算指数退避延迟时间
+  ///
+  /// 使用指数退避算法，添加随机抖动避免雷鸣羊群效应
+  Duration _calculateBackoffDelay(int attempt) {
+    const initialDelayMs = 1000; // 1秒
+    const backoffMultiplier = 2.0;
+    const maxDelayMs = 30000; // 30秒
 
-    throw Exception('LLM调用失败（已重试$maxRetries次）: $lastException');
+    // 计算基础延迟
+    final baseDelayMs =
+        initialDelayMs * math.pow(backoffMultiplier, attempt - 1);
+
+    // 限制最大延迟
+    final cappedDelayMs = math.min(
+      baseDelayMs.toDouble(),
+      maxDelayMs.toDouble(),
+    );
+
+    // 添加随机抖动（0.5 ~ 1.0倍）
+    final jitter = 0.5 + math.Random().nextDouble() * 0.5;
+    final finalDelayMs = (cappedDelayMs * jitter).toInt();
+
+    return Duration(milliseconds: finalDelayMs);
   }
 
   /// 调用LLM API
@@ -199,58 +210,46 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
     }
   }
 
-  /// 计算指数退避延迟时间
-  ///
-  /// 使用指数退避算法，添加随机抖动避免雷鸣羊群效应
-  Duration _calculateBackoffDelay(int attempt) {
-    const initialDelayMs = 1000; // 1秒
-    const backoffMultiplier = 2.0;
-    const maxDelayMs = 30000; // 30秒
+  /// 生成LLM响应（带重试机制）
+  Future<String> _generateLLMResponse({
+    required String systemPrompt,
+    required String userPrompt,
+  }) async {
+    Exception? lastException;
 
-    // 计算基础延迟
-    final baseDelayMs = initialDelayMs * math.pow(backoffMultiplier, attempt - 1);
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final content = await _callLLMAPI(
+          systemPrompt: systemPrompt,
+          userPrompt: userPrompt,
+        );
 
-    // 限制最大延迟
-    final cappedDelayMs = math.min(baseDelayMs.toDouble(), maxDelayMs.toDouble());
+        // 重试成功时记录日志
+        if (attempt > 1) {
+          GameEngineLogger.instance.d('LLM调用成功（第 $attempt 次尝试）');
+        }
 
-    // 添加随机抖动（0.5 ~ 1.0倍）
-    final jitter = 0.5 + math.Random().nextDouble() * 0.5;
-    final finalDelayMs = (cappedDelayMs * jitter).toInt();
+        return content;
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
 
-    return Duration(milliseconds: finalDelayMs);
-  }
+        if (attempt == maxRetries) {
+          // 最后一次尝试失败
+          GameEngineLogger.instance.e('LLM调用失败（$attempt/$maxRetries）: $e');
+          break;
+        }
 
-  /// 构建游戏上下文信息
-  ///
-  /// 为LLM提供当前游戏状态的关键信息
-  String _buildGameContext(dynamic player, GameState state) {
-    final alivePlayers = state.alivePlayers.map((p) => p.name).join(', ');
-    final deadPlayers = state.deadPlayers.map((p) => p.name).join(', ');
-    final eventNarratives = state.events
-        .where((event) => event.isVisibleTo(player))
-        .map((event) => event.toNarrative())
-        .join('\n');
-    final teammates = state.werewolves.map((p) => p.name).join(', ');
+        // 计算退避延迟
+        final delay = _calculateBackoffDelay(attempt);
+        GameEngineLogger.instance.w(
+          'LLM调用失败（$attempt/$maxRetries），${delay.inMilliseconds}ms后重试: $e',
+        );
 
-    return '''
-# **战场情报**
+        await Future.delayed(delay);
+      }
+    }
 
-## **当前局势**
-- **时间**: 第${state.dayNumber}天
-- **场上存活**: ${alivePlayers.isNotEmpty ? alivePlayers : '无'}
-- **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
-
-## **你的身份信息**
-- **我的名字**: ${player.name}
-- **我的底牌**: ${player.role.name}
-- **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
-
-# **【核心任务简报】**
-${player.role.prompt.replaceAll("{teammates}", teammates)}
-
-# **过往回合全记录**
-${eventNarratives.isNotEmpty ? eventNarratives : '无'}
-''';
+    throw Exception('LLM调用失败（已重试$maxRetries次）: $lastException');
   }
 
   /// 使用JsonCleaner解析JSON响应
@@ -259,14 +258,12 @@ ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
   Future<Map<String, dynamic>> _parseJsonWithCleaner(String content) async {
     try {
       // 首先尝试提取和解析完整的JSON
-      final cleanedContent = JsonCleaner.extractJson(content);
-      return jsonDecode(cleanedContent);
-    } catch (e) {
+      return AIPlayerDriverHelper.extractEmbeddedJson(content);
+    } catch (_) {
       try {
         // 如果失败，尝试提取部分JSON
-        final partialJson = JsonCleaner.extractPartialJson(content);
-        return partialJson ?? {};
-      } catch (e) {
+        return AIPlayerDriverHelper.extractPartialJson(content);
+      } catch (_) {
         // 最终失败，返回空Map
         return {};
       }
