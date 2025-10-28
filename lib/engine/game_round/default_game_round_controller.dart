@@ -40,6 +40,9 @@ import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 class DefaultGameRoundController implements GameRoundController {
   @override
   Future<void> tick(GameState state, {GameObserver? observer}) async {
+    // 记录当前回合开始前的事件数量
+    final eventsCountBeforeRound = state.events.length;
+
     var announceEvent = AnnounceEvent('天黑请闭眼');
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
@@ -105,6 +108,10 @@ class DefaultGameRoundController implements GameRoundController {
     await Future.delayed(const Duration(seconds: 1));
     // 白天结算 - 检查游戏是否结束
     await _processDaySettlement(state, observer: observer);
+
+    // 更新所有活着玩家的记忆
+    await _updatePlayerMemories(state, eventsCountBeforeRound);
+
     state.dayNumber++;
   }
 
@@ -668,5 +675,42 @@ class DefaultGameRoundController implements GameRoundController {
     }
 
     return targetPlayer;
+  }
+
+  /// 更新玩家记忆
+  ///
+  /// 在回合结束时调用,为每个活着的玩家并行更新记忆
+  Future<void> _updatePlayerMemories(
+    GameState state,
+    int eventsCountBeforeRound,
+  ) async {
+    // 获取当前回合的新事件
+    final currentRoundEvents = state.events.sublist(eventsCountBeforeRound);
+
+    // 为每个活着的玩家并行更新记忆
+    final alivePlayers = state.alivePlayers;
+    GameEngineLogger.instance.d('开始并行更新${alivePlayers.length}个玩家的记忆');
+
+    // 创建所有玩家的记忆更新任务
+    final futures = alivePlayers.map((player) async {
+      try {
+        final updatedMemory = await player.driver.updateMemory(
+          player: player,
+          currentMemory: player.memory,
+          currentPhaseEvents: currentRoundEvents,
+          state: state,
+        );
+        player.memory = updatedMemory;
+        GameEngineLogger.instance.d('玩家${player.name}记忆已更新');
+      } catch (e) {
+        GameEngineLogger.instance.e('更新${player.name}的记忆失败: $e');
+        // 继续更新其他玩家的记忆
+      }
+    }).toList();
+
+    // 等待所有更新任务完成
+    await Future.wait(futures);
+
+    GameEngineLogger.instance.d('所有玩家记忆更新完成');
   }
 }
