@@ -6,7 +6,7 @@ import 'package:werewolf_arena/engine/game_engine_status.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/processor/game_processor.dart';
+import 'package:werewolf_arena/engine/game_round/game_round_controller.dart';
 import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
 
 /// 简化版游戏引擎 - 只需要4个参数的构造函数，内部创建阶段处理器和工具类
@@ -15,7 +15,7 @@ class GameEngine {
   final GameScenario scenario;
   final List<GamePlayer> players;
   final GameObserver? _observer;
-  final GameProcessor processor;
+  final GameRoundController controller;
 
   GameState? _currentState;
   GameEngineStatus _status = GameEngineStatus.waiting;
@@ -25,7 +25,7 @@ class GameEngine {
     required this.scenario,
     required this.players,
     GameObserver? observer,
-    required this.processor,
+    required this.controller,
   }) : _observer = observer;
 
   // === 状态查询 ===
@@ -107,7 +107,7 @@ class GameEngine {
       final eventsCountBeforeRound = _currentState!.events.length;
 
       // 执行阶段处理
-      await processor.process(_currentState!, observer: _observer);
+      await controller.tick(_currentState!, observer: _observer);
 
       // 更新所有活着玩家的记忆
       await _updatePlayerMemories(eventsCountBeforeRound);

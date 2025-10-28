@@ -11,7 +11,7 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/processor/default_phase_processor.dart';
+import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
@@ -119,7 +119,7 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
     scenario: scenario,
     players: players,
     observer: observer,
-    processor: DefaultPhaseProcessor(),
+    controller: DefaultGameRoundController(),
   );
 }
 

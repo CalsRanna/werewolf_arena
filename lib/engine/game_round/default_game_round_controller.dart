@@ -18,7 +18,7 @@ import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/processor/game_processor.dart';
+import 'package:werewolf_arena/engine/game_round/game_round_controller.dart';
 import 'package:werewolf_arena/engine/role/guard_role.dart';
 import 'package:werewolf_arena/engine/role/hunter_role.dart';
 import 'package:werewolf_arena/engine/role/seer_role.dart';
@@ -37,9 +37,9 @@ import 'package:werewolf_arena/engine/skill/testament_skill.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 
 /// 默认阶段处理器（基于技能系统重构）
-class DefaultPhaseProcessor implements GameProcessor {
+class DefaultGameRoundController implements GameRoundController {
   @override
-  Future<void> process(GameState state, {GameObserver? observer}) async {
+  Future<void> tick(GameState state, {GameObserver? observer}) async {
     var announceEvent = AnnounceEvent('天黑请闭眼');
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
