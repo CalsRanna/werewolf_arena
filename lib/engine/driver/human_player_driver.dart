@@ -3,6 +3,7 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
+import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 人类玩家驱动器
 ///
@@ -15,5 +16,16 @@ class HumanPlayerDriver implements PlayerDriver {
     required GameSkill skill,
   }) async {
     return PlayerDriverResponse();
+  }
+
+  @override
+  Future<String> updateMemory({
+    required GamePlayer player,
+    required String currentMemory,
+    required List<GameEvent> currentPhaseEvents,
+    required GameState state,
+  }) async {
+    // 人类玩家不需要自动更新记忆，直接返回当前记忆
+    return currentMemory;
   }
 }

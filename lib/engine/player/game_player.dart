@@ -16,6 +16,10 @@ abstract class GamePlayer {
 
   int hp = 1;
 
+  /// 玩家记忆：存储高质量的结构化上下文
+  /// 在每个回合结束时更新，包含对其他玩家的分析、关键事件摘要等
+  String memory = '';
+
   GamePlayer({
     required this.id,
     required this.index,

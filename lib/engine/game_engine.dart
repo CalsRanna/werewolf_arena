@@ -57,6 +57,10 @@ class GameEngine {
 
       // 初始化游戏
       _currentState!.startGame();
+
+      // 初始化所有玩家的记忆
+      await _initializePlayerMemories();
+
       _status = GameEngineStatus.playing; // 设置为进行中状态
 
       GameEngineLogger.instance.i('游戏初始化完成');
@@ -67,14 +71,46 @@ class GameEngine {
     }
   }
 
+  /// 初始化玩家记忆
+  ///
+  /// 在游戏开始时为所有玩家初始化记忆
+  Future<void> _initializePlayerMemories() async {
+    if (_currentState == null) return;
+
+    final state = _currentState!;
+    GameEngineLogger.instance.d('开始初始化玩家记忆');
+
+    for (final player in state.players) {
+      try {
+        final initialMemory = await player.driver.updateMemory(
+          player: player,
+          currentMemory: '',
+          currentPhaseEvents: [],
+          state: state,
+        );
+        player.memory = initialMemory;
+      } catch (e) {
+        GameEngineLogger.instance.e('初始化${player.name}的记忆失败: $e');
+      }
+    }
+
+    GameEngineLogger.instance.d('玩家记忆初始化完成');
+  }
+
   /// 执行游戏步骤
   /// 返回bool表示是否还有下一步骤可执行
   Future<bool> loop() async {
     if (!isGameRunning || isGameEnded) return false;
 
     try {
+      // 记录当前回合开始前的事件数量
+      final eventsCountBeforeRound = _currentState!.events.length;
+
       // 执行阶段处理
       await processor.process(_currentState!, observer: _observer);
+
+      // 更新所有活着玩家的记忆
+      await _updatePlayerMemories(eventsCountBeforeRound);
 
       // 检查游戏结束
       if (_currentState!.checkGameEnd()) {
@@ -88,6 +124,39 @@ class GameEngine {
       await _handleGameError(e);
       return false; // 出错时停止执行
     }
+  }
+
+  /// 更新玩家记忆
+  ///
+  /// 在回合结束时调用，为每个活着的玩家更新记忆
+  Future<void> _updatePlayerMemories(int eventsCountBeforeRound) async {
+    if (_currentState == null) return;
+
+    final state = _currentState!;
+
+    // 获取当前回合的新事件
+    final currentRoundEvents = state.events.sublist(eventsCountBeforeRound);
+
+    // 为每个活着的玩家更新记忆
+    final alivePlayers = state.alivePlayers;
+    GameEngineLogger.instance.d('开始更新${alivePlayers.length}个玩家的记忆');
+    for (final player in alivePlayers) {
+      try {
+        final updatedMemory = await player.driver.updateMemory(
+          player: player,
+          currentMemory: player.memory,
+          currentPhaseEvents: currentRoundEvents,
+          state: state,
+        );
+        player.memory = updatedMemory;
+        print(updatedMemory);
+      } catch (e) {
+        GameEngineLogger.instance.e('更新${player.name}的记忆失败: $e');
+        // 继续更新其他玩家的记忆
+      }
+    }
+
+    GameEngineLogger.instance.d('记忆更新完成');
   }
 
   /// 结束游戏

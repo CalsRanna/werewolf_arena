@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:openai_dart/openai_dart.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver_helper.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
+import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
@@ -98,17 +99,170 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
     }
   }
 
+  @override
+  Future<String> updateMemory({
+    required GamePlayer player,
+    required String currentMemory,
+    required List<GameEvent> currentPhaseEvents,
+    required GameState state,
+  }) async {
+    // 如果是游戏初始，初始化记忆
+    if (currentMemory.isEmpty) {
+      return _initializeMemory(player, state);
+    }
+
+    // 构建新事件的叙述
+    final newEventsNarrative = currentPhaseEvents
+        .where((event) => event.isVisibleTo(player))
+        .map((event) => event.toNarrative())
+        .join('\n');
+
+    // 如果没有新事件，直接返回当前记忆
+    if (newEventsNarrative.isEmpty) {
+      return currentMemory;
+    }
+
+    // [修正点] 在此作用域内计算狼人队友信息
+    final teammates = player.role.id == 'werewolf'
+        ? state.werewolves
+              .where((p) => p.id != player.id)
+              .map((p) => p.name)
+              .join(', ')
+        : '';
+
+    // 构建其他玩家列表，用于模板生成
+    final otherPlayers = state.players
+        .where((p) => p.id != player.id)
+        .map((p) => p.name)
+        .toList();
+
+    // 构建更新记忆的系统提示词
+    final systemPrompt = '''
+你是一个顶级的狼人杀游戏分析师，负责为玩家整理和更新记忆。你的核心任务是接收旧的记忆和新发生的事件，然后输出一份全新的、高度结构化的记忆摘要。
+
+# 核心要求
+1.  **整合与提炼**: 你必须将「新发生的事件」与「当前记忆」完全整合。丢弃过时或不再重要的信息，提炼出对决策至关重要的核心内容。
+2.  **严格遵守格式**: 你的输出必须严格且完整地遵循我在用户提示中提供的「记忆模板」。不得增加、减少或修改模板的任何部分，特别是玩家分析表，必须包含所有其他玩家。
+3.  **区分内心思考**: 模板中的「# 内心思考 (完全保密)」部分是唯一的例外，这里必须包含玩家的所有秘密信息（真实身份、狼人队友、夜间行动结果等），这是你的决策基础。其他所有部分都应模拟一个不知晓秘密的玩家可能形成的认知。
+4.  **分析性，而非流水账**: 尤其在「## 玩家分析表」中，你需要给出具体的推测和可疑度判断，并简述理由，而不是简单罗列行为。
+5.  **第一人称视角**: 整个记忆摘要必须使用第一人称（"我"）来书写。
+6.  **禁止额外输出**: 除了严格按照模板生成的记忆文本，禁止输出任何额外的解释、前言或结尾。
+''';
+
+    // 构建更新记忆的用户提示词
+    final userPrompt =
+        '''
+# 我的旧记忆
+$currentMemory
+
+# 新发生的事件（第${state.dayNumber}天）
+$newEventsNarrative
+
+---
+请基于以上信息，严格按照以下「记忆模板」更新我的记忆。
+
+# **记忆模板**
+
+## 1. 核心档案
+- **我的身份**: ${player.name}，场上的一名${player.role.name}。
+
+## 2. 玩家分析表
+| 玩家 | 推测身份/阵营 | 可疑度 (极高/高/中/低/极低/金水/查杀) | 关键行为与理由 |
+| :--- | :--- | :--- | :--- |
+${otherPlayers.map((p) => '| $p | | | |').join('\n')}
+
+## 3. 局势概览
+- **当前阶段**: 第${state.dayNumber}天相关事件已结束。
+- **场上势力**: [例如：3狼 vs 4民 vs 2神]
+- **关键事件回顾**:
+  - [按重要性列出1-3个最重要的转折点，例如：昨晚XX号玩家被刀，XX号玩家被公投出局]
+
+## 4. 我的策略
+- **当前主要矛盾**: [例如：在A和B两个预言家之间站边]
+- **短期目标 (本阶段)**: [例如：说服好人投出我认为的狼人C]
+- **长期策略**: [例如：隐藏身份，拉拢D玩家作为盟友]
+
+## 5. 内心思考 (完全保密)
+- **确凿事实**:
+  - 我的身份是${player.role.name}。
+  - ${teammates.isNotEmpty ? '我的狼队友是: $teammates' : '我是好人阵营。'}
+  - [其他只有你知道的秘密，例如：昨晚我验了A，他是好人。/ 昨晚我们刀了B。]
+- **核心推理链**:
+  - [基于秘密信息进行的真实思考。例如：因为我知道A是我的队友，所以C对A的攻击一定是悍跳狼行为，C必是狼。]
+''';
+
+    try {
+      // 调用LLM获取更新后的记忆
+      final updatedMemory = await _generateLLMResponse(
+        systemPrompt: systemPrompt,
+        userPrompt: userPrompt,
+      );
+
+      GameEngineLogger.instance.d('${player.name}的记忆已更新');
+      return updatedMemory.trim();
+    } catch (e) {
+      GameEngineLogger.instance.e('更新玩家记忆失败: $e');
+      // 如果失败，简单追加新事件到现有记忆
+      return '$currentMemory\n\n# 新事件（第${state.dayNumber}天）\n$newEventsNarrative';
+    }
+  }
+
+  /// 初始化玩家记忆
+  ///
+  /// 在游戏开始时为玩家创建初始记忆
+  String _initializeMemory(GamePlayer player, GameState state) {
+    final teammates = player.role.id == 'werewolf'
+        ? state.werewolves
+              .where((p) => p.id != player.id)
+              .map((p) => p.name)
+              .join(', ')
+        : '';
+
+    return '''
+# 角色身份
+我是${player.name}，我的底牌是${player.role.name}。
+${player.role.prompt.replaceAll("{teammates}", teammates)}
+
+# 游戏开始
+这是游戏的第一个回合，我还没有获得太多信息。
+
+# 其他玩家分析
+${state.players.where((p) => p.id != player.id).map((p) => '- ${p.name}: 未知').join('\n')}
+
+# 当前推理
+- 确定的事实：我的身份是${player.role.name}${teammates.isNotEmpty ? '，我的队友是$teammates' : ''}
+- 下一步策略：观察其他玩家的行为，收集信息
+'''
+        .trim();
+  }
+
   /// 构建游戏上下文信息
   ///
   /// 为LLM提供当前游戏状态的关键信息
   String _buildGameContext(dynamic player, GameState state) {
     final alivePlayers = state.alivePlayers.map((p) => p.name).join(', ');
     final deadPlayers = state.deadPlayers.map((p) => p.name).join(', ');
-    final eventNarratives = state.events
-        .where((event) => event.isVisibleTo(player))
-        .map((event) => event.toNarrative())
-        .join('\n');
-    final teammates = state.werewolves.map((p) => p.name).join(', ');
+
+    // 如果玩家有记忆，使用记忆；否则回退到事件列表
+    String contextInfo;
+    if (player.memory.isNotEmpty) {
+      contextInfo =
+          '''
+# **我的记忆**
+${player.memory}
+''';
+    } else {
+      // 回退方案：使用原始事件列表（仅在记忆为空时使用）
+      final eventNarratives = state.events
+          .where((event) => event.isVisibleTo(player))
+          .map((event) => event.toNarrative())
+          .join('\n');
+      contextInfo =
+          '''
+# **过往回合全记录**
+${eventNarratives.isNotEmpty ? eventNarratives : '无'}
+''';
+    }
 
     return '''
 # **战场情报**
@@ -118,16 +272,7 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
 - **场上存活**: ${alivePlayers.isNotEmpty ? alivePlayers : '无'}
 - **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
 
-## **你的身份信息**
-- **我的名字**: ${player.name}
-- **我的底牌**: ${player.role.name}
-- **我的状态**: ${player.isAlive ? '存活' : '已出局，正在观战'}
-
-# **【核心任务简报】**
-${player.role.prompt.replaceAll("{teammates}", teammates)}
-
-# **过往回合全记录**
-${eventNarratives.isNotEmpty ? eventNarratives : '无'}
+$contextInfo
 ''';
   }
 
