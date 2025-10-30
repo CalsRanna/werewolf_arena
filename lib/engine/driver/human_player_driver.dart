@@ -22,7 +22,7 @@ class HumanPlayerDriver implements PlayerDriver {
   Future<String> updateMemory({
     required GamePlayer player,
     required String currentMemory,
-    required List<GameEvent> currentPhaseEvents,
+    required List<GameEvent> currentRoundEvents,
     required GameState state,
   }) async {
     // 人类玩家不需要自动更新记忆，直接返回当前记忆

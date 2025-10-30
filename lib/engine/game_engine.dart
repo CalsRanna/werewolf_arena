@@ -82,7 +82,7 @@ class GameEngine {
         final initialMemory = await player.driver.updateMemory(
           player: player,
           currentMemory: '',
-          currentPhaseEvents: [],
+          currentRoundEvents: [],
           state: state,
         );
         player.memory = initialMemory;

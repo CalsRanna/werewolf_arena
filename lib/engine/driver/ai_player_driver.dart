@@ -110,7 +110,7 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
   Future<String> updateMemory({
     required GamePlayer player,
     required String currentMemory,
-    required List<GameEvent> currentPhaseEvents,
+    required List<GameEvent> currentRoundEvents,
     required GameState state,
   }) async {
     // 如果是游戏初始，初始化记忆
@@ -119,7 +119,7 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
     }
 
     // 构建新事件的叙述
-    final newEventsNarrative = currentPhaseEvents
+    final newEventsNarrative = currentRoundEvents
         .where((event) => event.isVisibleTo(player))
         .map((event) => event.toNarrative())
         .join('\n');

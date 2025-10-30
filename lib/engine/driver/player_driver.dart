@@ -32,14 +32,14 @@ abstract class PlayerDriver {
   ///
   /// [player] 玩家实例
   /// [currentMemory] 玩家当前的记忆
-  /// [currentPhaseEvents] 当前阶段发生的对该玩家可见的事件
+  /// [currentRoundEvents] 当前阶段发生的对该玩家可见的事件
   /// [state] 当前游戏状态
   ///
   /// 返回更新后的记忆文本
   Future<String> updateMemory({
     required GamePlayer player,
     required String currentMemory,
-    required List<GameEvent> currentPhaseEvents,
+    required List<GameEvent> currentRoundEvents,
     required GameState state,
   });
 }

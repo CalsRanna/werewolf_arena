@@ -671,32 +671,21 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state,
     int eventsCountBeforeRound,
   ) async {
-    // 获取当前回合的新事件
     final currentRoundEvents = state.events.sublist(eventsCountBeforeRound);
-
-    // 为每个活着的玩家并行更新记忆
     final alivePlayers = state.alivePlayers;
-    GameEngineLogger.instance.d('开始并行更新${alivePlayers.length}个玩家的记忆');
-
-    // 创建所有玩家的记忆更新任务
     final futures = alivePlayers.map((player) async {
       try {
         final updatedMemory = await player.driver.updateMemory(
           player: player,
           currentMemory: player.memory,
-          currentPhaseEvents: currentRoundEvents,
+          currentRoundEvents: currentRoundEvents,
           state: state,
         );
         player.memory = updatedMemory;
       } catch (e) {
         GameEngineLogger.instance.e('更新${player.name}的记忆失败: $e');
-        // 继续更新其他玩家的记忆
       }
     }).toList();
-
-    // 等待所有更新任务完成
     await Future.wait(futures);
-
-    GameEngineLogger.instance.d('所有玩家记忆更新完成');
   }
 }

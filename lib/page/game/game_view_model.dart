@@ -32,7 +32,6 @@ class GameViewModel {
   final Signal<List<String>> eventLog = signal([]);
   final Signal<String> gameStatus = signal('准备就绪');
   final Signal<int> currentDay = signal(0);
-  final Signal<String> currentPhase = signal('等待开始');
 
   // SnackBar提示用的StreamController
   final StreamController<String> _snackBarMessageController =
@@ -41,7 +40,7 @@ class GameViewModel {
 
   // 计算属性
   late final formattedTime = computed(() {
-    return '第${currentDay.value}天 - ${currentPhase.value}';
+    return '第${currentDay.value}天}';
   });
 
   late final alivePlayersCount = computed(() {
@@ -202,13 +201,6 @@ class GameViewModel {
   void dispose() {
     _gameEngine?.dispose();
     _snackBarMessageController.close();
-
-    isGameRunning.dispose();
-    players.dispose();
-    eventLog.dispose();
-    gameStatus.dispose();
-    currentDay.dispose();
-    currentPhase.dispose();
   }
 }
 
