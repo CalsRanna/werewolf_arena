@@ -644,10 +644,10 @@ class DefaultGameRoundController implements GameRoundController {
     var results = await Future.wait(futures);
     for (var result in results) {
       if (result.target == null) continue;
-      var voteEvent = VoteEvent(
-        voter: state.getPlayerByName(result.caster)!,
-        candidate: state.getPlayerByName(result.target!)!,
-      );
+      final voter = state.getPlayerByName(result.caster);
+      final candidate = state.getPlayerByName(result.target!);
+      if (voter == null || candidate == null) continue;
+      var voteEvent = VoteEvent(voter: voter, candidate: candidate);
       state.handleEvent(voteEvent);
       await observer?.onGameEvent(voteEvent);
     }

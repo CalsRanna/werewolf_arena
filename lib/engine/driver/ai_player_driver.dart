@@ -111,9 +111,25 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
     try {
       final content = await _request(prompt, systemPrompt: playerPrompt);
       final json = await _parseJsonWithCleaner(content);
-      return PlayerDriverResponse.fromJson(json);
+      final response = PlayerDriverResponse.fromJson(json);
+
+      // 记录解析成功的响应信息
+      final messagePreview = response.message != null
+          ? (response.message!.length > 50
+                ? '${response.message!.substring(0, 50)}...'
+                : response.message)
+          : 'null';
+      GameEngineLogger.instance.d(
+        '${player.name} AI响应解析成功: target=${response.target}, '
+        'message=$messagePreview',
+      );
+
+      return response;
     } catch (e) {
-      GameEngineLogger.instance.e('AI驱动器请求失败: $e');
+      GameEngineLogger.instance.e(
+        '${player.name} AI驱动器请求失败: $e\n'
+        '技能类型: ${skill.runtimeType}',
+      );
       return PlayerDriverResponse();
     }
   }
