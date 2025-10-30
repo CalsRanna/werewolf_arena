@@ -16,6 +16,10 @@ class AIPlayer extends GamePlayer {
     required super.name,
   }) : super(driver: driver);
 
+  /// 玩家记忆：存储高质量的结构化上下文
+  /// 在每个回合结束时更新，包含对其他玩家的分析、关键事件摘要等
+  String memory = '';
+
   @override
   String get formattedName =>
       '[$name|${role.name}|${(driver as AIPlayerDriver).intelligence.modelId}]';

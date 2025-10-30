@@ -240,11 +240,7 @@ ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
       maxDelayMs.toDouble(),
     );
 
-    // 添加随机抖动（0.5 ~ 1.0倍）
-    final jitter = 0.5 + math.Random().nextDouble() * 0.5;
-    final finalDelayMs = (cappedDelayMs * jitter).toInt();
-
-    return Duration(milliseconds: finalDelayMs);
+    return Duration(milliseconds: cappedDelayMs.toInt());
   }
 
   /// 调用LLM API

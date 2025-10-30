@@ -16,9 +16,10 @@ import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_round/game_round_controller.dart';
+import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/player/ai_player.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/role/guard_role.dart';
 import 'package:werewolf_arena/engine/role/hunter_role.dart';
 import 'package:werewolf_arena/engine/role/seer_role.dart';
@@ -110,7 +111,7 @@ class DefaultGameRoundController implements GameRoundController {
     await _processDaySettlement(state, observer: observer);
 
     // 更新所有活着玩家的记忆
-    await _updatePlayerMemories(state, eventsCountBeforeRound);
+    await _updateAIPlayerMemories(state, eventsCountBeforeRound);
 
     state.dayNumber++;
   }
@@ -664,16 +665,16 @@ class DefaultGameRoundController implements GameRoundController {
     return targetPlayer;
   }
 
-  /// 更新玩家记忆
+  /// 更新AI玩家记忆
   ///
-  /// 在回合结束时调用,为每个活着的玩家并行更新记忆
-  Future<void> _updatePlayerMemories(
+  /// 在回合结束时调用,为每个活着的AI玩家并行更新记忆
+  Future<void> _updateAIPlayerMemories(
     GameState state,
     int eventsCountBeforeRound,
   ) async {
     final currentRoundEvents = state.events.sublist(eventsCountBeforeRound);
-    final alivePlayers = state.alivePlayers;
-    final futures = alivePlayers.map((player) async {
+    final aliveAIPlayers = state.alivePlayers.whereType<AIPlayer>().toList();
+    final futures = aliveAIPlayers.map((player) async {
       try {
         final updatedMemory = await player.driver.updateMemory(
           player: player,

@@ -5,6 +5,7 @@ import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_engine_status.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_round/game_round_controller.dart';
 import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
@@ -59,7 +60,7 @@ class GameEngine {
       _currentState!.startGame();
 
       // 初始化所有玩家的记忆
-      await _initializePlayerMemories();
+      await _initializeAIPlayerMemories();
 
       _status = GameEngineStatus.playing; // 设置为进行中状态
     } catch (e) {
@@ -69,15 +70,15 @@ class GameEngine {
     }
   }
 
-  /// 初始化玩家记忆
+  /// 初始化AI玩家记忆
   ///
-  /// 在游戏开始时为所有玩家初始化记忆
-  Future<void> _initializePlayerMemories() async {
+  /// 在游戏开始时为所有AI玩家初始化记忆
+  Future<void> _initializeAIPlayerMemories() async {
     if (_currentState == null) return;
 
     final state = _currentState!;
-
-    for (final player in state.players) {
+    final aiPlayers = state.players.whereType<AIPlayer>().toList();
+    final futures = aiPlayers.map((player) async {
       try {
         final initialMemory = await player.driver.updateMemory(
           player: player,
@@ -89,7 +90,8 @@ class GameEngine {
       } catch (e) {
         GameEngineLogger.instance.e('初始化${player.name}的记忆失败: $e');
       }
-    }
+    }).toList();
+    await Future.wait(futures);
   }
 
   /// 执行游戏步骤
