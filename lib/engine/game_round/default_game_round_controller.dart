@@ -613,7 +613,7 @@ class DefaultGameRoundController implements GameRoundController {
     GameObserver? observer,
     required GamePlayer voteTarget,
   }) async {
-    var announceEvent = AnnounceEvent('${voteTarget.formattedName}请发表遗言');
+    var announceEvent = AnnounceEvent('${voteTarget.name}请发表遗言');
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
     await observer?.onGameEvent(announceEvent);
