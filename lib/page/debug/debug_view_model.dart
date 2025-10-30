@@ -1,4 +1,5 @@
 import 'package:signals/signals_flutter.dart';
+import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
@@ -83,6 +84,7 @@ class DebugViewModel {
           intelligence: intelligence,
           maxRetries: config.maxRetries,
         ),
+        persona: AggressiveWarriorPersona(),
       );
 
       players.add(player);

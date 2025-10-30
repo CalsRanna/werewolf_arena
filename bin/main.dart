@@ -1,17 +1,28 @@
 // ignore_for_file: avoid_print
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:args/args.dart';
 import 'package:werewolf_arena/console/console_game_config_loader.dart';
 import 'package:werewolf_arena/console/console_game_observer.dart';
 import 'package:werewolf_arena/console/console_game_ui.dart';
+import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
+import 'package:werewolf_arena/engine/player/disciple_persona.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
+import 'package:werewolf_arena/engine/player/inquisitor_persona.dart';
+import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
+import 'package:werewolf_arena/engine/player/lurker_persona.dart';
+import 'package:werewolf_arena/engine/player/peacemaker_persona.dart';
+import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
+import 'package:werewolf_arena/engine/player/schemer_persona.dart';
+import 'package:werewolf_arena/engine/player/thespian_persona.dart';
+import 'package:werewolf_arena/engine/player/trickster_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
@@ -98,10 +109,23 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
   final players = <GamePlayer>[];
   final roles = scenario.roles;
   roles.shuffle();
+  final personas = [
+    AggressiveWarriorPersona(),
+    DisciplePersona(),
+    InquisitorPersona(),
+    LogicMasterPersona(),
+    LurkerPersona(),
+    PeacemakerPersona(),
+    RefinedEgoistPersona(),
+    SchemerPersona(),
+    ThespianPersona(),
+    TricksterPersona(),
+  ];
   for (int i = 0; i < roles.length; i++) {
     final playerIndex = i + 1;
     final role = roles[i];
     final intelligence = config.playerIntelligences[i];
+    final random = Random().nextInt(personas.length);
     final player = AIPlayer(
       id: 'player_$playerIndex',
       name: '$playerIndex号玩家',
@@ -111,6 +135,7 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
         intelligence: intelligence,
         maxRetries: config.maxRetries,
       ),
+      persona: personas[random],
     );
     players.add(player);
   }
