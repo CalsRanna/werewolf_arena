@@ -134,13 +134,13 @@ class AIPlayerDriverHelper {
       result['reasoning'] = reasoningMatch.group(1);
     }
 
-    // Extract statement
-    final statementMatch = RegExp(
-      r'"statement"\s*:\s*"([^"]*)"',
+    // Extract message
+    final messageMatch = RegExp(
+      r'"message"\s*:\s*"([^"]*)"',
       caseSensitive: false,
     ).firstMatch(content);
-    if (statementMatch != null) {
-      result['statement'] = statementMatch.group(1);
+    if (messageMatch != null) {
+      result['message'] = messageMatch.group(1);
     }
 
     return result.isNotEmpty ? result : null;

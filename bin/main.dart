@@ -39,6 +39,7 @@ Future<void> main(List<String> arguments) async {
       ..addOption('config', abbr: 'c', help: '配置文件路径')
       ..addOption('players', abbr: 'p', help: '玩家数量 (9或12)')
       ..addOption('scenario', abbr: 's', help: '游戏场景ID')
+      ..addFlag('god', abbr: 'g', help: '启用上帝视角', defaultsTo: false)
       ..addFlag('debug', abbr: 'd', help: '启用调试模式', defaultsTo: false)
       ..addFlag('help', abbr: 'h', help: '显示帮助信息', negatable: false);
 
@@ -75,6 +76,7 @@ Future<void> main(List<String> arguments) async {
     final observer = ConsoleGameObserver(
       ui: ui,
       showLog: argResults['debug'] as bool,
+      showRole: argResults['god'] as bool,
     );
 
     final gameEngine = await _createGameEngine(observer);

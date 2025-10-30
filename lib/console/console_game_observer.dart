@@ -24,8 +24,13 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 class ConsoleGameObserver extends GameObserver {
   final ConsoleGameUI ui;
   final bool showLog;
+  final bool showRole;
 
-  ConsoleGameObserver({required this.ui, this.showLog = false});
+  ConsoleGameObserver({
+    required this.ui,
+    this.showLog = false,
+    this.showRole = false,
+  });
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
@@ -51,15 +56,23 @@ class ConsoleGameObserver extends GameObserver {
     } else if (event is ShootEvent) {
       ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ConspireEvent) {
-      ui.printEvent('${event.speaker.formattedName}：${event.message}');
+      var name = event.speaker.formattedName;
+      if (!showRole) name = '[${event.speaker.name}]';
+      ui.printEvent('$name：${event.message}');
     } else if (event is DiscussEvent) {
-      ui.printEvent('${event.speaker.formattedName}：${event.message}');
+      var name = event.speaker.formattedName;
+      if (!showRole) name = '[${event.speaker.name}]';
+      ui.printEvent('$name：${event.message}');
     } else if (event is VoteEvent) {
-      ui.printEvent(
-        '${event.voter.formattedName}投票给${event.candidate.formattedName}',
-      );
+      var voterName = event.voter.formattedName;
+      if (!showRole) voterName = '[${event.voter.name}]';
+      var candidateName = event.candidate.formattedName;
+      if (!showRole) candidateName = '[${event.candidate.name}]';
+      ui.printEvent('$voterName投票给$candidateName');
     } else if (event is TestamentEvent) {
-      ui.printEvent('${event.speaker.formattedName}：${event.message}');
+      var name = event.speaker.formattedName;
+      if (!showRole) name = '[${event.speaker.name}]';
+      ui.printEvent('$name：${event.message}');
     } else if (event is DeadEvent) {
       // do nothing
     } else {
