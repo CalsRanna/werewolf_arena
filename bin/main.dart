@@ -22,7 +22,6 @@ import 'package:werewolf_arena/engine/player/peacemaker_persona.dart';
 import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
 import 'package:werewolf_arena/engine/player/schemer_persona.dart';
 import 'package:werewolf_arena/engine/player/thespian_persona.dart';
-import 'package:werewolf_arena/engine/player/trickster_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
@@ -124,7 +123,6 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
     RefinedEgoistPersona(),
     SchemerPersona(),
     ThespianPersona(),
-    TricksterPersona(),
   ];
   for (int i = 0; i < roles.length; i++) {
     final playerIndex = i + 1;

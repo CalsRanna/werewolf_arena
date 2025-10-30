@@ -40,6 +40,19 @@ class ConsoleGameUI {
     _currentSpinner = null;
   }
 
+  /// 暂停spinner（输出内容前调用）
+  void pauseSpinner() {
+    if (_currentSpinner == null) return;
+    _currentSpinner!.stop();
+  }
+
+  /// 恢复spinner（输出内容后调用）
+  void resumeSpinner() {
+    if (_currentSpinner != null) {
+      _currentSpinner = CliSpin(spinner: CliSpinners.dots).start();
+    }
+  }
+
   void startSpinner() {
     _currentSpinner = CliSpin(spinner: CliSpinners.dots).start();
   }
@@ -64,11 +77,13 @@ class ConsoleGameUI {
   }
 
   void printLine([String? text]) {
+    pauseSpinner();
     if (text != null) {
       stdout.writeln('● $text');
     } else {
       stdout.writeln();
     }
+    resumeSpinner();
   }
 
   void printLog(String text) {
