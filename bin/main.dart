@@ -72,7 +72,10 @@ Future<void> main(List<String> arguments) async {
       }
     }
 
-    final observer = ConsoleGameObserver(ui: ui);
+    final observer = ConsoleGameObserver(
+      ui: ui,
+      showLog: argResults['debug'] as bool,
+    );
 
     final gameEngine = await _createGameEngine(observer);
     await gameEngine.ensureInitialized();

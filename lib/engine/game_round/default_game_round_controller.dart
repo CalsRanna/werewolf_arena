@@ -657,7 +657,10 @@ class DefaultGameRoundController implements GameRoundController {
     // 设置玩家出局并发送 ExileEvent
     if (targetPlayer != null) {
       targetPlayer.setAlive(false);
-      var exileEvent = ExileEvent(victim: targetPlayer);
+      var exileEvent = ExileEvent(
+        dayNumber: state.dayNumber,
+        victim: targetPlayer,
+      );
       state.handleEvent(exileEvent);
       await observer?.onGameEvent(exileEvent);
     }

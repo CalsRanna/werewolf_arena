@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class ExileEvent extends GameEvent {
   final GamePlayer victim;
 
-  ExileEvent({required this.victim})
+  ExileEvent({required this.victim, required super.dayNumber})
     : super(
         id: 'exile_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [

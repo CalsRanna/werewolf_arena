@@ -23,12 +23,14 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 /// 这是游戏引擎与控制台显示之间的桥梁。
 class ConsoleGameObserver extends GameObserver {
   final ConsoleGameUI ui;
+  final bool showLog;
 
-  ConsoleGameObserver({required this.ui});
+  ConsoleGameObserver({required this.ui, this.showLog = false});
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
     if (event is LogEvent) {
+      if (!showLog) return;
       ui.printLog(event.toNarrative());
     } else if (event is AnnounceEvent) {
       ui.printEvent('[法官]：${event.announcement}');
