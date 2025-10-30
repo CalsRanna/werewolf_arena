@@ -62,8 +62,6 @@ class GameEngine {
       await _initializePlayerMemories();
 
       _status = GameEngineStatus.playing; // 设置为进行中状态
-
-      GameEngineLogger.instance.i('游戏初始化完成');
     } catch (e) {
       GameEngineLogger.instance.e('游戏初始化失败: $e');
       await _handleGameError(e);
@@ -78,7 +76,6 @@ class GameEngine {
     if (_currentState == null) return;
 
     final state = _currentState!;
-    GameEngineLogger.instance.d('开始初始化玩家记忆');
 
     for (final player in state.players) {
       try {
@@ -93,8 +90,6 @@ class GameEngine {
         GameEngineLogger.instance.e('初始化${player.name}的记忆失败: $e');
       }
     }
-
-    GameEngineLogger.instance.d('玩家记忆初始化完成');
   }
 
   /// 执行游戏步骤

@@ -42,10 +42,11 @@ class DefaultGameRoundController implements GameRoundController {
   Future<void> tick(GameState state, {GameObserver? observer}) async {
     // 记录当前回合开始前的事件数量
     final eventsCountBeforeRound = state.events.length;
-
+    // 夜晚开始
     var announceEvent = AnnounceEvent('天黑请闭眼');
     GameEngineLogger.instance.d(announceEvent.toString());
     state.handleEvent(announceEvent);
+    await observer?.onGameEvent(announceEvent);
     await Future.delayed(const Duration(seconds: 1));
     // 守卫守护
     final protectTarget = await _processProtect(state, observer: observer);
@@ -74,7 +75,6 @@ class DefaultGameRoundController implements GameRoundController {
       poisonTarget: poisonTarget,
       guardTarget: protectTarget,
     );
-
     await Future.delayed(const Duration(seconds: 1));
     // 公开讨论
     await _processDiscuss(
@@ -565,9 +565,6 @@ class DefaultGameRoundController implements GameRoundController {
       final protectEvent = ProtectEvent(target: target);
       state.handleEvent(protectEvent);
       await observer?.onGameEvent(protectEvent);
-
-      // 注意：不在这里公布守护结果，具体是否成功阻止击杀将在夜晚结算中判断
-      GameEngineLogger.instance.d('守卫选择守护${target.formattedName}');
     }
 
     announceEvent = AnnounceEvent('守卫请闭眼');
