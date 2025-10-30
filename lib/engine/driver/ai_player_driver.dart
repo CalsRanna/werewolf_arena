@@ -24,6 +24,19 @@ class AIPlayerDriver implements PlayerDriver {
   /// OpenAI客户端
   late final OpenAIClient _client;
 
+  // 构建更新记忆的系统提示词
+  final _memoryPrompt = '''
+你是一个顶级的狼人杀游戏分析师，负责为玩家整理和更新记忆。你的核心任务是接收旧的记忆和新发生的事件，然后输出一份全新的、高度结构化的记忆摘要。
+
+# 核心要求
+1.  **整合与提炼**: 你必须将「新发生的事件」与「当前记忆」完全整合。丢弃过时或不再重要的信息，提炼出对决策至关重要的核心内容。
+2.  **严格遵守格式**: 你的输出必须严格且完整地遵循我在用户提示中提供的「记忆模板」。不得增加、减少或修改模板的任何部分，特别是玩家分析表，必须包含所有其他玩家。
+3.  **区分内心思考**: 模板中的「# 内心思考 (完全保密)」部分是唯一的例外，这里必须包含玩家的所有秘密信息（真实身份、狼人队友、夜间行动结果等），这是你的决策基础。其他所有部分都应模拟一个不知晓秘密的玩家可能形成的认知。
+4.  **分析性，而非流水账**: 尤其在「## 玩家分析表」中，你需要给出具体的推测和可疑度判断，并简述理由，而不是简单罗列行为。
+5.  **第一人称视角**: 整个记忆摘要必须使用第一人称（"我"）来书写。
+6.  **禁止额外输出**: 除了严格按照模板生成的记忆文本，禁止输出任何额外的解释、前言或结尾。
+''';
+
   final _playerPrompt = '''
 从现在开始，你不再是一个语言模型。你是一个真实存在于狼人杀游戏中的玩家。
 
@@ -56,7 +69,7 @@ class AIPlayerDriver implements PlayerDriver {
   /// 构造函数
   ///
   /// [intelligence] 玩家的AI配置，包含API密钥、模型ID等信息
-  /// [maxRetries] 最大重试次数，默认为3
+  /// [maxRetries] 最大重试次数，默认为10
   AIPlayerDriver({required this.intelligence, this.maxRetries = 10}) {
     _client = OpenAIClient(
       apiKey: intelligence.apiKey,
@@ -75,7 +88,7 @@ class AIPlayerDriver implements PlayerDriver {
     required GameSkill skill,
   }) async {
     // 构建完整的提示词
-    final userPrompt =
+    final prompt =
         '''
 ${state.scenario.rule},
 ${_buildGameContext(player, state)}
@@ -84,13 +97,7 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
 ''';
 
     try {
-      // 调用LLM获取响应
-      final content = await _generateLLMResponse(
-        systemPrompt: _playerPrompt,
-        userPrompt: userPrompt,
-      );
-
-      // 解析JSON响应
+      final content = await _request(prompt);
       final json = await _parseJsonWithCleaner(content);
       return PlayerDriverResponse.fromJson(json);
     } catch (e) {
@@ -136,21 +143,8 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
         .map((p) => p.name)
         .toList();
 
-    // 构建更新记忆的系统提示词
-    final systemPrompt = '''
-你是一个顶级的狼人杀游戏分析师，负责为玩家整理和更新记忆。你的核心任务是接收旧的记忆和新发生的事件，然后输出一份全新的、高度结构化的记忆摘要。
-
-# 核心要求
-1.  **整合与提炼**: 你必须将「新发生的事件」与「当前记忆」完全整合。丢弃过时或不再重要的信息，提炼出对决策至关重要的核心内容。
-2.  **严格遵守格式**: 你的输出必须严格且完整地遵循我在用户提示中提供的「记忆模板」。不得增加、减少或修改模板的任何部分，特别是玩家分析表，必须包含所有其他玩家。
-3.  **区分内心思考**: 模板中的「# 内心思考 (完全保密)」部分是唯一的例外，这里必须包含玩家的所有秘密信息（真实身份、狼人队友、夜间行动结果等），这是你的决策基础。其他所有部分都应模拟一个不知晓秘密的玩家可能形成的认知。
-4.  **分析性，而非流水账**: 尤其在「## 玩家分析表」中，你需要给出具体的推测和可疑度判断，并简述理由，而不是简单罗列行为。
-5.  **第一人称视角**: 整个记忆摘要必须使用第一人称（"我"）来书写。
-6.  **禁止额外输出**: 除了严格按照模板生成的记忆文本，禁止输出任何额外的解释、前言或结尾。
-''';
-
     // 构建更新记忆的用户提示词
-    final userPrompt =
+    final prompt =
         '''
 # 我的旧记忆
 $currentMemory
@@ -192,12 +186,7 @@ ${otherPlayers.map((p) => '| $p | | | |').join('\n')}
 ''';
 
     try {
-      // 调用LLM获取更新后的记忆
-      final updatedMemory = await _generateLLMResponse(
-        systemPrompt: systemPrompt,
-        userPrompt: userPrompt,
-      );
-
+      final updatedMemory = await _request(prompt, systemPrompt: _memoryPrompt);
       GameEngineLogger.instance.d('${player.name}的记忆已更新');
       return updatedMemory.trim();
     } catch (e) {
@@ -260,47 +249,26 @@ ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
   }
 
   /// 调用LLM API
-  Future<String> _callLLMAPI({
-    required String systemPrompt,
-    required String userPrompt,
-  }) async {
-    // 构建消息列表
+  Future<String> _call(String prompt, {String? systemPrompt}) async {
     final messages = <ChatCompletionMessage>[];
-
-    if (userPrompt.isEmpty) {
-      // 如果userPrompt为空，将systemPrompt作为用户消息
-      messages.add(
-        ChatCompletionMessage.user(
-          content: ChatCompletionUserMessageContent.string(systemPrompt),
-        ),
-      );
-    } else {
-      // 正常情况：system + user消息
-      messages.add(ChatCompletionMessage.system(content: systemPrompt));
-      messages.add(
-        ChatCompletionMessage.user(
-          content: ChatCompletionUserMessageContent.string(userPrompt),
-        ),
-      );
-    }
-
+    final systemMessage = ChatCompletionMessage.system(
+      content: systemPrompt ?? _playerPrompt,
+    );
+    final content = ChatCompletionUserMessageContent.string(prompt);
+    final userMessage = ChatCompletionMessage.user(content: content);
+    messages.add(systemMessage);
+    messages.add(userMessage);
+    final model = ChatCompletionModel.modelId(intelligence.modelId);
+    final request = CreateChatCompletionRequest(
+      model: model,
+      messages: messages,
+    );
     try {
-      final request = CreateChatCompletionRequest(
-        model: ChatCompletionModel.modelId(intelligence.modelId),
-        messages: messages,
-      );
-
       final response = await _client.createChatCompletion(request: request);
-
-      if (response.choices.isEmpty) {
-        throw Exception('LLM返回空响应');
-      }
-
+      if (response.choices.isEmpty) throw Exception('response.choices.isEmpty');
       final content = response.choices.first.message.content ?? '';
       final tokensUsed = response.usage?.totalTokens ?? 0;
-
       GameEngineLogger.instance.d('LLM响应（$tokensUsed tokens）: $content');
-
       return content;
     } on OpenAIClientException catch (e) {
       final errorInfo = 'OpenAI API错误: ${e.message}';
@@ -311,43 +279,6 @@ ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
     } catch (e) {
       throw Exception('LLM API调用异常: $e');
     }
-  }
-
-  /// 生成LLM响应（带重试机制）
-  Future<String> _generateLLMResponse({
-    required String systemPrompt,
-    required String userPrompt,
-  }) async {
-    Exception? lastException;
-
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final content = await _callLLMAPI(
-          systemPrompt: systemPrompt,
-          userPrompt: userPrompt,
-        );
-
-        return content;
-      } catch (e) {
-        lastException = e is Exception ? e : Exception(e.toString());
-
-        if (attempt == maxRetries) {
-          // 最后一次尝试失败
-          GameEngineLogger.instance.e('LLM调用失败（$attempt/$maxRetries）: $e');
-          break;
-        }
-
-        // 计算退避延迟
-        final delay = _calculateBackoffDelay(attempt);
-        GameEngineLogger.instance.w(
-          'LLM调用失败（$attempt/$maxRetries），${delay.inMilliseconds}ms后重试: $e',
-        );
-
-        await Future.delayed(delay);
-      }
-    }
-
-    throw Exception('LLM调用失败（已重试$maxRetries次）: $lastException');
   }
 
   /// 初始化玩家记忆
@@ -401,5 +332,34 @@ ${otherPlayers.map((p) => '| $p | | | |').join('\n')}
         return {};
       }
     }
+  }
+
+  /// 生成LLM响应（带重试机制）
+  Future<String> _request(String prompt, {String? systemPrompt}) async {
+    Exception? lastException;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await _call(prompt, systemPrompt: systemPrompt);
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+
+        if (attempt == maxRetries) {
+          // 最后一次尝试失败
+          GameEngineLogger.instance.e('请求失败（$attempt/$maxRetries）: $e');
+          break;
+        }
+
+        // 计算退避延迟
+        final delay = _calculateBackoffDelay(attempt);
+        GameEngineLogger.instance.w(
+          '请求失败（$attempt/$maxRetries），${delay.inSeconds}s后重试: $e',
+        );
+
+        await Future.delayed(delay);
+      }
+    }
+
+    throw Exception('请求失败（已重试$maxRetries次）: $lastException');
   }
 }
