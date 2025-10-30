@@ -207,72 +207,30 @@ ${otherPlayers.map((p) => '| $p | | | |').join('\n')}
     }
   }
 
-  /// 初始化玩家记忆
-  ///
-  /// 在游戏开始时为玩家创建初始记忆
-  String _initializeMemory(GamePlayer player, GameState state) {
-    final teammates = player.role.id == 'werewolf'
-        ? state.werewolves
-              .where((p) => p.id != player.id)
-              .map((p) => p.name)
-              .join(', ')
-        : '';
-
-    return '''
-# 角色身份
-我是${player.name}，我的底牌是${player.role.name}。
-${player.role.prompt.replaceAll("{teammates}", teammates)}
-
-# 游戏开始
-这是游戏的第一个回合，我还没有获得太多信息。
-
-# 其他玩家分析
-${state.players.where((p) => p.id != player.id).map((p) => '- ${p.name}: 未知').join('\n')}
-
-# 当前推理
-- 确定的事实：我的身份是${player.role.name}${teammates.isNotEmpty ? '，我的队友是$teammates' : ''}
-- 下一步策略：观察其他玩家的行为，收集信息
-'''
-        .trim();
-  }
-
   /// 构建游戏上下文信息
   ///
   /// 为LLM提供当前游戏状态的关键信息
   String _buildGameContext(dynamic player, GameState state) {
     final alivePlayers = state.alivePlayers.map((p) => p.name).join(', ');
     final deadPlayers = state.deadPlayers.map((p) => p.name).join(', ');
-
-    // 如果玩家有记忆，使用记忆；否则回退到事件列表
-    String contextInfo;
-    if (player.memory.isNotEmpty) {
-      contextInfo =
-          '''
-# **我的记忆**
-${player.memory}
-''';
-    } else {
-      // 回退方案：使用原始事件列表（仅在记忆为空时使用）
-      final eventNarratives = state.events
-          .where((event) => event.isVisibleTo(player))
-          .map((event) => event.toNarrative())
-          .join('\n');
-      contextInfo =
-          '''
-# **过往回合全记录**
-${eventNarratives.isNotEmpty ? eventNarratives : '无'}
-''';
-    }
+    final eventNarratives = state.events
+        .where((event) => event.isVisibleTo(player))
+        .map((event) => event.toNarrative())
+        .join('\n');
 
     return '''
 # **战场情报**
+
+## **我的记忆**
+${player.memory}
+
+## **本轮事件**
+${eventNarratives.isNotEmpty ? eventNarratives : '无'}
 
 ## **当前局势**
 - **时间**: 第${state.dayNumber}天
 - **场上存活**: ${alivePlayers.isNotEmpty ? alivePlayers : '无'}
 - **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
-
-$contextInfo
 ''';
   }
 
@@ -369,11 +327,6 @@ $contextInfo
           userPrompt: userPrompt,
         );
 
-        // 重试成功时记录日志
-        if (attempt > 1) {
-          GameEngineLogger.instance.d('LLM调用成功（第 $attempt 次尝试）');
-        }
-
         return content;
       } catch (e) {
         lastException = e is Exception ? e : Exception(e.toString());
@@ -395,6 +348,41 @@ $contextInfo
     }
 
     throw Exception('LLM调用失败（已重试$maxRetries次）: $lastException');
+  }
+
+  /// 初始化玩家记忆
+  ///
+  /// 在游戏开始时为玩家创建初始记忆
+  String _initializeMemory(GamePlayer player, GameState state) {
+    final teammates = player.role.id == 'werewolf'
+        ? state.werewolves
+              .where((p) => p.id != player.id)
+              .map((p) => p.name)
+              .join(', ')
+        : '';
+
+    final otherPlayers = state.players
+        .where((p) => p.id != player.id)
+        .map((p) => p.name)
+        .toList();
+
+    return '''
+# **记忆模板**
+
+## 1. 核心档案
+- **我的身份**: ${player.name}，场上的一名${player.role.name}。
+- **我的队友**： $teammates
+
+## 2. 玩家分析表
+| 玩家 | 推测身份/阵营 | 可疑度 (极高/高/中/低/极低/金水/查杀) | 关键行为与理由 |
+| :--- | :--- | :--- | :--- |
+${otherPlayers.map((p) => '| $p | | | |').join('\n')}
+
+## 3. 局势概览
+- **当前阶段**: 这是游戏的第一个回合。
+- **场上势力**: [例如：3狼 vs 4民 vs 2神]
+- **关键事件回顾**:
+  - 我还没有获得太多信息''';
   }
 
   /// 使用JsonCleaner解析JSON响应
