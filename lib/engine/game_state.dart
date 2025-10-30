@@ -18,7 +18,6 @@ import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
 class GameState {
   final String gameId;
   final DateTime startTime;
-  // final AppConfig config; // 移除Flutter依赖
   final GameScenario scenario;
 
   int dayNumber;
@@ -47,31 +46,35 @@ class GameState {
     Map<String, int>? skillUsageCounts,
   }) : events = eventHistory ?? [],
        startTime = DateTime.now();
-  int get aliveGoodGuys =>
-      alivePlayers.where((p) => p.role.id != 'werewolf').length;
 
-  List<GamePlayer> get alivePlayers => players.where((p) => p.isAlive).toList();
-
-  int get aliveVillagers => villagers.where((p) => p.isAlive).length;
-  int get aliveWerewolves => werewolves.where((p) => p.isAlive).length;
-
-  List<GamePlayer> get deadPlayers => players.where((p) => !p.isAlive).toList();
   Stream<GameEvent> get eventStream => _controller.stream;
-  List<GamePlayer> get gods => players
-      .where((p) => p.role.id != 'werewolf' && p.role.id != 'villager')
-      .toList();
 
   // 内部日志器单例引用
   GameEngineLogger get logger => GameEngineLogger.instance;
-  List<GamePlayer> get villagers =>
-      players.where((p) => p.role.id == 'villager').toList();
-  List<GamePlayer> get werewolves =>
-      players.where((p) => p.role.id == 'werewolf').toList();
+
+  List<GamePlayer> get alivePlayers => players.where((p) => p.isAlive).toList();
+  List<GamePlayer> get deadPlayers => players.where((p) => !p.isAlive).toList();
+
+  List<GamePlayer> get gods {
+    return players
+        .where((p) => p.role.id != 'werewolf' && p.role.id != 'villager')
+        .toList();
+  }
+
+  List<GamePlayer> get villagers {
+    return players.where((p) => p.role.id == 'villager').toList();
+  }
+
+  List<GamePlayer> get werewolves {
+    return players.where((p) => p.role.id == 'werewolf').toList();
+  }
+
+  int get aliveVillagers => villagers.where((p) => p.isAlive).length;
+  int get aliveWerewolves => werewolves.where((p) => p.isAlive).length;
+  int get aliveGods => gods.where((p) => p.isAlive).length;
 
   /// Check if game should end
   bool checkGameEnd() {
-    logger.d('游戏结束检查: 存活狼人=$aliveWerewolves, 存活好人=$aliveGoodGuys');
-
     if (alivePlayers.length < 2) {
       logger.w('游戏异常：存活玩家少于2人');
       endGame('Game Error');
@@ -79,7 +82,6 @@ class GameState {
     }
 
     final winner = scenario.checkVictoryCondition(this);
-
     if (winner != null) {
       endGame(winner);
       return true;

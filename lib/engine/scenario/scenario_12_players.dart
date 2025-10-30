@@ -52,7 +52,7 @@ class Scenario12Players extends GameScenario {
   @override
   String? checkVictoryCondition(GameState state) {
     final aliveWerewolves = state.aliveWerewolves;
-    final aliveGods = state.gods.where((p) => p.isAlive).length;
+    final aliveGods = state.aliveGods;
     final aliveVillagers = state.aliveVillagers;
 
     // 好人胜利：所有狼人死亡
@@ -62,20 +62,16 @@ class Scenario12Players extends GameScenario {
     }
 
     // 狼人胜利（屠边规则）：
-    // 条件1：屠神边 - 所有神职死亡且狼人数量 >= 平民数量
-    if (state.gods.isNotEmpty && aliveGods == 0) {
-      if (aliveWerewolves >= aliveVillagers) {
-        GameEngineLogger.instance.i('狼人阵营获胜！屠神成功（所有神职已出局，狼人占优势）');
-        return '狼人阵营';
-      }
+    // 条件1：屠神边 - 所有神职死亡
+    if (aliveGods == 0) {
+      GameEngineLogger.instance.i('狼人阵营获胜！所有神职已出局');
+      return '狼人阵营';
     }
 
-    // 条件2：屠民边 - 所有平民死亡且狼人数量 >= 神职数量
-    if (state.villagers.isNotEmpty && aliveVillagers == 0) {
-      if (aliveWerewolves >= aliveGods) {
-        GameEngineLogger.instance.i('狼人阵营获胜！屠民成功（所有平民已出局，狼人占优势）');
-        return '狼人阵营';
-      }
+    // 条件2：屠民边 - 所有平民死亡
+    if (aliveVillagers == 0) {
+      GameEngineLogger.instance.i('狼人阵营获胜！所有平民已出局');
+      return '狼人阵营';
     }
 
     // 游戏继续
