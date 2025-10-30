@@ -9,6 +9,8 @@ abstract class AIPlayerPersona {
   final String languageStyle;
   // 决定AI“怎么记”，影响其后续决策
   final String memoryDirective;
+  final String gameSlang;
+  final String situationalReactions;
 
   const AIPlayerPersona({
     required this.name,
@@ -17,5 +19,7 @@ abstract class AIPlayerPersona {
     required this.behavioralLogic,
     required this.languageStyle,
     required this.memoryDirective,
+    required this.gameSlang,
+    required this.situationalReactions,
   });
 }

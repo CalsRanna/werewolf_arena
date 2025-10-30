@@ -452,7 +452,7 @@ class DefaultGameRoundController implements GameRoundController {
         await observer?.onGameEvent(deadEvent);
       }
       var announceEvent = AnnounceEvent(
-        '昨晚${deadPlayers.map((player) => player.formattedName).join('、')}死亡',
+        '昨晚${deadPlayers.map((player) => player.name).join('、')}死亡',
       );
       GameEngineLogger.instance.d(announceEvent.toString());
       state.handleEvent(announceEvent);
@@ -600,7 +600,7 @@ class DefaultGameRoundController implements GameRoundController {
       state.handleEvent(deadEvent);
       await observer?.onGameEvent(deadEvent);
       await Future.delayed(const Duration(seconds: 1));
-      var announceEvent = AnnounceEvent('猎人对${target.formattedName}开枪');
+      var announceEvent = AnnounceEvent('猎人对${target.name}开枪');
       GameEngineLogger.instance.d(announceEvent.toString());
       state.handleEvent(announceEvent);
       await observer?.onGameEvent(announceEvent);
