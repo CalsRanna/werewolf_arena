@@ -688,7 +688,6 @@ class DefaultGameRoundController implements GameRoundController {
           state: state,
         );
         player.memory = updatedMemory;
-        GameEngineLogger.instance.d('玩家${player.name}记忆已更新');
       } catch (e) {
         GameEngineLogger.instance.e('更新${player.name}的记忆失败: $e');
         // 继续更新其他玩家的记忆

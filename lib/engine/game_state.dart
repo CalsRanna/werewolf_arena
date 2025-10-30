@@ -81,7 +81,7 @@ class GameState {
       return true;
     }
 
-    final winner = scenario.checkVictoryCondition(this);
+    final winner = scenario.getWinner(this);
     if (winner != null) {
       endGame(winner);
       return true;

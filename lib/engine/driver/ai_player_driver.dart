@@ -187,7 +187,6 @@ ${otherPlayers.map((p) => '| $p | | | |').join('\n')}
 
     try {
       final updatedMemory = await _request(prompt, systemPrompt: _memoryPrompt);
-      GameEngineLogger.instance.d('${player.name}的记忆已更新');
       return updatedMemory.trim();
     } catch (e) {
       GameEngineLogger.instance.e('更新玩家记忆失败: $e');

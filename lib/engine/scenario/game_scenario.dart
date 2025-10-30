@@ -21,5 +21,5 @@ abstract class GameScenario {
 
   /// 检查胜利条件
   /// 返回获胜方名称，null 表示游戏继续
-  String? checkVictoryCondition(GameState state);
+  String? getWinner(GameState state);
 }

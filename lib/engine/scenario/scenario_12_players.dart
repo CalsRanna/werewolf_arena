@@ -35,12 +35,12 @@ class Scenario12Players extends GameScenario {
 3. 投票阶段：投票出局玩家
 
 角色配置（4狼4民4神）：
-- 狼人×4：夜晚可以击杀一名玩家
-- 村民×4：无特殊能力
-- 预言家×1：夜晚可以查验一名玩家身份
-- 女巫×1：拥有一瓶解药和一瓶毒药
-- 守卫×1：夜晚可以守护一名玩家（不能连续守护同一人）
-- 猎人×1：被投票出局或被狼人击杀时可以开枪带走一名玩家
+- 狼人：夜晚可以击杀最多一名玩家
+- 村民：无特殊能力
+- 预言家：夜晚可以查验一名玩家身份
+- 女巫：拥有一瓶解药和一瓶毒药
+- 守卫：夜晚可以守护一名玩家（不能连续守护同一人）
+- 猎人：被投票出局或被狼人击杀时可以开枪带走一名玩家
 
 特殊规则：
 - 无警长无警徽，禁提相关术语
@@ -50,26 +50,22 @@ class Scenario12Players extends GameScenario {
 ''';
 
   @override
-  String? checkVictoryCondition(GameState state) {
-    final aliveWerewolves = state.aliveWerewolves;
-    final aliveGods = state.aliveGods;
-    final aliveVillagers = state.aliveVillagers;
-
+  String? getWinner(GameState state) {
     // 好人胜利：所有狼人死亡
-    if (aliveWerewolves == 0) {
+    if (state.aliveWerewolves == 0) {
       GameEngineLogger.instance.i('好人阵营获胜！所有狼人已出局');
       return '好人阵营';
     }
 
     // 狼人胜利（屠边规则）：
     // 条件1：屠神边 - 所有神职死亡
-    if (aliveGods == 0) {
+    if (state.aliveGods == 0) {
       GameEngineLogger.instance.i('狼人阵营获胜！所有神职已出局');
       return '狼人阵营';
     }
 
     // 条件2：屠民边 - 所有平民死亡
-    if (aliveVillagers == 0) {
+    if (state.aliveVillagers == 0) {
       GameEngineLogger.instance.i('狼人阵营获胜！所有平民已出局');
       return '狼人阵营';
     }
