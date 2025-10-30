@@ -266,19 +266,9 @@ class DefaultGameRoundController implements GameRoundController {
     // 生成发言顺序
     final speakOrder = _generateSpeakOrder(state, lastNightDeadPlayers);
 
-    // 确定发言方向描述
-    String direction;
-    if (lastNightDeadPlayers.isNotEmpty) {
-      final deadPlayer = lastNightDeadPlayers.first;
-      direction = '以${deadPlayer.formattedName}为锚点';
-    } else {
-      direction = '随机顺序';
-    }
-
     var orderEvent = OrderEvent(
-      players: speakOrder,
-      direction: direction,
       dayNumber: state.dayNumber,
+      players: speakOrder,
     );
     GameEngineLogger.instance.d(orderEvent.toString());
     state.handleEvent(orderEvent);

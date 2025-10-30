@@ -4,9 +4,8 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 /// 发言顺序公告事件 - 公开可见
 class OrderEvent extends GameEvent {
   final List<GamePlayer> players;
-  final String direction; // "顺序" 或 "逆序"
 
-  OrderEvent({required this.players, required this.direction, super.dayNumber})
+  OrderEvent({required this.players, super.dayNumber})
     : super(
         id: 'order_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
@@ -21,7 +20,7 @@ class OrderEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天，发言顺序为${players.map((p) => p.name).join(", ")}，$direction发言';
+    return '第$dayNumber天，发言顺序为${players.map((p) => p.name).join(", ")}';
   }
 
   @override
