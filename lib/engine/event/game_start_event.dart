@@ -4,7 +4,7 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class GameStartEvent extends GameEvent {
   final int playerCount;
 
-  GameStartEvent({required this.playerCount, required super.dayNumber})
+  GameStartEvent({required this.playerCount, required super.day})
     : super(
         visibility: [
           'villager',

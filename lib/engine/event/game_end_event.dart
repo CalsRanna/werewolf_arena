@@ -12,7 +12,7 @@ class GameEndEvent extends GameEvent {
     required this.totalDays,
     required this.finalPlayerCount,
     required this.gameStartTime,
-    required super.dayNumber,
+    required super.day,
   }) : super(
          visibility: [
            'villager',
@@ -26,6 +26,6 @@ class GameEndEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天，游戏结束，$winner获胜';
+    return '第$day天，游戏结束，$winner获胜';
   }
 }

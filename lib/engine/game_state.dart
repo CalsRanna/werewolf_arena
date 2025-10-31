@@ -20,7 +20,7 @@ class GameState {
   final DateTime startTime;
   final GameScenario scenario;
 
-  int dayNumber;
+  int day;
 
   List<GamePlayer> players;
   final List<GameEvent> events;
@@ -40,7 +40,7 @@ class GameState {
     // required this.config, // 移除Flutter依赖
     required this.scenario,
     required this.players,
-    this.dayNumber = 0,
+    this.day = 0,
     List<GameEvent>? eventHistory,
     Map<String, dynamic>? metadata,
     Map<String, dynamic>? skillEffects,
@@ -103,10 +103,10 @@ class GameState {
 
     final event = GameEndEvent(
       winner: winner,
-      totalDays: dayNumber,
+      totalDays: day,
       finalPlayerCount: alivePlayers.length,
       gameStartTime: startTime,
-      dayNumber: dayNumber,
+      day: day,
     );
     logger.d(event.toString());
     handleEvent(event);
@@ -140,12 +140,9 @@ class GameState {
   }
 
   void startGame() {
-    dayNumber = 1;
+    day = 1;
 
-    final event = GameStartEvent(
-      playerCount: players.length,
-      dayNumber: dayNumber,
-    );
+    final event = GameStartEvent(playerCount: players.length, day: day);
     logger.d(event.toString());
     handleEvent(event);
   }

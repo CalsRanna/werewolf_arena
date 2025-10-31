@@ -7,12 +7,12 @@ class ConspireEvent extends GameEvent {
 
   ConspireEvent({
     required this.speaker,
-    required super.dayNumber,
+    required super.day,
     required super.message,
   }) : super(visibility: ['werewolf']);
 
   @override
   String toNarrative() {
-    return '第$dayNumber天晚上，狼人讨论：$message';
+    return '第$day天晚上，狼人讨论：$message';
   }
 }

@@ -104,7 +104,7 @@ ${player.persona.coreSetting}
         '''
 ${state.scenario.rule},
 ${_buildGameContext(player, state)}
-${(state.dayNumber == 1 && skill is ConspireSkill) ? skill.firstNightPrompt : skill.prompt}
+${(state.day == 1 && skill is ConspireSkill) ? skill.firstNightPrompt : skill.prompt}
 ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPrompt}
 ''';
     final playerPrompt = _getPlayerPrompt(player);
@@ -177,7 +177,7 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
 # 我的旧记忆
 $currentMemory
 
-# 新发生的事件（第${state.dayNumber}天）
+# 新发生的事件（第${state.day}天）
 $newEventsNarrative
 
 ---
@@ -194,7 +194,7 @@ $newEventsNarrative
 ${otherPlayers.map((p) => '| $p | | | |').join('\n')}
 
 ## 3. 局势概览
-- **当前阶段**: 第${state.dayNumber}天相关事件已结束。
+- **当前阶段**: 第${state.day}天相关事件已结束。
 - **场上势力**: [例如：3狼 vs 4民 vs 2神]
 - **关键事件回顾**:
   - [按重要性列出1-3个最重要的转折点，例如：昨晚XX号玩家被刀，XX号玩家被公投出局]
@@ -221,7 +221,7 @@ ${otherPlayers.map((p) => '| $p | | | |').join('\n')}
     } catch (e) {
       GameEngineLogger.instance.e('更新玩家记忆失败: $e');
       // 如果失败，简单追加新事件到现有记忆
-      return '$currentMemory\n\n# 新事件（第${state.dayNumber}天）\n$newEventsNarrative';
+      return '$currentMemory\n\n# 新事件（第${state.day}天）\n$newEventsNarrative';
     }
   }
 
@@ -246,7 +246,7 @@ ${player.memory}
 ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
 
 ## **当前局势**
-- **时间**: 第${state.dayNumber}天
+- **时间**: 第${state.day}天
 - **场上存活**: ${alivePlayers.isNotEmpty ? alivePlayers : '无'}
 - **出局玩家**: ${deadPlayers.isNotEmpty ? deadPlayers : '无'}
 ''';

@@ -7,7 +7,7 @@ class TestamentEvent extends GameEvent {
 
   TestamentEvent({
     required this.speaker,
-    required super.dayNumber,
+    required super.day,
     required super.message,
   }) : super(
          visibility: [
@@ -22,6 +22,6 @@ class TestamentEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天，${speaker.name}发表遗言：$message';
+    return '第$day天，${speaker.name}发表遗言：$message';
   }
 }

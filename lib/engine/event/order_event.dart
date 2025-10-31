@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 class OrderEvent extends GameEvent {
   final List<GamePlayer> players;
 
-  OrderEvent({required this.players, required super.dayNumber})
+  OrderEvent({required this.players, required super.day})
     : super(
         visibility: [
           'villager',
@@ -19,6 +19,6 @@ class OrderEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天，发言顺序为${players.map((p) => p.name).join(", ")}';
+    return '第$day天，发言顺序为${players.map((p) => p.name).join(", ")}';
   }
 }

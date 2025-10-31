@@ -4,15 +4,13 @@ abstract class GameEvent {
   final String id;
   final GamePlayer? target;
   final String message;
-  final int dayNumber;
-
-  /// 事件可见性
+  final int day;
   final List<String> visibility;
 
   GameEvent({
     this.target,
     this.visibility = const [],
-    required this.dayNumber,
+    required this.day,
     this.message = '',
   }) : id = DateTime.now().millisecondsSinceEpoch.toString();
 

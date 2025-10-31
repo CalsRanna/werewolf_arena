@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class ExileEvent extends GameEvent {
   final GamePlayer victim;
 
-  ExileEvent({required this.victim, required super.dayNumber})
+  ExileEvent({required this.victim, required super.day})
     : super(
         visibility: [
           'villager',
@@ -19,6 +19,6 @@ class ExileEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天，${victim.name}被投票出局';
+    return '第$day天，${victim.name}被投票出局';
   }
 }

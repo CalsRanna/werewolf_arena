@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class DeadEvent extends GameEvent {
   final GamePlayer victim;
 
-  DeadEvent({required this.victim, required super.dayNumber})
+  DeadEvent({required this.victim, required super.day})
     : super(
         visibility: [
           'villager',
@@ -19,6 +19,6 @@ class DeadEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$dayNumber天，玩家${victim.name}死亡';
+    return '第$day天，玩家${victim.name}死亡';
   }
 }

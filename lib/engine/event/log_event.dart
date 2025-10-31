@@ -10,23 +10,23 @@ class LogEvent extends GameEvent {
 
   LogEvent(String message)
     : _level = _LogLevel.info,
-      super(dayNumber: 0, message: message);
+      super(day: 0, message: message);
 
   LogEvent.debug(String message)
     : _level = _LogLevel.debug,
-      super(dayNumber: 0, message: message);
+      super(day: 0, message: message);
 
   LogEvent.error(String message)
     : _level = _LogLevel.error,
-      super(dayNumber: 0, message: message);
+      super(day: 0, message: message);
 
   LogEvent.info(String message)
     : _level = _LogLevel.info,
-      super(dayNumber: 0, message: message);
+      super(day: 0, message: message);
 
   LogEvent.warning(String message)
     : _level = _LogLevel.warning,
-      super(dayNumber: 0, message: message);
+      super(day: 0, message: message);
 
   @override
   String toNarrative() {
