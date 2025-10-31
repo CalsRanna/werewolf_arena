@@ -30,9 +30,9 @@ class DebugEventListTile extends StatelessWidget {
 
   String _getContent() {
     return switch (event) {
-      AnnounceEvent e => '[JUDGE]：${e.announcement}',
+      AnnounceEvent e => '[JUDGE]：${e.message}',
       ConspireEvent e => e.message,
-      DiscussEvent e => '[${e.speaker.name}]： ${e.message}',
+      DiscussEvent e => '[${e.source.name}]： ${e.message}',
       _ => '[SYSTEM]：${event.toNarrative()}',
     };
   }

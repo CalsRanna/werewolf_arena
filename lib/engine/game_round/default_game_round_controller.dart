@@ -235,8 +235,8 @@ class DefaultGameRoundController implements GameRoundController {
         state,
       );
       var conspireEvent = ConspireEvent(
-        speaker: werewolf,
-        message: result.message ?? '',
+        result.message ?? '',
+        source: werewolf,
         day: state.day,
       );
       state.handleEvent(conspireEvent);
@@ -279,8 +279,8 @@ class DefaultGameRoundController implements GameRoundController {
         state,
       );
       var discussEvent = DiscussEvent(
-        speaker: player,
-        message: result.message ?? '',
+        result.message ?? '',
+        source: player,
         day: state.day,
       );
       state.handleEvent(discussEvent);
@@ -450,7 +450,7 @@ class DefaultGameRoundController implements GameRoundController {
       await observer?.onGameEvent(announceEvent);
     } else {
       for (var player in deadPlayers) {
-        final deadEvent = DeadEvent(victim: player, day: state.day);
+        final deadEvent = DeadEvent(target: player, day: state.day);
         state.handleEvent(deadEvent);
         await observer?.onGameEvent(deadEvent);
       }
@@ -606,7 +606,7 @@ class DefaultGameRoundController implements GameRoundController {
 
       // 立即执行击杀
       target.setAlive(false);
-      final deadEvent = DeadEvent(victim: target, day: state.day);
+      final deadEvent = DeadEvent(target: target, day: state.day);
       state.handleEvent(deadEvent);
       await observer?.onGameEvent(deadEvent);
       await Future.delayed(const Duration(seconds: 1));
@@ -633,8 +633,8 @@ class DefaultGameRoundController implements GameRoundController {
 
     var testamentResult = await voteTarget.cast(TestamentSkill(), state);
     var testamentEvent = TestamentEvent(
-      speaker: voteTarget,
-      message: testamentResult.message ?? '',
+      testamentResult.message ?? '',
+      source: voteTarget,
       day: state.day,
     );
     state.handleEvent(testamentEvent);
@@ -675,7 +675,7 @@ class DefaultGameRoundController implements GameRoundController {
     // 设置玩家出局并发送 ExileEvent
     if (targetPlayer != null) {
       targetPlayer.setAlive(false);
-      var exileEvent = ExileEvent(day: state.day, victim: targetPlayer);
+      var exileEvent = ExileEvent(day: state.day, target: targetPlayer);
       state.handleEvent(exileEvent);
       await observer?.onGameEvent(exileEvent);
     }

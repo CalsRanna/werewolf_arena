@@ -3,9 +3,9 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 玩家被投票出局事件 - 公开可见
 class ExileEvent extends GameEvent {
-  final GamePlayer victim;
+  final GamePlayer target;
 
-  ExileEvent({required this.victim, required super.day})
+  ExileEvent({required super.day, required this.target})
     : super(
         visibility: [
           'villager',
@@ -19,6 +19,6 @@ class ExileEvent extends GameEvent {
 
   @override
   String toNarrative() {
-    return '第$day天，${victim.name}被投票出局';
+    return '第$day天，${target.name}被投票出局';
   }
 }

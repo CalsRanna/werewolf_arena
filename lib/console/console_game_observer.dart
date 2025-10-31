@@ -38,7 +38,7 @@ class ConsoleGameObserver extends GameObserver {
       if (!showLog) return;
       ui.printLog(event.toNarrative());
     } else if (event is AnnounceEvent) {
-      ui.printEvent('[法官]：${event.announcement}');
+      ui.printEvent('[法官]：${event.message}');
     } else if (event is OrderEvent) {
       ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ProtectEvent) {
@@ -56,12 +56,12 @@ class ConsoleGameObserver extends GameObserver {
     } else if (event is ShootEvent) {
       ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ConspireEvent) {
-      var name = event.speaker.formattedName;
-      if (!showRole) name = '[${event.speaker.name}]';
+      var name = event.source.formattedName;
+      if (!showRole) name = '[${event.source.name}]';
       ui.printEvent('$name：${event.message}');
     } else if (event is DiscussEvent) {
-      var name = event.speaker.formattedName;
-      if (!showRole) name = '[${event.speaker.name}]';
+      var name = event.source.formattedName;
+      if (!showRole) name = '[${event.source.name}]';
       ui.printEvent('$name：${event.message}');
     } else if (event is VoteEvent) {
       var voterName = event.voter.formattedName;
@@ -70,8 +70,8 @@ class ConsoleGameObserver extends GameObserver {
       if (!showRole) candidateName = '[${event.candidate.name}]';
       ui.printEvent('$voterName投票给$candidateName');
     } else if (event is TestamentEvent) {
-      var name = event.speaker.formattedName;
-      if (!showRole) name = '[${event.speaker.name}]';
+      var name = event.source.formattedName;
+      if (!showRole) name = '[${event.source.name}]';
       ui.printEvent('$name：${event.message}');
     } else if (event is DeadEvent) {
       // do nothing

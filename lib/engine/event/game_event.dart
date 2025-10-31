@@ -2,21 +2,12 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 
 abstract class GameEvent {
   final String id;
-  final GamePlayer? target;
-  final String message;
   final int day;
   final List<String> visibility;
 
-  GameEvent({
-    this.target,
-    this.visibility = const [],
-    required this.day,
-    this.message = '',
-  }) : id = DateTime.now().millisecondsSinceEpoch.toString();
+  GameEvent({this.day = 0, this.visibility = const []})
+    : id = DateTime.now().millisecondsSinceEpoch.toString();
 
-  /// 检查事件对指定玩家是否可见
-  ///
-  /// 根据可见性规则判断玩家是否能看到此事件
   bool isVisibleTo(GamePlayer player) {
     return visibility.contains(player.role.id);
   }

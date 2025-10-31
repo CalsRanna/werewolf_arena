@@ -3,25 +3,23 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 发言事件 - 所有人可见
 class DiscussEvent extends GameEvent {
-  final GamePlayer speaker;
+  final String message;
+  final GamePlayer source;
 
-  DiscussEvent({
-    required this.speaker,
-    required super.day,
-    required super.message,
-  }) : super(
-         visibility: [
-           'villager',
-           'werewolf',
-           'seer',
-           'witch',
-           'hunter',
-           'guard',
-         ],
-       );
+  DiscussEvent(this.message, {required super.day, required this.source})
+    : super(
+        visibility: [
+          'villager',
+          'werewolf',
+          'seer',
+          'witch',
+          'hunter',
+          'guard',
+        ],
+      );
 
   @override
   String toNarrative() {
-    return '第$day天，${speaker.name}发表了发言：$message';
+    return '第$day天，${source.name}：$message';
   }
 }

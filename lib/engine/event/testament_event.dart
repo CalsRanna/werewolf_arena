@@ -3,25 +3,23 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 遗言事件 - 公开可见
 class TestamentEvent extends GameEvent {
-  final GamePlayer speaker;
+  final String message;
+  final GamePlayer source;
 
-  TestamentEvent({
-    required this.speaker,
-    required super.day,
-    required super.message,
-  }) : super(
-         visibility: [
-           'villager',
-           'werewolf',
-           'seer',
-           'witch',
-           'hunter',
-           'guard',
-         ],
-       );
+  TestamentEvent(this.message, {required super.day, required this.source})
+    : super(
+        visibility: [
+          'villager',
+          'werewolf',
+          'seer',
+          'witch',
+          'hunter',
+          'guard',
+        ],
+      );
 
   @override
   String toNarrative() {
-    return '第$day天，${speaker.name}发表遗言：$message';
+    return '第$day天，${source.name}发表遗言：$message';
   }
 }

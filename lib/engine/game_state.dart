@@ -142,7 +142,7 @@ class GameState {
   void startGame() {
     day = 1;
 
-    final event = GameStartEvent(playerCount: players.length, day: day);
+    final event = GameStartEvent();
     logger.d(event.toString());
     handleEvent(event);
   }

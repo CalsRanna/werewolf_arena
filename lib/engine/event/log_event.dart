@@ -5,28 +5,18 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 /// 这是游戏引擎向外部暴露内部运行状态的机制
 /// 外部观察者可以选择如何处理这些日志（输出到文件、控制台、UI等）
 class LogEvent extends GameEvent {
-  /// 日志级别
+  final String message;
   final _LogLevel _level;
 
-  LogEvent(String message)
-    : _level = _LogLevel.info,
-      super(day: 0, message: message);
+  LogEvent(this.message) : _level = _LogLevel.info;
 
-  LogEvent.debug(String message)
-    : _level = _LogLevel.debug,
-      super(day: 0, message: message);
+  LogEvent.debug(this.message) : _level = _LogLevel.debug;
 
-  LogEvent.error(String message)
-    : _level = _LogLevel.error,
-      super(day: 0, message: message);
+  LogEvent.error(this.message) : _level = _LogLevel.error;
 
-  LogEvent.info(String message)
-    : _level = _LogLevel.info,
-      super(day: 0, message: message);
+  LogEvent.info(this.message) : _level = _LogLevel.info;
 
-  LogEvent.warning(String message)
-    : _level = _LogLevel.warning,
-      super(day: 0, message: message);
+  LogEvent.warning(this.message) : _level = _LogLevel.warning;
 
   @override
   String toNarrative() {
@@ -35,5 +25,4 @@ class LogEvent extends GameEvent {
   }
 }
 
-/// 游戏引擎日志级别
 enum _LogLevel { debug, info, warning, error }
