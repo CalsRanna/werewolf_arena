@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/page/player_intelligence/player_intelligence_view_model.dart';
 
 @RoutePage()
@@ -134,7 +135,13 @@ class _PlayerIntelligencePageState extends State<PlayerIntelligencePage> {
           ),
         ),
         ...viewModel.llmModels.value.map(
-          (model) => ListTile(title: Text(model), onTap: () {}),
+          (model) => ListTile(
+            title: Text(model),
+            onTap: () => viewModel.navigatePlayerIntelligenceDetailPage(
+              context,
+              PlayerIntelligence(baseUrl: '', apiKey: '', modelId: model),
+            ),
+          ),
         ),
       ],
     );

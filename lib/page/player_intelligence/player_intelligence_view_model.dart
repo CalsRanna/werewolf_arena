@@ -2,15 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:signals/signals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:werewolf_arena/engine/game_config.dart';
 import 'dart:convert';
+
+import 'package:werewolf_arena/router/router.gr.dart';
 
 class PlayerIntelligenceViewModel {
   // Signals 状态管理 - LLM 配置
-  final Signal<List<String>> llmModels = signal(['minimax/minimax-m2:free']);
-  final Signal<String> defaultApiKey = signal('');
-  final Signal<String> defaultBaseUrl = signal('https://openrouter.ai/api/v1');
-  final Signal<bool> isLoading = signal(false);
-  final Signal<bool> showApiKey = signal(false);
+  final llmModels = signal(['minimax/minimax-m2:free']);
+  final defaultApiKey = signal('');
+  final defaultBaseUrl = signal('https://openrouter.ai/api/v1');
+  final isLoading = signal(false);
+  final showApiKey = signal(false);
+  final defaultPlayerIntelligence = signal(
+    PlayerIntelligence(
+      baseUrl: 'https://openrouter.ai/api/v1',
+      apiKey: '',
+      modelId: 'minimax/minimax-m2:free',
+    ),
+  );
 
   // SharedPreferences 键名
   static const String _keyLLMModels = 'llm_models';
@@ -19,10 +29,17 @@ class PlayerIntelligenceViewModel {
 
   SharedPreferences? _preferences;
 
+  void navigatePlayerIntelligenceDetailPage(
+    BuildContext context,
+    PlayerIntelligence intelligence,
+  ) {
+    PlayerIntelligenceDetailRoute(intelligence: intelligence).push(context);
+  }
+
   /// 初始化设置
   Future<void> initSignals() async {
     isLoading.value = true;
-    await _loadConfig();
+    // TODO: load from database
     isLoading.value = false;
   }
 
@@ -82,30 +99,6 @@ class PlayerIntelligenceViewModel {
     defaultApiKey.value = '';
     defaultBaseUrl.value = 'https://openrouter.ai/api/v1';
     await _saveConfig();
-  }
-
-  /// 加载配置
-  Future<void> _loadConfig() async {
-    try {
-      _preferences = await SharedPreferences.getInstance();
-
-      // 从 SharedPreferences 加载配置
-      final modelsJson = _preferences?.getString(_keyLLMModels);
-      if (modelsJson != null && modelsJson.isNotEmpty) {
-        final List<dynamic> jsonList = jsonDecode(modelsJson);
-        llmModels.value = jsonList.map((e) => e.toString()).toList();
-      } else {
-        // 使用默认模型
-        llmModels.value = ['minimax/minimax-m2:free'];
-      }
-
-      defaultApiKey.value = _preferences?.getString(_keyLLMApiKey) ?? '';
-      defaultBaseUrl.value =
-          _preferences?.getString(_keyLLMBaseUrl) ??
-          'https://openrouter.ai/api/v1';
-    } catch (e) {
-      // 使用默认值
-    }
   }
 
   /// 保存配置
