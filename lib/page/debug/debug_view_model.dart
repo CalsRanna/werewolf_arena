@@ -37,10 +37,10 @@ class DebugViewModel {
   }
 
   Future<void> initSignals() async {
-    final intelligence = await _getPlayerIntelligence();
+    final intelligences = await _getPlayerIntelligences();
     final config = GameConfig(
-      playerIntelligences: [intelligence],
       maxRetries: 10,
+      playerIntelligences: intelligences,
     );
     final scenario = Scenario12Players();
     final roles = scenario.roles;
@@ -61,7 +61,7 @@ class DebugViewModel {
     for (int i = 0; i < roles.length; i++) {
       final playerIndex = i + 1; // 玩家编号从1开始
       var driver = AIPlayerDriver(
-        intelligence: intelligence,
+        intelligence: intelligences[i % intelligences.length],
         maxRetries: config.maxRetries,
       );
       final player = AIPlayer(
@@ -103,21 +103,25 @@ class DebugViewModel {
     logs.value = [];
   }
 
-  Future<PlayerIntelligence> _getPlayerIntelligence() async {
+  Future<List<PlayerIntelligence>> _getPlayerIntelligences() async {
     final viewModel = GetIt.instance.get<PlayerIntelligenceViewModel>();
     await viewModel.initSignals();
 
-    // 使用第一个可用模型，如果没有则使用默认值
-    final modelId = viewModel.llmModels.value.isNotEmpty
-        ? viewModel.llmModels.value.first
-        : 'minimax/minimax-m2:free';
-
-    var intelligence = PlayerIntelligence(
-      baseUrl: viewModel.defaultBaseUrl.value,
-      apiKey: viewModel.defaultApiKey.value,
-      modelId: modelId,
-    );
-    return intelligence;
+    final intelligences = [
+      viewModel.defaultPlayerIntelligence.value,
+      ...viewModel.playerIntelligences.value,
+    ];
+    return intelligences.map((intelligence) {
+      return PlayerIntelligence(
+        baseUrl: intelligence.baseUrl.isEmpty
+            ? viewModel.defaultBaseUrl.value
+            : intelligence.baseUrl,
+        apiKey: intelligence.apiKey.isEmpty
+            ? viewModel.defaultApiKey.value
+            : intelligence.apiKey,
+        modelId: intelligence.modelId,
+      );
+    }).toList();
   }
 
   Future<void> _handleGameEvent(GameEvent event) async {

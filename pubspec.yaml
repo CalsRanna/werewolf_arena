@@ -2,6 +2,7 @@ name: werewolf_arena
 description: 狼人杀竞技场 - AI对战游戏
 version: 2.0.0
 repository: https://github.com/cals/werewolf_arena
+publish_to: none
 
 environment:
   sdk: ^3.9.0
@@ -35,6 +36,9 @@ dependencies:
   window_manager: ^0.3.2
   tray_manager: ^0.2.0
   path_provider: ^2.1.5
+  laconic:
+    git: git@github.com:CalsRanna/laconic.git
+  sqlite3_flutter_libs: ^0.5.40
 
 dev_dependencies:
   flutter_test:

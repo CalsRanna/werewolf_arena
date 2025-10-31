@@ -1,12 +1,12 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:werewolf_arena/engine/game_config.dart';
+import 'package:werewolf_arena/entity/player_intelligence_entity.dart';
 import 'package:werewolf_arena/page/player_intelligence_detail/player_intelligence_detail_view_model.dart';
 
 @RoutePage()
 class PlayerIntelligenceDetailPage extends StatefulWidget {
-  final PlayerIntelligence intelligence;
+  final PlayerIntelligenceEntity intelligence;
   const PlayerIntelligenceDetailPage({super.key, required this.intelligence});
 
   @override
@@ -51,9 +51,12 @@ class _PlayerIntelligenceDetailPageState
             mainAxisAlignment: MainAxisAlignment.end,
             spacing: 16,
             children: [
-              TextButton(onPressed: () {}, child: const Text('Cancel')),
               TextButton(
-                onPressed: () => viewModel.storePlayerIntelligence(context),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => viewModel.save(context),
                 child: const Text('Save'),
               ),
             ],

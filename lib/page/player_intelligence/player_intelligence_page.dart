@@ -2,7 +2,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
-import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/page/player_intelligence/player_intelligence_view_model.dart';
 
 @RoutePage()
@@ -97,22 +96,31 @@ class _PlayerIntelligencePageState extends State<PlayerIntelligencePage> {
         ),
         ListTile(
           title: const Text('Base Url'),
-          subtitle: Text(viewModel.defaultBaseUrl.value),
-          onTap: () {},
+          subtitle: Text(viewModel.defaultPlayerIntelligence.value.baseUrl),
+          onTap: () => viewModel.navigatePlayerIntelligenceDetailPage(
+            context,
+            viewModel.defaultPlayerIntelligence.value,
+          ),
         ),
         ListTile(
           title: const Text('API Key'),
           subtitle: Text(
-            viewModel.defaultApiKey.value,
+            viewModel.defaultPlayerIntelligence.value.apiKey,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          onTap: () {},
+          onTap: () => viewModel.navigatePlayerIntelligenceDetailPage(
+            context,
+            viewModel.defaultPlayerIntelligence.value,
+          ),
         ),
         ListTile(
           title: const Text('Model Id'),
-          subtitle: Text(viewModel.llmModels.value.first),
-          onTap: () {},
+          subtitle: Text(viewModel.defaultPlayerIntelligence.value.modelId),
+          onTap: () => viewModel.navigatePlayerIntelligenceDetailPage(
+            context,
+            viewModel.defaultPlayerIntelligence.value,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -127,20 +135,22 @@ class _PlayerIntelligencePageState extends State<PlayerIntelligencePage> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () {},
+                onPressed: () => viewModel.createPlayerIntelligence(context),
                 icon: const Icon(Icons.add),
                 label: const Text('Add Player Intelligence'),
               ),
             ],
           ),
         ),
-        ...viewModel.llmModels.value.map(
-          (model) => ListTile(
-            title: Text(model),
+        ...viewModel.playerIntelligences.value.map(
+          (intelligence) => ListTile(
+            title: Text(intelligence.modelId),
             onTap: () => viewModel.navigatePlayerIntelligenceDetailPage(
               context,
-              PlayerIntelligence(baseUrl: '', apiKey: '', modelId: model),
+              intelligence,
             ),
+            onLongPress: () =>
+                viewModel.destroyPlayerIntelligence(intelligence.id),
           ),
         ),
       ],

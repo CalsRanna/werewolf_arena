@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:werewolf_arena/database/database.dart';
 import 'package:werewolf_arena/di.dart';
 import 'package:werewolf_arena/router/router.dart';
 import 'package:werewolf_arena/util/logger_util.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 初始化依赖注入
   DI.ensureInitialized();
+  await Database.instance.ensureInitialized();
   LoggerUtil.instance.i('应用启动');
   runApp(WerewolfArenaApp());
 }

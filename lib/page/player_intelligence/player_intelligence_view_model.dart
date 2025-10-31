@@ -1,45 +1,69 @@
-import 'package:flutter/material.dart';
-import 'package:auto_route/auto_route.dart';
-import 'package:signals/signals.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:werewolf_arena/engine/game_config.dart';
 import 'dart:convert';
 
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:signals/signals.dart';
+import 'package:werewolf_arena/database/player_intelligence_repository.dart';
+import 'package:werewolf_arena/entity/player_intelligence_entity.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
+import 'package:werewolf_arena/util/dialog_util.dart';
 
 class PlayerIntelligenceViewModel {
+  // SharedPreferences 键名
+  static const String _keyLLMModels = 'llm_models';
+  static const String _keyLLMApiKey = 'llm_api_key';
+  static const String _keyLLMBaseUrl = 'llm_base_url';
   // Signals 状态管理 - LLM 配置
   final llmModels = signal(['minimax/minimax-m2:free']);
   final defaultApiKey = signal('');
   final defaultBaseUrl = signal('https://openrouter.ai/api/v1');
   final isLoading = signal(false);
+
   final showApiKey = signal(false);
   final defaultPlayerIntelligence = signal(
-    PlayerIntelligence(
-      baseUrl: 'https://openrouter.ai/api/v1',
-      apiKey: '',
-      modelId: 'minimax/minimax-m2:free',
-    ),
+    PlayerIntelligenceEntity()
+      ..baseUrl = 'https://openrouter.ai/api/v1'
+      ..apiKey = ''
+      ..modelId = 'minimax/minimax-m2:free',
   );
-
-  // SharedPreferences 键名
-  static const String _keyLLMModels = 'llm_models';
-  static const String _keyLLMApiKey = 'llm_api_key';
-  static const String _keyLLMBaseUrl = 'llm_base_url';
+  final playerIntelligences = signal(<PlayerIntelligenceEntity>[]);
 
   SharedPreferences? _preferences;
 
-  void navigatePlayerIntelligenceDetailPage(
-    BuildContext context,
-    PlayerIntelligence intelligence,
-  ) {
+  /// 添加模型
+  Future<void> addModel(String modelId) async {
+    final models = List<String>.from(llmModels.value);
+    models.add(modelId);
+    llmModels.value = models;
+    await _saveConfig();
+  }
+
+  void createPlayerIntelligence(BuildContext context) {
+    var intelligence = PlayerIntelligenceEntity();
     PlayerIntelligenceDetailRoute(intelligence: intelligence).push(context);
+  }
+
+  /// 清理资源
+  void dispose() {
+    llmModels.dispose();
+    defaultApiKey.dispose();
+    defaultBaseUrl.dispose();
+    isLoading.dispose();
+    showApiKey.dispose();
   }
 
   /// 初始化设置
   Future<void> initSignals() async {
     isLoading.value = true;
-    // TODO: load from database
+    final repository = PlayerIntelligenceRepository();
+    playerIntelligences.value = await repository.getPlayerIntelligences();
+    if (playerIntelligences.value.isEmpty) {
+      await repository.storePlayerIntelligence(defaultPlayerIntelligence.value);
+      playerIntelligences.value = await repository.getPlayerIntelligences();
+    }
+    defaultPlayerIntelligence.value = playerIntelligences.value.first;
+    playerIntelligences.value = playerIntelligences.value.sublist(1);
     isLoading.value = false;
   }
 
@@ -48,12 +72,28 @@ class PlayerIntelligenceViewModel {
     context.router.pop();
   }
 
-  /// 添加模型
-  Future<void> addModel(String modelId) async {
-    final models = List<String>.from(llmModels.value);
-    models.add(modelId);
-    llmModels.value = models;
-    await _saveConfig();
+  void navigatePlayerIntelligenceDetailPage(
+    BuildContext context,
+    PlayerIntelligenceEntity intelligence,
+  ) {
+    PlayerIntelligenceDetailRoute(intelligence: intelligence).push(context);
+  }
+
+  Future<void> refreshPlayerIntelligences() async {
+    final repository = PlayerIntelligenceRepository();
+    playerIntelligences.value = await repository.getPlayerIntelligences();
+    defaultPlayerIntelligence.value = playerIntelligences.value.first;
+    playerIntelligences.value = playerIntelligences.value.sublist(1);
+  }
+
+  Future<void> destroyPlayerIntelligence(int id) async {
+    final result = await DialogUtil.instance.confirm(
+      'Do you want to delete this player intelligence?',
+    );
+    if (!result) return;
+    final repository = PlayerIntelligenceRepository();
+    await repository.destroyPlayerIntelligence(id);
+    await refreshPlayerIntelligences();
   }
 
   /// 删除模型
@@ -66,14 +106,12 @@ class PlayerIntelligenceViewModel {
     }
   }
 
-  /// 更新模型
-  Future<void> updateModel(int index, String modelId) async {
-    final models = List<String>.from(llmModels.value);
-    if (index >= 0 && index < models.length) {
-      models[index] = modelId;
-      llmModels.value = models;
-      await _saveConfig();
-    }
+  /// 重置为默认配置
+  Future<void> resetToDefaults() async {
+    llmModels.value = ['minimax/minimax-m2:free'];
+    defaultApiKey.value = '';
+    defaultBaseUrl.value = 'https://openrouter.ai/api/v1';
+    await _saveConfig();
   }
 
   /// 设置 API Key
@@ -93,12 +131,14 @@ class PlayerIntelligenceViewModel {
     showApiKey.value = !showApiKey.value;
   }
 
-  /// 重置为默认配置
-  Future<void> resetToDefaults() async {
-    llmModels.value = ['minimax/minimax-m2:free'];
-    defaultApiKey.value = '';
-    defaultBaseUrl.value = 'https://openrouter.ai/api/v1';
-    await _saveConfig();
+  /// 更新模型
+  Future<void> updateModel(int index, String modelId) async {
+    final models = List<String>.from(llmModels.value);
+    if (index >= 0 && index < models.length) {
+      models[index] = modelId;
+      llmModels.value = models;
+      await _saveConfig();
+    }
   }
 
   /// 保存配置
@@ -113,14 +153,5 @@ class PlayerIntelligenceViewModel {
     } catch (e) {
       // 保存失败
     }
-  }
-
-  /// 清理资源
-  void dispose() {
-    llmModels.dispose();
-    defaultApiKey.dispose();
-    defaultBaseUrl.dispose();
-    isLoading.dispose();
-    showApiKey.dispose();
   }
 }

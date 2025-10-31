@@ -32,7 +32,8 @@
       "Bash(grep:*)",
       "Bash(cp:*)",
       "Bash(cat:*)",
-      "WebFetch(domain:pub.dev)"
+      "WebFetch(domain:pub.dev)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

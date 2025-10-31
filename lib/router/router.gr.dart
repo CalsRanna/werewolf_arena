@@ -11,7 +11,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i8;
 import 'package:flutter/material.dart' as _i9;
-import 'package:werewolf_arena/engine/game_config.dart' as _i10;
+import 'package:werewolf_arena/entity/player_intelligence_entity.dart' as _i10;
 import 'package:werewolf_arena/page/bootstrap/bootstrap_page.dart' as _i1;
 import 'package:werewolf_arena/page/debug/debug_page.dart' as _i2;
 import 'package:werewolf_arena/page/game/game_page.dart' as _i3;
@@ -128,7 +128,7 @@ class PlayerIntelligenceDetailRoute
     extends _i8.PageRouteInfo<PlayerIntelligenceDetailRouteArgs> {
   PlayerIntelligenceDetailRoute({
     _i9.Key? key,
-    required _i10.PlayerIntelligence intelligence,
+    required _i10.PlayerIntelligenceEntity intelligence,
     List<_i8.PageRouteInfo>? children,
   }) : super(
          PlayerIntelligenceDetailRoute.name,
@@ -161,7 +161,7 @@ class PlayerIntelligenceDetailRouteArgs {
 
   final _i9.Key? key;
 
-  final _i10.PlayerIntelligence intelligence;
+  final _i10.PlayerIntelligenceEntity intelligence;
 
   @override
   String toString() {
