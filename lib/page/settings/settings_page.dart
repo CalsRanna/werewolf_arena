@@ -42,16 +42,24 @@ class _SettingsPageState extends State<SettingsPage> {
         }
 
         return _buildSettingsContent(
-          soundOn, animationsOn, theme, speed,
-          logLevel, llmApiKey,
+          soundOn,
+          animationsOn,
+          theme,
+          speed,
+          logLevel,
+          llmApiKey,
         );
       }),
     );
   }
 
   Widget _buildSettingsContent(
-    bool soundOn, bool animationsOn, String theme, double speed,
-    String logLevel, String llmApiKey,
+    bool soundOn,
+    bool animationsOn,
+    String theme,
+    double speed,
+    String logLevel,
+    String llmApiKey,
   ) {
     return ListView(
       padding: EdgeInsets.all(16),
@@ -81,16 +89,12 @@ class _SettingsPageState extends State<SettingsPage> {
         SizedBox(height: 24),
 
         // 外观设置
-        _buildSection('外观设置', [
-          _buildThemeTile(theme),
-        ]),
+        _buildSection('外观设置', [_buildThemeTile(theme)]),
 
         SizedBox(height: 24),
 
         // 高级设置
-        _buildSection('高级设置', [
-          _buildLogLevelTile(logLevel),
-        ]),
+        _buildSection('高级设置', [_buildLogLevelTile(logLevel)]),
 
         SizedBox(height: 24),
 
@@ -98,10 +102,10 @@ class _SettingsPageState extends State<SettingsPage> {
         _buildSection('AI配置', [
           ListTile(
             leading: Icon(Icons.psychology),
-            title: Text('LLM 模型配置'),
-            subtitle: Text('配置 AI 玩家使用的语言模型'),
+            title: Text('Player Intelligence'),
+            subtitle: Text('Configure AI player models'),
             trailing: Icon(Icons.chevron_right),
-            onTap: () => viewModel.navigateToLLMConfig(context),
+            onTap: () => viewModel.navigatePlayerIntelligencePage(context),
           ),
         ]),
 
@@ -148,21 +152,22 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: EdgeInsets.only(bottom: 16),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        Card(
-          child: Column(
-            children: children,
-          ),
-        ),
+        Card(child: Column(children: children)),
       ],
     );
   }
 
-  Widget _buildSwitchTile(String title, String subtitle, bool value, Function(bool) onChanged) {
+  Widget _buildSwitchTile(
+    String title,
+    String subtitle,
+    bool value,
+    Function(bool) onChanged,
+  ) {
     return SwitchListTile(
       title: Text(title),
       subtitle: Text(subtitle),
@@ -171,7 +176,12 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildSliderTile(String title, String subtitle, double value, Function(double) onChanged) {
+  Widget _buildSliderTile(
+    String title,
+    String subtitle,
+    double value,
+    Function(double) onChanged,
+  ) {
     return Column(
       children: [
         ListTile(
@@ -179,10 +189,7 @@ class _SettingsPageState extends State<SettingsPage> {
           subtitle: Text(subtitle),
           trailing: SizedBox(
             width: 100,
-            child: Text(
-              value.toStringAsFixed(1),
-              textAlign: TextAlign.right,
-            ),
+            child: Text(value.toStringAsFixed(1), textAlign: TextAlign.right),
           ),
         ),
         Padding(
@@ -256,9 +263,9 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () {
               Navigator.of(context).pop();
               viewModel.resetSettings();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('设置已重置')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('设置已重置')));
             },
             child: Text('确定'),
           ),

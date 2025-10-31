@@ -23,7 +23,7 @@ import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
 import 'package:werewolf_arena/engine/player/schemer_persona.dart';
 import 'package:werewolf_arena/engine/player/thespian_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
-import 'package:werewolf_arena/page/llm_setting/llm_setting_view_model.dart';
+import 'package:werewolf_arena/page/player_intelligence/player_intelligence_view_model.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 import 'package:werewolf_arena/util/logger_util.dart';
 
@@ -104,12 +104,18 @@ class DebugViewModel {
   }
 
   Future<PlayerIntelligence> _getPlayerIntelligence() async {
-    final viewModel = GetIt.instance.get<LLMSettingViewModel>();
+    final viewModel = GetIt.instance.get<PlayerIntelligenceViewModel>();
     await viewModel.initSignals();
+
+    // 使用第一个可用模型，如果没有则使用默认值
+    final modelId = viewModel.llmModels.value.isNotEmpty
+        ? viewModel.llmModels.value.first
+        : 'minimax/minimax-m2:free';
+
     var intelligence = PlayerIntelligence(
-      baseUrl: viewModel.llmBaseUrl.value,
-      apiKey: viewModel.llmApiKey.value,
-      modelId: viewModel.llmModel.value,
+      baseUrl: viewModel.defaultBaseUrl.value,
+      apiKey: viewModel.defaultApiKey.value,
+      modelId: modelId,
     );
     return intelligence;
   }

@@ -1,12 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:signals/signals.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:signals/signals.dart';
 import 'package:werewolf_arena/router/router.gr.dart';
 
 class SettingsViewModel {
+  // SharedPreferences 键名 - UI设置
+  static const String _keySoundEnabled = 'sound_enabled';
+  static const String _keyAnimationsEnabled = 'animations_enabled';
+  static const String _keySelectedTheme = 'selected_theme';
+  static const String _keyTextSpeed = 'text_speed';
   // Signals 状态管理 - UI设置
   final Signal<bool> soundEnabled = signal(true);
+
   final Signal<bool> animationsEnabled = signal(true);
   final Signal<String> selectedTheme = signal('dark');
   final Signal<double> textSpeed = signal(1.0);
@@ -18,13 +24,20 @@ class SettingsViewModel {
   final Signal<String> llmApiKey = signal('');
   final Signal<String> llmBaseUrl = signal('');
 
-  // SharedPreferences 键名 - UI设置
-  static const String _keySoundEnabled = 'sound_enabled';
-  static const String _keyAnimationsEnabled = 'animations_enabled';
-  static const String _keySelectedTheme = 'selected_theme';
-  static const String _keyTextSpeed = 'text_speed';
-
   SharedPreferences? _preferences;
+
+  /// 清理资源
+  void dispose() {
+    soundEnabled.dispose();
+    animationsEnabled.dispose();
+    selectedTheme.dispose();
+    textSpeed.dispose();
+    isLoading.dispose();
+    logLevel.dispose();
+    defaultLLMModel.dispose();
+    llmApiKey.dispose();
+    llmBaseUrl.dispose();
+  }
 
   /// 初始化设置
   Future<void> initSignals() async {
@@ -40,31 +53,51 @@ class SettingsViewModel {
   }
 
   /// 导航到 LLM 配置页面
-  void navigateToLLMConfig(BuildContext context) {
-    context.router.push(const LLMConfigRoute());
+  void navigatePlayerIntelligencePage(BuildContext context) {
+    PlayerIntelligenceRoute().push(context);
   }
 
-  /// 切换音效
-  Future<void> toggleSound(bool value) async {
-    soundEnabled.value = value;
+  /// 重置设置
+  Future<void> resetSettings() async {
+    // UI设置
+    soundEnabled.value = true;
+    animationsEnabled.value = true;
+    selectedTheme.value = 'dark';
+    textSpeed.value = 1.0;
+
+    // LLM 配置
+    logLevel.value = 'info';
+
     await _saveSettings();
   }
 
-  /// 切换动画
-  Future<void> toggleAnimations(bool value) async {
-    animationsEnabled.value = value;
+  /// 设置LLM API Key
+  Future<void> setLLMApiKey(String key) async {
+    llmApiKey.value = key;
+    await _saveGameConfig();
+  }
+
+  /// 设置LLM Base URL
+  Future<void> setLLMBaseUrl(String url) async {
+    llmBaseUrl.value = url;
+    await _saveGameConfig();
+  }
+
+  /// 设置日志级别
+  Future<void> setLogLevel(String level) async {
+    logLevel.value = level;
+    await _saveGameConfig();
+  }
+
+  /// 设置文字速度
+  Future<void> setTextSpeed(double speed) async {
+    textSpeed.value = speed;
     await _saveSettings();
   }
 
   /// 设置主题
   Future<void> setTheme(String theme) async {
     selectedTheme.value = theme;
-    await _saveSettings();
-  }
-
-  /// 设置文字速度
-  Future<void> setTextSpeed(double speed) async {
-    textSpeed.value = speed;
     await _saveSettings();
   }
 
@@ -96,19 +129,20 @@ class SettingsViewModel {
     );
   }
 
-  /// 重置设置
-  Future<void> resetSettings() async {
-    // UI设置
-    soundEnabled.value = true;
-    animationsEnabled.value = true;
-    selectedTheme.value = 'dark';
-    textSpeed.value = 1.0;
-
-    // LLM 配置
-    logLevel.value = 'info';
-
+  /// 切换动画
+  Future<void> toggleAnimations(bool value) async {
+    animationsEnabled.value = value;
     await _saveSettings();
   }
+
+  /// 切换音效
+  Future<void> toggleSound(bool value) async {
+    soundEnabled.value = value;
+    await _saveSettings();
+  }
+
+  /// 加载游戏配置
+  Future<void> _loadGameConfig() async {}
 
   /// 加载设置
   Future<void> _loadSettings() async {
@@ -127,6 +161,9 @@ class SettingsViewModel {
     }
   }
 
+  /// 保存游戏配置
+  Future<void> _saveGameConfig() async {}
+
   /// 保存设置
   Future<void> _saveSettings() async {
     try {
@@ -142,42 +179,5 @@ class SettingsViewModel {
     } catch (e) {
       // 使用默认值
     }
-  }
-
-  /// 加载游戏配置
-  Future<void> _loadGameConfig() async {}
-
-  /// 保存游戏配置
-  Future<void> _saveGameConfig() async {}
-
-  /// 设置日志级别
-  Future<void> setLogLevel(String level) async {
-    logLevel.value = level;
-    await _saveGameConfig();
-  }
-
-  /// 设置LLM API Key
-  Future<void> setLLMApiKey(String key) async {
-    llmApiKey.value = key;
-    await _saveGameConfig();
-  }
-
-  /// 设置LLM Base URL
-  Future<void> setLLMBaseUrl(String url) async {
-    llmBaseUrl.value = url;
-    await _saveGameConfig();
-  }
-
-  /// 清理资源
-  void dispose() {
-    soundEnabled.dispose();
-    animationsEnabled.dispose();
-    selectedTheme.dispose();
-    textSpeed.dispose();
-    isLoading.dispose();
-    logLevel.dispose();
-    defaultLLMModel.dispose();
-    llmApiKey.dispose();
-    llmBaseUrl.dispose();
   }
 }

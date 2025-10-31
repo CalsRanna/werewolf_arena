@@ -15,7 +15,8 @@ import 'package:werewolf_arena/page/bootstrap/bootstrap_page.dart' as _i1;
 import 'package:werewolf_arena/page/debug/debug_page.dart' as _i2;
 import 'package:werewolf_arena/page/game/game_page.dart' as _i3;
 import 'package:werewolf_arena/page/home/home_page.dart' as _i4;
-import 'package:werewolf_arena/page/llm_setting/llm_setting_page.dart' as _i5;
+import 'package:werewolf_arena/page/player_intelligence/player_intelligence_page.dart'
+    as _i5;
 import 'package:werewolf_arena/page/settings/settings_page.dart' as _i6;
 
 /// generated route for
@@ -119,17 +120,17 @@ class HomeRoute extends _i7.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i5.LLMSettingPage]
-class LLMConfigRoute extends _i7.PageRouteInfo<void> {
-  const LLMConfigRoute({List<_i7.PageRouteInfo>? children})
-    : super(LLMConfigRoute.name, initialChildren: children);
+/// [_i5.PlayerIntelligencePage]
+class PlayerIntelligenceRoute extends _i7.PageRouteInfo<void> {
+  const PlayerIntelligenceRoute({List<_i7.PageRouteInfo>? children})
+    : super(PlayerIntelligenceRoute.name, initialChildren: children);
 
-  static const String name = 'LLMConfigRoute';
+  static const String name = 'PlayerIntelligenceRoute';
 
   static _i7.PageInfo page = _i7.PageInfo(
     name,
     builder: (data) {
-      return const _i5.LLMSettingPage();
+      return const _i5.PlayerIntelligencePage();
     },
   );
 }

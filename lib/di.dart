@@ -4,7 +4,7 @@ import 'package:werewolf_arena/page/debug/debug_view_model.dart';
 import 'package:werewolf_arena/page/home/home_view_model.dart';
 import 'package:werewolf_arena/page/game/game_view_model.dart';
 import 'package:werewolf_arena/page/settings/settings_view_model.dart';
-import 'package:werewolf_arena/page/llm_setting/llm_setting_view_model.dart';
+import 'package:werewolf_arena/page/player_intelligence/player_intelligence_view_model.dart';
 
 /// 依赖注入配置
 ///
@@ -27,8 +27,8 @@ class DI {
     GetIt.instance.registerFactory<SettingsViewModel>(
       () => SettingsViewModel(),
     );
-    GetIt.instance.registerLazySingleton<LLMSettingViewModel>(
-      () => LLMSettingViewModel(),
+    GetIt.instance.registerLazySingleton<PlayerIntelligenceViewModel>(
+      () => PlayerIntelligenceViewModel(),
     );
     GetIt.instance.registerFactory<DebugViewModel>(() => DebugViewModel());
   }
