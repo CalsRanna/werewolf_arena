@@ -4,16 +4,10 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class AnnounceEvent extends GameEvent {
   final String announcement;
 
-  AnnounceEvent(this.announcement)
-    : super(id: 'announcement_${DateTime.now().millisecondsSinceEpoch}');
+  AnnounceEvent(this.announcement, {required super.dayNumber});
 
   @override
   String toNarrative() {
     return '第$dayNumber天，法官宣布了$announcement';
-  }
-
-  @override
-  String toString() {
-    return 'AnnounceEvent($id)';
   }
 }

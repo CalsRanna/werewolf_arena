@@ -106,6 +106,7 @@ class GameState {
       totalDays: dayNumber,
       finalPlayerCount: alivePlayers.length,
       gameStartTime: startTime,
+      dayNumber: dayNumber,
     );
     logger.d(event.toString());
     handleEvent(event);
@@ -141,7 +142,10 @@ class GameState {
   void startGame() {
     dayNumber = 1;
 
-    final event = GameStartEvent(playerCount: players.length);
+    final event = GameStartEvent(
+      playerCount: players.length,
+      dayNumber: dayNumber,
+    );
     logger.d(event.toString());
     handleEvent(event);
   }

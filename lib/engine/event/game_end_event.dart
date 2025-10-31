@@ -12,8 +12,8 @@ class GameEndEvent extends GameEvent {
     required this.totalDays,
     required this.finalPlayerCount,
     required this.gameStartTime,
+    required super.dayNumber,
   }) : super(
-         id: 'game_end_${DateTime.now().millisecondsSinceEpoch}',
          visibility: [
            'villager',
            'werewolf',
@@ -27,10 +27,5 @@ class GameEndEvent extends GameEvent {
   @override
   String toNarrative() {
     return '第$dayNumber天，游戏结束，$winner获胜';
-  }
-
-  @override
-  String toString() {
-    return 'GameEndEvent($id)';
   }
 }

@@ -8,38 +8,30 @@ class LogEvent extends GameEvent {
   /// 日志级别
   final _LogLevel _level;
 
-  /// 日志消息
-  final String message;
-
-  LogEvent({required this.message})
+  LogEvent(String message)
     : _level = _LogLevel.info,
-      super(id: 'log_${DateTime.now().millisecondsSinceEpoch}');
+      super(dayNumber: 0, message: message);
 
-  LogEvent.debug(this.message)
+  LogEvent.debug(String message)
     : _level = _LogLevel.debug,
-      super(id: 'log_${DateTime.now().millisecondsSinceEpoch}');
+      super(dayNumber: 0, message: message);
 
-  LogEvent.error(this.message)
+  LogEvent.error(String message)
     : _level = _LogLevel.error,
-      super(id: 'log_${DateTime.now().millisecondsSinceEpoch}');
+      super(dayNumber: 0, message: message);
 
-  LogEvent.info(this.message)
+  LogEvent.info(String message)
     : _level = _LogLevel.info,
-      super(id: 'log_${DateTime.now().millisecondsSinceEpoch}');
+      super(dayNumber: 0, message: message);
 
-  LogEvent.warning(this.message)
+  LogEvent.warning(String message)
     : _level = _LogLevel.warning,
-      super(id: 'log_${DateTime.now().millisecondsSinceEpoch}');
+      super(dayNumber: 0, message: message);
 
   @override
   String toNarrative() {
     var now = DateTime.now();
     return '[$now][${_level.name}] $message';
-  }
-
-  @override
-  String toString() {
-    return 'LogEvent($id)';
   }
 }
 

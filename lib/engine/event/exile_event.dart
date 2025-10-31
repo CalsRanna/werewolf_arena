@@ -7,7 +7,6 @@ class ExileEvent extends GameEvent {
 
   ExileEvent({required this.victim, required super.dayNumber})
     : super(
-        id: 'exile_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
           'villager',
           'werewolf',
@@ -21,10 +20,5 @@ class ExileEvent extends GameEvent {
   @override
   String toNarrative() {
     return '第$dayNumber天，${victim.name}被投票出局';
-  }
-
-  @override
-  String toString() {
-    return 'ExileEvent($id)';
   }
 }

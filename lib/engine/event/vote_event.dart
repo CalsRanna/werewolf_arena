@@ -6,26 +6,23 @@ class VoteEvent extends GameEvent {
   final GamePlayer voter;
   final GamePlayer candidate;
 
-  VoteEvent({required this.voter, required this.candidate})
-    : super(
-        id: 'vote_${voter.name}_${DateTime.now().millisecondsSinceEpoch}',
-        visibility: [
-          'villager',
-          'werewolf',
-          'seer',
-          'witch',
-          'hunter',
-          'guard',
-        ],
-      );
+  VoteEvent({
+    required this.voter,
+    required this.candidate,
+    required super.dayNumber,
+  }) : super(
+         visibility: [
+           'villager',
+           'werewolf',
+           'seer',
+           'witch',
+           'hunter',
+           'guard',
+         ],
+       );
 
   @override
   String toNarrative() {
     return '第$dayNumber天，${voter.name}投票给了${candidate.name}';
-  }
-
-  @override
-  String toString() {
-    return 'VoteEvent($id)';
   }
 }

@@ -4,9 +4,8 @@ import 'package:werewolf_arena/engine/event/game_event.dart';
 class GameStartEvent extends GameEvent {
   final int playerCount;
 
-  GameStartEvent({required this.playerCount})
+  GameStartEvent({required this.playerCount, required super.dayNumber})
     : super(
-        id: 'game_start_${DateTime.now().millisecondsSinceEpoch}',
         visibility: [
           'villager',
           'werewolf',
@@ -19,9 +18,4 @@ class GameStartEvent extends GameEvent {
 
   @override
   String toNarrative() => '游戏开始';
-
-  @override
-  String toString() {
-    return 'GameStartEvent($id)';
-  }
 }
