@@ -18,28 +18,17 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('设置'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => viewModel.navigateBack(context),
-        ),
-      ),
+      appBar: AppBar(title: Text('Setting')),
       body: Watch((context) {
-        // 响应式获取 signals 的值
         final isLoading = viewModel.isLoading.value;
+        if (isLoading) return Center(child: CircularProgressIndicator());
+
         final soundOn = viewModel.soundEnabled.value;
         final animationsOn = viewModel.animationsEnabled.value;
         final theme = viewModel.selectedTheme.value;
         final speed = viewModel.textSpeed.value;
-
-        // 游戏配置
         final logLevel = viewModel.logLevel.value;
         final llmApiKey = viewModel.llmApiKey.value;
-
-        if (isLoading) {
-          return Center(child: CircularProgressIndicator());
-        }
 
         return _buildSettingsContent(
           soundOn,
@@ -62,189 +51,69 @@ class _SettingsPageState extends State<SettingsPage> {
     String llmApiKey,
   ) {
     return ListView(
-      padding: EdgeInsets.all(16),
-      children: [
-        // 游戏设置
-        _buildSection('游戏设置', [
-          _buildSwitchTile(
-            '音效',
-            '启用游戏音效',
-            soundOn,
-            (value) => viewModel.toggleSound(value),
-          ),
-          _buildSwitchTile(
-            '动画',
-            '启用界面动画',
-            animationsOn,
-            (value) => viewModel.toggleAnimations(value),
-          ),
-          _buildSliderTile(
-            '文字速度',
-            '调整界面文字显示速度',
-            speed,
-            (value) => viewModel.setTextSpeed(value),
-          ),
-        ]),
-
-        SizedBox(height: 24),
-
-        // 外观设置
-        _buildSection('外观设置', [_buildThemeTile(theme)]),
-
-        SizedBox(height: 24),
-
-        // 高级设置
-        _buildSection('高级设置', [_buildLogLevelTile(logLevel)]),
-
-        SizedBox(height: 24),
-
-        // LLM配置
-        _buildSection('AI配置', [
-          ListTile(
-            leading: Icon(Icons.psychology),
-            title: Text('Player Intelligence'),
-            subtitle: Text('Configure AI player models'),
-            trailing: Icon(Icons.chevron_right),
-            onTap: () => viewModel.navigatePlayerIntelligencePage(context),
-          ),
-        ]),
-
-        SizedBox(height: 24),
-
-        // 关于
-        _buildSection('关于', [
-          ListTile(
-            leading: Icon(Icons.info),
-            title: Text('关于应用'),
-            subtitle: Text('查看应用信息和版本'),
-            onTap: () => viewModel.showAbout(context),
-          ),
-          ListTile(
-            leading: Icon(Icons.description),
-            title: Text('许可证'),
-            subtitle: Text('查看开源许可证'),
-            onTap: () => viewModel.showLicenseDialog(context),
-          ),
-        ]),
-
-        SizedBox(height: 24),
-
-        // 重置设置
-        _buildSection('重置', [
-          ListTile(
-            leading: Icon(Icons.restore),
-            title: Text('重置设置'),
-            subtitle: Text('恢复所有设置为默认值'),
-            onTap: () => _showResetDialog(),
-          ),
-        ]),
-
-        SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildSection(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            'Game',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
-        Card(child: Column(children: children)),
-      ],
-    );
-  }
-
-  Widget _buildSwitchTile(
-    String title,
-    String subtitle,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return SwitchListTile(
-      title: Text(title),
-      subtitle: Text(subtitle),
-      value: value,
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildSliderTile(
-    String title,
-    String subtitle,
-    double value,
-    Function(double) onChanged,
-  ) {
-    return Column(
-      children: [
+        SwitchListTile(
+          value: soundOn,
+          onChanged: (value) => viewModel.toggleSound(value),
+          title: Text('Sound'),
+          subtitle: Text('Enable sound effects'),
+        ),
+        SwitchListTile(
+          value: animationsOn,
+          onChanged: (value) => viewModel.toggleAnimations(value),
+          title: Text('Animations'),
+          subtitle: Text('Enable animations'),
+        ),
         ListTile(
-          title: Text(title),
-          subtitle: Text(subtitle),
+          title: Text('Text Speed'),
+          subtitle: Text('Adjust text speed'),
           trailing: SizedBox(
             width: 100,
-            child: Text(value.toStringAsFixed(1), textAlign: TextAlign.right),
+            child: Text(speed.toStringAsFixed(1), textAlign: TextAlign.right),
           ),
+        ),
+        Slider(
+          value: speed,
+          onChanged: (value) => viewModel.setTextSpeed(value),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Slider(
-            value: value,
-            min: 0.5,
-            max: 2.0,
-            divisions: 15,
-            label: value.toStringAsFixed(1),
-            onChanged: onChanged,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Text(
+            'LLM',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
+        ListTile(
+          title: Text('Player Intelligence'),
+          subtitle: Text('Configure AI player models'),
+          onTap: () => viewModel.navigatePlayerIntelligencePage(context),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Text(
+            'More',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+        ListTile(
+          title: Text('Reset'),
+          subtitle: Text('Reset all settings to default'),
+          onTap: () => _showResetDialog(),
+        ),
       ],
-    );
-  }
-
-  Widget _buildThemeTile(String theme) {
-    return ListTile(
-      title: Text('主题'),
-      subtitle: Text('选择应用主题'),
-      trailing: DropdownButton<String>(
-        value: theme,
-        items: [
-          DropdownMenuItem(value: 'light', child: Text('浅色')),
-          DropdownMenuItem(value: 'dark', child: Text('深色')),
-          DropdownMenuItem(value: 'system', child: Text('跟随系统')),
-        ],
-        onChanged: (value) {
-          if (value != null) {
-            viewModel.setTheme(value);
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildLogLevelTile(String logLevel) {
-    return ListTile(
-      title: Text('日志级别'),
-      subtitle: Text('设置日志记录详细程度'),
-      trailing: DropdownButton<String>(
-        value: logLevel,
-        items: [
-          DropdownMenuItem(value: 'debug', child: Text('调试')),
-          DropdownMenuItem(value: 'info', child: Text('信息')),
-          DropdownMenuItem(value: 'warning', child: Text('警告')),
-          DropdownMenuItem(value: 'error', child: Text('错误')),
-        ],
-        onChanged: (value) {
-          if (value != null) {
-            viewModel.setLogLevel(value);
-          }
-        },
-      ),
     );
   }
 

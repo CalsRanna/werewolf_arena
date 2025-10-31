@@ -2,6 +2,7 @@ import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:werewolf_arena/page/debug/debug_event_list_tile.dart';
 import 'package:werewolf_arena/page/debug/debug_view_model.dart';
 
 @RoutePage()
@@ -41,7 +42,7 @@ class _DebugPageState extends State<DebugPage> {
           ),
         ],
       ),
-      body: Watch((_) => _buildBody(viewModel.logs.value)),
+      body: Watch((_) => _buildBody()),
       floatingActionButton: Watch((_) {
         if (viewModel.running.value) {
           return FloatingActionButton(
@@ -57,27 +58,13 @@ class _DebugPageState extends State<DebugPage> {
     );
   }
 
-  Widget _buildBody(List<String> logs) {
+  Widget _buildBody() {
     return ListView.builder(
+      controller: viewModel.controller,
       itemBuilder: (context, index) {
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 16,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              height: 8,
-              margin: EdgeInsets.only(top: 8),
-              width: 8,
-            ),
-            Expanded(child: Text(logs[index])),
-          ],
-        );
+        return DebugEventListTile(event: viewModel.logs.value[index]);
       },
-      itemCount: logs.length,
+      itemCount: viewModel.logs.value.length,
       padding: EdgeInsets.symmetric(horizontal: 16),
     );
   }

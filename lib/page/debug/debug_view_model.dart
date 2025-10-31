@@ -2,9 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
-import 'package:werewolf_arena/engine/event/announce_event.dart';
-import 'package:werewolf_arena/engine/event/conspire_event.dart';
-import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
@@ -29,10 +26,13 @@ import 'package:werewolf_arena/util/logger_util.dart';
 
 class DebugViewModel {
   late final GameEngine gameEngine;
-  final logs = Signal(<String>[]);
+  final logs = Signal(<GameEvent>[]);
   final running = Signal(false);
 
+  final controller = ScrollController();
+
   void dispose() {
+    controller.dispose();
     gameEngine.dispose();
   }
 
@@ -129,13 +129,14 @@ class DebugViewModel {
       LoggerUtil.instance.d(event.toNarrative());
       return;
     }
-    var message = switch (event) {
-      AnnounceEvent() => event.announcement,
-      ConspireEvent() => event.message,
-      DiscussEvent() => event.message,
-      _ => event.toString(),
-    };
-    logs.value = [...logs.value, message];
+    logs.value = [...logs.value, event];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.animateTo(
+        controller.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 }
 
