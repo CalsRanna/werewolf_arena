@@ -65,10 +65,7 @@ class _GamePageState extends State<GamePage> {
           ],
         ),
         content: SingleChildScrollView(
-          child: Text(
-            message,
-            style: TextStyle(fontSize: 14, height: 1.6),
-          ),
+          child: Text(message, style: TextStyle(fontSize: 14, height: 1.6)),
         ),
         actions: [
           TextButton(
@@ -104,9 +101,7 @@ class _GamePageState extends State<GamePage> {
                   _buildTopBar(context, gameStatus, isRunning),
 
                   // 玩家展示区域
-                  Expanded(
-                    child: _buildPlayersArea(context, players),
-                  ),
+                  Expanded(child: _buildPlayersArea(context, players)),
 
                   // 底部操作按钮
                   _buildBottomActions(context, isRunning),
@@ -150,10 +145,7 @@ class _GamePageState extends State<GamePage> {
                 SizedBox(height: 4),
                 Text(
                   status,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
@@ -176,7 +168,7 @@ class _GamePageState extends State<GamePage> {
             Icon(Icons.people_outline, size: 64, color: Colors.white70),
             SizedBox(height: 16),
             Text(
-              '点击开��游戏创建玩家',
+              '点击开始游戏创建玩家',
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
           ],
@@ -296,10 +288,7 @@ class _GamePageState extends State<GamePage> {
             SizedBox(height: 4),
             Text(
               player.role.name,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.white70, fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
             if (!isAlive) ...[

@@ -105,7 +105,7 @@ class GameEngine {
 
       // 检查游戏结束
       if (_currentState!.checkGameEnd()) {
-        await _endGame();
+        await endGame();
         return false; // 游戏结束，没有下一步
       }
 
@@ -118,7 +118,7 @@ class GameEngine {
   }
 
   /// 结束游戏
-  Future<void> _endGame() async {
+  Future<void> endGame() async {
     if (_currentState == null) return;
 
     final state = _currentState!;
@@ -127,6 +127,12 @@ class GameEngine {
     state.endGame(state.winner ?? 'unknown');
 
     GameEngineLogger.instance.i('游戏结束');
+
+    // 延迟一小段时间，确保 GameEndEvent 被 observer 处理
+    await Future.delayed(Duration(milliseconds: 100));
+
+    // 关闭事件流，防止后续事件发送
+    state.dispose();
   }
 
   /// 处理游戏错误

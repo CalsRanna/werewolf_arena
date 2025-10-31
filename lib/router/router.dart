@@ -10,10 +10,11 @@ class AppRouter extends RootStackRouter {
   List<AutoRoute> get routes {
     return [
       AutoRoute(page: BootstrapRoute.page),
-      AutoRoute(initial: true, page: HomeRoute.page),
+      AutoRoute(page: HomeRoute.page),
       AutoRoute(page: GameRoute.page),
       AutoRoute(page: SettingsRoute.page),
-      AutoRoute(page: DebugRoute.page),
+      AutoRoute(page: LLMConfigRoute.page),
+      AutoRoute(initial: true, page: DebugRoute.page),
     ];
   }
 }

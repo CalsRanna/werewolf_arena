@@ -56,9 +56,7 @@ class _HomePageState extends State<HomePage> {
                 SizedBox(height: 24),
 
                 // 场景列表
-                Expanded(
-                  child: _buildScenarioList(context, scenarios),
-                ),
+                Expanded(child: _buildScenarioList(context, scenarios)),
               ],
             ),
           ),
@@ -86,18 +84,17 @@ class _HomePageState extends State<HomePage> {
                   Text(
                     '选择游戏场景',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   SizedBox(height: 4),
                   Text(
                     '选择一个场景开始AI狼人杀游戏',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.7),
-                        ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
                   ),
                 ],
               ),
@@ -132,7 +129,7 @@ class _HomePageState extends State<HomePage> {
         ),
         childAspectRatio: Responsive.getGridChildAspectRatio(
           context,
-          mobile: 1.8,
+          mobile: 1.5,
           tablet: 1.5,
           desktop: 1.3,
         ),
@@ -184,19 +181,18 @@ class _HomePageState extends State<HomePage> {
               SizedBox(height: 16),
               Text(
                 scenario.name,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
               Text(
                 scenario.description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
-                    ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),

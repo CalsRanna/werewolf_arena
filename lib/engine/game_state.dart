@@ -33,6 +33,7 @@ class GameState {
   String lastProtectedPlayer = '';
 
   final _controller = StreamController<GameEvent>.broadcast();
+  bool _isDisposed = false;
 
   GameState({
     required this.gameId,
@@ -92,6 +93,8 @@ class GameState {
   }
 
   void dispose() {
+    if (_isDisposed) return;
+    _isDisposed = true;
     _controller.close();
   }
 
@@ -118,6 +121,18 @@ class GameState {
 
   // Methods
   Future<void> handleEvent(GameEvent event) async {
+    // 如果游戏已结束且当前事件不是 GameEndEvent，则不处理新事件
+    if (winner != null && event is! GameEndEvent) {
+      logger.d('游戏已结束，忽略事件: ${event.runtimeType}');
+      return;
+    }
+
+    // 如果事件流已关闭，不再添加事件
+    if (_isDisposed) {
+      logger.d('事件流已关闭，忽略事件: ${event.runtimeType}');
+      return;
+    }
+
     events.add(event);
     lastUpdateTime = DateTime.now();
     _controller.add(event);
