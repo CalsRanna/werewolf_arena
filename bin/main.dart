@@ -8,7 +8,7 @@ import 'package:args/args.dart';
 import 'package:werewolf_arena/console/console_game_config_loader.dart';
 import 'package:werewolf_arena/console/console_game_observer.dart';
 import 'package:werewolf_arena/console/console_game_ui.dart';
-import 'package:werewolf_arena/console/console_human_player_driver_input.dart';
+import 'package:werewolf_arena/console/console_human_player_driver_ui.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/player/human_player.dart';
@@ -172,7 +172,7 @@ Future<Map<String, dynamic>> _createGameEngine(
         index: playerIndex,
         role: role,
         driver: HumanPlayerDriver(
-          inputReader: ConsoleHumanPlayerDriverInput(ui),
+          ui: ConsoleHumanPlayerDriverUI(ui),
         ),
       );
       players.add(player);
