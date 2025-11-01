@@ -58,7 +58,10 @@ class AIPlayerDriver implements PlayerDriver {
       _reasoningEngine = AIReasoningEngine(
         client: _client,
         steps: [
-          FactAnalysisStep(), // 步骤1：事实分析（本地过滤）
+          FactAnalysisStep(
+            // 步骤1：事实分析（LLM）
+            modelId: intelligence.modelId,
+          ),
           IdentityInferenceStep(
             // 步骤2：身份推理（LLM）
             modelId: intelligence.modelId,
@@ -67,8 +70,14 @@ class AIPlayerDriver implements PlayerDriver {
             // 步骤3：策略规划（LLM）
             modelId: intelligence.modelId,
           ),
-          PlaybookSelectionStep(), // 步骤4：剧本选择（本地选择）
-          MaskSelectionStep(), // 步骤5：面具选择（本地选择）
+          PlaybookSelectionStep(
+            // 步骤4：剧本选择（LLM）
+            modelId: intelligence.modelId,
+          ),
+          MaskSelectionStep(
+            // 步骤5：面具选择（LLM）
+            modelId: intelligence.modelId,
+          ),
           SpeechGenerationStep(
             // 步骤6：发言生成（LLM）
             modelId: intelligence.modelId,
