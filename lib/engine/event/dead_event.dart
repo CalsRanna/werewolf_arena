@@ -6,16 +6,7 @@ class DeadEvent extends GameEvent {
   final GamePlayer target;
 
   DeadEvent({required super.day, required this.target})
-    : super(
-        visibility: [
-          'villager',
-          'werewolf',
-          'seer',
-          'witch',
-          'hunter',
-          'guard',
-        ],
-      );
+    : super(visibility: const ['public']);
 
   @override
   String toNarrative() {

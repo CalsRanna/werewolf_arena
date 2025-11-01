@@ -6,16 +6,7 @@ class ExileEvent extends GameEvent {
   final GamePlayer target;
 
   ExileEvent({required super.day, required this.target})
-    : super(
-        visibility: [
-          'villager',
-          'werewolf',
-          'seer',
-          'witch',
-          'hunter',
-          'guard',
-        ],
-      );
+    : super(visibility: const ['public']);
 
   @override
   String toNarrative() {

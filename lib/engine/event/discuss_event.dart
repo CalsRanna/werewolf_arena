@@ -7,16 +7,7 @@ class DiscussEvent extends GameEvent {
   final GamePlayer source;
 
   DiscussEvent(this.message, {required super.day, required this.source})
-    : super(
-        visibility: [
-          'villager',
-          'werewolf',
-          'seer',
-          'witch',
-          'hunter',
-          'guard',
-        ],
-      );
+    : super(visibility: const ['public']);
 
   @override
   String toNarrative() {

@@ -6,7 +6,7 @@ class ShootEvent extends GameEvent {
   final GamePlayer target;
 
   ShootEvent({required super.day, required this.target})
-    : super(visibility: ['hunter']);
+    : super(visibility: const ['public']);
 
   @override
   String toNarrative() {

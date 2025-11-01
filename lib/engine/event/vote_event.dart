@@ -7,16 +7,7 @@ class VoteEvent extends GameEvent {
   final GamePlayer candidate;
 
   VoteEvent({required this.voter, required this.candidate, required super.day})
-    : super(
-        visibility: [
-          'villager',
-          'werewolf',
-          'seer',
-          'witch',
-          'hunter',
-          'guard',
-        ],
-      );
+    : super(visibility: const ['public']);
 
   @override
   String toNarrative() {

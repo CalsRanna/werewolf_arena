@@ -6,16 +6,7 @@ class OrderEvent extends GameEvent {
   final List<GamePlayer> players;
 
   OrderEvent({required this.players, required super.day})
-    : super(
-        visibility: [
-          'villager',
-          'werewolf',
-          'seer',
-          'witch',
-          'hunter',
-          'guard',
-        ],
-      );
+    : super(visibility: const ['public']);
 
   @override
   String toNarrative() {

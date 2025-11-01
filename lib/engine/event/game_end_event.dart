@@ -13,16 +13,7 @@ class GameEndEvent extends GameEvent {
     required this.finalPlayerCount,
     required this.gameStartTime,
     required super.day,
-  }) : super(
-         visibility: [
-           'villager',
-           'werewolf',
-           'seer',
-           'witch',
-           'hunter',
-           'guard',
-         ],
-       );
+  }) : super(visibility: const ['public']);
 
   @override
   String toNarrative() {

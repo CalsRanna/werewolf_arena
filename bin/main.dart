@@ -10,7 +10,9 @@ import 'package:werewolf_arena/console/console_game_ui.dart';
 import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
+import 'package:werewolf_arena/engine/player/human_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
+import 'package:werewolf_arena/engine/driver/human_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
@@ -35,6 +37,7 @@ Future<void> main(List<String> arguments) async {
       ..addOption('config', abbr: 'c', help: '配置文件路径')
       ..addOption('players', abbr: 'p', help: '玩家数量 (9或12)')
       ..addOption('scenario', abbr: 's', help: '游戏场景ID')
+      ..addOption('player', help: '指定由真人玩家控制的玩家编号 (1-12)')
       ..addFlag('god', abbr: 'g', help: '启用上帝视角', defaultsTo: false)
       ..addFlag('debug', abbr: 'd', help: '启用调试模式', defaultsTo: false)
       ..addFlag('help', abbr: 'h', help: '显示帮助信息', negatable: false);
@@ -69,13 +72,24 @@ Future<void> main(List<String> arguments) async {
       }
     }
 
+    // 解析人类玩家参数
+    int? humanPlayerIndex;
+    final humanPlayerStr = argResults['player'] as String?;
+    if (humanPlayerStr != null) {
+      humanPlayerIndex = int.tryParse(humanPlayerStr);
+      if (humanPlayerIndex == null || humanPlayerIndex < 1 || humanPlayerIndex > 12) {
+        ui.displayError('无效的玩家编号: $humanPlayerStr (支持1-12)');
+        exit(1);
+      }
+    }
+
     final observer = ConsoleGameObserver(
       ui: ui,
       showLog: argResults['debug'] as bool,
       showRole: argResults['god'] as bool,
     );
 
-    final gameEngine = await _createGameEngine(observer);
+    final gameEngine = await _createGameEngine(observer, humanPlayerIndex);
     await gameEngine.ensureInitialized();
 
     while (!gameEngine.isGameEnded) {
@@ -104,7 +118,10 @@ Future<void> main(List<String> arguments) async {
   }
 }
 
-Future<GameEngine> _createGameEngine(GameObserver observer) async {
+Future<GameEngine> _createGameEngine(
+  GameObserver observer,
+  int? humanPlayerIndex,
+) async {
   final config = await ConsoleGameConfigLoader().loadGameConfig();
   final scenario = Scenario12Players();
   final players = <GamePlayer>[];
@@ -122,19 +139,33 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
     final playerIndex = i + 1;
     final role = roles[i];
     final intelligence = config.playerIntelligences[i];
-    final random = Random().nextInt(personas.length);
-    final player = AIPlayer(
-      id: 'player_$playerIndex',
-      name: '$playerIndex号玩家',
-      index: playerIndex,
-      role: role,
-      driver: AIPlayerDriver(
-        intelligence: intelligence,
-        maxRetries: config.maxRetries,
-      ),
-      persona: personas[random],
-    );
-    players.add(player);
+
+    // 如果当前玩家是人类玩家，创建HumanPlayer
+    if (humanPlayerIndex != null && playerIndex == humanPlayerIndex) {
+      final player = HumanPlayer(
+        id: 'player_$playerIndex',
+        name: '$playerIndex号玩家',
+        index: playerIndex,
+        role: role,
+        driver: HumanPlayerDriver(),
+      );
+      players.add(player);
+    } else {
+      // 否则创建AIPlayer
+      final random = Random().nextInt(personas.length);
+      final player = AIPlayer(
+        id: 'player_$playerIndex',
+        name: '$playerIndex号玩家',
+        index: playerIndex,
+        role: role,
+        driver: AIPlayerDriver(
+          intelligence: intelligence,
+          maxRetries: config.maxRetries,
+        ),
+        persona: personas[random],
+      );
+      players.add(player);
+    }
   }
   return GameEngine(
     config: config,
@@ -165,4 +196,6 @@ void _printHelp(ArgParser parser) {
   print('  dart run bin/main.dart -c config/my.yaml      # 使用自定义配置');
   print('  dart run bin/main.dart -d                     # 启用调试模式');
   print('  dart run bin/main.dart -p 9 -c config.yaml   # 组合参数');
+  print('  dart run bin/main.dart --player 1             # 1号玩家由真人控制');
+  print('  dart run bin/main.dart -p 9 --player 3        # 9人局，3号玩家由真人控制');
 }
