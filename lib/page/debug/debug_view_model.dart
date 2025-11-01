@@ -10,7 +10,7 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
 import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
-import 'package:werewolf_arena/engine/player/disciple_persona.dart';
+import 'package:werewolf_arena/engine/player/pragmatic_veteran_persona.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/player/inquisitor_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
@@ -47,7 +47,7 @@ class DebugViewModel {
     roles.shuffle();
     final personas = [
       AggressiveWarriorPersona(),
-      DisciplePersona(),
+      PragmaticVeteranPersona(),
       InquisitorPersona(),
       LogicMasterPersona(),
       LurkerPersona(),
