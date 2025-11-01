@@ -37,13 +37,14 @@ class FactAnalysisStep extends ReasoningStep {
       aiPlayer.workingMemory = workingMemory;
     }
 
-    // 2. 构建Prompt并调用LLM
+    // 2. 构建Prompt并调用LLM（带重试）
     try {
       final systemPrompt = _buildSystemPrompt();
       final userPrompt = _buildUserPrompt(context, workingMemory);
 
-      final response = await _call(
+      final response = await callLLMWithRetry(
         client: client,
+        modelId: modelId,
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
         context: context,
@@ -201,37 +202,6 @@ $eventNarratives
 ''';
   }
 
-  /// 调用LLM
-  Future<String> _call({
-    required OpenAIClient client,
-    required String systemPrompt,
-    required String userPrompt,
-    required ReasoningContext context,
-  }) async {
-    final messages = <ChatCompletionMessage>[];
-    messages.add(ChatCompletionMessage.system(content: systemPrompt));
-    messages.add(ChatCompletionMessage.user(
-      content: ChatCompletionUserMessageContent.string(userPrompt),
-    ));
-
-    final request = CreateChatCompletionRequest(
-      model: ChatCompletionModel.modelId(modelId),
-      messages: messages,
-    );
-
-    final response = await client.createChatCompletion(request: request);
-    if (response.choices.isEmpty) {
-      throw Exception('response.choices.isEmpty');
-    }
-
-    final content = response.choices.first.message.content ?? '';
-    final tokensUsed = response.usage?.totalTokens ?? 0;
-
-    // 记录token使用量到context
-    context.recordStepTokens(name, tokensUsed);
-
-    return content;
-  }
 
   /// 解析LLM响应
   Map<String, dynamic> _parseResponse(String response, int currentDay) {
