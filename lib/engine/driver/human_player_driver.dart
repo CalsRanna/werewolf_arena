@@ -32,29 +32,13 @@ class HumanPlayerDriver implements PlayerDriver {
     print('  当前回合: 第 ${state.day} 天');
     print('  存活玩家数: ${state.alivePlayers.length}');
 
-    // 显示存活玩家列表
-    print('\n【存活玩家】');
-    for (final p in state.alivePlayers) {
-      print('  - ${p.name}');
-    }
-
-    // 显示技能信息
-    print('\n【当前技能】');
-    print('  技能名称: ${skill.name}');
-    print('  技能描述: ${skill.description}');
-    print('\n【技能提示】');
-    print(skill.prompt);
-
-    // 显示最近的事件（对该玩家可见的）
+    // 本回合发生的事件（对该玩家可见的）
     final visibleEvents = state.events
-        .where((event) => event.isVisibleTo(player))
+        .where((event) => event.isVisibleTo(player) && event.day == state.day)
         .toList();
     if (visibleEvents.isNotEmpty) {
-      print('\n【最近发生的事件】（最多显示最近10条）');
-      final recentEvents = visibleEvents.length > 10
-          ? visibleEvents.sublist(visibleEvents.length - 10)
-          : visibleEvents;
-      for (final event in recentEvents) {
+      print('\n【本回合发生的事件】');
+      for (final event in visibleEvents) {
         print('  ${event.toNarrative()}');
       }
     }
@@ -71,10 +55,36 @@ class HumanPlayerDriver implements PlayerDriver {
     final needsMessage = _skillNeedsMessage(skill);
 
     if (needsTarget) {
-      print('\n请选择目标玩家（输入玩家编号，如"1号玩家"或直接输入数字"1"）:');
-      stdout.write('> ');
+      // 判断是否是可选技能（女巫的药可以选择不使用）
+      final isOptional = _skillIsOptional(skill);
+
+      if (isOptional) {
+        print('\n请选择目标玩家（输入玩家编号，或输入"跳过"不使用）:');
+      } else {
+        print('\n请选择目标玩家（输入玩家编号，如"1号玩家"或直接输入数字"1"）:');
+      }
+
+      // 显示可选的目标玩家
+      print('\n可选玩家:');
+      for (final p in state.alivePlayers) {
+        if (p.id != player.id) {
+          // 不显示自己
+          print('  ${p.name}');
+        }
+      }
+
+      stdout.write('\n> ');
       final input = stdin.readLineSync()?.trim();
-      if (input != null && input.isNotEmpty) {
+
+      // 处理跳过
+      if (isOptional &&
+          (input == null ||
+              input.isEmpty ||
+              input == '跳过' ||
+              input.toLowerCase() == 'skip')) {
+        target = null; // 不使用技能
+        print('已选择不使用该技能');
+      } else if (input != null && input.isNotEmpty) {
         // 支持 "1号玩家" 或 "1" 格式
         if (input.contains('号')) {
           target = input;
@@ -82,6 +92,16 @@ class HumanPlayerDriver implements PlayerDriver {
           final num = int.tryParse(input);
           if (num != null) {
             target = '$num号玩家';
+          } else {
+            print('⚠️ 无效的输入，将跳过此操作');
+          }
+        }
+
+        // 验证目标玩家是否存在
+        if (target != null) {
+          final targetExists = state.alivePlayers.any((p) => p.name == target);
+          if (!targetExists) {
+            print('⚠️ 警告: 目标玩家不存在或已死亡，请确认输入');
           }
         }
       }
@@ -129,11 +149,12 @@ class HumanPlayerDriver implements PlayerDriver {
     // 投票、击杀、治疗、保护等技能需要目标
     final targetSkills = [
       'vote',
-      'kill',
-      'heal',
-      'poison',
-      'protect',
-      'investigate',
+      'werewolf_kill',
+      'witch_heal',
+      'witch_poison',
+      'guard_protect',
+      'seer_check',
+      'hunter_shoot',
       'conspire', // 狼人讨论时选择击杀目标
     ];
     return targetSkills.contains(skill.skillId);
@@ -143,11 +164,17 @@ class HumanPlayerDriver implements PlayerDriver {
   bool _skillNeedsMessage(GameSkill skill) {
     // 发言、讨论、狼人密谈等需要输入消息
     final messageSkills = [
-      'discuss',
-      'speak',
+      'discuss', // 白天发言
       'testament', // 遗言
       'conspire', // 狼人密谈
     ];
     return messageSkills.contains(skill.skillId);
+  }
+
+  /// 判断技能是否可选（可以选择不使用）
+  bool _skillIsOptional(GameSkill skill) {
+    // 女巫的解药和毒药可以选择不使用
+    final optionalSkills = ['witch_heal', 'witch_poison'];
+    return optionalSkills.contains(skill.skillId);
   }
 }

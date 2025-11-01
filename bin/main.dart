@@ -81,6 +81,9 @@ Future<void> main(List<String> arguments) async {
         ui.displayError('无效的玩家编号: $humanPlayerStr (支持1-12)');
         exit(1);
       }
+    } else {
+      // 如果没有指定玩家，随机分配一个
+      humanPlayerIndex = Random().nextInt(12) + 1;
     }
 
     final observer = ConsoleGameObserver(
@@ -89,8 +92,22 @@ Future<void> main(List<String> arguments) async {
       showRole: argResults['god'] as bool,
     );
 
-    final gameEngine = await _createGameEngine(observer, humanPlayerIndex);
+    final gameEngineData = await _createGameEngine(observer, humanPlayerIndex);
+    final gameEngine = gameEngineData['engine'] as GameEngine;
+    final humanPlayer = gameEngineData['humanPlayer'] as GamePlayer;
+
     await gameEngine.ensureInitialized();
+
+    // 显示玩家通知
+    ui.pauseSpinner();
+    _showPlayerNotification(ui, humanPlayer);
+
+    // 等待用户确认
+    print('\n按回车键开始游戏...');
+    stdin.readLineSync();
+    print('');
+
+    ui.resumeSpinner();
 
     while (!gameEngine.isGameEnded) {
       await gameEngine.loop();
@@ -118,7 +135,7 @@ Future<void> main(List<String> arguments) async {
   }
 }
 
-Future<GameEngine> _createGameEngine(
+Future<Map<String, dynamic>> _createGameEngine(
   GameObserver observer,
   int? humanPlayerIndex,
 ) async {
@@ -135,6 +152,9 @@ Future<GameEngine> _createGameEngine(
     PettyArtistPersona(),
     PragmaticVeteranPersona(),
   ];
+
+  GamePlayer? humanPlayer;
+
   for (int i = 0; i < roles.length; i++) {
     final playerIndex = i + 1;
     final role = roles[i];
@@ -150,6 +170,7 @@ Future<GameEngine> _createGameEngine(
         driver: HumanPlayerDriver(),
       );
       players.add(player);
+      humanPlayer = player;
     } else {
       // 否则创建AIPlayer
       final random = Random().nextInt(personas.length);
@@ -167,13 +188,19 @@ Future<GameEngine> _createGameEngine(
       players.add(player);
     }
   }
-  return GameEngine(
+
+  final engine = GameEngine(
     config: config,
     scenario: scenario,
     players: players,
     observer: observer,
     controller: DefaultGameRoundController(),
   );
+
+  return {
+    'engine': engine,
+    'humanPlayer': humanPlayer,
+  };
 }
 
 /// 打印帮助信息
@@ -190,7 +217,7 @@ void _printHelp(ArgParser parser) {
   print('  12_players  - 12人局');
   print('');
   print('示例:');
-  print('  dart run bin/main.dart                        # 使用默认配置运行');
+  print('  dart run bin/main.dart                        # 使用默认配置运行（随机分配真人玩家）');
   print('  dart run bin/main.dart -p 9                   # 指定9人局');
   print('  dart run bin/main.dart -s 12_players          # 指定12人场景');
   print('  dart run bin/main.dart -c config/my.yaml      # 使用自定义配置');
@@ -198,4 +225,34 @@ void _printHelp(ArgParser parser) {
   print('  dart run bin/main.dart -p 9 -c config.yaml   # 组合参数');
   print('  dart run bin/main.dart --player 1             # 1号玩家由真人控制');
   print('  dart run bin/main.dart -p 9 --player 3        # 9人局，3号玩家由真人控制');
+}
+
+/// 显示玩家通知
+void _showPlayerNotification(ConsoleGameUI ui, GamePlayer player) {
+  print('');
+  print('=' * 80);
+  print('');
+  print('🎮 欢迎来到狼人杀竞技场！');
+  print('');
+  print('-' * 80);
+  print('');
+  print('📋 你的身份信息:');
+  print('');
+  print('  👤 玩家编号: ${player.name}');
+  print('  🎭 角色: ${player.role.name}');
+  print('  📖 角色描述: ${player.role.description}');
+  print('');
+  print('-' * 80);
+  print('');
+  print('💡 游戏提示:');
+  print('  • 仔细阅读每个技能的提示信息');
+  print('  • 关注游戏中发生的事件');
+  print('  • 根据你的角色身份制定策略');
+  print('  • 输入目标时可以使用简化格式（如输入"1"表示"1号玩家"）');
+  if (player.role.name.contains('女巫')) {
+    print('  • 女巫的解药和毒药可以选择不使用（输入"跳过"或直接回车）');
+  }
+  print('');
+  print('=' * 80);
+  print('');
 }
