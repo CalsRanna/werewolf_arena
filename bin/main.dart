@@ -9,7 +9,6 @@ import 'package:werewolf_arena/console/console_game_config_loader.dart';
 import 'package:werewolf_arena/console/console_game_observer.dart';
 import 'package:werewolf_arena/console/console_game_ui.dart';
 import 'package:werewolf_arena/console/console_human_player_driver_input.dart';
-import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/player/human_player.dart';
@@ -17,11 +16,6 @@ import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/driver/human_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
-import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
-import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
-import 'package:werewolf_arena/engine/player/observant_skeptic_persona.dart';
-import 'package:werewolf_arena/engine/player/pragmatic_veteran_persona.dart';
-import 'package:werewolf_arena/engine/player/narrator_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
 /// 狼人杀竞技场 - 控制台模式入口
@@ -41,8 +35,6 @@ Future<void> main(List<String> arguments) async {
     // 解析命令行参数
     final parser = ArgParser()
       ..addOption('config', abbr: 'c', help: '配置文件路径')
-      ..addOption('players', abbr: 'p', help: '玩家数量 (9或12)')
-      ..addOption('scenario', abbr: 's', help: '游戏场景ID')
       ..addOption('player', help: '指定由真人玩家控制的玩家编号 (1-12)')
       ..addFlag('god', abbr: 'g', help: '启用上帝视角', defaultsTo: false)
       ..addFlag('debug', abbr: 'd', help: '启用调试模式', defaultsTo: false)
@@ -66,31 +58,31 @@ Future<void> main(List<String> arguments) async {
     ui.initialize(useColors: true);
     ui.startSpinner();
 
-    final playerCountStr = argResults['players'] as String?;
-
-    int? playerCount;
-    if (playerCountStr != null) {
-      playerCount = int.tryParse(playerCountStr);
-      if (playerCount == null || (playerCount != 9 && playerCount != 12)) {
-        ui.displayError('无效的玩家数量: $playerCountStr (支持9或12人)');
-        exit(1);
-      }
-    }
-
     // 解析人类玩家参数
     int? humanPlayerIndex;
-    final humanPlayerStr = argResults['player'] as String?;
-    if (humanPlayerStr != null) {
-      humanPlayerIndex = int.tryParse(humanPlayerStr);
-      if (humanPlayerIndex == null ||
-          humanPlayerIndex < 1 ||
-          humanPlayerIndex > 12) {
-        ui.displayError('无效的玩家编号: $humanPlayerStr (支持1-12)');
+    final isGodMode = argResults['god'] as bool;
+
+    // 上帝视角模式下不创建人类玩家
+    if (isGodMode) {
+      humanPlayerIndex = null;
+      if (argResults['player'] != null) {
+        ui.displayError('上帝视角模式 (-g) 与人类玩家模式 (--player) 不能同时使用');
         exit(1);
       }
     } else {
-      // 如果没有指定玩家，随机分配一个
-      humanPlayerIndex = Random().nextInt(12) + 1;
+      final humanPlayerStr = argResults['player'] as String?;
+      if (humanPlayerStr != null) {
+        humanPlayerIndex = int.tryParse(humanPlayerStr);
+        if (humanPlayerIndex == null ||
+            humanPlayerIndex < 1 ||
+            humanPlayerIndex > 12) {
+          ui.displayError('无效的玩家编号: $humanPlayerStr (支持1-12)');
+          exit(1);
+        }
+      } else {
+        // 如果没有指定玩家，随机分配一个
+        humanPlayerIndex = Random().nextInt(12) + 1;
+      }
     }
 
     // 创建游戏引擎和玩家
@@ -101,18 +93,22 @@ Future<void> main(List<String> arguments) async {
       argResults['god'] as bool,
     );
     final gameEngine = gameEngineData['engine'] as GameEngine;
-    final humanPlayer = gameEngineData['humanPlayer'] as GamePlayer;
+    final humanPlayer = gameEngineData['humanPlayer'] as GamePlayer?;
 
     await gameEngine.ensureInitialized();
 
-    // 显示玩家通知
+    // 显示玩家通知（仅在非上帝视角模式下）
     ui.pauseSpinner();
-    _showPlayerNotification(ui, humanPlayer);
+    if (humanPlayer != null) {
+      _showPlayerNotification(ui, humanPlayer);
 
-    // 等待用户确认
-    print('\n按回车键开始游戏...');
-    stdin.readLineSync(encoding: utf8);
-    print('');
+      // 等待用户确认
+      print('\n按回车键开始游戏...');
+      stdin.readLineSync(encoding: utf8);
+      print('');
+    } else {
+      print('\n上帝视角模式已启用，所有玩家均由 AI 控制');
+    }
 
     ui.resumeSpinner();
 
@@ -160,14 +156,6 @@ Future<Map<String, dynamic>> _createGameEngine(
   final players = <GamePlayer>[];
   final roles = scenario.roles;
   roles.shuffle();
-  final personas = [
-    AggressiveWarriorPersona(),
-    LogicMasterPersona(),
-    NarratorPersona(),
-    ObservantSkepticPersona(),
-    PettyArtistPersona(),
-    PragmaticVeteranPersona(),
-  ];
 
   GamePlayer? humanPlayer;
 
@@ -191,7 +179,6 @@ Future<Map<String, dynamic>> _createGameEngine(
       humanPlayer = player;
     } else {
       // 否则创建AIPlayer
-      final random = Random().nextInt(personas.length);
       final player = AIPlayer(
         id: 'player_$playerIndex',
         name: '$playerIndex号玩家',
@@ -201,7 +188,6 @@ Future<Map<String, dynamic>> _createGameEngine(
           intelligence: intelligence,
           maxRetries: config.maxRetries,
         ),
-        persona: personas[random],
       );
       players.add(player);
     }
@@ -235,19 +221,22 @@ void _printHelp(ArgParser parser) {
   print('选项:');
   print(parser.usage);
   print('');
+  print('玩家模式说明:');
+  print('  --player N  - 指定N号玩家由真人控制（1-12）');
+  print('  -g, --god   - 上帝视角模式，所有玩家均由AI控制，可观察所有信息');
+  print('  注意: -g 和 --player 参数不能同时使用');
+  print('');
   print('支持的场景:');
   print('  9_players   - 9人标准局');
   print('  12_players  - 12人局');
   print('');
   print('示例:');
   print('  dart run bin/main.dart                        # 使用默认配置运行（随机分配真人玩家）');
-  print('  dart run bin/main.dart -p 9                   # 指定9人局');
-  print('  dart run bin/main.dart -s 12_players          # 指定12人场景');
+  print('  dart run bin/main.dart -g                     # 上帝视角模式（所有玩家由AI控制）');
+  print('  dart run bin/main.dart --player 1             # 1号玩家由真人控制');
   print('  dart run bin/main.dart -c config/my.yaml      # 使用自定义配置');
   print('  dart run bin/main.dart -d                     # 启用调试模式');
-  print('  dart run bin/main.dart -p 9 -c config.yaml   # 组合参数');
-  print('  dart run bin/main.dart --player 1             # 1号玩家由真人控制');
-  print('  dart run bin/main.dart -p 9 --player 3        # 9人局，3号玩家由真人控制');
+  print('  dart run bin/main.dart -g -d                  # 上帝视角+调试模式');
 }
 
 /// 显示玩家通知

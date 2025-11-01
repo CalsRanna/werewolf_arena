@@ -34,7 +34,8 @@
       "Bash(cat:*)",
       "WebFetch(domain:pub.dev)",
       "WebFetch(domain:github.com)",
-      "Bash(stty:*)"
+      "Bash(stty:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

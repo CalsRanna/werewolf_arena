@@ -19,7 +19,6 @@ import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_round/game_round_controller.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/role/guard_role.dart';
 import 'package:werewolf_arena/engine/role/hunter_role.dart';
@@ -42,8 +41,6 @@ import 'package:werewolf_arena/engine/skill/vote_skill.dart';
 class DefaultGameRoundController implements GameRoundController {
   @override
   Future<void> tick(GameState state, {GameObserver? observer}) async {
-    // 记录当前回合开始前的事件数量
-    final eventsCountBeforeRound = state.events.length;
     // 夜晚开始
     var systemEvent = SystemEvent('天黑请闭眼');
     GameEngineLogger.instance.d(systemEvent.toString());
@@ -123,13 +120,6 @@ class DefaultGameRoundController implements GameRoundController {
     }
 
     await Future.delayed(const Duration(seconds: 1));
-    // 更新所有活着玩家的记忆
-    await _updateAIPlayerMemories(
-      state,
-      eventsCountBeforeRound,
-      observer: observer,
-    );
-
     state.day++;
   }
 
@@ -682,33 +672,4 @@ class DefaultGameRoundController implements GameRoundController {
     return targetPlayer;
   }
 
-  /// 更新AI玩家记忆
-  ///
-  /// 在回合结束时调用,为每个活着的AI玩家并行更新记忆
-  Future<void> _updateAIPlayerMemories(
-    GameState state,
-    int eventsCountBeforeRound, {
-    GameObserver? observer,
-  }) async {
-    var systemEvent = SystemEvent('更新AI玩家记忆');
-    GameEngineLogger.instance.d(systemEvent.toString());
-    state.handleEvent(systemEvent);
-    await observer?.onGameEvent(systemEvent);
-    final currentRoundEvents = state.events.sublist(eventsCountBeforeRound);
-    final aliveAIPlayers = state.alivePlayers.whereType<AIPlayer>().toList();
-    final futures = aliveAIPlayers.map((player) async {
-      try {
-        final updatedMemory = await player.driver.updateMemory(
-          player: player,
-          currentMemory: player.memory,
-          currentRoundEvents: currentRoundEvents,
-          state: state,
-        );
-        player.memory = updatedMemory;
-      } catch (e) {
-        GameEngineLogger.instance.e('更新${player.name}的记忆失败: $e');
-      }
-    }).toList();
-    await Future.wait(futures);
-  }
 }

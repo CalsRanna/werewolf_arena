@@ -42,9 +42,6 @@ class GameState {
     required this.players,
     this.day = 0,
     List<GameEvent>? eventHistory,
-    Map<String, dynamic>? metadata,
-    Map<String, dynamic>? skillEffects,
-    Map<String, int>? skillUsageCounts,
   }) : events = eventHistory ?? [],
        startTime = DateTime.now();
 

@@ -1,4 +1,3 @@
-import 'package:werewolf_arena/engine/player/ai_player_persona.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
@@ -15,17 +14,11 @@ class AIPlayer extends GamePlayer {
     required AIPlayerDriver driver,
     required super.role,
     required super.name,
-    required this.persona,
   }) : super(driver: driver);
-
-  /// 玩家记忆：存储高质量的结构化上下文
-  /// 在每个回合结束时更新，包含对其他玩家的分析、关键事件摘要等
-  String memory = '';
-  final AIPlayerPersona persona;
 
   @override
   String get formattedName =>
-      '[$name|${role.name}|${(driver as AIPlayerDriver).intelligence.modelId}|${persona.name}]';
+      '[$name|${role.name}|${(driver as AIPlayerDriver).intelligence.modelId}]';
 
   @override
   Future<SkillResult> cast(GameSkill skill, GameState state) async {

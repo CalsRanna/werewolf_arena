@@ -9,7 +9,6 @@ import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
@@ -142,7 +141,6 @@ class GameViewModel {
             intelligence: intelligence,
             maxRetries: config.maxRetries,
           ),
-          persona: AggressiveWarriorPersona(),
         );
         gamePlayers.add(player);
       }

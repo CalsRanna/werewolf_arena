@@ -52,8 +52,6 @@ class ConsoleGameObserver extends GameObserver {
       ui.printLog(event.toNarrative());
     } else if (event is PeacefulNightEvent) {
       ui.printEvent('[法官]：${event.toNarrative()}');
-    } else if (event is SystemEvent) {
-      ui.printEvent('[法官]：${event.message}');
     } else if (event is OrderEvent) {
       ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is ProtectEvent) {

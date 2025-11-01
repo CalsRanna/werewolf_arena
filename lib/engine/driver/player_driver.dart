@@ -1,7 +1,6 @@
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
-import 'package:werewolf_arena/engine/event/game_event.dart';
 
 /// 玩家驱动器抽象接口
 ///
@@ -24,23 +23,6 @@ abstract class PlayerDriver {
     required GamePlayer player,
     required GameState state,
     required GameSkill skill,
-  });
-
-  /// 更新玩家记忆
-  ///
-  /// 在阶段结束时调用，将当前阶段的事件提炼成高质量的结构化上下文
-  ///
-  /// [player] 玩家实例
-  /// [currentMemory] 玩家当前的记忆
-  /// [currentRoundEvents] 当前阶段发生的对该玩家可见的事件
-  /// [state] 当前游戏状态
-  ///
-  /// 返回更新后的记忆文本
-  Future<String> updateMemory({
-    required GamePlayer player,
-    required String currentMemory,
-    required List<GameEvent> currentRoundEvents,
-    required GameState state,
   });
 }
 
