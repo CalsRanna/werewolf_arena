@@ -1,8 +1,14 @@
 import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/playbook/guard_protect_playbook.dart';
 import 'package:werewolf_arena/engine/playbook/playbook.dart';
 import 'package:werewolf_arena/engine/playbook/seer_reveal_playbook.dart';
+import 'package:werewolf_arena/engine/playbook/villager_block_knife_playbook.dart';
+import 'package:werewolf_arena/engine/playbook/werewolf_charge_playbook.dart';
 import 'package:werewolf_arena/engine/playbook/werewolf_hook_playbook.dart';
 import 'package:werewolf_arena/engine/playbook/werewolf_jump_seer_playbook.dart';
+import 'package:werewolf_arena/engine/playbook/werewolf_kill_god_playbook.dart';
+import 'package:werewolf_arena/engine/playbook/witch_hide_antidote_playbook.dart';
+import 'package:werewolf_arena/engine/playbook/witch_use_poison_playbook.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
 /// 剧本库
@@ -11,10 +17,24 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 class PlaybookLibrary {
   /// 所有可用的剧本
   static final List<Playbook> allPlaybooks = [
-    WerewolfJumpSeerPlaybook(),
-    WerewolfHookPlaybook(),
-    SeerRevealPlaybook(),
-    // 可扩展：女巫藏药、守卫守人、猎人开枪等
+    // 狼人剧本
+    WerewolfJumpSeerPlaybook(), // 狼人悍跳预言家
+    WerewolfHookPlaybook(), // 狼人倒钩
+    WerewolfKillGodPlaybook(), // 狼人刀神职
+    WerewolfChargePlaybook(), // 狼人冲锋
+
+    // 预言家剧本
+    SeerRevealPlaybook(), // 预言家起跳
+
+    // 女巫剧本
+    WitchHideAntidotePlaybook(), // 女巫藏药
+    WitchUsePoisonPlaybook(), // 女巫用毒
+
+    // 守卫剧本
+    GuardProtectPlaybook(), // 守卫守护
+
+    // 村民剧本
+    VillagerBlockKnifePlaybook(), // 村民假冲锋
   ];
 
   /// 为玩家推荐合适的剧本
