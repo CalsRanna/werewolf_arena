@@ -15,12 +15,12 @@ import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
-import 'package:werewolf_arena/engine/player/inquisitor_persona.dart';
+import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
 import 'package:werewolf_arena/engine/player/lurker_persona.dart';
 import 'package:werewolf_arena/engine/player/peacemaker_persona.dart';
 import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
-import 'package:werewolf_arena/engine/player/schemer_persona.dart';
+import 'package:werewolf_arena/engine/player/narrator_persona.dart';
 import 'package:werewolf_arena/engine/player/thespian_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
@@ -116,12 +116,12 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
   final personas = [
     AggressiveWarriorPersona(),
     PragmaticVeteranPersona(),
-    InquisitorPersona(),
+    PettyArtistPersona(),
     LogicMasterPersona(),
     LurkerPersona(),
     PeacemakerPersona(),
     RefinedEgoistPersona(),
-    SchemerPersona(),
+    NarratorPersona(),
     ThespianPersona(),
   ];
   for (int i = 0; i < roles.length; i++) {

@@ -12,12 +12,12 @@ import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/pragmatic_veteran_persona.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/player/inquisitor_persona.dart';
+import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
 import 'package:werewolf_arena/engine/player/lurker_persona.dart';
 import 'package:werewolf_arena/engine/player/peacemaker_persona.dart';
 import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
-import 'package:werewolf_arena/engine/player/schemer_persona.dart';
+import 'package:werewolf_arena/engine/player/narrator_persona.dart';
 import 'package:werewolf_arena/engine/player/thespian_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 import 'package:werewolf_arena/page/player_intelligence/player_intelligence_view_model.dart';
@@ -48,12 +48,12 @@ class DebugViewModel {
     final personas = [
       AggressiveWarriorPersona(),
       PragmaticVeteranPersona(),
-      InquisitorPersona(),
+      PettyArtistPersona(),
       LogicMasterPersona(),
       LurkerPersona(),
       PeacemakerPersona(),
       RefinedEgoistPersona(),
-      SchemerPersona(),
+      NarratorPersona(),
       ThespianPersona(),
     ];
     personas.shuffle();
