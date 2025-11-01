@@ -17,7 +17,7 @@ import 'package:werewolf_arena/engine/game_round/default_game_round_controller.d
 import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
 import 'package:werewolf_arena/engine/player/observant_skeptic_persona.dart';
-import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
+import 'package:werewolf_arena/engine/player/pragmatic_veteran_persona.dart';
 import 'package:werewolf_arena/engine/player/narrator_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
@@ -112,11 +112,11 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
   roles.shuffle();
   final personas = [
     AggressiveWarriorPersona(),
-    PettyArtistPersona(),
     LogicMasterPersona(),
-    ObservantSkepticPersona(),
-    RefinedEgoistPersona(),
     NarratorPersona(),
+    ObservantSkepticPersona(),
+    PettyArtistPersona(),
+    PragmaticVeteranPersona(),
   ];
   for (int i = 0; i < roles.length; i++) {
     final playerIndex = i + 1;

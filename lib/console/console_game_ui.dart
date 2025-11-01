@@ -87,7 +87,9 @@ class ConsoleGameUI {
   }
 
   void printLog(String text) {
+    pauseSpinner();
     stdout.writeln(text);
+    resumeSpinner();
   }
 
   void printSeparator([String char = '-', int length = 40]) {

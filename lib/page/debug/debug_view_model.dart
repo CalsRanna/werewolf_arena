@@ -14,7 +14,7 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
 import 'package:werewolf_arena/engine/player/observant_skeptic_persona.dart';
-import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
+import 'package:werewolf_arena/engine/player/pragmatic_veteran_persona.dart';
 import 'package:werewolf_arena/engine/player/narrator_persona.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 import 'package:werewolf_arena/page/player_intelligence/player_intelligence_view_model.dart';
@@ -44,11 +44,11 @@ class DebugViewModel {
     roles.shuffle();
     final personas = [
       AggressiveWarriorPersona(),
-      PettyArtistPersona(),
       LogicMasterPersona(),
-      ObservantSkepticPersona(),
-      RefinedEgoistPersona(),
       NarratorPersona(),
+      ObservantSkepticPersona(),
+      PettyArtistPersona(),
+      PragmaticVeteranPersona(),
     ];
     personas.shuffle();
     final players = <GamePlayer>[];

@@ -87,8 +87,6 @@ class GameState {
       endGame(winner);
       return true;
     }
-
-    logger.d('游戏继续，未达到结束条件');
     return false;
   }
 
