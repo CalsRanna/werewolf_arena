@@ -111,20 +111,7 @@ ${skill is ConspireSkill ? skill.formatPrompt : PlayerDriverResponse.formatPromp
     try {
       final content = await _request(prompt, systemPrompt: playerPrompt);
       final json = await _parseJsonWithCleaner(content);
-      final response = PlayerDriverResponse.fromJson(json);
-
-      // 记录解析成功的响应信息
-      final messagePreview = response.message != null
-          ? (response.message!.length > 50
-                ? '${response.message!.substring(0, 50)}...'
-                : response.message)
-          : 'null';
-      GameEngineLogger.instance.d(
-        '${player.name} AI响应解析成功: target=${response.target}, '
-        'message=$messagePreview',
-      );
-
-      return response;
+      return PlayerDriverResponse.fromJson(json);
     } catch (e) {
       GameEngineLogger.instance.e(
         '${player.name} AI驱动器请求失败: $e\n'
@@ -252,19 +239,14 @@ ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
 ''';
   }
 
-  /// 计算指数退避延迟时间
-  ///
-  /// 使用指数退避算法，添加随机抖动避免雷鸣羊群效应
   Duration _calculateBackoffDelay(int attempt) {
-    const initialDelayMs = 1000; // 1秒
+    const initialDelayMs = 1000;
     const backoffMultiplier = 2.0;
-    const maxDelayMs = 30000; // 30秒
+    const maxDelayMs = 30000;
 
-    // 计算基础延迟
     final baseDelayMs =
         initialDelayMs * math.pow(backoffMultiplier, attempt - 1);
 
-    // 限制最大延迟
     final cappedDelayMs = math.min(
       baseDelayMs.toDouble(),
       maxDelayMs.toDouble(),
@@ -273,7 +255,6 @@ ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
     return Duration(milliseconds: cappedDelayMs.toInt());
   }
 
-  /// 调用LLM API
   Future<String> _call(String prompt, {required String systemPrompt}) async {
     final messages = <ChatCompletionMessage>[];
     final systemMessage = ChatCompletionMessage.system(content: systemPrompt);
@@ -291,7 +272,7 @@ ${eventNarratives.isNotEmpty ? eventNarratives : '无'}
       if (response.choices.isEmpty) throw Exception('response.choices.isEmpty');
       final content = response.choices.first.message.content ?? '';
       final tokensUsed = response.usage?.totalTokens ?? 0;
-      GameEngineLogger.instance.d('LLM响应（$tokensUsed tokens）: $content');
+      GameEngineLogger.instance.d('\nUsage:$tokensUsed tokens\n$content');
       return content;
     } on OpenAIClientException catch (e) {
       final errorInfo = 'OpenAI API错误: ${e.message}';
@@ -357,7 +338,6 @@ ${otherPlayers.map((p) => '| $p | | | |').join('\n')}
     }
   }
 
-  /// 生成LLM响应（带重试机制）
   Future<String> _request(String prompt, {required String systemPrompt}) async {
     Exception? lastException;
 
