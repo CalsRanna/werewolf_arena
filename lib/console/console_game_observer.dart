@@ -7,6 +7,7 @@ import 'package:werewolf_arena/engine/event/investigate_event.dart';
 import 'package:werewolf_arena/engine/event/kill_event.dart';
 import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/event/announce_event.dart';
+import 'package:werewolf_arena/engine/event/peaceful_night_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/order_event.dart';
 import 'package:werewolf_arena/engine/event/poison_event.dart';
@@ -37,6 +38,8 @@ class ConsoleGameObserver extends GameObserver {
     if (event is LogEvent) {
       if (!showLog) return;
       ui.printLog(event.toNarrative());
+    } else if (event is PeacefulNightEvent) {
+      ui.printEvent('[法官]：${event.toNarrative()}');
     } else if (event is AnnounceEvent) {
       ui.printEvent('[法官]：${event.message}');
     } else if (event is OrderEvent) {

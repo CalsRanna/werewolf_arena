@@ -1,0 +1,21 @@
+import 'package:werewolf_arena/engine/event/game_event.dart';
+
+/// 平安夜事件 - 所有玩家可见
+class PeacefulNightEvent extends GameEvent {
+  PeacefulNightEvent()
+    : super(
+        visibility: [
+          'villager',
+          'werewolf',
+          'seer',
+          'witch',
+          'hunter',
+          'guard',
+        ],
+      );
+
+  @override
+  String toNarrative() {
+    return '昨晚是平安夜';
+  }
+}

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:werewolf_arena/engine/event/announce_event.dart';
+import 'package:werewolf_arena/engine/event/peaceful_night_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/dead_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
@@ -455,10 +456,10 @@ class DefaultGameRoundController implements GameRoundController {
 
     // 发布死亡公告
     if (deadPlayers.isEmpty) {
-      var announceEvent = AnnounceEvent('昨晚是平安夜', day: state.day);
-      GameEngineLogger.instance.d(announceEvent.toString());
-      state.handleEvent(announceEvent);
-      await observer?.onGameEvent(announceEvent);
+      var peacefulNightEvent = PeacefulNightEvent();
+      GameEngineLogger.instance.d(peacefulNightEvent.toString());
+      state.handleEvent(peacefulNightEvent);
+      await observer?.onGameEvent(peacefulNightEvent);
     } else {
       for (var player in deadPlayers) {
         final deadEvent = DeadEvent(target: player, day: state.day);
