@@ -38,7 +38,10 @@ class ConsoleGameObserver extends GameObserver {
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
-    if (event is SystemEvent) ui.printEvent('[法官]：${event.message}');
+    if (event is SystemEvent) {
+      ui.printEvent('[法官]：${event.message}');
+      return;
+    }
     // 如果有人类玩家且不是上帝视角，检查事件可见性
     if (humanPlayer != null && !showRole) {
       if (!event.isVisibleTo(humanPlayer!)) {
