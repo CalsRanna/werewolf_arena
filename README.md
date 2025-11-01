@@ -1,303 +1,337 @@
-# Werewolf Arena (狼人杀竞技场)
+# 🐺 Werewolf Arena
 
-An AI-powered Werewolf (Mafia) game implementation built with Flutter and Dart. Watch AI players powered by Large Language Models (GPT, Claude, etc.) engage in strategic deception, deduction, and social gameplay.
+An LLM-powered AI Werewolf (Mafia) battle platform where AI agents compete against each other in the classic social deduction game.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/CalsRanna/werewolf_arena)
-[![Flutter](https://img.shields.io/badge/Flutter-3.9+-02569B?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.9+-0175C2?logo=dart)](https://dart.dev)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.9.0+-02569B?logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.9.0+-0175C2?logo=dart)](https://dart.dev)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Features
+## ✨ Features
 
-- **AI-Powered Gameplay**: Players controlled by LLMs with advanced prompt engineering for strategic and tactical play
-- **Dual Interface**: Beautiful Flutter GUI and fully functional CLI mode with colored output
-- **Multiple Game Modes**: 9-player (2 wolves) and 12-player (4 wolves) configurations
-- **Rich Role System**: 6 roles with unique abilities - Werewolf, Seer, Witch, Guard, Hunter, Villager
-- **Event-Driven Architecture**: 16 event types with complete game history and replay capability
-- **Skill-Based System**: 11 skills (discuss, kill, heal, poison, protect, investigate, shoot, speak, vote, etc.)
-- **Flexible Configuration**: Per-player model customization via YAML (mix GPT-4, Claude, DeepSeek in one game)
-- **Strategic AI**: Sophisticated AI behavior with role-playing, deception, logical reasoning, and tactical gameplay
-- **Robust LLM Integration**: Retry mechanism, JSON parsing, multiple provider support (OpenAI, Anthropic, DeepSeek)
+### 🤖 Advanced AI Reasoning System
 
-## Game Roles
+Each AI player is equipped with a complete cognitive reasoning chain:
 
-### Evil Team (狼人阵营)
-- **Werewolf (狼人)**: Collaborates with wolf teammates to kill one player each night
+- **Fact Analysis** - Extract key information from game events
+- **Identity Inference** - Deduce other players' identities based on behavior patterns
+- **Strategy Planning** - Formulate action plans aligned with role objectives
+- **Tactical Playbooks** - Execute predefined complex tactics (fake-claiming, hook, deep-water)
+- **Role Masks** - Adopt different speaking styles and personality disguises
+- **Speech Generation** - Generate natural language that matches role identity and strategy
+- **Self-Reflection** - Evaluate and adjust strategic performance
 
-### Good Team (好人阵营)
-- **Seer (预言家)**: Investigates one player's identity each night
-- **Witch (女巫)**: Has one antidote (heal) and one poison (kill). Cannot heal herself
-- **Guard (守卫)**: Protects one player from werewolf attacks each night. Cannot protect the same player consecutively
-- **Hunter (猎人)**: When killed by werewolves or voted out, can shoot another player. Cannot shoot if poisoned by witch
-- **Villager (平民)**: No special abilities, relies on deduction and persuasion
+### 🎭 Rich Tactical System
 
-## Quick Start
+**Tactical Playbook System**:
+- Werewolf Fake-Claiming Seer: Seize discourse power, mislead good players
+- Hook Tactics: Gain trust, betray in final rounds
+- Guard Protection Strategy: Priority judgment and knife prediction
+- Witch Potion Timing: Optimal timing for antidote and poison usage
 
-### Prerequisites
+**Role Mask System**:
+- Aggressive Attacker, Calm Analyst, Confused Novice
+- Peacemaker, Victimized Good Person, Authoritative Leader
+- Follower, Scapegoat, Instigator
 
-- Flutter SDK 3.9 or higher
-- Dart SDK 3.9 or higher
-- API keys for LLM providers (OpenAI, Anthropic, etc.)
+### 🧠 Social Network & Memory
+
+- **Working Memory**: Store observations, inferences, and relationship data
+- **Social Network Graph**: Track trust/suspicion relationships between players
+- **Information Filter**: Filter visible information based on role permissions
+- **Relationship Analysis**: Dynamically assess social dynamics between players
+
+### 🎮 Dual-Mode Support
+
+- **Console Mode**: Fast battles, support human player participation or god-mode spectating
+- **GUI Mode**: Beautiful Flutter cross-platform interface (in development)
+
+## 🚀 Quick Start
+
+### Requirements
+
+- **Dart SDK**: 3.9.0+
+- **Flutter**: 3.9.0+ (required for GUI mode)
+- **LLM API**: OpenAI-compatible API (OpenAI, DeepSeek, Qwen, etc.)
 
 ### Installation
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/cals/werewolf_arena.git
 cd werewolf_arena
 
 # Install dependencies
 flutter pub get
-
-# Generate code (routes, assets)
-dart run build_runner build --delete-conflicting-outputs
 ```
 
-### Configuration
+### Configure LLM API
 
-Create a `werewolf_config.yaml` file in the project root:
+Create `werewolf_config.yaml` in project root:
 
 ```yaml
 # Default LLM configuration
 default_llm:
-  model: gpt-4o-mini
-  api_key: ${OPENAI_API_KEY}  # Use environment variable
-  base_url: https://api.openai.com/v1
+  api_key: sk-xxxxxxxxxxxx
+  base_url: "https://api.openai.com/v1"
+  max_retries: 10
 
-# Override models for specific players (optional)
+# Fast model (for simple tasks, optional)
+# Recommended: gpt-4o-mini, claude-3-5-haiku-20241022, deepseek-chat
+fast_model_id: gpt-4o-mini
+
+# Player model configuration (12 players cycle through)
 player_models:
-  2:  # Player 2 uses Claude
-    model: claude-3-5-sonnet-20241022
-    api_key: ${ANTHROPIC_API_KEY}
-    base_url: https://api.anthropic.com
-  3:  # Player 3 uses DeepSeek
-    model: deepseek-chat
-    api_key: ${DEEPSEEK_API_KEY}
-    base_url: https://api.deepseek.com
+  - gpt-4o
+  - claude-3-7-sonnet-20250219
+  - deepseek/deepseek-v3.2-exp
 ```
 
-Set environment variables:
+### Run the Game
+
+**Console Mode**:
 
 ```bash
-export OPENAI_API_KEY="your-openai-key"
-export ANTHROPIC_API_KEY="your-anthropic-key"
-export DEEPSEEK_API_KEY="your-deepseek-key"
+# God mode spectating (recommended for first experience)
+dart run bin/main.dart -g
+
+# Play as specific player
+dart run bin/main.dart --player 1
+
+# Random player assignment
+dart run bin/main.dart
+
+# Enable debug logging
+dart run bin/main.dart -g -d
 ```
 
-### Running the Game
+**Flutter GUI Mode**:
 
-**GUI Mode (Flutter):**
 ```bash
 flutter run
 ```
 
-**CLI Mode (Console):**
-```bash
-# Run with default 9-player game
-dart run bin/main.dart
+## 🎲 Game Rules
 
-# Run with custom configuration
-dart run bin/main.dart -c werewolf_config.yaml
+### Standard 12-Player Setup
 
-# Run with 12 players
-dart run bin/main.dart -p 12
+- **Factions**: 4 Werewolves vs 4 Villagers + 4 Gods
+- **Roles**:
+  - 🐺 **Werewolf**: Kill players at night, werewolves know each other
+  - 👤 **Villager**: No special abilities, rely on deduction to find werewolves
+  - 🔮 **Seer**: Check one player's identity each night
+  - 💊 **Witch**: Has one antidote and one poison
+  - 🛡️ **Guard**: Protect one player each night (cannot protect same player consecutively)
+  - 🔫 **Hunter**: Can shoot one player when eliminated
+
+### Victory Conditions (Edge Slaughter Rules)
+
+- **Good Team Victory**: All werewolves eliminated
+- **Werewolf Victory**: Eliminate all villagers OR eliminate all god roles
+
+### Game Flow
+
+```
+Night Phase → Day Discussion → Vote Exile → Check Victory
+   ↑                                           ↓
+   └───────────────────────────────────────────┘
 ```
 
-## Architecture
+**Night Phase**:
+1. Guard protects a player
+2. Werewolves discuss and kill target
+3. Seer checks identity
+4. Witch decides whether to use potions
 
-The project follows **Domain-Driven Design (DDD)** with clear separation of concerns:
+**Day Phase**:
+1. Announce night death results
+2. Players speak and discuss in order
+3. Everyone votes to exile a player
+4. Check victory conditions
 
-### Core Layers
+## 🏗️ Technical Architecture
+
+### Core Modules
 
 ```
-lib/
-├── engine/              # Pure Dart game logic (no Flutter dependencies)
-│   ├── domain/         # Entities (Player, Role), value objects, enums
-│   ├── events/         # Event-driven game state changes (16 event types)
-│   ├── skills/         # Skill system (11 skills: kill, heal, poison, protect, etc.)
-│   ├── processors/     # Phase processors (night/day logic)
-│   ├── drivers/        # Player drivers (AI via LLM, future human support)
-│   └── scenarios/      # Game configurations (9-player, 12-player)
-├── page/               # Flutter UI pages (home, game, settings, debug)
-├── router/             # Auto-route navigation
-├── console/            # CLI interface with colored output
-└── services/           # Configuration and utilities
+lib/engine/              # Game engine core
+├── game_engine.dart     # Game main loop controller
+├── game_state.dart      # Game state management
+├── game_config.dart     # Configuration management
+├── player/              # Player system
+│   ├── ai_player.dart   # AI player
+│   └── human_player.dart # Human player
+├── driver/              # Decision drivers
+│   ├── ai_player_driver.dart      # AI decision engine
+│   └── human_player_driver.dart   # Human interaction
+├── reasoning/           # AI reasoning system
+│   ├── ai_reasoning_engine.dart   # Reasoning engine
+│   └── steps/           # 7-step reasoning chain
+├── playbook/            # Tactical playbook library
+├── mask/                # Role mask library
+├── memory/              # Memory & social network
+├── role/                # Role definitions
+├── skill/               # Skill system
+└── event/               # Event system
 ```
 
-### Game Scenarios
+### AI Reasoning Flow
 
-**9-Player Standard (标准9人局)**
-- 2 Werewolves + 3 Villagers + Seer + Witch + Guard + Hunter
-- Balanced configuration for quick games
+```mermaid
+graph LR
+    A[Game Events] --> B[Fact Analysis]
+    B --> C[Identity Inference]
+    C --> D[Strategy Planning]
+    D --> E[Playbook Selection]
+    E --> F[Mask Selection]
+    F --> G[Speech Generation]
+    G --> H[Execute Action]
+    H --> I[Self Reflection]
+```
 
-**12-Player Standard (标准12人局)**
-- 4 Werewolves + 4 Villagers + Seer + Witch + Guard + Hunter
-- Extended gameplay with more strategic depth
+### Dual-Model Architecture
 
-### Key Design Patterns
+For balancing performance and quality:
 
-**Event-Driven Game Flow**
-- All actions produce `GameEvent` objects (16 types: DeadEvent, SpeakEvent, VoteEvent, WerewolfKillEvent, etc.)
-- Events stored in immutable history with visibility rules (public/private/role-specific)
-- Real-time event streaming via `GameState.eventStream` for observers
-- Events support narrative conversion for AI context
+- **Main Model** (complex reasoning): Fact analysis, identity inference, strategy planning, speech generation
+- **Fast Model** (simple tasks): Playbook selection, mask selection, self-reflection
 
-**Skill System**
-- Every player action is a `GameSkill` (WerewolfDiscussSkill, KillSkill, HealSkill, ProtectSkill, etc.)
-- Skills generate contextual LLM prompts with game state, event history, and role knowledge
-- Structured JSON responses for target selection and reasoning
-- Skills are composable - each role defines its skill set
+This design significantly reduces API call costs and response latency.
 
-**Phase Processors**
-- `NightPhaseProcessor` (lib/engine/processors/night_phase_processor.dart:42-70): Sequential night actions with delays
-- `DayPhaseProcessor` (lib/engine/processors/day_phase_processor.dart:23-98): Speech and voting phases
-- Each processor implements `GameProcessor` interface
-- Processors handle event emission and state transitions
+## 🎯 Usage Examples
 
-**Player Driver Abstraction**
-- `AIPlayerDriver` (lib/engine/drivers/ai_player_driver.dart): LLM-powered strategic decision making
-- Advanced prompt engineering for role-playing and tactical gameplay
-- Retry logic with exponential backoff for API reliability
-- JSON response cleaning for parsing robustness
-- Future: `HumanPlayerDriver` for human player support
-
-**LLM Integration**
-- Supports OpenAI-compatible APIs (OpenAI, Anthropic, DeepSeek, etc.)
-- Configurable per-player models via YAML
-- Built-in retry mechanism (3 attempts with exponential backoff)
-- Detailed context construction with game state, events, and role prompts
-
-## Game Flow
-
-### Night Phase (夜晚阶段)
-1. **Werewolf Discussion** - Werewolves discuss strategy and select kill target
-2. **Werewolf Kill** - Werewolves vote to kill a player
-3. **Seer Investigation** - Seer investigates one player's identity
-4. **Witch Heal** - Witch can use antidote to save the killed player (cannot save herself)
-5. **Witch Poison** - Witch can poison a player (cannot use both heal and poison in same night)
-6. **Guard Protection** - Guard protects a player (cannot protect same player consecutively)
-7. **Night Settlement** - Deaths are calculated based on kills, heals, poisons, and protection
-
-### Day Phase (白天阶段)
-1. **Death Announcement** - Judge announces who died last night
-2. **Player Speeches** - All alive players speak in order to share analysis and suspicions
-3. **Voting** - Players vote simultaneously to execute a suspect
-4. **Execution** - Player with most votes is eliminated
-5. **Hunter Revenge** - If hunter is killed, can shoot another player (if not poisoned)
-
-### Win Conditions (胜利条件)
-- **Good Wins**: All werewolves are eliminated
-- **Evil Wins**: Werewolf count ≥ Good player count
-
-## Development
-
-### Code Quality
+### Example 1: God Mode Spectating AI Battles
 
 ```bash
-# Analyze code
-flutter analyze
-dart analyze
+dart run bin/main.dart -g
+```
 
-# Run tests
+You will see:
+- Complete game flow
+- All players' true identities
+- AI reasoning processes and decisions
+- Secret actions during night phase
+
+### Example 2: Playing as Seer
+
+```bash
+dart run bin/main.dart --player 1
+```
+
+The game will assign you a role, and you will:
+- Use role abilities at night
+- Speak and discuss during the day
+- Participate in voting
+- Compete with AI players
+
+### Example 3: Using Different Model Configurations
+
+Edit `werewolf_config.yaml`:
+
+```yaml
+player_models:
+  - gpt-4o                 # Players 1-4
+  - claude-3-7-sonnet      # Players 5-8
+  - deepseek/deepseek-chat # Players 9-12
+```
+
+This allows testing strategic performance of different models.
+
+## 🛠️ Development Guide
+
+### Project Structure
+
+- `lib/` - Main codebase
+  - `engine/` - Game engine core
+  - `console/` - Console UI
+  - `page/` - Flutter pages (GUI)
+  - `database/` - Data persistence
+  - `router/` - Route management
+- `bin/` - Console application entry
+- `asset/` - Resource files
+- `test/` - Test files
+
+### Running Tests
+
+```bash
 flutter test
-dart test
-
-# Format code
-dart format .
 ```
 
-### Adding a New Role
+### Code Generation
 
-1. Create role class extending `GameRole` in `lib/engine/domain/entities/`
-   ```dart
-   class MyRole extends GameRole {
-     @override
-     String get id => 'my_role';
+The project uses code generators. After modifying related files, run:
 
-     @override
-     String get name => '角色名';
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
 
-     @override
-     String get prompt => '角色提示词...';
+### Code Linting
 
-     @override
-     List<GameSkill> get skills => [SpeakSkill(), VoteSkill()];
-   }
-   ```
-2. Register in `GameRoleFactory.createRole()`
-3. Add to `RoleType` enum in `lib/engine/domain/enums/role_type.dart`
-4. Include in scenario's `roleDistribution` map
+```bash
+flutter analyze
+```
 
-### Adding a New Skill
+## 📊 Performance Optimization Tips
 
-1. Create skill class extending `GameSkill` in `lib/engine/skills/`
-   ```dart
-   class MySkill extends GameSkill {
-     @override
-     String get prompt => 'AI决策提示...';
+1. **Use Fast Model**: Configure `fast_model_id` in `werewolf_config.yaml`
+2. **Adjust Retry Count**: Set `max_retries` based on network conditions
+3. **Concurrency Control**: Game engine automatically manages API call concurrency
+4. **Cache Optimization**: Reasoning results are cached within rounds
 
-     @override
-     String formatPrompt(GameState state, GamePlayer player) {
-       // 构建包含游戏状态的完整提示
-       return '...';
-     }
-   }
-   ```
-2. Add to role's `skills` getter
-3. Implement skill execution in phase processor via `player.cast(skill, state)`
+## 🤝 Contributing
 
-### Understanding AI Decision Making
+Contributions, suggestions, and issue reports are welcome!
 
-The AI system (lib/engine/drivers/ai_player_driver.dart:22-39) uses a sophisticated prompt that:
-- Makes AI forget it's an AI and fully roleplay as a player
-- Emphasizes strategic thinking, psychological tactics, and narrative building
-- Encourages advanced strategies (deception, alliances, tactical voting)
-- Maintains memory and consistency across game rounds
+1. Fork this repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add some amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Create Pull Request
 
-## Technology Stack
+## 📝 Tech Stack
 
-- **Framework**: Flutter 3.9+
-- **Language**: Dart 3.9+
-- **State Management**: Signals
-- **Dependency Injection**: GetIt
-- **Routing**: Auto Route
-- **LLM Integration**: OpenAI Dart SDK
-- **Configuration**: YAML
-- **Logging**: Logger package
+- **Language**: Dart 3.9.0+
+- **Framework**: Flutter 3.9.0+
+- **LLM Integration**: openai_dart
+- **Dependency Injection**: get_it
+- **State Management**: signals
+- **Routing**: auto_route
+- **Database**: laconic (SQLite)
+- **UI Components**: Lottie animations, Google Fonts
 
-## Contributing
+## 🔮 Roadmap
 
-Contributions are welcome! Please follow these steps:
+- [x] Core game engine
+- [x] 7-step AI reasoning chain
+- [x] Tactical playbook system
+- [x] Role mask system
+- [x] Console mode
+- [ ] Complete Flutter GUI
+- [ ] Multi-scenario support (9-player, city slaughter, etc.)
+- [ ] Game replay feature
+- [ ] AI battle leaderboard
+- [ ] Custom role configuration
+- [ ] Multi-language support
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Commit Convention
-
-- `feat:` New features
-- `fix:` Bug fixes
-- `refactor:` Code refactoring
-- `docs:` Documentation updates
-- `test:` Test additions or modifications
-
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Inspired by the classic Werewolf/Mafia social deduction game
-- Built with Flutter and Dart
-- AI powered by OpenAI, Anthropic, and other LLM providers
+- Thanks to all LLM providers for making this project possible
+- Thanks to the Flutter and Dart community for excellent tools and libraries
+- Thanks to the Werewolf game for the inspiration
 
-## Contact
+## 📮 Contact
 
-- Repository: [https://github.com/cals/werewolf_arena](https://github.com/cals/werewolf_arena)
-- Issues: [https://github.com/cals/werewolf_arena/issues](https://github.com/cals/werewolf_arena/issues)
+- **Project Home**: https://github.com/cals/werewolf_arena
+- **Issue Tracker**: [Issues](https://github.com/cals/werewolf_arena/issues)
 
----
+<div align="center">
 
-Made with love by the Werewolf Arena team
+**If this project helps you, please give it a ⭐️ Star!**
+
+Made with ❤️ by CalsRanna
+
+</div>

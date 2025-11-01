@@ -4,245 +4,233 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Werewolf Arena (狼人杀竞技场) is an AI-powered Werewolf game implementation in Flutter/Dart. The game features AI players that use LLMs (GPT, Claude, etc.) to make strategic decisions, supporting both GUI (Flutter) and CLI modes.
+Werewolf Arena (狼人杀竞技场) is an AI-powered Werewolf (Mafia) game where LLM-based agents compete against each other. The project is built with Flutter/Dart and supports both a GUI application and a console mode.
 
-## Development Commands
+**Repository:** https://github.com/cals/werewolf_arena
 
-### Setup and Dependencies
+## Running the Application
+
+### Console Mode
+```bash
+# Run with default settings (random human player assignment)
+dart run bin/main.dart
+
+# God mode (all AI players, observe everything)
+dart run bin/main.dart -g
+
+# Play as specific player (1-12)
+dart run bin/main.dart --player 1
+
+# Enable debug mode
+dart run bin/main.dart -d
+
+# God mode with debug
+dart run bin/main.dart -g -d
+```
+
+### Flutter GUI
+```bash
+# Run the Flutter application
+flutter run
+
+# For desktop platforms
+flutter run -d macos  # or windows/linux
+```
+
+### Development Commands
 ```bash
 # Install dependencies
 flutter pub get
 
-# Run code generation for routes and assets
-dart run build_runner build --delete-conflicting-outputs
-```
+# Run code generation (for auto_route, json_serializable, etc.)
+flutter pub run build_runner build --delete-conflicting-outputs
 
-### Running the Application
-```bash
-# Run Flutter GUI app (development)
-flutter run
-
-# Run CLI/console mode
-dart run bin/main.dart
-
-# Run with specific configuration
-dart run bin/main.dart -c werewolf_config.yaml
-
-# Run with 9 or 12 players
-dart run bin/main.dart -p 12
-```
-
-### Code Quality
-```bash
-# Analyze code
+# Run linter
 flutter analyze
-dart analyze
 
 # Run tests
 flutter test
-dart test
 
-# Format code
-dart format .
+# Run a single test file
+flutter test test/widget_test.dart
 ```
 
-## Architecture Overview
+## Architecture
 
-### Core Architecture Pattern
+### Core Engine (`lib/engine/`)
 
-The project follows a **Domain-Driven Design (DDD)** with clear separation:
+The game engine is the heart of the application and follows a modular, event-driven architecture:
 
-1. **Engine Layer** (`lib/engine/`) - Pure Dart game logic, no Flutter dependencies
-   - `domain/` - Core entities, value objects, enums (Player, Role, Skills)
-   - `events/` - Event-driven game state changes
-   - `skills/` - Skill system (each role ability is a skill)
-   - `processors/` - Phase processors (night/day logic)
-   - `drivers/` - Player drivers (AI/Human input abstraction)
-   - `scenarios/` - Game scenarios (9-player, 12-player configurations)
+**Game Flow:**
+1. **GameEngine** (`game_engine.dart`) - Main coordinator that manages game lifecycle
+   - Initializes game state with players and scenario
+   - Runs the main game loop via `loop()` method
+   - Uses **GameRoundController** to process each phase
+   - Emits events to **GameObserver** for UI updates
 
-2. **UI Layer** (`lib/page/`, `lib/router/`) - Flutter-specific code
-   - Uses `auto_route` for navigation
-   - `signals` for reactive state management
-   - ViewModels follow factory pattern via GetIt DI
+2. **GameState** (`game_state.dart`) - Central state container
+   - Tracks players, day count, phase, deaths, votes
+   - Maintains event stream for observers
+   - Checks win conditions
 
-3. **Console Layer** (`lib/console/`, `bin/main.dart`) - CLI interface
-   - Fully functional terminal-based game
-   - ColoredConsole output
-   - ConsoleGameObserver for event handling
+3. **GameRoundController** (`game_round/`) - Phase execution
+   - **DefaultGameRoundController** executes night/day/vote phases sequentially
+   - Each phase involves players casting skills in appropriate order
 
-### Key Design Patterns
+**Player System:**
+- **GamePlayer** (`player/game_player.dart`) - Abstract base class with common properties
+  - **AIPlayer** - LLM-controlled player using reasoning engine
+  - **HumanPlayer** - Human-controlled player with interactive UI
 
-**Event-Driven Game Flow**
-- All game actions produce `GameEvent` objects
-- Events are stored in `GameState.events` history
-- Observers can listen to events via `GameState.eventStream`
-- Events include: SpeakEvent, VoteEvent, DeadEvent, WerewolfKillEvent, etc.
+**Player Driver Pattern:**
+- **PlayerDriver** (`driver/`) - Strategy pattern for player decision-making
+  - **AIPlayerDriver** - Coordinates with AIReasoningEngine for LLM decisions
+  - **HumanPlayerDriver** - Handles human input via UI interface
+  - Drivers are injected into players, enabling easy testing and different control modes
 
-**Skill System**
-- Every player action is a `GameSkill` (speak, vote, kill, heal, protect, etc.)
-- Skills have `formatPrompt()` to generate LLM prompts
-- Skills return `SkillResult` with target and reasoning
-- Example: `WerewolfDiscussSkill`, `KillSkill`, `HealSkill`, `VoteSkill`
+**AI Reasoning System (`reasoning/`):**
 
-**Phase Processors**
-- `NightPhaseProcessor` - handles werewolf kills, seer investigations, witch actions, guard protection
-- `DayPhaseProcessor` - handles player speeches, voting, executions, last words
-- Each processor implements `GameProcessor` interface
+The AI uses a multi-step reasoning pipeline executed by **AIReasoningEngine**:
 
-**Player Driver Abstraction**
-- `PlayerDriver` interface separates decision-making from game logic
-- `AIPlayerDriver` uses LLM APIs (OpenAI/Anthropic) for AI decisions
-- `HumanPlayerDriver` for future human player support
-- Drivers receive game context and return formatted responses
+1. **FactAnalysisStep** - Analyze observable facts and events
+2. **IdentityInferenceStep** - Deduce player identities based on behavior
+3. **MaskSelectionStep** - Choose behavioral "mask" (persona) for this turn
+4. **PlaybookSelectionStep** - Select tactical playbook to follow
+5. **StrategyPlanningStep** - Plan concrete actions for current phase
+6. **SpeechGenerationStep** - Generate in-character speech
+7. **SelfReflectionStep** - Reflect on performance and adjust strategy
 
-### Game Flow
+Each step receives a **ReasoningContext** and produces a **ReasoningResult**. Steps can be skipped based on conditions.
 
-1. **Initialization**
-   - `GameEngine` created with config, scenario, players, observer
-   - `GameState` initialized with player list
-   - Game starts in night phase, day 1
+**Memory & Social Analysis (`memory/`):**
+- **WorkingMemory** - Stores observations, inferences, relationship data
+- **SocialNetwork** - Tracks trust/suspicion relationships between players
+- **SocialAnalyzer** - Analyzes social dynamics and player behavior patterns
+- **InformationFilter** - Filters information based on player's role/knowledge
 
-2. **Game Loop** (`GameEngine.loop()`)
-   - Select processor based on current phase
-   - Processor executes all phase actions via skill system
-   - Check win conditions after each phase
-   - Transition to next phase
+**Role System (`role/`):**
+- Abstract **GameRole** base class
+- Concrete roles: Werewolf, Seer, Witch, Guard, Hunter, Villager
+- Each role defines faction, skills, and abilities
 
-3. **Phase Execution**
-   - Night: Werewolf discussion → kill → seer investigate → witch heal/poison → guard protect
-   - Day: Announce deaths → last words → speeches → voting → execute
+**Skill System (`skill/`):**
+- **GameSkill** - Abstract skill interface
+- Skills: Kill, Investigate, Heal, Poison, Protect, Vote, Discuss, Conspire, Testament, Shoot
+- Skills return **SkillResult** containing targets and effects
 
-4. **Win Conditions** (checked in `GameState.checkGameEnd()`)
-   - Good guys win: All werewolves dead
-   - Werewolves win: All gods dead OR all villagers dead (with numerical advantage)
+**Tactical Systems:**
+
+- **Playbook** (`playbook/`) - Strategic templates for complex multi-phase tactics
+  - Examples: WerewolfJumpSeerPlaybook, GuardProtectPlaybook, WitchHidePoisonPlaybook
+  - Define core goals, execution steps, key phrases, and success criteria
+  - Selected during PlaybookSelectionStep based on game state
+
+- **RoleMask** (`mask/`) - Behavioral personas that affect speech style
+  - Examples: AggressiveAttacker, CalmAnalyst, ConfusedNovice, Peacemaker
+  - Define tone, language style, and example phrases
+  - Selected during MaskSelectionStep to add variety to player behavior
+
+**Event System (`event/`):**
+- All game actions emit events (GameEvent subclasses)
+- Events: GameStart, Kill, Heal, Poison, Protect, Investigate, Discuss, Vote, Exile, Dead, GameEnd
+- **GameObserver** receives events for UI updates and logging
+
+**Scenario System (`scenario/`):**
+- **GameScenario** defines player count and role distribution
+- **Scenario12Players** - 12-player configuration with standard role mix
 
 ### Configuration System
 
-**Game Configuration** (`werewolf_config.yaml`)
-- `default_llm`: Default LLM settings (model, API key, base URL)
-- `player_models`: Per-player model overrides (e.g., player 2 uses Claude, player 3 uses GPT-4)
-- Environment variable substitution supported: `${OPENAI_API_KEY}`
+**GameConfig** (`engine/game_config.dart`):
+- Contains list of **PlayerIntelligence** objects (one per player)
+- Each PlayerIntelligence specifies: `baseUrl`, `apiKey`, `modelId`
+- Supports `fastModelId` for performance optimization on simple reasoning steps
+- `maxRetries` for LLM API call retry logic
 
-**Player Intelligence** (`PlayerIntelligence`)
-- Each AI player has: `modelId`, `apiKey`, `baseUrl`
-- Supports OpenAI-compatible APIs (OpenAI, Anthropic, DeepSeek, etc.)
+Configuration is loaded by:
+- **ConsoleGameConfigLoader** for console mode (reads from config file or defaults)
+- GUI uses database-stored PlayerIntelligence records
 
-### Dependency Injection
+### Console Mode (`lib/console/`)
 
-Uses GetIt with two registration patterns:
-- **Singleton**: `ConfigService` (lazy singleton)
-- **Factory**: All ViewModels (fresh instance per use)
+Console-specific implementations:
+- **ConsoleGameObserver** - Prints game events to terminal with color formatting
+- **ConsoleGameUI** - Terminal UI utilities (spinners, colors, formatting)
+- **ConsoleHumanPlayerDriverUI** - Interactive human player input in console
+- **ConsoleGameConfigLoader** - Loads configuration for console games
 
-Initialize in app startup: `DI.ensureInitialized()`
+### Flutter UI (`lib/page/`)
 
-### State Management
+Pages follow MVVM pattern with GetIt dependency injection:
+- **BootstrapPage** - Initial loading screen
+- **HomePage** - Main menu
+- **GamePage** - Active game UI
+- **SettingsPage** - Configuration management
+- **PlayerIntelligencePage** - Manage AI player configurations
+- **DebugPage** - Development tools (currently set as initial route)
 
-**Engine State** (Pure Dart)
-- `GameState` holds all game data (players, events, phase, day number)
-- Immutable value objects for game concepts
-- Stream-based event propagation
+**Routing:**
+- Uses **auto_route** package (`lib/router/router.dart`)
+- Routes defined with `@AutoRouterConfig` annotation
+- Run code generator after route changes
 
-**UI State** (Flutter)
-- `signals` package for reactive state
-- Computed signals for derived values (alive players count, formatted time, etc.)
-- ViewModel pattern for each page
+**State Management:**
+- Uses **signals** package for reactive state
+- ViewModels registered in `lib/di.dart` via GetIt
 
-## Important Files and Locations
+### Database (`lib/database/`)
 
-### Entry Points
-- `lib/main.dart` - Flutter GUI app entry
-- `bin/main.dart` - CLI console app entry
+- **Database** - SQLite database singleton using laconic package
+- **PlayerIntelligenceRepository** - CRUD operations for AI configurations
+- Migrations in `database/migration/`
 
-### Core Game Logic
-- `lib/engine/game_engine.dart` - Main game loop orchestrator
-- `lib/engine/game_state.dart` - Game state management and win condition logic
-- `lib/engine/processors/night_phase_processor.dart:42-110` - Night phase sequence
-- `lib/engine/processors/day_phase_processor.dart` - Day phase sequence
+## Key Patterns & Conventions
 
-### AI System
-- `lib/engine/drivers/ai_player_driver.dart:21-38` - Core AI player prompt
-- `lib/engine/drivers/llm_service.dart` - LLM API integration with retry logic
-- `lib/engine/skills/werewolf_discuss_skill.dart` - Example of complex skill with detailed prompt
+1. **Dependency Injection**: GetIt container initialized in `main.dart` via `DI.ensureInitialized()`
 
-### Role System
-- `lib/engine/domain/entities/game_role.dart` - Role interface
-- `lib/engine/domain/entities/werewolf_role.dart`, `witch_role.dart`, etc. - Specific roles
-- `lib/engine/domain/entities/game_role_factory.dart` - Role factory
+2. **Event-Driven**: Game state changes emit events through GameState's event stream, observers react to events
 
-### Configuration Loading
-- `lib/console/console_config_loader.dart` - Console config loader
-- `lib/services/config_service.dart` - Flutter config service (with shared_preferences)
-- `werewolf_config.yaml` - Game configuration template
+3. **Strategy Pattern**: PlayerDriver abstraction allows swapping AI/Human control
+
+4. **Multi-Step Reasoning**: AIReasoningEngine chains multiple ReasoningStep implementations
+
+5. **Observable Pattern**: GameObserver receives all game events for UI/logging
+
+6. **Repository Pattern**: Database access through dedicated repository classes
+
+## LLM Integration
+
+The project uses **openai_dart** package to communicate with OpenAI-compatible APIs. Each AI player maintains its own OpenAIClient configured via PlayerIntelligence settings.
+
+**Performance Optimization:**
+- Two-tier model strategy: complex reasoning uses main model, simple tasks use `fastModelId`
+- Fast model used for: Playbook selection, Mask selection, Self-reflection
+- Main model used for: Fact analysis, Identity inference, Strategy planning, Speech generation
+
+**Retry Logic:**
+- AIPlayerDriver implements retry logic with exponential backoff
+- Controlled by `maxRetries` in GameConfig
 
 ## Code Generation
 
-The project uses build_runner for:
-1. **Auto Route** - Router code generation (router.gr.dart)
-2. **JSON Serializable** - Model serialization (if used)
-3. **Flutter Gen** - Asset code generation (assets.gen.dart)
-
-After modifying routes or assets, run:
+This project uses several code generators. After modifying annotated files, run:
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-## Testing Strategy
+Generators used:
+- **auto_route_generator** - Routing code
+- **json_serializable** - JSON serialization
+- **flutter_gen_runner** - Asset references
 
-- Unit tests focus on game logic in `lib/engine/`
-- Keep UI tests minimal (Flutter is framework, engine is core)
-- Mock LLM responses using `mocktail` for AI driver tests
-- Test win conditions thoroughly in `GameState.checkGameEnd()`
+## Important Notes
 
-## Common Patterns
+- **Chinese Language**: This project uses Chinese for game text, player interactions, and UI. All prompts to LLMs are in Chinese.
 
-### Adding a New Role
-1. Create role class extending `GameRole` in `lib/engine/domain/entities/`
-2. Define role's skills in `skills` getter
-3. Add role-specific prompt in `prompt` getter
-4. Register in `GameRoleFactory`
-5. Add to scenario's role distribution
+- **Role Knowledge**: Players only see information available to their role. InformationFilter enforces this.
 
-### Adding a New Skill
-1. Create skill class extending `GameSkill` in `lib/engine/skills/`
-2. Implement `formatPrompt()` with detailed instructions for AI
-3. Add skill to appropriate role's `skills` list
-4. Use skill in phase processor via `player.cast(skill, state)`
+- **Game Loop**: The `GameEngine.loop()` method is designed to be called repeatedly. It returns `false` when the game ends.
 
-### Modifying Game Flow
-1. Edit phase processors (`night_phase_processor.dart`, `day_phase_processor.dart`)
-2. Follow existing pattern: create event → emit event → handle in game state
-3. Update win conditions if needed in `GameState._checkWinner()`
+- **Resource Cleanup**: Always call `GameEngine.dispose()` after game completion to clean up event streams and prevent memory leaks.
 
-### Working with Events
-- All events extend `GameEvent` base class
-- Events have `type`, `timestamp`, `visibility` (public/private/role-specific)
-- Create event → `state.handleEvent(event)` → appears in event log
-- Observer pattern: listen to `state.eventStream` for real-time updates
-
-## Special Considerations
-
-### LLM Prompt Engineering
-- Player prompts emphasize role-playing and strategic thinking (see `ai_player_driver.dart:21-38`)
-- Each skill provides detailed context: game state, event history, role knowledge
-- Responses are JSON-formatted for parsing (target selection, reasoning, speech)
-
-### Platform Differences
-- Engine code is platform-agnostic (pure Dart)
-- Console mode uses `dart:io` (not available on web)
-- Flutter UI uses platform channels for desktop features (window_manager, tray_manager)
-
-### Performance
-- Game loop has 500ms delays between steps for readability
-- LLM calls can be slow (1-5 seconds per decision)
-- Event history grows over time - consider cleanup for very long games
-
-### Logging
-- Use `GameEngineLogger.instance` for engine logs
-- Use `LoggerUtil.instance` for app-level logs
-- Console mode shows colored output via `ConsoleGameOutput`
-
-## Git Workflow
-
-Main branch: `main`
-- Recent work focused on fixing night phase processing and AI discussion skills
-- Bug fixes use `fix:` prefix, features use `feat:` prefix in commits
+- **Human Player Integration**: When creating a game with human players, ensure the HumanPlayerDriverInterface implementation is passed to the GameObserver so it can display prompts correctly.
