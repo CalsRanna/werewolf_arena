@@ -478,7 +478,7 @@ class DefaultGameRoundController implements GameRoundController {
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
 
-    // 检查是否有猎人死亡，如果有则触发开枪
+    // 检查是否有猎人死亡，如果有则触发开枪（夜晚死亡没有遗言）
     for (var player in deadPlayers) {
       if (player.role is HunterRole) {
         // 判断猎人是否可以开枪（被毒死不能开枪）
