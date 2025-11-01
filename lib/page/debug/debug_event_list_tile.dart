@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:werewolf_arena/engine/event/announce_event.dart';
+import 'package:werewolf_arena/engine/event/system_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
@@ -30,7 +30,7 @@ class DebugEventListTile extends StatelessWidget {
 
   String _getContent() {
     return switch (event) {
-      AnnounceEvent e => '[JUDGE]：${e.message}',
+      SystemEvent e => '[JUDGE]：${e.message}',
       ConspireEvent e => e.message,
       DiscussEvent e => '[${e.source.name}]： ${e.message}',
       _ => '[SYSTEM]：${event.toNarrative()}',
