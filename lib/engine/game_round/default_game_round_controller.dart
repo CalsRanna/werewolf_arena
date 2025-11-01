@@ -76,6 +76,12 @@ class DefaultGameRoundController implements GameRoundController {
       poisonTarget: poisonTarget,
       guardTarget: protectTarget,
     );
+
+    // 如果游戏在夜晚阶段结束，不执行后续白天阶段
+    if (state.winner != null) {
+      return;
+    }
+
     await Future.delayed(const Duration(seconds: 1));
     // 公开讨论
     await _processDiscuss(
@@ -109,6 +115,11 @@ class DefaultGameRoundController implements GameRoundController {
     await Future.delayed(const Duration(seconds: 1));
     // 白天结算 - 检查游戏是否结束
     await _processDaySettlement(state, observer: observer);
+
+    // 如果游戏在白天阶段结束，不执行后续操作
+    if (state.winner != null) {
+      return;
+    }
 
     // 更新所有活着玩家的记忆
     await _updateAIPlayerMemories(state, eventsCountBeforeRound);
@@ -486,6 +497,7 @@ class DefaultGameRoundController implements GameRoundController {
     // 检查游戏是否结束
     if (state.checkGameEnd()) {
       GameEngineLogger.instance.i('游戏在夜晚阶段结束');
+      return deadPlayers; // 游戏已结束，立即返回，不执行后续白天阶段
     }
 
     return deadPlayers;
