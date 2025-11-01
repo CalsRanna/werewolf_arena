@@ -45,7 +45,7 @@ class DefaultGameRoundController implements GameRoundController {
     // 记录当前回合开始前的事件数量
     final eventsCountBeforeRound = state.events.length;
     // 夜晚开始
-    var systemEvent = SystemEvent('天黑请闭眼', day: state.day);
+    var systemEvent = SystemEvent('天黑请闭眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -239,7 +239,7 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('狼人请睁眼', day: state.day);
+    var systemEvent = SystemEvent('狼人请睁眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -277,7 +277,7 @@ class DefaultGameRoundController implements GameRoundController {
     GameObserver? observer,
     required List<GamePlayer> lastNightDeadPlayers,
   }) async {
-    var systemEvent = SystemEvent('所有人请睁眼', day: state.day);
+    var systemEvent = SystemEvent('所有人请睁眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -309,11 +309,11 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('女巫请睁眼', day: state.day);
+    var systemEvent = SystemEvent('女巫请睁眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
-    systemEvent = SystemEvent('你有一瓶解药，你要用吗', day: state.day);
+    systemEvent = SystemEvent('你有一瓶解药，你要用吗');
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
 
@@ -337,17 +337,14 @@ class DefaultGameRoundController implements GameRoundController {
       state.handleEvent(healEvent);
       await observer?.onGameEvent(healEvent);
       state.canUserHeal = false;
-      systemEvent = SystemEvent(
-        '女巫对${target.formattedName}使用解药',
-        day: state.day,
-      );
+      systemEvent = SystemEvent('女巫对${target.formattedName}使用解药');
       GameEngineLogger.instance.d(systemEvent.toString());
       state.handleEvent(systemEvent);
       return target;
     } else if (target != null && target.name == witch.name) {
       // 女巫试图救自己，记录日志但不执行
       GameEngineLogger.instance.d('女巫不能救自己，解药使用失败');
-      systemEvent = SystemEvent('女巫试图救自己，但规则不允许', day: state.day);
+      systemEvent = SystemEvent('女巫试图救自己，但规则不允许');
       GameEngineLogger.instance.d(systemEvent.toString());
       state.handleEvent(systemEvent);
     }
@@ -359,11 +356,11 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('预言家请睁眼', day: state.day);
+    var systemEvent = SystemEvent('预言家请睁眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
-    systemEvent = SystemEvent('你要查验的玩家是谁', day: state.day);
+    systemEvent = SystemEvent('你要查验的玩家是谁');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -381,7 +378,7 @@ class DefaultGameRoundController implements GameRoundController {
       state.handleEvent(investigateEvent);
       await observer?.onGameEvent(investigateEvent);
     }
-    systemEvent = SystemEvent('预言家请闭眼', day: state.day);
+    systemEvent = SystemEvent('预言家请闭眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -391,7 +388,7 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('请选择你们要击杀的玩家', day: state.day);
+    var systemEvent = SystemEvent('请选择你们要击杀的玩家');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -416,7 +413,7 @@ class DefaultGameRoundController implements GameRoundController {
     if (target.role.id == 'witch') {
       state.canUserHeal = false;
     }
-    systemEvent = SystemEvent('狼人请闭眼', day: state.day);
+    systemEvent = SystemEvent('狼人请闭眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -467,13 +464,12 @@ class DefaultGameRoundController implements GameRoundController {
       }
       var systemEvent = SystemEvent(
         '昨晚${deadPlayers.map((player) => player.name).join('、')}死亡',
-        day: state.day,
       );
       GameEngineLogger.instance.d(systemEvent.toString());
       state.handleEvent(systemEvent);
       await observer?.onGameEvent(systemEvent);
     }
-    var systemEvent = SystemEvent('天亮了', day: state.day);
+    var systemEvent = SystemEvent('天亮了');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -507,7 +503,7 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('你有一瓶毒药，你要用吗', day: state.day);
+    var systemEvent = SystemEvent('你有一瓶毒药，你要用吗');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -526,14 +522,11 @@ class DefaultGameRoundController implements GameRoundController {
       state.handleEvent(poisonEvent);
       await observer?.onGameEvent(poisonEvent);
       state.canUserPoison = false;
-      systemEvent = SystemEvent(
-        '女巫对${target.formattedName}使用毒药',
-        day: state.day,
-      );
+      systemEvent = SystemEvent('女巫对${target.formattedName}使用毒药');
       GameEngineLogger.instance.d(systemEvent.toString());
       state.handleEvent(systemEvent);
     }
-    systemEvent = SystemEvent('女巫请闭眼', day: state.day);
+    systemEvent = SystemEvent('女巫请闭眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -544,11 +537,11 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('守卫请睁眼', day: state.day);
+    var systemEvent = SystemEvent('守卫请睁眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
-    systemEvent = SystemEvent('你要守护的玩家是谁', day: state.day);
+    systemEvent = SystemEvent('你要守护的玩家是谁');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -568,13 +561,10 @@ class DefaultGameRoundController implements GameRoundController {
     if (target != null && state.lastProtectedPlayer == target.name) {
       // 守卫试图连续保护同一人，规则不允许
       GameEngineLogger.instance.d('守卫不能连续两次保护${target.formattedName}，保护失败');
-      systemEvent = SystemEvent(
-        '守卫试图连续保护${target.formattedName}，但规则不允许',
-        day: state.day,
-      );
+      systemEvent = SystemEvent('守卫试图连续保护${target.formattedName}，但规则不允许');
       GameEngineLogger.instance.d(systemEvent.toString());
       state.handleEvent(systemEvent);
-      systemEvent = SystemEvent('守卫请闭眼', day: state.day);
+      systemEvent = SystemEvent('守卫请闭眼');
       GameEngineLogger.instance.d(systemEvent.toString());
       state.handleEvent(systemEvent);
       await observer?.onGameEvent(systemEvent);
@@ -590,7 +580,7 @@ class DefaultGameRoundController implements GameRoundController {
       await observer?.onGameEvent(protectEvent);
     }
 
-    systemEvent = SystemEvent('守卫请闭眼', day: state.day);
+    systemEvent = SystemEvent('守卫请闭眼');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -622,7 +612,7 @@ class DefaultGameRoundController implements GameRoundController {
       state.handleEvent(deadEvent);
       await observer?.onGameEvent(deadEvent);
       await Future.delayed(const Duration(seconds: 1));
-      var systemEvent = SystemEvent('猎人对${target.name}开枪', day: state.day);
+      var systemEvent = SystemEvent('猎人对${target.name}开枪');
       GameEngineLogger.instance.d(systemEvent.toString());
       state.handleEvent(systemEvent);
       await observer?.onGameEvent(systemEvent);
@@ -635,7 +625,7 @@ class DefaultGameRoundController implements GameRoundController {
     GameObserver? observer,
     required GamePlayer voteTarget,
   }) async {
-    var systemEvent = SystemEvent('${voteTarget.name}请发表遗言', day: state.day);
+    var systemEvent = SystemEvent('${voteTarget.name}请发表遗言');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -654,7 +644,7 @@ class DefaultGameRoundController implements GameRoundController {
     GameState state, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('所有玩家讨论结束，开始投票', day: state.day);
+    var systemEvent = SystemEvent('所有玩家讨论结束，开始投票');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
@@ -700,7 +690,7 @@ class DefaultGameRoundController implements GameRoundController {
     int eventsCountBeforeRound, {
     GameObserver? observer,
   }) async {
-    var systemEvent = SystemEvent('更新AI玩家记忆', day: state.day);
+    var systemEvent = SystemEvent('更新AI玩家记忆');
     GameEngineLogger.instance.d(systemEvent.toString());
     state.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);

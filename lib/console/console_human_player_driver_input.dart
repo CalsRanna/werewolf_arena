@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:werewolf_arena/engine/driver/human_player_driver_input.dart';
 import 'package:werewolf_arena/console/console_game_ui.dart';
 
@@ -14,7 +15,8 @@ class ConsoleHumanPlayerDriverInput implements HumanPlayerDriverInput {
   @override
   String? readLine() {
     // 读取输入（spinner 应该已经在调用前暂停）
-    final input = stdin.readLineSync()?.trim();
+    // 🔑 显式使用UTF-8编码，确保中文字符正确处理
+    final input = stdin.readLineSync(encoding: utf8)?.trim();
     return input;
   }
 

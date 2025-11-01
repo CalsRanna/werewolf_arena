@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
@@ -65,9 +66,9 @@ class HumanPlayerDriver implements PlayerDriver {
       print('\n【本回合发生的事件】');
       for (final event in visibleEvents) {
         if (event is DiscussEvent) {
-          print('  ${event.source.name}发言： 内容省略');
+          print('  第${event.day}天，${event.source.name}发言：...');
         } else if (event is ConspireEvent) {
-          print('  ${event.source.name}密谈： 内容省略');
+          print('  第${event.day}天，${event.source.name}密谈：...');
         } else {
           print('  ${event.toNarrative()}');
         }
@@ -254,7 +255,7 @@ class HumanPlayerDriver implements PlayerDriver {
     if (_inputReader != null) {
       return _inputReader.readLine();
     }
-    // 降级方案：直接使用 stdin
-    return stdin.readLineSync()?.trim();
+    // 降级方案：直接使用 stdin，显式使用UTF-8编码
+    return stdin.readLineSync(encoding: utf8)?.trim();
   }
 }

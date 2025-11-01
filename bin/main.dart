@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'dart:math';
+import 'dart:convert';
 
 import 'package:args/args.dart';
 import 'package:werewolf_arena/console/console_game_config_loader.dart';
@@ -29,6 +30,11 @@ import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 /// - 简化启动流程，移除复杂的参数管理
 /// - 保持控制台友好的用户体验
 Future<void> main(List<String> arguments) async {
+  // 🔑 显式设置终端编码为UTF-8，确保中文字符正确显示和输入
+  // 注意：不要手动设置 echoMode 和 lineMode，让终端使用默认行为
+  // 手动设置会导致中文字符删除时显示与实际输入缓冲不一致
+  stdout.encoding = utf8;
+
   final ui = ConsoleGameUI.instance;
 
   try {
@@ -105,7 +111,7 @@ Future<void> main(List<String> arguments) async {
 
     // 等待用户确认
     print('\n按回车键开始游戏...');
-    stdin.readLineSync();
+    stdin.readLineSync(encoding: utf8);
     print('');
 
     ui.resumeSpinner();
