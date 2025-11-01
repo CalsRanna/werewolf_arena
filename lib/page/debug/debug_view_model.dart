@@ -14,7 +14,7 @@ import 'package:werewolf_arena/engine/player/pragmatic_veteran_persona.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
-import 'package:werewolf_arena/engine/player/lurker_persona.dart';
+import 'package:werewolf_arena/engine/player/observant_skeptic_persona.dart';
 import 'package:werewolf_arena/engine/player/peacemaker_persona.dart';
 import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
 import 'package:werewolf_arena/engine/player/narrator_persona.dart';
@@ -50,7 +50,7 @@ class DebugViewModel {
       PragmaticVeteranPersona(),
       PettyArtistPersona(),
       LogicMasterPersona(),
-      LurkerPersona(),
+      ObservantSkepticPersona(),
       PeacemakerPersona(),
       RefinedEgoistPersona(),
       NarratorPersona(),

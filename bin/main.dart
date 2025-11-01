@@ -17,7 +17,7 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
 import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
-import 'package:werewolf_arena/engine/player/lurker_persona.dart';
+import 'package:werewolf_arena/engine/player/observant_skeptic_persona.dart';
 import 'package:werewolf_arena/engine/player/peacemaker_persona.dart';
 import 'package:werewolf_arena/engine/player/refined_egoist_persona.dart';
 import 'package:werewolf_arena/engine/player/narrator_persona.dart';
@@ -118,7 +118,7 @@ Future<GameEngine> _createGameEngine(GameObserver observer) async {
     PragmaticVeteranPersona(),
     PettyArtistPersona(),
     LogicMasterPersona(),
-    LurkerPersona(),
+    ObservantSkepticPersona(),
     PeacemakerPersona(),
     RefinedEgoistPersona(),
     NarratorPersona(),
