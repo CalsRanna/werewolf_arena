@@ -31,13 +31,14 @@ class FactAnalysisStep extends ReasoningStep {
     final keyFacts = _filter.extractKeyFacts(context.state, context.player, limit: 5);
     final focusPlayers = _filter.identifyFocusPlayers(context.state, context.player, limit: 3);
 
-    // 2. 构建工作记忆（如果AI玩家还没有的话）
+    // 2. 获取或创建工作记忆
     WorkingMemory? workingMemory;
     if (context.player is AIPlayer) {
       final aiPlayer = context.player as AIPlayer;
-      // TODO: 从AIPlayer中获取或创建WorkingMemory
-      // 目前先创建临时的工作记忆
-      workingMemory = _createTemporaryMemory(aiPlayer, context);
+      // 从AIPlayer获取已存在的WorkingMemory，或创建新的
+      workingMemory = aiPlayer.workingMemory ?? _createInitialMemory(aiPlayer, context);
+      // 持久化回AIPlayer
+      aiPlayer.workingMemory = workingMemory;
     }
 
     // 3. 将提取的信息存入上下文
@@ -69,10 +70,10 @@ class FactAnalysisStep extends ReasoningStep {
     return context;
   }
 
-  /// 创建临时的工作记忆
+  /// 创建初始的工作记忆
   ///
-  /// TODO: 后续应该持久化到AIPlayer中
-  WorkingMemory _createTemporaryMemory(
+  /// 当AIPlayer还没有WorkingMemory时创建初始记忆
+  WorkingMemory _createInitialMemory(
     AIPlayer player,
     ReasoningContext context,
   ) {

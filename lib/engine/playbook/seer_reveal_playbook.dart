@@ -27,7 +27,7 @@ class SeerRevealPlaybook extends Playbook {
     // 触发条件：
     // 1. 自己是预言家
     // 2. 第1-3天
-    // 3. 还没有起跳过（TODO: 需要状态追踪）
+    // 3. 还没有起跳过（未来优化：需要在WorkingMemory中追踪起跳状态）
     if (player.role.id != 'seer') return false;
     if (state.day > 3) return false;
 

@@ -1,6 +1,8 @@
 import 'package:openai_dart/openai_dart.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/memory/working_memory.dart';
+import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_result.dart';
@@ -103,6 +105,15 @@ class AIReasoningEngine {
 
     _log('推理链完成，总耗时: ${totalDuration.inMilliseconds}ms');
 
+    // 持久化WorkingMemory回AIPlayer
+    if (player is AIPlayer) {
+      final workingMemory = context.getStepOutput<WorkingMemory>('working_memory');
+      if (workingMemory != null) {
+        player.workingMemory = workingMemory;
+        _log('WorkingMemory已持久化到AIPlayer');
+      }
+    }
+
     final result = ReasoningResult(
       message: context.finalSpeech,
       reasoning: context.completeThoughtChain.toString(),
@@ -125,7 +136,7 @@ class AIReasoningEngine {
     required GameState state,
     required GameSkill skill,
   }) async* {
-    // TODO: 实现流式执行
+    // 未来功能：实现流式执行
     throw UnimplementedError('流式执行暂未实现');
   }
 

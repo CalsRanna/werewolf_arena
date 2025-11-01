@@ -154,39 +154,49 @@ class InformationFilter {
   // ===== 私有辅助方法 =====
 
   /// 查找声称是预言家的玩家
+  ///
+  /// 未来优化：实现通过发言事件识别预言家声明
+  /// 需要解析发言内容，识别"我是预言家"等关键词
   List<String> _findSeerClaims(GameState state) {
     final claims = <String>[];
-    // TODO: 实现通过发言事件识别预言家声明
-    // 需要解析发言内容，识别"我是预言家"等关键词
+    // 当前返回空，依赖LLM从发言中推理
     return claims;
   }
 
   /// 查找被多人怀疑的玩家
+  ///
+  /// 未来优化：实现通过发言和投票统计被怀疑的玩家
   List<String> _findSuspectedPlayers(GameState state) {
     final suspected = <String>[];
-    // TODO: 实现通过发言和投票统计被怀疑的玩家
+    // 当前返回空，依赖LLM从发言中推理
     return suspected;
   }
 
   /// 检查玩家是否声称是预言家
+  ///
+  /// 未来优化：通过发言历史判断
   bool _hasClaimedSeer(GamePlayer player, GameState state) {
-    // TODO: 通过发言历史判断
+    // 当前返回false，依赖LLM从发言中推理
     return false;
   }
 
   /// 检查玩家是否攻击过我
+  ///
+  /// 未来优化：分析发言和投票记录
   bool _hasAttackedMe(
     GamePlayer player,
     GamePlayer me,
     GameState state,
   ) {
-    // TODO: 分析发言和投票记录
+    // 当前返回false，依赖LLM从发言中推理
     return false;
   }
 
   /// 获取玩家被怀疑的次数
+  ///
+  /// 未来优化：统计针对该玩家的怀疑发言数量
   int _getSuspicionCount(GamePlayer player, GameState state) {
-    // TODO: 统计针对该玩家的怀疑发言数量
+    // 当前返回0，依赖LLM从发言中推理
     return 0;
   }
 

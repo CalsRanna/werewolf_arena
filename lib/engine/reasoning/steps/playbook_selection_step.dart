@@ -9,7 +9,7 @@ import 'package:werewolf_arena/engine/reasoning/reasoning_step.dart';
 ///
 /// 从剧本库中选择最适合当前场景的战术剧本
 /// 当前实现：本地选择，不调用LLM（快速集成）
-/// TODO: 后续可升级为LLM选择
+/// 未来优化：后续可升级为LLM选择
 class PlaybookSelectionStep extends ReasoningStep {
   @override
   String get name => 'playbook_selection';

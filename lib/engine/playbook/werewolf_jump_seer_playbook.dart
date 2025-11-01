@@ -31,7 +31,7 @@ class WerewolfJumpSeerPlaybook extends Playbook {
     if (player.role.id != 'werewolf') return false;
     if (state.day > 2) return false;
 
-    // TODO: 检查是否已有预言家跳出
+    // 未来优化：检查WorkingMemory中是否已有预言家跳出
     // 简化实现：前2天都可以使用此战术
     return true;
   }

@@ -9,7 +9,7 @@ import 'package:werewolf_arena/engine/reasoning/reasoning_step.dart';
 ///
 /// 从面具库中选择最适合当前场景的面具
 /// 当前实现：本地选择，不调用LLM（快速集成）
-/// TODO: 后续可升级为LLM选择
+/// 未来优化：后续可升级为LLM选择
 class MaskSelectionStep extends ReasoningStep {
   @override
   String get name => 'mask_selection';

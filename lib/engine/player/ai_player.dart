@@ -1,6 +1,7 @@
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 
@@ -8,6 +9,10 @@ import 'package:werewolf_arena/engine/skill/skill_result.dart';
 ///
 /// 使用AIPlayerDriver进行AI决策的玩家实现
 class AIPlayer extends GamePlayer {
+  /// 工作记忆：存储结构化的游戏记忆
+  /// 在推理过程中更新和使用
+  WorkingMemory? workingMemory;
+
   AIPlayer({
     required super.id,
     required super.index,
