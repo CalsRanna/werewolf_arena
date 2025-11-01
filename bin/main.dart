@@ -126,7 +126,7 @@ Future<void> main(List<String> arguments) async {
       ui.printLine('🏆 获胜者: ${finalState.winner}');
       ui.printLine('🕐 游戏时长: ${finalState.day} 天');
       ui.printLine(
-        '⚰️ 身份公布： ${finalState.alivePlayers.map((p) => '${p.name} ${p.role.name}').join(', ')}',
+        '⚰️ 身份公布： ${finalState.players.map((p) => '${p.name} ${p.role.name}').join(', ')}',
       );
     }
     ui.dispose();
