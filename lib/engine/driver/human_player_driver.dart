@@ -108,6 +108,7 @@ class HumanPlayerDriver implements PlayerDriver {
         }
 
         stdout.write('\n> ');
+        stdout.flush(); // 立即刷新输出缓冲区，确保提示符显示
         String? input;
         try {
           input = _readLineSync();
@@ -162,6 +163,7 @@ class HumanPlayerDriver implements PlayerDriver {
       while (!validInput) {
         print('\n请输入你的发言内容（直接输入，回车结束）:');
         stdout.write('> ');
+        stdout.flush(); // 立即刷新输出缓冲区，确保提示符显示
         try {
           message = _readLineSync();
           if (message == null || message.isEmpty) {
@@ -175,19 +177,6 @@ class HumanPlayerDriver implements PlayerDriver {
           continue;
         }
       }
-    }
-
-    // 可选：让玩家输入思考过程
-    print('\n[可选] 请简单说明你的思考过程（直接回车跳过）:');
-    stdout.write('> ');
-    try {
-      reasoning = _readLineSync();
-    } catch (e) {
-      print('⚠️ 输入读取失败，将使用默认值');
-      reasoning = '';
-    }
-    if (reasoning?.isEmpty ?? true) {
-      reasoning = '人类玩家的决策';
     }
 
     print('\n${'=' * 80}');

@@ -44,11 +44,13 @@ class ConsoleGameUI {
   void pauseSpinner() {
     if (_currentSpinner == null) return;
     _currentSpinner!.stop();
+    _currentSpinner = null; // 清空引用，防止多个spinner同时运行
   }
 
   /// 恢复spinner（输出内容后调用）
   void resumeSpinner() {
-    if (_currentSpinner != null) {
+    // 只有在没有spinner运行时才创建新的
+    if (_currentSpinner == null) {
       _currentSpinner = CliSpin(spinner: CliSpinners.dots).start();
     }
   }

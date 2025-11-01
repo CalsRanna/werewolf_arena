@@ -123,18 +123,23 @@ Future<void> main(List<String> arguments) async {
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
-    ui.printLine();
-    ui.printSeparator('=', 60);
-    ui.printLine('✅ 游戏已结束');
-
     final finalState = gameEngine.currentState;
-    if (finalState != null && finalState.winner != null) {
-      ui.printLine('🏆 获胜者: ${finalState.winner}');
-      ui.printLine('🕐 游戏时长: ${finalState.day} 天');
-      ui.printLine(
-        '⚰️ 身份公布： ${finalState.players.map((p) => '${p.name} ${p.role.name}').join(', ')}',
-      );
-    }
+    final winner = finalState?.winner;
+    final day = finalState?.day;
+    final players = finalState?.players
+        .map((p) => '${p.name} ${p.role.name}')
+        .join(', ');
+    final alivePlayers = finalState?.alivePlayers
+        .map((p) => '${p.name} ${p.role.name}')
+        .join(', ');
+
+    ui.printLine();
+    ui.printLine('游戏结束');
+    if (winner != null) ui.printLine('获胜者: $winner');
+    if (day != null) ui.printLine('游戏时长: $day 天');
+    if (players != null) ui.printLine('玩家身份： $players');
+    if (alivePlayers != null) ui.printLine('存活玩家: $alivePlayers');
+
     ui.dispose();
     exit(0);
   } catch (e, stackTrace) {
