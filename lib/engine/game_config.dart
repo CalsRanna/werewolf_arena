@@ -8,9 +8,20 @@ class GameConfig {
   /// 最大重试次数
   final int maxRetries;
 
+  /// 快速模型ID（用于简单推理任务的性能优化）
+  ///
+  /// 这个模型会用于不需要复杂推理的步骤：
+  /// - PlaybookSelectionStep (剧本选择)
+  /// - MaskSelectionStep (面具选择)
+  /// - SelfReflectionStep (自我反思)
+  ///
+  /// 如果为null，所有步骤都使用玩家的主模型
+  final String? fastModelId;
+
   const GameConfig({
     required this.playerIntelligences,
     required this.maxRetries,
+    this.fastModelId,
   });
 
   /// 获取指定玩家的智能配置
@@ -32,10 +43,12 @@ class GameConfig {
   GameConfig copyWith({
     List<PlayerIntelligence>? playerIntelligences,
     int? maxRetries,
+    String? fastModelId,
   }) {
     return GameConfig(
       playerIntelligences: playerIntelligences ?? this.playerIntelligences,
       maxRetries: maxRetries ?? this.maxRetries,
+      fastModelId: fastModelId ?? this.fastModelId,
     );
   }
 
@@ -45,14 +58,16 @@ class GameConfig {
       other is GameConfig &&
           runtimeType == other.runtimeType &&
           playerIntelligences == other.playerIntelligences &&
-          maxRetries == other.maxRetries;
+          maxRetries == other.maxRetries &&
+          fastModelId == other.fastModelId;
 
   @override
-  int get hashCode => playerIntelligences.hashCode ^ maxRetries.hashCode;
+  int get hashCode =>
+      playerIntelligences.hashCode ^ maxRetries.hashCode ^ fastModelId.hashCode;
 
   @override
   String toString() {
-    return 'GameConfig{playerIntelligences: $playerIntelligences, maxRetries: $maxRetries}';
+    return 'GameConfig{playerIntelligences: $playerIntelligences, maxRetries: $maxRetries, fastModelId: $fastModelId}';
   }
 }
 

@@ -81,7 +81,12 @@ class AIReasoningEngine {
         await step.execute(context, client);
 
         final duration = DateTime.now().difference(stepStartTime);
-        _log('  完成，耗时: ${duration.inMilliseconds}ms');
+
+        // 获取此步骤的token使用量
+        final stepTokens = context.getMetadata<int>('${step.name}_tokens') ?? 0;
+        final tokenInfo = stepTokens > 0 ? ', tokens: $stepTokens' : '';
+
+        _log('  完成，耗时: ${duration.inMilliseconds}ms$tokenInfo');
 
         // 记录步骤耗时
         context.setMetadata('${step.name}_duration_ms', duration.inMilliseconds);
@@ -99,11 +104,12 @@ class AIReasoningEngine {
     // 构建最终结果
     final endTime = DateTime.now();
     final totalDuration = endTime.difference(startTime);
+    final totalTokens = context.getMetadata<int>('total_tokens') ?? 0;
 
     context.setMetadata('end_time', endTime.toIso8601String());
     context.setMetadata('total_duration_ms', totalDuration.inMilliseconds);
 
-    _log('推理链完成，总耗时: ${totalDuration.inMilliseconds}ms');
+    _log('推理链完成，总耗时: ${totalDuration.inMilliseconds}ms, 总tokens: $totalTokens');
 
     // 持久化WorkingMemory回AIPlayer
     if (player is AIPlayer) {
@@ -112,6 +118,11 @@ class AIReasoningEngine {
         player.workingMemory = workingMemory;
         _log('WorkingMemory已持久化到AIPlayer');
       }
+
+      // 累计玩家的总token使用量
+      final playerTotalTokens = (player.metadata['total_tokens_used'] as int? ?? 0) + totalTokens;
+      player.metadata['total_tokens_used'] = playerTotalTokens;
+      _log('玩家总token累计: $playerTotalTokens');
     }
 
     final result = ReasoningResult(

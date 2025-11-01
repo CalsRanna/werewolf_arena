@@ -46,6 +46,7 @@ class FactAnalysisStep extends ReasoningStep {
         client: client,
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
+        context: context,
       );
 
       // 3. 解析响应
@@ -205,6 +206,7 @@ $eventNarratives
     required OpenAIClient client,
     required String systemPrompt,
     required String userPrompt,
+    required ReasoningContext context,
   }) async {
     final messages = <ChatCompletionMessage>[];
     messages.add(ChatCompletionMessage.system(content: systemPrompt));
@@ -224,7 +226,9 @@ $eventNarratives
 
     final content = response.choices.first.message.content ?? '';
     final tokensUsed = response.usage?.totalTokens ?? 0;
-    GameEngineLogger.instance.d('Usage: $tokensUsed tokens');
+
+    // 记录token使用量到context
+    context.recordStepTokens(name, tokensUsed);
 
     return content;
   }

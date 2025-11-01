@@ -73,7 +73,7 @@ class ConsoleGameConfigLoader {
   String _generateSampleConfigYaml() {
     return '''
 # Werewolf Arena 游戏配置文件
-# 
+#
 # 此文件定义了游戏运行所需的基本配置
 
 # 默认LLM配置
@@ -81,6 +81,12 @@ default_llm:
   api_key: YOUR_KEY_HERE
   base_url: "https://api.openai.com/v1"
   max_retries: 10
+
+# 快速模型配置（用于简单推理任务的性能优化）
+# 这个模型会用于：剧本选择、面具选择、自我反思等简单步骤
+# 推荐使用小而快的模型：gpt-4o-mini, claude-3-5-haiku-20241022, deepseek/deepseek-chat
+# 如果不配置，则所有步骤都使用player_models中的模型
+fast_model_id: gpt-4o-mini
 
 # 玩家专属模型配置
 player_models:
@@ -121,9 +127,13 @@ logging:
     // 解析maxRetries
     final maxRetries = (defaultLLM['max_retries'] as int?) ?? 3;
 
+    // 解析fast_model_id（性能优化配置，可选）
+    final fastModelId = yaml['fast_model_id'] as String?;
+
     return GameConfig(
       playerIntelligences: playerIntelligences,
       maxRetries: maxRetries,
+      fastModelId: fastModelId,
     );
   }
 

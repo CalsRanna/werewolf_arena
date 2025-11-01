@@ -13,6 +13,9 @@ class AIPlayer extends GamePlayer {
   /// 在推理过程中更新和使用
   WorkingMemory? workingMemory;
 
+  /// 元数据：存储统计信息（如token使用量等）
+  final Map<String, dynamic> metadata = {};
+
   AIPlayer({
     required super.id,
     required super.index,

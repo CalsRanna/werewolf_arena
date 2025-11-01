@@ -55,6 +55,7 @@ class SelfReflectionStep extends ReasoningStep {
         client: client,
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
+        context: context,
       );
 
       // 解析响应
@@ -193,6 +194,7 @@ $secretInfo
     required OpenAIClient client,
     required String systemPrompt,
     required String userPrompt,
+    required ReasoningContext context,
   }) async {
     final messages = <ChatCompletionMessage>[];
     messages.add(ChatCompletionMessage.system(content: systemPrompt));
@@ -212,7 +214,7 @@ $secretInfo
 
     final content = response.choices.first.message.content ?? '';
     final tokensUsed = response.usage?.totalTokens ?? 0;
-    GameEngineLogger.instance.d('\\nUsage: $tokensUsed tokens');
+    context.recordStepTokens(name, tokensUsed);
 
     return content;
   }

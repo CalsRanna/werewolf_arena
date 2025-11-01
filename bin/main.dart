@@ -187,6 +187,7 @@ Future<Map<String, dynamic>> _createGameEngine(
         driver: AIPlayerDriver(
           intelligence: intelligence,
           maxRetries: config.maxRetries,
+          fastModelId: config.fastModelId, // 传递快速模型配置
         ),
       );
       players.add(player);

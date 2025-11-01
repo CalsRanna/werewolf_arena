@@ -49,6 +49,7 @@ class StrategyPlanningStep extends ReasoningStep {
         client: client,
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
+        context: context,
       );
 
       // 4. 解析响应
@@ -206,6 +207,7 @@ $identitySummary
     required OpenAIClient client,
     required String systemPrompt,
     required String userPrompt,
+    required ReasoningContext context,
   }) async {
     final messages = <ChatCompletionMessage>[];
     messages.add(ChatCompletionMessage.system(content: systemPrompt));
@@ -225,7 +227,7 @@ $identitySummary
 
     final content = response.choices.first.message.content ?? '';
     final tokensUsed = response.usage?.totalTokens ?? 0;
-    GameEngineLogger.instance.d('Usage: $tokensUsed tokens');
+    context.recordStepTokens(name, tokensUsed);
 
     return content;
   }

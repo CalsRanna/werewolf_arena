@@ -38,6 +38,15 @@ class ReasoningContext {
     metadata['${stepName}_timestamp'] = DateTime.now().toIso8601String();
   }
 
+  /// 记录步骤的token使用量
+  void recordStepTokens(String stepName, int tokens) {
+    metadata['${stepName}_tokens'] = tokens;
+
+    // 累计总token
+    final currentTotal = metadata['total_tokens'] as int? ?? 0;
+    metadata['total_tokens'] = currentTotal + tokens;
+  }
+
   /// 获取步骤输出
   T? getStepOutput<T>(String stepName) {
     return stepOutputs[stepName] as T?;

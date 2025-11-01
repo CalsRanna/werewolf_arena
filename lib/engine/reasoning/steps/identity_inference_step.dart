@@ -55,6 +55,7 @@ class IdentityInferenceStep extends ReasoningStep {
         client: client,
         systemPrompt: systemPrompt,
         userPrompt: userPrompt,
+        context: context,
       );
 
       // 4. 解析响应并更新WorkingMemory
@@ -218,6 +219,7 @@ ${keyFacts.isEmpty ? '暂无' : keyFacts.asMap().entries.map((e) => '${e.key + 1
     required OpenAIClient client,
     required String systemPrompt,
     required String userPrompt,
+    required ReasoningContext context,
   }) async {
     final messages = <ChatCompletionMessage>[];
     messages.add(ChatCompletionMessage.system(content: systemPrompt));
@@ -239,7 +241,7 @@ ${keyFacts.isEmpty ? '暂无' : keyFacts.asMap().entries.map((e) => '${e.key + 1
 
     final content = response.choices.first.message.content ?? '';
     final tokensUsed = response.usage?.totalTokens ?? 0;
-    GameEngineLogger.instance.d('Usage: $tokensUsed tokens');
+    context.recordStepTokens(name, tokensUsed);
 
     return content;
   }
