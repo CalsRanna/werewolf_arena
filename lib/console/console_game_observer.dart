@@ -17,6 +17,7 @@ import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
+import 'package:werewolf_arena/engine/player/game_player.dart';
 
 /// 控制台游戏观察者
 ///
@@ -26,15 +27,25 @@ class ConsoleGameObserver extends GameObserver {
   final ConsoleGameUI ui;
   final bool showLog;
   final bool showRole;
+  final GamePlayer? humanPlayer;
 
   ConsoleGameObserver({
     required this.ui,
     this.showLog = false,
     this.showRole = false,
+    this.humanPlayer,
   });
 
   @override
   Future<void> onGameEvent(GameEvent event) async {
+    // 如果有人类玩家且不是上帝视角，检查事件可见性
+    if (humanPlayer != null && !showRole) {
+      if (!event.isVisibleTo(humanPlayer!)) {
+        // 事件对该玩家不可见，跳过显示
+        return;
+      }
+    }
+
     if (event is LogEvent) {
       if (!showLog) return;
       ui.printLog(event.toNarrative());

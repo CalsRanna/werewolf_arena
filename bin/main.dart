@@ -7,6 +7,7 @@ import 'package:args/args.dart';
 import 'package:werewolf_arena/console/console_game_config_loader.dart';
 import 'package:werewolf_arena/console/console_game_observer.dart';
 import 'package:werewolf_arena/console/console_game_ui.dart';
+import 'package:werewolf_arena/console/console_human_player_driver_input.dart';
 import 'package:werewolf_arena/engine/player/aggressive_warrior_persona.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
@@ -14,7 +15,6 @@ import 'package:werewolf_arena/engine/player/human_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/driver/human_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
-import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_round/default_game_round_controller.dart';
 import 'package:werewolf_arena/engine/player/petty_artist_persona.dart';
 import 'package:werewolf_arena/engine/player/logic_master_persona.dart';
@@ -58,7 +58,6 @@ Future<void> main(List<String> arguments) async {
 
     // 初始化控制台
     ui.initialize(useColors: true);
-    ui.printHeader('狼人杀竞技场', color: ConsoleColor.green);
     ui.startSpinner();
 
     final playerCountStr = argResults['players'] as String?;
@@ -77,7 +76,9 @@ Future<void> main(List<String> arguments) async {
     final humanPlayerStr = argResults['player'] as String?;
     if (humanPlayerStr != null) {
       humanPlayerIndex = int.tryParse(humanPlayerStr);
-      if (humanPlayerIndex == null || humanPlayerIndex < 1 || humanPlayerIndex > 12) {
+      if (humanPlayerIndex == null ||
+          humanPlayerIndex < 1 ||
+          humanPlayerIndex > 12) {
         ui.displayError('无效的玩家编号: $humanPlayerStr (支持1-12)');
         exit(1);
       }
@@ -86,13 +87,13 @@ Future<void> main(List<String> arguments) async {
       humanPlayerIndex = Random().nextInt(12) + 1;
     }
 
-    final observer = ConsoleGameObserver(
-      ui: ui,
-      showLog: argResults['debug'] as bool,
-      showRole: argResults['god'] as bool,
+    // 创建游戏引擎和玩家
+    final gameEngineData = await _createGameEngine(
+      ui,
+      humanPlayerIndex,
+      argResults['debug'] as bool,
+      argResults['god'] as bool,
     );
-
-    final gameEngineData = await _createGameEngine(observer, humanPlayerIndex);
     final gameEngine = gameEngineData['engine'] as GameEngine;
     final humanPlayer = gameEngineData['humanPlayer'] as GamePlayer;
 
@@ -136,8 +137,10 @@ Future<void> main(List<String> arguments) async {
 }
 
 Future<Map<String, dynamic>> _createGameEngine(
-  GameObserver observer,
+  ConsoleGameUI ui,
   int? humanPlayerIndex,
+  bool showLog,
+  bool showGod,
 ) async {
   final config = await ConsoleGameConfigLoader().loadGameConfig();
   final scenario = Scenario12Players();
@@ -167,7 +170,9 @@ Future<Map<String, dynamic>> _createGameEngine(
         name: '$playerIndex号玩家',
         index: playerIndex,
         role: role,
-        driver: HumanPlayerDriver(),
+        driver: HumanPlayerDriver(
+          inputReader: ConsoleHumanPlayerDriverInput(ui),
+        ),
       );
       players.add(player);
       humanPlayer = player;
@@ -189,6 +194,14 @@ Future<Map<String, dynamic>> _createGameEngine(
     }
   }
 
+  // 创建带人类玩家视角的observer
+  final observer = ConsoleGameObserver(
+    ui: ui,
+    showLog: showLog,
+    showRole: showGod,
+    humanPlayer: humanPlayer,
+  );
+
   final engine = GameEngine(
     config: config,
     scenario: scenario,
@@ -197,10 +210,7 @@ Future<Map<String, dynamic>> _createGameEngine(
     controller: DefaultGameRoundController(),
   );
 
-  return {
-    'engine': engine,
-    'humanPlayer': humanPlayer,
-  };
+  return {'engine': engine, 'humanPlayer': humanPlayer};
 }
 
 /// 打印帮助信息

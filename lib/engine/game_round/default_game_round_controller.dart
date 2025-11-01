@@ -380,12 +380,6 @@ class DefaultGameRoundController implements GameRoundController {
       final investigateEvent = InvestigateEvent(target: target, day: state.day);
       state.handleEvent(investigateEvent);
       await observer?.onGameEvent(investigateEvent);
-      systemEvent = SystemEvent(
-        '${target.formattedName}是${target.role.name}',
-        day: state.day,
-      );
-      GameEngineLogger.instance.d(systemEvent.toString());
-      state.handleEvent(systemEvent);
     }
     systemEvent = SystemEvent('预言家请闭眼', day: state.day);
     GameEngineLogger.instance.d(systemEvent.toString());
