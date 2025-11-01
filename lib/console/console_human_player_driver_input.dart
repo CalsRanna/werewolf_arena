@@ -13,15 +13,18 @@ class ConsoleHumanPlayerDriverInput implements HumanPlayerDriverInput {
 
   @override
   String? readLine() {
-    // 暂停 spinner 避免与 stdin 阻塞冲突
-    ui.pauseSpinner();
+    // 读取输入（spinner 应该已经在调用前暂停）
+    final input = stdin.readLineSync()?.trim();
+    return input;
+  }
 
-    try {
-      final input = stdin.readLineSync()?.trim();
-      return input;
-    } finally {
-      // 无论成功或失败，都要恢复 spinner
-      ui.resumeSpinner();
-    }
+  @override
+  void pauseUI() {
+    ui.pauseSpinner();
+  }
+
+  @override
+  void resumeUI() {
+    ui.resumeSpinner();
   }
 }

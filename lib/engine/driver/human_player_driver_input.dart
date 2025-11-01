@@ -9,4 +9,14 @@ abstract class HumanPlayerDriverInput {
   /// 返回用户输入的字符串，如果读取失败或用户取消返回 null。
   /// 实现者应该处理好 spinner、UI 更新等外部问题。
   String? readLine();
+
+  /// 暂停 UI 动画（如 spinner）
+  ///
+  /// 在显示提示信息或输出内容前调用，避免 UI 动画干扰显示。
+  void pauseUI();
+
+  /// 恢复 UI 动画（如 spinner）
+  ///
+  /// 在完成所有输出和交互后调用。
+  void resumeUI();
 }

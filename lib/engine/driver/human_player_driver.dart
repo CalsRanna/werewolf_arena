@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:werewolf_arena/engine/event/conspire_event.dart';
+import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
 import 'package:werewolf_arena/engine/driver/human_player_driver_input.dart';
@@ -18,6 +20,23 @@ class HumanPlayerDriver implements PlayerDriver {
     : _inputReader = inputReader;
   @override
   Future<PlayerDriverResponse> request({
+    required GamePlayer player,
+    required GameState state,
+    required GameSkill skill,
+  }) async {
+    // 暂停 UI 动画，避免与用户输入冲突
+    _inputReader?.pauseUI();
+
+    try {
+      return await _handleRequest(player: player, state: state, skill: skill);
+    } finally {
+      // 无论成功或失败，都要恢复 UI 动画
+      _inputReader?.resumeUI();
+    }
+  }
+
+  /// 处理用户输入请求的内部方法
+  Future<PlayerDriverResponse> _handleRequest({
     required GamePlayer player,
     required GameState state,
     required GameSkill skill,
@@ -45,7 +64,13 @@ class HumanPlayerDriver implements PlayerDriver {
     if (visibleEvents.isNotEmpty) {
       print('\n【本回合发生的事件】');
       for (final event in visibleEvents) {
-        print('  ${event.toNarrative()}');
+        if (event is DiscussEvent) {
+          print('  ${event.source.name}发言： 内容省略');
+        } else if (event is ConspireEvent) {
+          print('  ${event.source.name}密谈： 内容省略');
+        } else {
+          print('  ${event.toNarrative()}');
+        }
       }
     }
 

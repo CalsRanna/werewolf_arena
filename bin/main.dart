@@ -125,7 +125,9 @@ Future<void> main(List<String> arguments) async {
     if (finalState != null && finalState.winner != null) {
       ui.printLine('🏆 获胜者: ${finalState.winner}');
       ui.printLine('🕐 游戏时长: ${finalState.day} 天');
-      ui.printLine('⚰️ 存活玩家: ${finalState.alivePlayers.length}');
+      ui.printLine(
+        '⚰️ 身份公布： ${finalState.alivePlayers.map((p) => '${p.name} ${p.role.name}').join(', ')}',
+      );
     }
     ui.dispose();
     exit(0);
