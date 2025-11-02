@@ -60,10 +60,17 @@ class ReasoningEngine {
     _log('开始执行推理链: ${player.name} (${player.role.name}) - ${skill.name}');
     _log('总共 ${steps.length} 个推理步骤');
 
+    // 找到 speech_generation 和 action_rehearsal 步骤的索引
+    int? speechStepIndex;
+    int? rehearsalStepIndex;
+    for (var i = 0; i < steps.length; i++) {
+      if (steps[i].name == 'speech_generation') speechStepIndex = i;
+      if (steps[i].name == 'action_rehearsal') rehearsalStepIndex = i;
+    }
+
     // 依次执行各个推理步骤
     for (var i = 0; i < steps.length; i++) {
       final step = steps[i];
-      final stepStartTime = DateTime.now();
 
       // 检查是否应该跳过此步骤
       if (step.shouldSkip(context)) {
@@ -71,36 +78,23 @@ class ReasoningEngine {
         continue;
       }
 
-      _log('执行步骤 ${i + 1}/${steps.length}: ${step.name}');
-      if (enableVerboseLogging) {
-        _log('  描述: ${step.description}');
-      }
-
-      try {
-        // 执行步骤
-        await step.execute(context, client);
-
-        final duration = DateTime.now().difference(stepStartTime);
-
-        // 获取此步骤的token使用量
-        final stepTokens = context.getMetadata<int>('${step.name}_tokens') ?? 0;
-        final tokenInfo = stepTokens > 0 ? ', tokens: $stepTokens' : '';
-
-        _log('  完成，耗时: ${duration.inMilliseconds}ms$tokenInfo');
-
-        // 记录步骤耗时
-        context.setMetadata(
-          '${step.name}_duration_ms',
-          duration.inMilliseconds,
+      // 特殊处理: speech_generation 可能需要重新生成
+      if (i == speechStepIndex &&
+          speechStepIndex != null &&
+          rehearsalStepIndex != null) {
+        await _executeWithRegeneration(
+          context,
+          speechStep: steps[speechStepIndex],
+          rehearsalStep: steps[rehearsalStepIndex],
+          stepNumber: i + 1,
+          totalSteps: steps.length,
         );
-      } catch (e, stackTrace) {
-        _logError('步骤 ${step.name} 执行失败: $e');
-        if (enableVerboseLogging) {
-          _logError('堆栈: $stackTrace');
-        }
-
-        // 记录错误但继续执行（某些步骤失败不应该导致整个流程崩溃）
-        context.setMetadata('${step.name}_error', e.toString());
+      } else if (i == rehearsalStepIndex) {
+        // action_rehearsal 已经在上面的循环中执行了，跳过
+        continue;
+      } else {
+        // 普通步骤执行
+        await _executeStep(context, step, i + 1, steps.length);
       }
     }
 
@@ -155,6 +149,108 @@ class ReasoningEngine {
   }) async* {
     // 未来功能：实现流式执行
     throw UnimplementedError('流式执行暂未实现');
+  }
+
+  /// 执行单个步骤
+  Future<void> _executeStep(
+    ReasoningContext context,
+    ReasoningStep step,
+    int stepNumber,
+    int totalSteps,
+  ) async {
+    final stepStartTime = DateTime.now();
+
+    _log('执行步骤 $stepNumber/$totalSteps: ${step.name}');
+    if (enableVerboseLogging) {
+      _log('  描述: ${step.description}');
+    }
+
+    try {
+      // 执行步骤
+      await step.execute(context, client);
+
+      final duration = DateTime.now().difference(stepStartTime);
+
+      // 获取此步骤的token使用量
+      final stepTokens = context.getMetadata<int>('${step.name}_tokens') ?? 0;
+      final tokenInfo = stepTokens > 0 ? ', tokens: $stepTokens' : '';
+
+      _log('  完成，耗时: ${duration.inMilliseconds}ms$tokenInfo');
+
+      // 记录步骤耗时
+      context.setMetadata(
+        '${step.name}_duration_ms',
+        duration.inMilliseconds,
+      );
+    } catch (e, stackTrace) {
+      _logError('步骤 ${step.name} 执行失败: $e');
+      if (enableVerboseLogging) {
+        _logError('堆栈: $stackTrace');
+      }
+
+      // 记录错误但继续执行（某些步骤失败不应该导致整个流程崩溃）
+      context.setMetadata('${step.name}_error', e.toString());
+    }
+  }
+
+  /// 执行发言生成+行动预演的循环（支持重新生成）
+  Future<void> _executeWithRegeneration(
+    ReasoningContext context, {
+    required ReasoningStep speechStep,
+    required ReasoningStep rehearsalStep,
+    required int stepNumber,
+    required int totalSteps,
+  }) async {
+    const maxRegenerationAttempts = 3;
+    int attempt = 0;
+
+    while (attempt < maxRegenerationAttempts) {
+      attempt++;
+
+      if (attempt > 1) {
+        _log('发言重新生成 (第 $attempt/$maxRegenerationAttempts 次尝试)');
+      }
+
+      // 1. 执行发言生成步骤
+      await _executeStep(context, speechStep, stepNumber, totalSteps);
+
+      // 2. 执行行动预演步骤
+      final rehearsalNumber = stepNumber + 1;
+      await _executeStep(context, rehearsalStep, rehearsalNumber, totalSteps);
+
+      // 3. 检查是否需要重新生成
+      final needsRegeneration =
+          context.getStepOutput<bool>('needs_regeneration') ?? false;
+
+      if (!needsRegeneration) {
+        // 审查通过，跳出循环
+        if (attempt > 1) {
+          _log('发言重新生成成功，通过审查');
+        }
+        break;
+      }
+
+      // 4. 如果需要重新生成但已达最大尝试次数
+      if (attempt >= maxRegenerationAttempts) {
+        _logError(
+          '发言重新生成失败：已达最大尝试次数 ($maxRegenerationAttempts)，'
+          '使用最后一次生成结果',
+        );
+        break;
+      }
+
+      // 5. 清除上次的发言生成结果，准备重新生成
+      context.setStepOutput('speech_generation', null);
+      context.setStepOutput('target_player', null);
+      context.setStepOutput('needs_regeneration', false);
+
+      _log('审查未通过，准备重新生成发言...');
+    }
+
+    // 记录重新生成统计
+    if (attempt > 1) {
+      context.setMetadata('regeneration_attempts', attempt);
+    }
   }
 
   void _log(String message) {

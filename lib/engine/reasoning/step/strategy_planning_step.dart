@@ -143,6 +143,10 @@ class StrategyPlanningStep extends ReasoningStep {
       identitySummary.writeln('暂无身份推测');
     }
 
+    // *** 新增：获取社交网络信息 ***
+    final socialNetwork = memory?.socialNetwork;
+    final socialSection = _buildSocialNetworkSection(socialNetwork, state);
+
     return '''
 **我的信息**
 我是${player.name}，角色：${player.role.name}，阵营：${player.role.id == 'werewolf' ? '狼人' : '好人'}
@@ -155,7 +159,7 @@ ${memory?.secretKnowledge.toText() ?? ''}
 ${keyFacts.isEmpty ? '暂无' : keyFacts.asMap().entries.map((e) => '${e.key + 1}. ${e.value.description}').join('\n')}
 
 **身份推测**
-$identitySummary
+$identitySummary$socialSection
 
 ---
 
@@ -180,8 +184,8 @@ $identitySummary
   "main_plan": "强势公布查验结果，给出警徽流，攻击对方逻辑漏洞",
   "backup_plan": "如被质疑，展示更详细推理过程",
   "target": "2号玩家",
-  "risks": ["对方预言家发言质量高"],
-  "countermeasures": ["强调自己验人准确率"]
+  "risks": ["对方预言家发言质量高", "可能被狼队集火"],
+  "countermeasures": ["强调自己验人准确率", "请求神牌保护"]
 }
 ```
 
@@ -203,10 +207,83 @@ $identitySummary
   "goal": "找出狼人，保护神牌",
   "main_plan": "分析发言逻辑漏洞，找出矛盾点，引导投票方向",
   "target": "5号玩家",
-  "risks": ["可能误判好人"],
-  "countermeasures": ["保持开放心态，听取反驳"]
+  "risks": ["可能误判好人", "暴露推理能力引起狼队注意"],
+  "countermeasures": ["保持开放心态，听取反驳", "不过早暴露全部推理"]
 }
 ```
+
+场景4 - 利用社交关系制定策略 (新增):
+```json
+{
+  "goal": "削弱3号玩家的影响力",
+  "main_plan": "针对3号的盟友5号发起攻击，动摇5号对3号的信任，从而孤立3号",
+  "backup_plan": "如果5号防御强硬，转而质疑3号和5号的关系是否异常亲密",
+  "target": "5号玩家",
+  "risks": ["可能被视为挑拨离间", "5号的盟友可能反击"],
+  "countermeasures": ["基于逻辑而非情绪化攻击", "寻找其他玩家的支持"]
+}
+```
+
+**策略制定原则**:
+1. 考虑社交关系：攻击一个有强盟友的玩家前，先评估盟友的反应
+2. 利用敌对关系：如果A和B互相怀疑，可以利用这个矛盾
+3. 孤立策略：孤立的玩家更容易被出局，可以优先选择孤立目标
+4. 联盟建立：主动与信任我的玩家建立更紧密的合作关系
+5. 三角关系：利用"A信任B，B信任C"的传递性影响
 ''';
+  }
+
+  /// 构建社交网络部分 (新增)
+  String _buildSocialNetworkSection(
+    dynamic socialNetwork,
+    dynamic state,
+  ) {
+    if (socialNetwork == null) return '';
+
+    final buffer = StringBuffer();
+    buffer.writeln();
+    buffer.writeln('**社交关系网络**');
+
+    // 获取最信任和最怀疑的玩家
+    final mostTrusted = socialNetwork.getMostTrusted(limit: 3) as List<String>;
+    final mostSuspicious =
+        socialNetwork.getMostSuspicious(limit: 3) as List<String>;
+
+    if (mostTrusted.isNotEmpty) {
+      final trustedNames = mostTrusted.map((id) {
+        final player = state.players.firstWhere(
+          (p) => p.id == id,
+          orElse: () => state.players.first,
+        );
+        return player.name;
+      }).join(', ');
+      buffer.writeln('最信任: $trustedNames');
+    }
+
+    if (mostSuspicious.isNotEmpty) {
+      final suspiciousNames = mostSuspicious.map((id) {
+        final player = state.players.firstWhere(
+          (p) => p.id == id,
+          orElse: () => state.players.first,
+        );
+        return player.name;
+      }).join(', ');
+      buffer.writeln('最怀疑: $suspiciousNames');
+    }
+
+    // 添加关键关系提示
+    final allies = socialNetwork.allies as List<String>;
+    final enemies = socialNetwork.enemies as List<String>;
+
+    if (allies.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('提示: 攻击我的盟友可能会削弱我的支持基础');
+    }
+
+    if (enemies.isNotEmpty) {
+      buffer.writeln('提示: 我的敌人很可能会质疑我的发言，需要准备应对');
+    }
+
+    return buffer.toString();
   }
 }

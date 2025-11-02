@@ -123,12 +123,17 @@ class SpeechGenerationStep extends ReasoningStep {
     );
     final strategy = context.getStepOutput<Map<String, dynamic>>('strategy');
 
-    // 获取面具和剧本（新增）
+    // 获取面具和剧本
     final selectedMask = context.getStepOutput('selected_mask');
     final selectedPlaybook = context.getStepOutput('selected_playbook');
 
-    // 获取社交网络（Phase 4新增）
+    // 获取社交网络
     final socialNetwork = workingMemory?.socialNetwork;
+
+    // *** 新增：获取战术指令 ***
+    final tacticalDirective = context.getStepOutput<Map<String, dynamic>>(
+      'tactical_directive',
+    );
 
     // 构建游戏上下文
     final gameContext = _buildGameContext(
@@ -149,6 +154,11 @@ class SpeechGenerationStep extends ReasoningStep {
         ? skill.firstNightPrompt
         : skill.prompt;
 
+    // *** 新增：构建战术指令部分 ***
+    final tacticalSection = tacticalDirective != null
+        ? _buildTacticalDirectiveSection(tacticalDirective)
+        : '';
+
     // 格式提示
     final formatPrompt = skill is ConspireSkill
         ? skill.formatPrompt
@@ -157,12 +167,68 @@ class SpeechGenerationStep extends ReasoningStep {
     return '''
 ${state.scenario.rule}
 
-$gameContext
+$gameContext$tacticalSection
 
 $skillPrompt
 
 $formatPrompt
 ''';
+  }
+
+  /// 构建战术指令部分
+  String _buildTacticalDirectiveSection(
+    Map<String, dynamic> directive,
+  ) {
+    final buffer = StringBuffer();
+    buffer.writeln();
+    buffer.writeln('**战术指令** (必须严格遵守)');
+    buffer.writeln();
+
+    // 发言长度
+    buffer.writeln('- 发言长度: ${directive['speech_length']}');
+
+    // 语气风格
+    buffer.writeln('- 语气风格: ${directive['tone']}');
+
+    // 必须包含
+    final mustInclude = directive['must_include'] as List? ?? [];
+    if (mustInclude.isNotEmpty) {
+      buffer.writeln('- 必须包含:');
+      for (var item in mustInclude) {
+        buffer.writeln('  · $item');
+      }
+    }
+
+    // 必须避免
+    final mustAvoid = directive['must_avoid'] as List? ?? [];
+    if (mustAvoid.isNotEmpty) {
+      buffer.writeln('- 必须避免:');
+      for (var item in mustAvoid) {
+        buffer.writeln('  · $item');
+      }
+    }
+
+    // 关键要点
+    final keyPoints = directive['key_points'] as List? ?? [];
+    if (keyPoints.isNotEmpty) {
+      buffer.writeln('- 关键要点:');
+      for (var i = 0; i < keyPoints.length; i++) {
+        buffer.writeln('  ${i + 1}. ${keyPoints[i]}');
+      }
+    }
+
+    // 目标情感
+    if (directive['target_emotion'] != null) {
+      buffer.writeln('- 目标效果: ${directive['target_emotion']}');
+    }
+
+    // 禁止话题
+    final forbiddenTopics = directive['forbidden_topics'] as List? ?? [];
+    if (forbiddenTopics.isNotEmpty) {
+      buffer.writeln('- 禁止话题: ${forbiddenTopics.join(", ")}');
+    }
+
+    return buffer.toString();
   }
 
   /// 构建游戏上下文
@@ -193,17 +259,17 @@ ${strategy['target'] != null ? '目标: ${strategy['target']}' : ''}
 '''
         : '';
 
-    // 构建面具部分（新增）
+    // 构建面具部分
     final maskSection = selectedMask != null
         ? '\n${selectedMask.toPrompt()}'
         : '';
 
-    // 构建剧本部分（新增）
+    // 构建剧本部分
     final playbookSection = selectedPlaybook != null
         ? '\n${selectedPlaybook.toPrompt()}'
         : '';
 
-    // 构建社交网络部分（Phase 4新增）
+    // 构建社交网络部分
     final socialNetworkSection = socialNetwork != null
         ? '\n\n${socialNetwork.toPrompt(state)}'
         : '';

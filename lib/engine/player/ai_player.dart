@@ -5,6 +5,7 @@ import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_engine.dart';
+import 'package:werewolf_arena/engine/reasoning/step/action_rehearsal_step.dart';
 import 'package:werewolf_arena/engine/reasoning/step/fact_analysis_step.dart';
 import 'package:werewolf_arena/engine/reasoning/step/identity_inference_step.dart';
 import 'package:werewolf_arena/engine/reasoning/step/mask_selection_step.dart';
@@ -12,6 +13,7 @@ import 'package:werewolf_arena/engine/reasoning/step/playbook_selection_step.dar
 import 'package:werewolf_arena/engine/reasoning/step/self_reflection_step.dart';
 import 'package:werewolf_arena/engine/reasoning/step/speech_generation_step.dart';
 import 'package:werewolf_arena/engine/reasoning/step/strategy_planning_step.dart';
+import 'package:werewolf_arena/engine/reasoning/step/tactical_directive_step.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 
@@ -59,18 +61,38 @@ class AIPlayer extends GamePlayer {
     final mainModel = intelligence.modelId;
     final fastModel = fastModelId ?? mainModel;
 
+    // 新的推理链：增强版 COT
     return ReasoningEngine(
       client: client,
       steps: [
+        // 1. 事实分析 (使用快速模型)
         FactAnalysisStep(modelId: fastModel),
+
+        // 2. 身份推理 (使用主模型，需要深度推理)
         IdentityInferenceStep(modelId: mainModel),
+
+        // 3. 策略规划 (使用主模型，已优化社交网络整合)
         StrategyPlanningStep(modelId: mainModel),
+
+        // 4. 战术指令生成 (使用快速模型)
+        TacticalDirectiveStep(modelId: fastModel),
+
+        // 5. 剧本选择 (使用快速模型)
         PlaybookSelectionStep(modelId: fastModel),
+
+        // 6. 面具选择 (使用快速模型)
         MaskSelectionStep(modelId: fastModel),
+
+        // 7. 发言生成 (使用主模型，已整合战术指令)
         SpeechGenerationStep(modelId: mainModel),
+
+        // 8. 行动预演 (使用快速模型，预审查+重新生成机制)
+        ActionRehearsalStep(modelId: fastModel),
+
+        // 9. 自我反思 (保留用于长期记忆更新，但不再控制重新生成)
         SelfReflectionStep(
           modelId: fastModel,
-          enableRegeneration: false,
+          enableRegeneration: false, // 重新生成已由 ActionRehearsalStep 控制
         ),
       ],
       enableVerboseLogging: true,

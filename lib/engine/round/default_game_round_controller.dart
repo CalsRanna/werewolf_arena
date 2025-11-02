@@ -92,6 +92,12 @@ class DefaultGameRoundController implements GameRoundController {
       return;
     }
 
+    // 第一天：警长竞选流程（在宣布结果后、讨论前）
+    if (game.day == 1) {
+      await Future.delayed(const Duration(seconds: 1));
+      await _processSheriffElection(game, observer: observer);
+    }
+
     await Future.delayed(const Duration(seconds: 1));
     // 公开讨论
     await _processDiscuss(
@@ -99,12 +105,6 @@ class DefaultGameRoundController implements GameRoundController {
       observer: observer,
       lastNightDeadPlayers: lastNightDeadPlayers,
     );
-
-    // 第一天：警长竞选流程
-    if (game.day == 1) {
-      await Future.delayed(const Duration(seconds: 1));
-      await _processSheriffElection(game, observer: observer);
-    }
 
     await Future.delayed(const Duration(seconds: 1));
     // 投票
