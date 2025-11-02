@@ -4,7 +4,7 @@
 /// 每个技能都有自己的提示词、优先级和执行逻辑。
 abstract class GameSkill {
   /// 技能唯一标识
-  String get skillId;
+  String get id;
 
   /// 技能名称
   String get name;

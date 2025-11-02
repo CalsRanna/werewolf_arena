@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 狼人之间的私密讨论，只有狼人可见
 class ConspireSkill extends GameSkill {
   @override
-  String get skillId => 'conspire';
+  String get id => 'conspire';
 
   @override
   String get name => '狼人讨论';

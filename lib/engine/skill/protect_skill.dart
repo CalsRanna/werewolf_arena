@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 包含守护规则：不能连续两晚守护同一人
 class ProtectSkill extends GameSkill {
   @override
-  String get skillId => 'guard_protect';
+  String get id => 'guard_protect';
 
   @override
   String get name => '守卫保护';

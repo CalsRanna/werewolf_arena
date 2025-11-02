@@ -37,7 +37,11 @@ class HumanPlayer extends GamePlayer {
       _input.pauseUI();
 
       try {
-        return await _handleRequest(player: this, context: context, skill: skill);
+        return await _handleRequest(
+          player: this,
+          context: context,
+          skill: skill,
+        );
       } finally {
         // 无论成功或失败，都要恢复 UI 动画
         _input.resumeUI();
@@ -103,7 +107,9 @@ class HumanPlayer extends GamePlayer {
           }
 
           // 验证目标玩家是否存在
-          final targetExists = context.alivePlayers.any((p) => p.name == target);
+          final targetExists = context.alivePlayers.any(
+            (p) => p.name == target,
+          );
           if (!targetExists) {
             _input.showError('目标玩家不存在或已死亡，请重新输入');
             target = null;
@@ -158,7 +164,7 @@ class HumanPlayer extends GamePlayer {
       'hunter_shoot',
       'conspire', // 狼人讨论时选择击杀目标
     ];
-    return targetSkills.contains(skill.skillId);
+    return targetSkills.contains(skill.id);
   }
 
   /// 判断技能是否需要发言
@@ -169,14 +175,14 @@ class HumanPlayer extends GamePlayer {
       'testament', // 遗言
       'conspire', // 狼人密谈
     ];
-    return messageSkills.contains(skill.skillId);
+    return messageSkills.contains(skill.id);
   }
 
   /// 判断技能是否可选（可以选择不使用）
   bool _skillIsOptional(GameSkill skill) {
     // 女巫的解药和毒药可以选择不使用
     final optionalSkills = ['witch_heal', 'witch_poison'];
-    return optionalSkills.contains(skill.skillId);
+    return optionalSkills.contains(skill.id);
   }
 
   /// 释放资源

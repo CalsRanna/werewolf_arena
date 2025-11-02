@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 可以救活当晚被狼人击杀的玩家，只能使用一次
 class HealSkill extends GameSkill {
   @override
-  String get skillId => 'witch_heal';
+  String get id => 'witch_heal';
 
   @override
   String get name => '女巫解药';

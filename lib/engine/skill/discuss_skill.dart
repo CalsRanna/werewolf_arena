@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 玩家在白天阶段的正常发言
 class DiscussSkill extends GameSkill {
   @override
-  String get skillId => 'discuss';
+  String get id => 'discuss';
 
   @override
   String get name => '发言';

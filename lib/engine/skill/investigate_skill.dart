@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 查验玩家身份，结果只有预言家可见
 class InvestigateSkill extends GameSkill {
   @override
-  String get skillId => 'seer_check';
+  String get id => 'seer_check';
 
   @override
   String get name => '预言家查验';

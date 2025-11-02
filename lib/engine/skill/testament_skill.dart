@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 玩家被投票出局后发表最后的遗言
 class TestamentSkill extends GameSkill {
   @override
-  String get skillId => 'testament';
+  String get id => 'testament';
 
   @override
   String get name => '遗言';

@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 猎人死亡时可以开枪带走一名玩家，但被毒死时不能开枪
 class ShootSkill extends GameSkill {
   @override
-  String get skillId => 'hunter_shoot';
+  String get id => 'hunter_shoot';
 
   @override
   String get name => '猎人开枪';

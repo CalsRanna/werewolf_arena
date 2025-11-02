@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 可以毒死一名玩家，只能使用一次
 class PoisonSkill extends GameSkill {
   @override
-  String get skillId => 'witch_poison';
+  String get id => 'witch_poison';
 
   @override
   String get name => '女巫毒药';

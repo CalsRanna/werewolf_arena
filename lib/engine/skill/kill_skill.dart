@@ -5,7 +5,7 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 具有完整的游戏逻辑实现，包括目标选择、事件生成和状态更新
 class KillSkill extends GameSkill {
   @override
-  String get skillId => 'werewolf_kill';
+  String get id => 'werewolf_kill';
 
   @override
   String get name => '狼人击杀';
