@@ -6,6 +6,7 @@ import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/event/log_event.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -20,8 +21,8 @@ class GameViewModel {
   // 场景ID
   String? scenarioId;
 
-  // 游戏引擎
-  GameEngine? _gameEngine;
+  // 游戏实例
+  Game? _game;
 
   // 事件弹窗回调
   Function(String message)? onShowEventDialog;
@@ -148,7 +149,7 @@ class GameViewModel {
       players.value = gamePlayers;
 
       // 创建游戏引擎
-      _gameEngine = GameEngine(
+      final gameEngine = GameEngine(
         config: config,
         scenario: scenario,
         players: gamePlayers,
@@ -156,8 +157,8 @@ class GameViewModel {
         controller: DefaultGameRoundController(),
       );
 
-      // 初始化并启动游戏循环
-      await _gameEngine!.ensureInitialized();
+      // 创建游戏实例
+      _game = await gameEngine.create();
 
       // 在后台运行游戏循环
       _runGameLoop();
@@ -172,11 +173,10 @@ class GameViewModel {
   /// 运行游戏循环
   Future<void> _runGameLoop() async {
     try {
-      while (_gameEngine != null && !_gameEngine!.isGameEnded) {
-        await _gameEngine!.loop();
+      while (_game != null && !_game!.isGameEnded) {
+        await _game!.loop();
 
-        // 更新状态（这里需要从游戏引擎获取当前状态）
-        // 由于GameEngine没有直接暴露state，我们通过玩家列表更新
+        // 更新状态
         players.value = List.from(players.value);
       }
 
@@ -199,7 +199,7 @@ class GameViewModel {
 
   /// 释放资源
   void dispose() {
-    _gameEngine?.dispose();
+    _game?.dispose();
     _snackBarMessageController.close();
   }
 }

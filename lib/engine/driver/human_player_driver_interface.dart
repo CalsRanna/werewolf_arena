@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/engine/event/game_event.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
@@ -13,7 +13,7 @@ abstract class HumanPlayerDriverInterface {
   /// [player] 当前玩家
   /// [state] 游戏状态
   /// [skill] 当前技能
-  void showTurnStart(GamePlayer player, GameState state, GameSkill skill);
+  void showTurnStart(GamePlayer player, Game state, GameSkill skill);
 
   /// 显示玩家信息
   ///
@@ -23,7 +23,7 @@ abstract class HumanPlayerDriverInterface {
   /// 显示游戏状态
   ///
   /// [state] 游戏状态
-  void showGameState(GameState state);
+  void showGameState(Game state);
 
   /// 显示本回合事件
   ///

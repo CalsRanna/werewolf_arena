@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
 
 /// 推理步骤抽象类
@@ -102,7 +102,7 @@ abstract class ReasoningStep {
       // 如果不是最后一次尝试，等待后重试
       if (attempt < maxRetries) {
         final delay = _calculateBackoffDelay(attempt);
-        GameEngineLogger.instance.w(
+        GameLogger.instance.w(
           '[$name] LLM调用失败 ($attempt/$maxRetries)，${delay.inSeconds}s后重试: $lastException',
         );
         await Future.delayed(delay);
@@ -111,7 +111,7 @@ abstract class ReasoningStep {
 
     // 所有重试都失败了
     final errorMsg = '[$name] LLM调用失败（已重试$maxRetries次）: $lastException';
-    GameEngineLogger.instance.e(errorMsg);
+    GameLogger.instance.e(errorMsg);
     throw Exception(errorMsg);
   }
 

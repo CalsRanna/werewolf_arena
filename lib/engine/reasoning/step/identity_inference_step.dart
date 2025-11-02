@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/social_analyzer.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/social_network.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
@@ -26,7 +26,7 @@ class IdentityInferenceStep extends ReasoningStep {
     ReasoningContext context,
     OpenAIClient client,
   ) async {
-    GameEngineLogger.instance.d('[身份推理] 开始推理...');
+    GameLogger.instance.d('[身份推理] 开始推理...');
 
     // 1. 获取前一步的分析结果
     final coreConflict = context.getStepOutput<String>('core_conflict') ?? '无';
@@ -114,11 +114,9 @@ class IdentityInferenceStep extends ReasoningStep {
 
       context.appendThought(thought.toString());
 
-      GameEngineLogger.instance.d(
-        '[身份推理] 完成 - 推理了 ${identityEstimates.length} 个玩家',
-      );
+      GameLogger.instance.d('[身份推理] 完成 - 推理了 ${identityEstimates.length} 个玩家');
     } catch (e) {
-      GameEngineLogger.instance.e('[身份推理] 失败: $e');
+      GameLogger.instance.e('[身份推理] 失败: $e');
     }
 
     return context;

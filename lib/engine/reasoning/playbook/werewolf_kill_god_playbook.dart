@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/playbook.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -23,7 +23,7 @@ class WerewolfKillGodPlaybook extends Playbook {
   List<String> get applicableRoles => ['werewolf'];
 
   @override
-  bool canActivate(GameState state, GamePlayer player) {
+  bool canActivate(Game state, GamePlayer player) {
     // 触发条件：
     // 1. 自己是狼人
     // 2. 任何阶段都可以使用

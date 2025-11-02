@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/playbook.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/playbook_library.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
@@ -25,7 +25,7 @@ class PlaybookSelectionStep extends ReasoningStep {
     ReasoningContext context,
     OpenAIClient client,
   ) async {
-    GameEngineLogger.instance.d('[剧本选择] 开始选择...');
+    GameLogger.instance.d('[剧本选择] 开始选择...');
 
     final player = context.player;
     final state = context.state;
@@ -40,7 +40,7 @@ class PlaybookSelectionStep extends ReasoningStep {
     if (recommendedPlaybooks.isEmpty) {
       context.setStepOutput('selected_playbook', null);
       context.appendThought('[步骤4: 剧本选择] 暂无合适的剧本');
-      GameEngineLogger.instance.d('[剧本选择] 完成 - 无推荐剧本');
+      GameLogger.instance.d('[剧本选择] 完成 - 无推荐剧本');
       return context;
     }
 
@@ -86,15 +86,13 @@ class PlaybookSelectionStep extends ReasoningStep {
 选择的剧本: ${selectedPlaybook.name}
 核心目标: ${selectedPlaybook.coreGoal}
 ''');
-        GameEngineLogger.instance.d(
-          '[剧本选择] 完成 - 选择了: ${selectedPlaybook.name}',
-        );
+        GameLogger.instance.d('[剧本选择] 完成 - 选择了: ${selectedPlaybook.name}');
       } else {
         context.appendThought('[步骤4: 剧本选择] 不使用剧本');
-        GameEngineLogger.instance.d('[剧本选择] 完成 - 不使用剧本');
+        GameLogger.instance.d('[剧本选择] 完成 - 不使用剧本');
       }
     } catch (e) {
-      GameEngineLogger.instance.e('[剧本选择] 失败: $e');
+      GameLogger.instance.e('[剧本选择] 失败: $e');
       // 降级：使用第一个推荐
       final fallbackPlaybook = recommendedPlaybooks.first;
       context.setStepOutput('selected_playbook', fallbackPlaybook);

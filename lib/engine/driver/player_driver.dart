@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
 /// 玩家驱动器抽象接口
@@ -21,7 +21,7 @@ abstract class PlayerDriver {
   /// 返回包含玩家决策的Map，格式由具体技能定义
   Future<PlayerDriverResponse> request({
     required GamePlayer player,
-    required GameState state,
+    required Game state,
     required GameSkill skill,
   });
 }

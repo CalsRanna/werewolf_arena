@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -40,7 +40,7 @@ class InstigatorMask extends RoleMask {
   ];
 
   @override
-  bool isApplicable(GameState state, GamePlayer player) {
+  bool isApplicable(Game state, GamePlayer player) {
     // 适用于：
     // 1. 狼人挑拨离间（主要使用者）
     // 2. 游戏中后期更有效（第2天以后，有足够信息制造矛盾）

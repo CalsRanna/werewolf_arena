@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
 import 'package:werewolf_arena/engine/reasoning/step/reasoning_step.dart';
@@ -27,14 +27,14 @@ class SelfReflectionStep extends ReasoningStep {
     ReasoningContext context,
     OpenAIClient client,
   ) async {
-    GameEngineLogger.instance.d('[自我反思] 开始评估...');
+    GameLogger.instance.d('[自我反思] 开始评估...');
 
     // 获取生成的发言
     final message = context.getStepOutput<String>('speech_generation');
     final reasoning = context.getStepOutput<String>('reasoning');
 
     if (message == null || message.isEmpty) {
-      GameEngineLogger.instance.d('[自我反思] 跳过 - 没有发言内容');
+      GameLogger.instance.d('[自我反思] 跳过 - 没有发言内容');
       context.setStepOutput('self_reflection_result', 'skipped');
       return context;
     }
@@ -77,7 +77,7 @@ class SelfReflectionStep extends ReasoningStep {
       thought.writeln('质量评分: $qualityScore/100');
 
       if (hasLeakage) {
-        GameEngineLogger.instance.w('[自我反思] 警告 - 检测到信息泄露: $leakageDescription');
+        GameLogger.instance.w('[自我反思] 警告 - 检测到信息泄露: $leakageDescription');
         thought.writeln('信息泄露检测: 是');
         thought.writeln('泄露描述: $leakageDescription');
 
@@ -87,7 +87,7 @@ class SelfReflectionStep extends ReasoningStep {
           thought.writeln('需要重新生成: 是');
         }
       } else {
-        GameEngineLogger.instance.d('[自我反思] 通过 - 质量评分: $qualityScore/100');
+        GameLogger.instance.d('[自我反思] 通过 - 质量评分: $qualityScore/100');
         thought.writeln('信息泄露检测: 否');
       }
 
@@ -101,7 +101,7 @@ class SelfReflectionStep extends ReasoningStep {
 
       context.appendThought(thought.toString());
     } catch (e) {
-      GameEngineLogger.instance.e('[自我反思] 失败: $e');
+      GameLogger.instance.e('[自我反思] 失败: $e');
       context.setStepOutput('self_reflection_result', 'error');
     }
 

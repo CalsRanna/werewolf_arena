@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
 /// 战术剧本抽象基类
@@ -23,7 +23,7 @@ abstract class Playbook {
   /// [state] 游戏状态
   /// [player] 当前玩家
   /// 返回 true 表示满足触发条件
-  bool canActivate(GameState state, GamePlayer player);
+  bool canActivate(Game state, GamePlayer player);
 
   /// 核心目标
   String get coreGoal;

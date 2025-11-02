@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/social_analyzer.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
@@ -25,7 +25,7 @@ class StrategyPlanningStep extends ReasoningStep {
     ReasoningContext context,
     OpenAIClient client,
   ) async {
-    GameEngineLogger.instance.d('[策略规划] 开始规划...');
+    GameLogger.instance.d('[策略规划] 开始规划...');
 
     // 1. 获取前面步骤的分析结果
     final coreConflict = context.getStepOutput<String>('core_conflict') ?? '无';
@@ -100,9 +100,9 @@ class StrategyPlanningStep extends ReasoningStep {
 
       context.appendThought(thought.toString());
 
-      GameEngineLogger.instance.d('[策略规划] 完成 - 目标: ${strategy['goal']}');
+      GameLogger.instance.d('[策略规划] 完成 - 目标: ${strategy['goal']}');
     } catch (e) {
-      GameEngineLogger.instance.e('[策略规划] 失败: $e');
+      GameLogger.instance.e('[策略规划] 失败: $e');
     }
 
     return context;

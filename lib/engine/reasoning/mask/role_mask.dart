@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
 /// 角色面具抽象基类
@@ -32,7 +32,7 @@ abstract class RoleMask {
   /// [state] 游戏状态
   /// [player] 当前玩家
   /// 返回 true 表示此面具适合当前场景
-  bool isApplicable(GameState state, GamePlayer player);
+  bool isApplicable(Game state, GamePlayer player);
 
   /// 生成完整的面具指导Prompt
   ///

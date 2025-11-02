@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
 import 'package:werewolf_arena/engine/driver/human_player_driver_interface.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
 /// 人类玩家驱动器
@@ -16,7 +16,7 @@ class HumanPlayerDriver implements PlayerDriver {
   @override
   Future<PlayerDriverResponse> request({
     required GamePlayer player,
-    required GameState state,
+    required Game state,
     required GameSkill skill,
   }) async {
     // 暂停 UI 动画，避免与用户输入冲突
@@ -33,7 +33,7 @@ class HumanPlayerDriver implements PlayerDriver {
   /// 处理用户输入请求的内部方法
   Future<PlayerDriverResponse> _handleRequest({
     required GamePlayer player,
-    required GameState state,
+    required Game state,
     required GameSkill skill,
   }) async {
     // 显示回合开始提示

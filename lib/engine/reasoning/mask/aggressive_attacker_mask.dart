@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -40,7 +40,7 @@ class AggressiveAttackerMask extends RoleMask {
   ];
 
   @override
-  bool isApplicable(GameState state, GamePlayer player) {
+  bool isApplicable(Game state, GamePlayer player) {
     // 适用于：
     // 1. 狼人在任何阶段都可以使用（主动攻击策略）
     // 2. 好人在确定狼人身份后也可以使用

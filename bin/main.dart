@@ -95,7 +95,8 @@ Future<void> main(List<String> arguments) async {
     final gameEngine = gameEngineData['engine'] as GameEngine;
     final humanPlayer = gameEngineData['humanPlayer'] as GamePlayer?;
 
-    await gameEngine.ensureInitialized();
+    // 创建游戏实例
+    final game = await gameEngine.create();
 
     // 显示玩家通知（仅在非上帝视角模式下）
     ui.pauseSpinner();
@@ -112,29 +113,28 @@ Future<void> main(List<String> arguments) async {
 
     ui.resumeSpinner();
 
-    while (!gameEngine.isGameEnded) {
-      await gameEngine.loop();
+    while (!game.isGameEnded) {
+      await game.loop();
 
       // 添加小延迟，让用户有时间阅读输出
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
-    final finalState = gameEngine.currentState;
-    final winner = finalState?.winner;
-    final day = finalState?.day;
-    final players = finalState?.players
+    final winner = game.winner;
+    final day = game.day;
+    final players = game.players
         .map((p) => '${p.name} ${p.role.name}')
         .join(', ');
-    final alivePlayers = finalState?.alivePlayers
+    final alivePlayers = game.alivePlayers
         .map((p) => '${p.name} ${p.role.name}')
         .join(', ');
 
     ui.printLine();
     ui.printLine('游戏结束');
-    if (winner != null) ui.printLine('获胜者: $winner');
-    if (day != null) ui.printLine('游戏时长: $day 天');
-    if (players != null) ui.printLine('玩家身份： $players');
-    if (alivePlayers != null) ui.printLine('存活玩家: $alivePlayers');
+    ui.printLine('获胜者: $winner');
+    ui.printLine('游戏时长: $day 天');
+    ui.printLine('玩家身份： $players');
+    ui.printLine('存活玩家: $alivePlayers');
 
     ui.dispose();
     exit(0);

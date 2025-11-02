@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/engine/role/game_role.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 
@@ -28,7 +28,7 @@ abstract class GamePlayer {
 
   bool get isAlive => hp > 0;
 
-  Future<SkillResult> cast(GameSkill skill, GameState state);
+  Future<SkillResult> cast(GameSkill skill, Game state);
 
   void setAlive(bool alive) {
     hp = alive ? 1 : 0;

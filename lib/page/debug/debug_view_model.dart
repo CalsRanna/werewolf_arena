@@ -4,6 +4,7 @@ import 'package:signals/signals_flutter.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/event/log_event.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -17,6 +18,7 @@ import 'package:werewolf_arena/util/logger_util.dart';
 
 class DebugViewModel {
   late final GameEngine gameEngine;
+  Game? _game;
   final logs = Signal(<GameEvent>[]);
   final running = Signal(false);
 
@@ -24,7 +26,7 @@ class DebugViewModel {
 
   void dispose() {
     controller.dispose();
-    gameEngine.dispose();
+    _game?.dispose();
   }
 
   Future<void> initSignals() async {
@@ -68,16 +70,16 @@ class DebugViewModel {
 
   Future<void> startGame() async {
     running.value = true;
-    await gameEngine.ensureInitialized();
-    while (!gameEngine.isGameEnded) {
-      await gameEngine.loop();
+    _game = await gameEngine.create();
+    while (!_game!.isGameEnded) {
+      await _game!.loop();
     }
     running.value = false;
   }
 
   Future<void> stopGame() async {
     running.value = false;
-    gameEngine.endGame();
+    await _game?.endGame();
     logs.value = [];
   }
 

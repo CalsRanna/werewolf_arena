@@ -6,8 +6,8 @@ import 'package:werewolf_arena/engine/role/villager_role.dart';
 import 'package:werewolf_arena/engine/role/werewolf_role.dart';
 import 'package:werewolf_arena/engine/role/witch_role.dart';
 import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 
 /// 标准12人局场景
 /// 4狼4民+4神配置，无警长
@@ -50,23 +50,23 @@ class Scenario12Players extends GameScenario {
 ''';
 
   @override
-  String? getWinner(GameState state) {
+  String? getWinner(Game state) {
     // 好人胜利：所有狼人死亡
     if (state.aliveWerewolves == 0) {
-      GameEngineLogger.instance.i('好人阵营获胜！所有狼人已出局');
+      GameLogger.instance.i('好人阵营获胜！所有狼人已出局');
       return '好人阵营';
     }
 
     // 狼人胜利（屠边规则）：
     // 条件1：屠神边 - 所有神职死亡
     if (state.aliveGods == 0) {
-      GameEngineLogger.instance.i('狼人阵营获胜！所有神职已出局');
+      GameLogger.instance.i('狼人阵营获胜！所有神职已出局');
       return '狼人阵营';
     }
 
     // 条件2：屠民边 - 所有平民死亡
     if (state.aliveVillagers == 0) {
-      GameEngineLogger.instance.i('狼人阵营获胜！所有平民已出局');
+      GameLogger.instance.i('狼人阵营获胜！所有平民已出局');
       return '狼人阵营';
     }
 

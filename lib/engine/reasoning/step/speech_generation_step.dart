@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
 import 'package:werewolf_arena/engine/reasoning/step/reasoning_step.dart';
@@ -25,7 +25,7 @@ class SpeechGenerationStep extends ReasoningStep {
     ReasoningContext context,
     OpenAIClient client,
   ) async {
-    GameEngineLogger.instance.d('[发言生成] 开始生成...');
+    GameLogger.instance.d('[发言生成] 开始生成...');
 
     // 1. 构建System Prompt
     final systemPrompt = _buildSystemPrompt(context);
@@ -71,11 +71,11 @@ class SpeechGenerationStep extends ReasoningStep {
       }
       context.appendThought(thought.toString());
 
-      GameEngineLogger.instance.d(
+      GameLogger.instance.d(
         '[发言生成] 完成 - 发言: ${message ?? "(无)"}, 目标: ${target ?? "(无)"}',
       );
     } catch (e) {
-      GameEngineLogger.instance.e('[发言生成] 失败: $e');
+      GameLogger.instance.e('[发言生成] 失败: $e');
       context.setStepOutput('speech_generation', null);
       context.setStepOutput('target_player', null);
     }

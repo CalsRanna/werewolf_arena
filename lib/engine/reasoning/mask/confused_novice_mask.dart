@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -40,7 +40,7 @@ class ConfusedNoviceMask extends RoleMask {
   ];
 
   @override
-  bool isApplicable(GameState state, GamePlayer player) {
+  bool isApplicable(Game state, GamePlayer player) {
     // 适用于：
     // 1. 狼人伪装平民时使用（降低威胁）
     // 2. 真正的平民也可以使用

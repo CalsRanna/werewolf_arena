@@ -1,5 +1,5 @@
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
 
 /// The abstract base class for all round controllers.
 ///
@@ -13,6 +13,6 @@ abstract class GameRoundController {
   /// - Day: discussions, voting, executions
   /// - Memory updates: updating AI player memories after the round
   ///
-  /// - [state]: The current [GameState] of the game.
-  Future<void> tick(GameState state, {GameObserver? observer});
+  /// - [game]: The current [Game] instance.
+  Future<void> tick(Game game, {GameObserver? observer});
 }

@@ -6,13 +6,13 @@ import 'package:werewolf_arena/engine/game_observer.dart';
 /// 设计原则：
 /// 1. 单例模式，全局唯一实例
 /// 2. 通过observer?安全调用，可能为null
-/// 3. GameState持有此单例，简化使用
+/// 3. Game持有此单例，简化使用
 /// 4. 不包含复杂的null判断逻辑
-class GameEngineLogger {
-  static GameEngineLogger? _instance;
-  static GameEngineLogger get instance => _instance ??= GameEngineLogger._();
+class GameLogger {
+  static GameLogger? _instance;
+  static GameLogger get instance => _instance ??= GameLogger._();
 
-  GameEngineLogger._();
+  GameLogger._();
 
   /// 当前观察者（可能为null）
   GameObserver? _observer;

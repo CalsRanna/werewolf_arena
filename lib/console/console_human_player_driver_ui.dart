@@ -4,7 +4,7 @@ import 'package:werewolf_arena/engine/driver/human_player_driver_interface.dart'
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
-import 'package:werewolf_arena/engine/game_state.dart';
+import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/console/console_game_ui.dart';
@@ -18,7 +18,7 @@ class ConsoleHumanPlayerDriverUI implements HumanPlayerDriverInterface {
   ConsoleHumanPlayerDriverUI(this.ui);
 
   @override
-  void showTurnStart(GamePlayer player, GameState state, GameSkill skill) {
+  void showTurnStart(GamePlayer player, Game state, GameSkill skill) {
     ui.printLine();
     ui.printHeader(
       '>>> 轮到你行动了！',
@@ -36,7 +36,7 @@ class ConsoleHumanPlayerDriverUI implements HumanPlayerDriverInterface {
   }
 
   @override
-  void showGameState(GameState state) {
+  void showGameState(Game state) {
     ui.printLine('【游戏状态】');
     ui.printLine('  当前回合: 第 ${state.day} 天');
     ui.printLine('  存活玩家数: ${state.alivePlayers.length}');

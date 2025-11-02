@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/mask_library.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
@@ -25,7 +25,7 @@ class MaskSelectionStep extends ReasoningStep {
     ReasoningContext context,
     OpenAIClient client,
   ) async {
-    GameEngineLogger.instance.d('[面具选择] 开始选择...');
+    GameLogger.instance.d('[面具选择] 开始选择...');
 
     final player = context.player;
     final state = context.state;
@@ -74,9 +74,9 @@ class MaskSelectionStep extends ReasoningStep {
 面具描述: ${selectedMask.description}
 ''');
 
-      GameEngineLogger.instance.d('[面具选择] 完成 - 选择了: ${selectedMask.name}');
+      GameLogger.instance.d('[面具选择] 完成 - 选择了: ${selectedMask.name}');
     } catch (e) {
-      GameEngineLogger.instance.e('[面具选择] 失败: $e');
+      GameLogger.instance.e('[面具选择] 失败: $e');
       // 降级：使用默认面具
       final fallbackMask = MaskLibrary.getDefault();
       context.setStepOutput('selected_mask', fallbackMask);

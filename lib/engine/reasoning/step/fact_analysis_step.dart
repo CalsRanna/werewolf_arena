@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart';
-import 'package:werewolf_arena/engine/game_engine_logger.dart';
+import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
@@ -25,7 +25,7 @@ class FactAnalysisStep extends ReasoningStep {
     ReasoningContext context,
     OpenAIClient client,
   ) async {
-    GameEngineLogger.instance.d('[事实分析] 开始分析...');
+    GameLogger.instance.d('[事实分析] 开始分析...');
 
     // 1. 获取或创建工作记忆
     WorkingMemory? workingMemory;
@@ -88,12 +88,12 @@ class FactAnalysisStep extends ReasoningStep {
 
       context.appendThought(thought.toString());
 
-      GameEngineLogger.instance.d(
+      GameLogger.instance.d(
         '[事实分析] 完成 - 核心矛盾: ${response['core_conflict']}, '
         '关键事实: ${keyFacts.length}个, 关注玩家: ${focusPlayers.length}个',
       );
     } catch (e) {
-      GameEngineLogger.instance.e('[事实分析] 失败: $e');
+      GameLogger.instance.e('[事实分析] 失败: $e');
       // 降级：使用空数据
       context.setStepOutput('core_conflict', '当前处于信息收集阶段，需要观察各方表现');
       context.setStepOutput('key_facts', <KeyFact>[]);
