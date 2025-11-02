@@ -176,12 +176,13 @@ class SocialNetwork {
         final relationship = entry.value;
 
         // 查找玩家名称
-        final player = state.players.firstWhere(
-          (p) => p.id == playerId,
-          orElse: () => state.players.first as dynamic,
-        );
-
-        buffer.writeln('- ${relationship.toPrompt(player.name)}');
+        try {
+          final player = state.players.firstWhere((p) => p.id == playerId);
+          buffer.writeln('- ${relationship.toPrompt(player.name)}');
+        } catch (e) {
+          // 如果找不到玩家，跳过
+          continue;
+        }
       }
     }
 
@@ -189,11 +190,12 @@ class SocialNetwork {
     if (allies.isNotEmpty) {
       final allyNames = allies
           .map((id) {
-            final player = state.players.firstWhere(
-              (p) => p.id == id,
-              orElse: () => state.players.first as dynamic,
-            );
-            return player.name;
+            try {
+              final player = state.players.firstWhere((p) => p.id == id);
+              return player.name;
+            } catch (e) {
+              return id; // 如果找不到玩家，使用ID
+            }
           })
           .join(', ');
       buffer.writeln('\n**潜在盟友**: $allyNames');
@@ -202,11 +204,12 @@ class SocialNetwork {
     if (enemies.isNotEmpty) {
       final enemyNames = enemies
           .map((id) {
-            final player = state.players.firstWhere(
-              (p) => p.id == id,
-              orElse: () => state.players.first as dynamic,
-            );
-            return player.name;
+            try {
+              final player = state.players.firstWhere((p) => p.id == id);
+              return player.name;
+            } catch (e) {
+              return id; // 如果找不到玩家，使用ID
+            }
           })
           .join(', ');
       buffer.writeln('**潜在敌人**: $enemyNames');
@@ -225,11 +228,12 @@ class SocialNetwork {
     if (topTrusted.isNotEmpty) {
       final names = topTrusted
           .map((id) {
-            final player = state.players.firstWhere(
-              (p) => p.id == id,
-              orElse: () => state.players.first as dynamic,
-            );
-            return player.name;
+            try {
+              final player = state.players.firstWhere((p) => p.id == id);
+              return player.name;
+            } catch (e) {
+              return id; // 如果找不到玩家，使用ID
+            }
           })
           .join(', ');
       buffer.write('信任: $names');
@@ -239,11 +243,12 @@ class SocialNetwork {
       if (topTrusted.isNotEmpty) buffer.write(' | ');
       final names = topSuspicious
           .map((id) {
-            final player = state.players.firstWhere(
-              (p) => p.id == id,
-              orElse: () => state.players.first as dynamic,
-            );
-            return player.name;
+            try {
+              final player = state.players.firstWhere((p) => p.id == id);
+              return player.name;
+            } catch (e) {
+              return id; // 如果找不到玩家，使用ID
+            }
           })
           .join(', ');
       buffer.write('怀疑: $names');

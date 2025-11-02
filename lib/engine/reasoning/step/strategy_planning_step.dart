@@ -251,22 +251,24 @@ $identitySummary$socialSection
 
     if (mostTrusted.isNotEmpty) {
       final trustedNames = mostTrusted.map((id) {
-        final player = state.players.firstWhere(
-          (p) => p.id == id,
-          orElse: () => state.players.first as dynamic,
-        );
-        return player.name as String;
+        try {
+          final player = state.players.firstWhere((p) => p.id == id);
+          return player.name as String;
+        } catch (e) {
+          return id; // 如果找不到玩家，使用ID
+        }
       }).join(', ');
       buffer.writeln('最信任: $trustedNames');
     }
 
     if (mostSuspicious.isNotEmpty) {
       final suspiciousNames = mostSuspicious.map((id) {
-        final player = state.players.firstWhere(
-          (p) => p.id == id,
-          orElse: () => state.players.first as dynamic,
-        );
-        return player.name as String;
+        try {
+          final player = state.players.firstWhere((p) => p.id == id);
+          return player.name as String;
+        } catch (e) {
+          return id; // 如果找不到玩家，使用ID
+        }
       }).join(', ');
       buffer.writeln('最怀疑: $suspiciousNames');
     }

@@ -56,10 +56,14 @@ class MaskSelectionStep extends ReasoningStep {
       // 4. 查找选中的面具
       final RoleMask selectedMask;
       if (selectedMaskId != null) {
-        selectedMask = recommendedMasks.firstWhere(
-          (m) => m.id == selectedMaskId,
-          orElse: () => recommendedMasks.first as dynamic,
-        );
+        try {
+          selectedMask = recommendedMasks.firstWhere(
+            (m) => m.id == selectedMaskId,
+          );
+        } catch (e) {
+          // 如果找不到指定的面具，使用第一个
+          selectedMask = recommendedMasks.first;
+        }
       } else {
         selectedMask = recommendedMasks.first;
       }

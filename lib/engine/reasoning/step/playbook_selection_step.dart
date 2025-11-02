@@ -68,10 +68,14 @@ class PlaybookSelectionStep extends ReasoningStep {
       // 5. 查找选中的剧本
       final Playbook? selectedPlaybook;
       if (selectedPlaybookId != null) {
-        selectedPlaybook = recommendedPlaybooks.firstWhere(
-          (p) => p.id == selectedPlaybookId,
-          orElse: () => recommendedPlaybooks.first as dynamic,
-        );
+        try {
+          selectedPlaybook = recommendedPlaybooks.firstWhere(
+            (p) => p.id == selectedPlaybookId,
+          );
+        } catch (e) {
+          // 如果找不到指定的剧本，使用第一个
+          selectedPlaybook = recommendedPlaybooks.first;
+        }
       } else {
         selectedPlaybook = null;
       }

@@ -27,10 +27,15 @@ class SocialAnalyzer {
       final estimate = entry.value;
 
       // 通过名称查找玩家
-      final targetPlayer = state.players.firstWhere(
-        (p) => p.name == targetPlayerName,
-        orElse: () => state.players.first as dynamic,
-      );
+      GamePlayer? targetPlayer;
+      try {
+        targetPlayer = state.players.firstWhere(
+          (p) => p.name == targetPlayerName,
+        );
+      } catch (e) {
+        // 如果找不到玩家，跳过这个条目
+        continue;
+      }
 
       // 获取当前关系（使用playerId）
       final currentRelation = currentNetwork.getRelationship(targetPlayer.id);
@@ -71,10 +76,15 @@ class SocialAnalyzer {
     // 如果策略中有目标玩家，提升对该玩家的关注度
     final targetPlayerName = strategy['target'] as String?;
     if (targetPlayerName != null) {
-      final targetPlayer = state.players.firstWhere(
-        (p) => p.name == targetPlayerName,
-        orElse: () => state.players.first as dynamic,
-      );
+      GamePlayer? targetPlayer;
+      try {
+        targetPlayer = state.players.firstWhere(
+          (p) => p.name == targetPlayerName,
+        );
+      } catch (e) {
+        // 如果找不到玩家，忽略
+        return currentNetwork;
+      }
 
       final currentRelation = currentNetwork.getRelationship(targetPlayer.id);
       if (currentRelation != null) {
@@ -224,11 +234,12 @@ class SocialAnalyzer {
       final allyNames = allies
           .take(3)
           .map((id) {
-            final player = state.players.firstWhere(
-              (p) => p.id == id,
-              orElse: () => state.players.first as dynamic,
-            );
-            return player.name;
+            try {
+              final player = state.players.firstWhere((p) => p.id == id);
+              return player.name;
+            } catch (e) {
+              return id; // 如果找不到玩家，使用ID
+            }
           })
           .join(', ');
       buffer.write('盟友: $allyNames');
@@ -239,11 +250,12 @@ class SocialAnalyzer {
       final enemyNames = enemies
           .take(3)
           .map((id) {
-            final player = state.players.firstWhere(
-              (p) => p.id == id,
-              orElse: () => state.players.first as dynamic,
-            );
-            return player.name;
+            try {
+              final player = state.players.firstWhere((p) => p.id == id);
+              return player.name;
+            } catch (e) {
+              return id; // 如果找不到玩家，使用ID
+            }
           })
           .join(', ');
       buffer.write('敌人: $enemyNames');
