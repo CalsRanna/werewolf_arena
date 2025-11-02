@@ -66,19 +66,20 @@ class PlaybookSelectionStep extends ReasoningStep {
       final selectedPlaybookId = response['selected_playbook_id'] as String?;
 
       // 5. 查找选中的剧本
-      final Playbook? selectedPlaybook;
+      Playbook? foundPlaybook;
       if (selectedPlaybookId != null) {
         try {
-          selectedPlaybook = recommendedPlaybooks.firstWhere(
+          foundPlaybook = recommendedPlaybooks.firstWhere(
             (p) => p.id == selectedPlaybookId,
           );
         } catch (e) {
           // 如果找不到指定的剧本，使用第一个
-          selectedPlaybook = recommendedPlaybooks.first;
+          foundPlaybook = recommendedPlaybooks.isNotEmpty
+              ? recommendedPlaybooks.first
+              : null;
         }
-      } else {
-        selectedPlaybook = null;
       }
+      final selectedPlaybook = foundPlaybook;
 
       // 6. 存入上下文
       context.setStepOutput('selected_playbook', selectedPlaybook);

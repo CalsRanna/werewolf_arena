@@ -54,19 +54,18 @@ class MaskSelectionStep extends ReasoningStep {
       final selectedMaskId = response['selected_mask_id'] as String?;
 
       // 4. 查找选中的面具
-      final RoleMask selectedMask;
+      RoleMask? foundMask;
       if (selectedMaskId != null) {
         try {
-          selectedMask = recommendedMasks.firstWhere(
+          foundMask = recommendedMasks.firstWhere(
             (m) => m.id == selectedMaskId,
           );
         } catch (e) {
           // 如果找不到指定的面具，使用第一个
-          selectedMask = recommendedMasks.first;
+          foundMask = null;
         }
-      } else {
-        selectedMask = recommendedMasks.first;
       }
+      final selectedMask = foundMask ?? recommendedMasks.first;
 
       // 5. 存入上下文
       context.setStepOutput('selected_mask', selectedMask);
