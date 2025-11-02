@@ -9,6 +9,9 @@ import 'package:werewolf_arena/engine/reasoning/mask/peacemaker_mask.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/scapegoater_mask.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/victimized_good_person_mask.dart';
+import 'package:werewolf_arena/engine/reasoning/mask/confident_leader_mask.dart';
+import 'package:werewolf_arena/engine/reasoning/mask/humble_servant_mask.dart';
+import 'package:werewolf_arena/engine/reasoning/mask/aggressive_challenger_mask.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
 /// 面具库
@@ -20,6 +23,7 @@ class MaskLibrary {
     // 进攻型面具
     AuthoritativeLeaderMask(), // 强势领袖
     AggressiveAttackerMask(), // 激进攻击者
+    AggressiveChallengerMask(), // 激进挑战者（警长竞选专用）
     // 防守型面具
     VictimizedGoodPersonMask(), // 委屈好人
     ScapegoaterMask(), // 甩锅者
@@ -31,6 +35,9 @@ class MaskLibrary {
     FollowerMask(), // 跟风者
     // 挑拨型面具
     InstigatorMask(), // 煽动者
+    // 警长竞选专用面具
+    ConfidentLeaderMask(), // 自信领袖
+    HumbleServantMask(), // 谦逊服务者
   ];
 
   /// 根据场景推荐合适的面具
