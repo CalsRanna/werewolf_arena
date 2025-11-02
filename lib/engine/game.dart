@@ -39,6 +39,12 @@ class Game {
   bool canUserPoison = true;
   String lastProtectedPlayer = '';
 
+  /// 当前警长
+  GamePlayer? sheriff;
+
+  /// 警徽流历史(记录警徽传递链)
+  final List<String> badgeHistory = [];
+
   final _controller = StreamController<GameEvent>.broadcast();
   bool _isDisposed = false;
   bool _isEnded = false;
@@ -104,6 +110,8 @@ class Game {
       canWitchHeal: canUserHeal,
       canWitchPoison: canUserPoison,
       lastProtectedPlayer: lastProtectedPlayer,
+      sheriff: sheriff,
+      badgeHistory: List.unmodifiable(badgeHistory),
     );
 
     final winner = scenario.getWinner(context);
@@ -241,6 +249,8 @@ class Game {
       canWitchHeal: canUserHeal,
       canWitchPoison: canUserPoison,
       lastProtectedPlayer: lastProtectedPlayer,
+      sheriff: sheriff,
+      badgeHistory: List.unmodifiable(badgeHistory),
     );
   }
 

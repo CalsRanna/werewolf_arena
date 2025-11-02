@@ -15,6 +15,13 @@ import 'package:werewolf_arena/engine/event/protect_event.dart';
 import 'package:werewolf_arena/engine/event/shoot_event.dart';
 import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_campaign_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_speech_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_withdraw_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_vote_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_elected_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_badge_transfer_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_torn_event.dart';
 import 'package:werewolf_arena/engine/game.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
@@ -36,6 +43,11 @@ import 'package:werewolf_arena/engine/skill/shoot_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 import 'package:werewolf_arena/engine/skill/testament_skill.dart';
 import 'package:werewolf_arena/engine/skill/vote_skill.dart';
+import 'package:werewolf_arena/engine/skill/campaign_skill.dart';
+import 'package:werewolf_arena/engine/skill/sheriff_speech_skill.dart';
+import 'package:werewolf_arena/engine/skill/withdraw_skill.dart';
+import 'package:werewolf_arena/engine/skill/sheriff_vote_skill.dart';
+import 'package:werewolf_arena/engine/skill/transfer_badge_skill.dart';
 
 /// 默认阶段处理器（基于技能系统重构）
 class DefaultGameRoundController implements GameRoundController {
@@ -87,6 +99,13 @@ class DefaultGameRoundController implements GameRoundController {
       observer: observer,
       lastNightDeadPlayers: lastNightDeadPlayers,
     );
+
+    // 第一天：警长竞选流程
+    if (game.day == 1) {
+      await Future.delayed(const Duration(seconds: 1));
+      await _processSheriffElection(game, observer: observer);
+    }
+
     await Future.delayed(const Duration(seconds: 1));
     // 投票
     var voteTarget = await _processVote(game, observer: observer);
@@ -95,6 +114,12 @@ class DefaultGameRoundController implements GameRoundController {
     if (voteTarget != null) {
       await _processTestament(game, observer: observer, voteTarget: voteTarget);
       await Future.delayed(const Duration(seconds: 1));
+
+      // 检查是否是警长死亡，如果是则触发警徽传递
+      if (voteTarget.isSheriff) {
+        await _processTransferBadge(game, observer: observer, deadSheriff: voteTarget);
+        await Future.delayed(const Duration(seconds: 1));
+      }
     }
     // 检查被投票出局的玩家是否是猎人，如果是则触发开枪
     if (voteTarget?.role is HunterRole) {
@@ -469,6 +494,14 @@ class DefaultGameRoundController implements GameRoundController {
       }
     }
 
+    // 检查是否有警长死亡，如果有则触发警徽传递（夜晚死亡也要传递警徽）
+    for (var player in deadPlayers) {
+      if (player.isSheriff) {
+        await Future.delayed(const Duration(seconds: 1));
+        await _processTransferBadge(game, observer: observer, deadSheriff: player);
+      }
+    }
+
     // 检查游戏是否结束
     if (game.checkGameEnd()) {
       GameLogger.instance.i('游戏在夜晚阶段结束');
@@ -649,8 +682,33 @@ class DefaultGameRoundController implements GameRoundController {
       game.handleEvent(voteEvent);
       await observer?.onGameEvent(voteEvent);
     }
-    final names = results.map((result) => result.target).toList();
-    var targetPlayer = _getTargetGamePlayer(game, names);
+
+    // 使用警长权重计算得票数
+    final voteCount = <String, double>{};
+    for (var result in results) {
+      if (result.target == null) continue;
+      final voter = game.getPlayerByName(result.caster);
+      if (voter == null) continue;
+
+      final weight = voter.voteWeight; // 警长1.5票，普通玩家1.0票
+      voteCount[result.target!] = (voteCount[result.target!] ?? 0.0) + weight;
+    }
+
+    // 找出得票最高的玩家
+    if (voteCount.isEmpty) return null;
+
+    final maxVotes = voteCount.values.reduce((a, b) => a > b ? a : b);
+    final topCandidates = voteCount.entries.where((e) => e.value == maxVotes).toList();
+
+    String? targetPlayerName;
+    if (topCandidates.length == 1) {
+      targetPlayerName = topCandidates.first.key;
+    } else {
+      // 平票情况，随机选择一个（或者可以选择流局，这里简化为随机）
+      targetPlayerName = topCandidates[Random().nextInt(topCandidates.length)].key;
+    }
+
+    final targetPlayer = game.getPlayerByName(targetPlayerName);
 
     // 设置玩家出局并发送 ExileEvent
     if (targetPlayer != null) {
@@ -661,5 +719,359 @@ class DefaultGameRoundController implements GameRoundController {
     }
 
     return targetPlayer;
+  }
+
+  /// 警长竞选流程（仅第一天执行）
+  /// 包括：上警 -> 竞选演讲 -> 退水 -> 投票选警
+  Future<void> _processSheriffElection(
+    Game game, {
+    GameObserver? observer,
+  }) async {
+    var systemEvent = SystemEvent('开始警长竞选');
+    GameLogger.instance.d(systemEvent.toString());
+    game.handleEvent(systemEvent);
+    await observer?.onGameEvent(systemEvent);
+
+    // 阶段1: 上警阶段
+    final candidates = await _processCampaign(game, observer: observer);
+
+    if (candidates.isEmpty) {
+      systemEvent = SystemEvent('无人上警，本局无警长');
+      GameLogger.instance.d(systemEvent.toString());
+      game.handleEvent(systemEvent);
+      await observer?.onGameEvent(systemEvent);
+      return;
+    }
+
+    if (candidates.length == 1) {
+      // 只有一人上警，直接当选
+      final sheriff = candidates.first;
+      sheriff.isSheriff = true;
+      game.sheriff = sheriff;
+      game.badgeHistory.add(sheriff.name);
+
+      final electedEvent = SheriffElectedEvent(
+        sheriffName: sheriff.name,
+        voteResults: {sheriff.name: 0},
+        day: game.day,
+      );
+      game.handleEvent(electedEvent);
+      await observer?.onGameEvent(electedEvent);
+
+      systemEvent = SystemEvent('${sheriff.name}直接当选警长');
+      GameLogger.instance.d(systemEvent.toString());
+      game.handleEvent(systemEvent);
+      await observer?.onGameEvent(systemEvent);
+      return;
+    }
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    // 阶段2: 竞选演讲
+    await _processSheriffSpeeches(game, observer: observer, candidates: candidates);
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    // 阶段3: 退水环节
+    final finalCandidates = await _processWithdraw(game, observer: observer, candidates: candidates);
+
+    if (finalCandidates.isEmpty) {
+      systemEvent = SystemEvent('所有候选人均已退水，本局无警长');
+      GameLogger.instance.d(systemEvent.toString());
+      game.handleEvent(systemEvent);
+      await observer?.onGameEvent(systemEvent);
+      return;
+    }
+
+    if (finalCandidates.length == 1) {
+      // 只剩一人，直接当选
+      final sheriff = finalCandidates.first;
+      sheriff.isSheriff = true;
+      game.sheriff = sheriff;
+      game.badgeHistory.add(sheriff.name);
+
+      final electedEvent = SheriffElectedEvent(
+        sheriffName: sheriff.name,
+        voteResults: {sheriff.name: 0},
+        day: game.day,
+      );
+      game.handleEvent(electedEvent);
+      await observer?.onGameEvent(electedEvent);
+
+      systemEvent = SystemEvent('${sheriff.name}当选警长');
+      GameLogger.instance.d(systemEvent.toString());
+      game.handleEvent(systemEvent);
+      await observer?.onGameEvent(systemEvent);
+      return;
+    }
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    // 阶段4: 投票选警
+    await _processSheriffVote(game, observer: observer, candidates: finalCandidates);
+  }
+
+  /// 上警阶段 - 玩家决定是否参加警长竞选
+  Future<List<GamePlayer>> _processCampaign(
+    Game game, {
+    GameObserver? observer,
+  }) async {
+    var systemEvent = SystemEvent('请选择是否上警');
+    GameLogger.instance.d(systemEvent.toString());
+    game.handleEvent(systemEvent);
+    await observer?.onGameEvent(systemEvent);
+
+    final candidates = <GamePlayer>[];
+
+    for (var player in game.alivePlayers) {
+      final context = game.buildContextForPlayer(player);
+      final result = await player.cast(CampaignSkill(), context);
+
+      // 解析结果判断是否上警
+      final decision = result.message?.trim() ?? '';
+      final isCampaigning = decision.contains('上警') && !decision.contains('不上警');
+
+      final campaignEvent = SheriffCampaignEvent(
+        playerName: player.name,
+        isCampaigning: isCampaigning,
+        day: game.day,
+      );
+      game.handleEvent(campaignEvent);
+      await observer?.onGameEvent(campaignEvent);
+
+      if (isCampaigning) {
+        candidates.add(player);
+      }
+    }
+
+    systemEvent = SystemEvent(
+      candidates.isEmpty
+          ? '无人上警'
+          : '上警玩家：${candidates.map((p) => p.name).join('、')}',
+    );
+    GameLogger.instance.d(systemEvent.toString());
+    game.handleEvent(systemEvent);
+    await observer?.onGameEvent(systemEvent);
+
+    return candidates;
+  }
+
+  /// 竞选演讲阶段 - 上警玩家发表竞选宣言
+  Future<void> _processSheriffSpeeches(
+    Game game, {
+    GameObserver? observer,
+    required List<GamePlayer> candidates,
+  }) async {
+    var systemEvent = SystemEvent('竞选发言阶段');
+    GameLogger.instance.d(systemEvent.toString());
+    game.handleEvent(systemEvent);
+    await observer?.onGameEvent(systemEvent);
+
+    for (var candidate in candidates) {
+      final context = game.buildContextForPlayer(candidate);
+      final result = await candidate.cast(SheriffSpeechSkill(), context);
+
+      final speechEvent = SheriffSpeechEvent(
+        playerName: candidate.name,
+        speech: result.message ?? '',
+        day: game.day,
+      );
+      game.handleEvent(speechEvent);
+      await observer?.onGameEvent(speechEvent);
+    }
+  }
+
+  /// 退水阶段 - 上警玩家可以选择退出竞选
+  Future<List<GamePlayer>> _processWithdraw(
+    Game game, {
+    GameObserver? observer,
+    required List<GamePlayer> candidates,
+  }) async {
+    var systemEvent = SystemEvent('退水环节');
+    GameLogger.instance.d(systemEvent.toString());
+    game.handleEvent(systemEvent);
+    await observer?.onGameEvent(systemEvent);
+
+    final finalCandidates = <GamePlayer>[];
+
+    for (var candidate in candidates) {
+      final context = game.buildContextForPlayer(candidate);
+      final result = await candidate.cast(WithdrawSkill(), context);
+
+      // 解析结果判断是否退水
+      final decision = result.message?.trim() ?? '';
+      final isWithdrawing = decision.contains('退水') && !decision.contains('不退水');
+
+      if (isWithdrawing) {
+        final withdrawEvent = SheriffWithdrawEvent(
+          playerName: candidate.name,
+          day: game.day,
+        );
+        game.handleEvent(withdrawEvent);
+        await observer?.onGameEvent(withdrawEvent);
+      } else {
+        finalCandidates.add(candidate);
+      }
+    }
+
+    if (finalCandidates.isNotEmpty) {
+      systemEvent = SystemEvent(
+        '最终候选人：${finalCandidates.map((p) => p.name).join('、')}',
+      );
+      GameLogger.instance.d(systemEvent.toString());
+      game.handleEvent(systemEvent);
+      await observer?.onGameEvent(systemEvent);
+    }
+
+    return finalCandidates;
+  }
+
+  /// 警长投票阶段 - 所有玩家投票选举警长
+  Future<void> _processSheriffVote(
+    Game game, {
+    GameObserver? observer,
+    required List<GamePlayer> candidates,
+  }) async {
+    var systemEvent = SystemEvent('开始投票选举警长');
+    GameLogger.instance.d(systemEvent.toString());
+    game.handleEvent(systemEvent);
+    await observer?.onGameEvent(systemEvent);
+
+    final voteCount = <String, int>{};
+    for (var candidate in candidates) {
+      voteCount[candidate.name] = 0;
+    }
+
+    // 所有存活玩家投票
+    for (var voter in game.alivePlayers) {
+      final context = game.buildContextForPlayer(voter);
+      final result = await voter.cast(SheriffVoteSkill(), context);
+
+      final targetName = result.target;
+      if (targetName != null && voteCount.containsKey(targetName)) {
+        voteCount[targetName] = (voteCount[targetName] ?? 0) + 1;
+
+        final voteEvent = SheriffVoteEvent(
+          voterName: voter.name,
+          targetName: targetName,
+          day: game.day,
+        );
+        game.handleEvent(voteEvent);
+        await observer?.onGameEvent(voteEvent);
+      }
+    }
+
+    // 统计得票最高者
+    final maxVotes = voteCount.values.isEmpty ? 0 : voteCount.values.reduce((a, b) => a > b ? a : b);
+    final winners = voteCount.entries.where((e) => e.value == maxVotes).toList();
+
+    if (winners.length > 1) {
+      // 平票，流局
+      final electedEvent = SheriffElectedEvent(
+        sheriffName: null,
+        voteResults: voteCount,
+        isRunoff: true,
+        day: game.day,
+      );
+      game.handleEvent(electedEvent);
+      await observer?.onGameEvent(electedEvent);
+
+      systemEvent = SystemEvent('警长竞选平票流局，本局无警长');
+      GameLogger.instance.d(systemEvent.toString());
+      game.handleEvent(systemEvent);
+      await observer?.onGameEvent(systemEvent);
+    } else {
+      // 选出警长
+      final sheriffName = winners.first.key;
+      final sheriff = game.getPlayerByName(sheriffName);
+
+      if (sheriff != null) {
+        sheriff.isSheriff = true;
+        game.sheriff = sheriff;
+        game.badgeHistory.add(sheriff.name);
+
+        final electedEvent = SheriffElectedEvent(
+          sheriffName: sheriffName,
+          voteResults: voteCount,
+          day: game.day,
+        );
+        game.handleEvent(electedEvent);
+        await observer?.onGameEvent(electedEvent);
+
+        systemEvent = SystemEvent('$sheriffName 当选警长');
+        GameLogger.instance.d(systemEvent.toString());
+        game.handleEvent(systemEvent);
+        await observer?.onGameEvent(systemEvent);
+      }
+    }
+  }
+
+  /// 警徽传递 - 警长死亡时传递警徽或撕毁警徽
+  Future<void> _processTransferBadge(
+    Game game, {
+    GameObserver? observer,
+    required GamePlayer deadSheriff,
+  }) async {
+    var systemEvent = SystemEvent('${deadSheriff.name}是警长，请选择是否传递警徽');
+    GameLogger.instance.d(systemEvent.toString());
+    game.handleEvent(systemEvent);
+    await observer?.onGameEvent(systemEvent);
+
+    final context = game.buildContextForPlayer(deadSheriff);
+    final result = await deadSheriff.cast(TransferBadgeSkill(), context);
+
+    final decision = result.message?.trim() ?? '';
+
+    if (decision.contains('撕毁警徽')) {
+      // 撕毁警徽
+      deadSheriff.isSheriff = false;
+      game.sheriff = null;
+
+      final tornEvent = SheriffTornEvent(
+        sheriffName: deadSheriff.name,
+        day: game.day,
+      );
+      game.handleEvent(tornEvent);
+      await observer?.onGameEvent(tornEvent);
+
+      systemEvent = SystemEvent('${deadSheriff.name}撕毁警徽');
+      GameLogger.instance.d(systemEvent.toString());
+      game.handleEvent(systemEvent);
+      await observer?.onGameEvent(systemEvent);
+    } else {
+      // 尝试解析传递目标
+      final targetName = result.target;
+      final target = targetName != null ? game.getPlayerByName(targetName) : null;
+
+      if (target != null && target.isAlive) {
+        // 传递警徽
+        deadSheriff.isSheriff = false;
+        target.isSheriff = true;
+        game.sheriff = target;
+        game.badgeHistory.add(target.name);
+
+        final transferEvent = SheriffBadgeTransferEvent(
+          fromPlayerName: deadSheriff.name,
+          toPlayerName: target.name,
+          day: game.day,
+        );
+        game.handleEvent(transferEvent);
+        await observer?.onGameEvent(transferEvent);
+
+        systemEvent = SystemEvent('${deadSheriff.name}将警徽传给${target.name}');
+        GameLogger.instance.d(systemEvent.toString());
+        game.handleEvent(systemEvent);
+        await observer?.onGameEvent(systemEvent);
+      } else {
+        // 无效的传递目标，视为撕毁警徽
+        deadSheriff.isSheriff = false;
+        game.sheriff = null;
+
+        systemEvent = SystemEvent('警徽传递目标无效，警徽被撕毁');
+        GameLogger.instance.d(systemEvent.toString());
+        game.handleEvent(systemEvent);
+        await observer?.onGameEvent(systemEvent);
+      }
+    }
   }
 }

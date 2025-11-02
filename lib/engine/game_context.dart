@@ -38,6 +38,12 @@ class GameContext {
   /// 上一次守卫保护的玩家名称
   final String lastProtectedPlayer;
 
+  /// 当前警长(null表示无警长或警徽已撕毁)
+  final GamePlayer? sheriff;
+
+  /// 警徽流历史(记录警徽传递链)
+  final List<String> badgeHistory;
+
   GameContext({
     required this.day,
     required this.scenario,
@@ -47,6 +53,8 @@ class GameContext {
     required this.canWitchHeal,
     required this.canWitchPoison,
     required this.lastProtectedPlayer,
+    this.sheriff,
+    this.badgeHistory = const [],
   });
 
   /// 根据玩家名称查找玩家
@@ -112,4 +120,7 @@ class GameContext {
 
   /// 存活神职数量
   int get aliveGods => gods.where((p) => p.isAlive).length;
+
+  /// 警长是否存活
+  bool get hasSheriff => sheriff != null && sheriff!.isAlive;
 }

@@ -19,6 +19,9 @@ abstract class GamePlayer {
 
   int hp = 1;
 
+  /// 是否是警长
+  bool isSheriff = false;
+
   GamePlayer({
     required this.id,
     required this.index,
@@ -27,6 +30,9 @@ abstract class GamePlayer {
   });
 
   String get formattedName => "[$name|${role.name}]";
+
+  /// 警徽投票权重(警长为1.5,普通玩家为1.0)
+  double get voteWeight => isSheriff ? 1.5 : 1.0;
 
   bool get isAlive => hp > 0;
 
