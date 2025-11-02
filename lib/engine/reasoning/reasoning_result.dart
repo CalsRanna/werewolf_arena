@@ -23,25 +23,18 @@ class ReasoningResult {
 
   /// 转换为PlayerDriverResponse格式
   Map<String, dynamic> toJson() {
-    return {
-      'message': message,
-      'reasoning': reasoning,
-      'target': target,
-    };
+    return {'message': message, 'reasoning': reasoning, 'target': target};
   }
 
   /// 获取调试信息
   String getDebugInfo() {
     final buffer = StringBuffer();
-    buffer.writeln('=== 推理结果 ===');
-    buffer.writeln('发言: $message');
-    buffer.writeln('目标: $target');
-    buffer.writeln('\n=== 完整思考链 ===');
-    buffer.writeln(reasoning);
-    buffer.writeln('\n=== 元数据 ===');
+    buffer.writeln('=== Metadata ===');
     metadata.forEach((key, value) {
       buffer.writeln('$key: $value');
     });
+    buffer.writeln('\n=== Chain of Thought ===');
+    buffer.writeln(reasoning);
     return buffer.toString();
   }
 }

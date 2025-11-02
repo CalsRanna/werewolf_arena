@@ -1,7 +1,7 @@
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
-import 'package:werewolf_arena/engine/memory/working_memory.dart';
+import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 

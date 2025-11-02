@@ -4,14 +4,14 @@ import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/reasoning/ai_reasoning_engine.dart';
-import 'package:werewolf_arena/engine/reasoning/steps/fact_analysis_step.dart';
-import 'package:werewolf_arena/engine/reasoning/steps/identity_inference_step.dart';
-import 'package:werewolf_arena/engine/reasoning/steps/mask_selection_step.dart';
-import 'package:werewolf_arena/engine/reasoning/steps/playbook_selection_step.dart';
-import 'package:werewolf_arena/engine/reasoning/steps/self_reflection_step.dart';
-import 'package:werewolf_arena/engine/reasoning/steps/speech_generation_step.dart';
-import 'package:werewolf_arena/engine/reasoning/steps/strategy_planning_step.dart';
+import 'package:werewolf_arena/engine/reasoning/reasoning_engine.dart';
+import 'package:werewolf_arena/engine/reasoning/step/fact_analysis_step.dart';
+import 'package:werewolf_arena/engine/reasoning/step/identity_inference_step.dart';
+import 'package:werewolf_arena/engine/reasoning/step/mask_selection_step.dart';
+import 'package:werewolf_arena/engine/reasoning/step/playbook_selection_step.dart';
+import 'package:werewolf_arena/engine/reasoning/step/self_reflection_step.dart';
+import 'package:werewolf_arena/engine/reasoning/step/speech_generation_step.dart';
+import 'package:werewolf_arena/engine/reasoning/step/strategy_planning_step.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
 /// AI玩家驱动器（重构版）
@@ -33,7 +33,7 @@ class AIPlayerDriver implements PlayerDriver {
   late final OpenAIClient _client;
 
   /// 推理引擎
-  late final AIReasoningEngine _reasoningEngine;
+  late final ReasoningEngine _reasoningEngine;
 
   /// 构造函数
   ///
@@ -59,35 +59,16 @@ class AIPlayerDriver implements PlayerDriver {
     final fastModel = fastModelId ?? mainModel; // 如果没有配置快速模型，使用主模型
 
     // 使用多步推理链（Phase 4 - 7步推理）
-    _reasoningEngine = AIReasoningEngine(
+    _reasoningEngine = ReasoningEngine(
       client: _client,
       steps: [
-        FactAnalysisStep(
-          // 步骤1：事实分析（LLM）- 使用主模型
-          modelId: mainModel,
-        ),
-        IdentityInferenceStep(
-          // 步骤2：身份推理（LLM）- 使用主模型
-          modelId: mainModel,
-        ),
-        StrategyPlanningStep(
-          // 步骤3：策略规划（LLM）- 使用主模型
-          modelId: mainModel,
-        ),
-        PlaybookSelectionStep(
-          // 步骤4：剧本选择（LLM）- 使用快速模型（简单任务）
-          modelId: fastModel,
-        ),
-        MaskSelectionStep(
-          // 步骤5：面具选择（LLM）- 使用快速模型（简单任务）
-          modelId: fastModel,
-        ),
-        SpeechGenerationStep(
-          // 步骤6：发言生成（LLM）- 使用主模型
-          modelId: mainModel,
-        ),
+        FactAnalysisStep(modelId: fastModel),
+        IdentityInferenceStep(modelId: mainModel),
+        StrategyPlanningStep(modelId: mainModel),
+        PlaybookSelectionStep(modelId: fastModel),
+        MaskSelectionStep(modelId: fastModel),
+        SpeechGenerationStep(modelId: mainModel),
         SelfReflectionStep(
-          // 步骤7：自我反思（LLM）- 使用快速模型（简单任务）
           modelId: fastModel,
           enableRegeneration: false, // 暂时禁用重新生成
         ),
