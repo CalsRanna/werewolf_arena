@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
-import 'package:werewolf_arena/engine/game_engine_status.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
@@ -18,7 +17,7 @@ class GameEngine {
   final GameRoundController controller;
 
   GameState? _currentState;
-  GameEngineStatus _status = GameEngineStatus.waiting;
+  bool _isEnded = false;
 
   GameEngine({
     required this.config,
@@ -31,10 +30,8 @@ class GameEngine {
   // === 状态查询 ===
   GameState? get currentState => _currentState;
   bool get hasGameStarted => _currentState != null;
-  bool get isGameEnded => hasGameStarted && _status == GameEngineStatus.ended;
-  bool get isGameRunning =>
-      hasGameStarted && _status == GameEngineStatus.playing;
-  GameEngineStatus get status => _status;
+  bool get isGameEnded => _isEnded;
+  bool get isGameRunning => hasGameStarted && !_isEnded;
 
   /// 清理资源
   void dispose() {
@@ -57,8 +54,6 @@ class GameEngine {
 
       // 初始化游戏
       _currentState!.startGame();
-
-      _status = GameEngineStatus.playing; // 设置为进行中状态
     } catch (e) {
       GameEngineLogger.instance.e('游戏初始化失败: $e');
       await _handleGameError(e);
@@ -95,7 +90,7 @@ class GameEngine {
 
     final state = _currentState!;
 
-    _status = GameEngineStatus.ended;
+    _isEnded = true;
     state.endGame(state.winner ?? 'unknown');
 
     GameEngineLogger.instance.i('游戏结束');
