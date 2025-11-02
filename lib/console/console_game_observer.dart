@@ -19,10 +19,6 @@ import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
-/// 控制台游戏观察者
-///
-/// 实现 GameObserver 接口，将游戏事件转换为控制台输出。
-/// 这是游戏引擎与控制台显示之间的桥梁。
 class ConsoleGameObserver extends GameObserver {
   final ConsoleGameUI ui;
   final bool showLog;
@@ -42,10 +38,8 @@ class ConsoleGameObserver extends GameObserver {
       ui.printEvent('[法官]：${event.message}');
       return;
     }
-    // 如果有人类玩家且不是上帝视角，检查事件可见性
     if (humanPlayer != null && !showRole) {
       if (!event.isVisibleTo(humanPlayer!)) {
-        // 事件对该玩家不可见，跳过显示
         return;
       }
     }

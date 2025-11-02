@@ -16,21 +16,10 @@ import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/round/default_game_round_controller.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
 
-/// 狼人杀竞技场 - 控制台模式入口
-///
-/// 基于新架构的控制台应用：
-/// - 简化启动流程，移除复杂的参数管理
-/// - 保持控制台友好的用户体验
 Future<void> main(List<String> arguments) async {
-  // 🔑 显式设置终端编码为UTF-8，确保中文字符正确显示和输入
-  // 注意：不要手动设置 echoMode 和 lineMode，让终端使用默认行为
-  // 手动设置会导致中文字符删除时显示与实际输入缓冲不一致
-  stdout.encoding = utf8;
-
   final ui = ConsoleGameUI.instance;
 
   try {
-    // 解析命令行参数
     final parser = ArgParser()
       ..addOption('config', abbr: 'c', help: '配置文件路径')
       ..addOption('player', help: '指定由真人玩家控制的玩家编号 (1-12)')
@@ -52,15 +41,12 @@ Future<void> main(List<String> arguments) async {
       return;
     }
 
-    // 初始化控制台
     ui.initialize(useColors: true);
     ui.startSpinner();
 
-    // 解析人类玩家参数
     int? humanPlayerIndex;
     final isGodMode = argResults['god'] as bool;
 
-    // 上帝视角模式下不创建人类玩家
     if (isGodMode) {
       humanPlayerIndex = null;
       if (argResults['player'] != null) {
@@ -78,12 +64,10 @@ Future<void> main(List<String> arguments) async {
           exit(1);
         }
       } else {
-        // 如果没有指定玩家，随机分配一个
         humanPlayerIndex = Random().nextInt(12) + 1;
       }
     }
 
-    // 创建游戏引擎和玩家
     final gameEngineData = await _createGameEngine(
       ui,
       humanPlayerIndex,
@@ -93,15 +77,12 @@ Future<void> main(List<String> arguments) async {
     final gameEngine = gameEngineData['engine'] as GameEngine;
     final humanPlayer = gameEngineData['humanPlayer'] as GamePlayer?;
 
-    // 创建游戏实例
     final game = await gameEngine.create();
 
-    // 显示玩家通知（仅在非上帝视角模式下）
     ui.pauseSpinner();
     if (humanPlayer != null) {
       _showPlayerNotification(ui, humanPlayer);
 
-      // 等待用户确认
       print('\n按回车键开始游戏...');
       stdin.readLineSync(encoding: utf8);
       print('');
@@ -113,9 +94,6 @@ Future<void> main(List<String> arguments) async {
 
     while (!game.isGameEnded) {
       await game.loop();
-
-      // 添加小延迟，让用户有时间阅读输出
-      await Future.delayed(const Duration(milliseconds: 500));
     }
 
     final winner = game.winner;
@@ -162,7 +140,6 @@ Future<Map<String, dynamic>> _createGameEngine(
     final role = roles[i];
     final intelligence = config.playerIntelligences[i];
 
-    // 如果当前玩家是人类玩家，创建HumanPlayer
     if (humanPlayerIndex != null && playerIndex == humanPlayerIndex) {
       final player = HumanPlayer(
         id: 'player_$playerIndex',
@@ -174,20 +151,18 @@ Future<Map<String, dynamic>> _createGameEngine(
       players.add(player);
       humanPlayer = player;
     } else {
-      // 否则创建AIPlayer
       final player = AIPlayer(
         id: 'player_$playerIndex',
         name: '$playerIndex号玩家',
         index: playerIndex,
         role: role,
         intelligence: intelligence,
-        fastModelId: config.fastModelId, // 传递快速模型配置
+        fastModelId: config.fastModelId,
       );
       players.add(player);
     }
   }
 
-  // 创建带人类玩家视角的observer
   final observer = ConsoleGameObserver(
     ui: ui,
     showLog: showLog,
@@ -206,7 +181,6 @@ Future<Map<String, dynamic>> _createGameEngine(
   return {'engine': engine, 'humanPlayer': humanPlayer};
 }
 
-/// 打印帮助信息
 void _printHelp(ArgParser parser) {
   print('狼人杀竞技场 - 控制台模式 (新架构)');
   print('');
@@ -233,7 +207,6 @@ void _printHelp(ArgParser parser) {
   print('  dart run bin/main.dart -g -d                  # 上帝视角+调试模式');
 }
 
-/// 显示玩家通知
 void _showPlayerNotification(ConsoleGameUI ui, GamePlayer player) {
   print('');
   print('=' * 80);

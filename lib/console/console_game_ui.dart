@@ -1,5 +1,4 @@
-// ignore_for_file: avoid_print
-
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cli_spin/cli_spin.dart';
@@ -22,7 +21,9 @@ class ConsoleGameUI {
   bool _useColors = true;
 
   CliSpin? _currentSpinner;
-  ConsoleGameUI._internal();
+  ConsoleGameUI._internal() {
+    stdout.encoding = utf8;
+  }
 
   /// 显示错误信息
   void displayError(String error, {Object? errorDetails}) {
