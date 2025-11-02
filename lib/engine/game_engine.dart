@@ -6,7 +6,7 @@ import 'package:werewolf_arena/engine/game_engine_status.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/game_round/game_round_controller.dart';
+import 'package:werewolf_arena/engine/round/game_round_controller.dart';
 import 'package:werewolf_arena/engine/scenario/game_scenario.dart';
 
 /// 简化版游戏引擎 - 只需要4个参数的构造函数，内部创建阶段处理器和工具类

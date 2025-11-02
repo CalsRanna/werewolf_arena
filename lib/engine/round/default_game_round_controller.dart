@@ -17,7 +17,7 @@ import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/game_engine_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
-import 'package:werewolf_arena/engine/game_round/game_round_controller.dart';
+import 'package:werewolf_arena/engine/round/game_round_controller.dart';
 import 'package:werewolf_arena/engine/game_state.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/role/guard_role.dart';
@@ -671,5 +671,4 @@ class DefaultGameRoundController implements GameRoundController {
 
     return targetPlayer;
   }
-
 }
