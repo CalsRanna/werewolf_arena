@@ -1,5 +1,4 @@
 import 'package:werewolf_arena/engine/role/game_role.dart';
-import 'package:werewolf_arena/engine/driver/player_driver.dart';
 import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
@@ -10,10 +9,9 @@ import 'package:werewolf_arena/engine/skill/skill_result.dart';
 ///
 /// 设计原则：
 /// - 无状态：玩家不持有游戏状态，通过GameContext接收
-/// - 单向依赖：只依赖Driver和Role，不依赖Game
+/// - 单向依赖：只依赖Role，不依赖Game
 /// - 职责单一：只负责执行技能，不负责游戏流程控制
 abstract class GamePlayer {
-  final PlayerDriver driver;
   final String id;
   final int index;
   final GameRole role;
@@ -24,7 +22,6 @@ abstract class GamePlayer {
   GamePlayer({
     required this.id,
     required this.index,
-    required this.driver,
     required this.role,
     required this.name,
   });

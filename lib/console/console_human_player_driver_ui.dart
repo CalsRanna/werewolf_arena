@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:werewolf_arena/engine/driver/human_player_driver_interface.dart';
+import 'package:werewolf_arena/engine/player/human_player_input.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
@@ -9,10 +9,10 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/console/console_game_ui.dart';
 
-/// 控制台人类玩家驱动器UI实现
+/// 控制台人类玩家输入UI实现
 ///
-/// 实现了 HumanPlayerDriverInterface 接口，提供完整的控制台UI显示和输入功能
-class ConsoleHumanPlayerDriverUI implements HumanPlayerDriverInterface {
+/// 实现了 HumanPlayerInput 接口，提供完整的控制台UI显示和输入功能
+class ConsoleHumanPlayerDriverUI implements HumanPlayerInput {
   final ConsoleGameUI ui;
 
   ConsoleHumanPlayerDriverUI(this.ui);

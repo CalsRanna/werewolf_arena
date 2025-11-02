@@ -12,8 +12,6 @@ import 'package:werewolf_arena/console/console_human_player_driver_ui.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/player/human_player.dart';
-import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
-import 'package:werewolf_arena/engine/driver/human_player_driver.dart';
 import 'package:werewolf_arena/engine/game_engine.dart';
 import 'package:werewolf_arena/engine/round/default_game_round_controller.dart';
 import 'package:werewolf_arena/engine/scenario/scenario_12_players.dart';
@@ -171,7 +169,7 @@ Future<Map<String, dynamic>> _createGameEngine(
         name: '$playerIndex号玩家',
         index: playerIndex,
         role: role,
-        driver: HumanPlayerDriver(ui: ConsoleHumanPlayerDriverUI(ui)),
+        input: ConsoleHumanPlayerDriverUI(ui),
       );
       players.add(player);
       humanPlayer = player;
@@ -182,11 +180,8 @@ Future<Map<String, dynamic>> _createGameEngine(
         name: '$playerIndex号玩家',
         index: playerIndex,
         role: role,
-        driver: AIPlayerDriver(
-          intelligence: intelligence,
-          maxRetries: config.maxRetries,
-          fastModelId: config.fastModelId, // 传递快速模型配置
-        ),
+        intelligence: intelligence,
+        fastModelId: config.fastModelId, // 传递快速模型配置
       );
       players.add(player);
     }

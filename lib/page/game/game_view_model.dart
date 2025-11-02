@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
-import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
 import 'package:werewolf_arena/engine/event/discuss_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
@@ -138,10 +137,7 @@ class GameViewModel {
           name: '$playerIndex号玩家',
           index: playerIndex,
           role: roles[i],
-          driver: AIPlayerDriver(
-            intelligence: intelligence,
-            maxRetries: config.maxRetries,
-          ),
+          intelligence: intelligence,
         );
         gamePlayers.add(player);
       }

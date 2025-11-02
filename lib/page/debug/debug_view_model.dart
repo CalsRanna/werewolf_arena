@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 import 'package:signals/signals_flutter.dart';
-import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/event/log_event.dart';
 import 'package:werewolf_arena/engine/game.dart';
@@ -41,16 +40,12 @@ class DebugViewModel {
     final players = <GamePlayer>[];
     for (int i = 0; i < roles.length; i++) {
       final playerIndex = i + 1; // 玩家编号从1开始
-      var driver = AIPlayerDriver(
-        intelligence: intelligences[i % intelligences.length],
-        maxRetries: config.maxRetries,
-      );
       final player = AIPlayer(
         id: 'player_$playerIndex',
         name: '$playerIndex号玩家',
         index: playerIndex,
         role: roles[i],
-        driver: driver,
+        intelligence: intelligences[i % intelligences.length],
       );
       players.add(player);
     }

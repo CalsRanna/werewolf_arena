@@ -3,11 +3,11 @@ import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
-/// 人类玩家驱动器交互接口
+/// 人类玩家输入接口
 ///
 /// 该接口定义了Engine层与UI层之间的交互协议
 /// Engine层通过这个接口请求UI显示和用户输入，但不直接依赖具体的UI实现
-abstract class HumanPlayerDriverInterface {
+abstract class HumanPlayerInput {
   /// 显示回合开始提示
   ///
   /// [player] 当前玩家
