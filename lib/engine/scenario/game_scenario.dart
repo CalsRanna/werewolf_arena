@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/engine/role/game_role.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 
 /// 游戏场景抽象类
 /// 定义不同游戏板子的基础接口和行为
@@ -21,5 +21,5 @@ abstract class GameScenario {
 
   /// 检查胜利条件
   /// 返回获胜方名称，null 表示游戏继续
-  String? getWinner(Game state);
+  String? getWinner(GameContext context);
 }

@@ -94,7 +94,19 @@ class Game {
       return true;
     }
 
-    final winner = scenario.getWinner(this);
+    // 构建用于检查胜利条件的上下文（包含所有公开信息）
+    final context = GameContext(
+      day: day,
+      scenario: scenario,
+      allPlayers: List.unmodifiable(players),
+      alivePlayers: List.unmodifiable(alivePlayers),
+      visibleEvents: List.unmodifiable(events),
+      canWitchHeal: canUserHeal,
+      canWitchPoison: canUserPoison,
+      lastProtectedPlayer: lastProtectedPlayer,
+    );
+
+    final winner = scenario.getWinner(context);
     if (winner != null) {
       _endGameInternal(winner);
       return true;
