@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
@@ -11,7 +11,7 @@ class ReasoningContext {
   final GamePlayer player;
 
   /// 当前游戏状态
-  final Game state;
+  final GameContext state;
 
   /// 当前技能
   final GameSkill skill;

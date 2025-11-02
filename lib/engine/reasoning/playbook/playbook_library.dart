@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/guard_protect_playbook.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/playbook.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/seer_reveal_playbook.dart';
@@ -39,7 +39,7 @@ class PlaybookLibrary {
   /// [player] 当前玩家
   /// 返回适用的剧本列表（按优先级排序）
   static List<Playbook> recommend({
-    required Game state,
+    required GameContext state,
     required GamePlayer player,
   }) {
     return allPlaybooks

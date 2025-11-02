@@ -35,7 +35,13 @@
       "WebFetch(domain:pub.dev)",
       "WebFetch(domain:github.com)",
       "Bash(stty:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(perl -pi -e:*)",
+      "Bash(perl:*)",
+      "Bash(while read file)",
+      "Bash(do if ! grep -q \"import.*game_context.dart\" \"$file\")",
+      "Bash([ \"$file\" != \"lib/engine/game_context.dart\" ])",
+      "Bash(then echo \"$file\")"
     ],
     "deny": [],
     "ask": []

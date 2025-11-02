@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/relationship.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -154,7 +154,7 @@ class SocialNetwork {
   }
 
   /// 转换为Prompt文本
-  String toPrompt(Game state) {
+  String toPrompt(GameContext state) {
     final buffer = StringBuffer();
     buffer.writeln('## 我的社交关系网络');
 
@@ -216,7 +216,7 @@ class SocialNetwork {
   }
 
   /// 转换为简洁的Prompt文本（用于非关键步骤）
-  String toCompactPrompt(Game state) {
+  String toCompactPrompt(GameContext state) {
     final buffer = StringBuffer();
 
     final topTrusted = getMostTrusted(limit: 2);

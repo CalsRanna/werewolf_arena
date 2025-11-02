@@ -1,6 +1,6 @@
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/ai_player_driver.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
@@ -29,12 +29,12 @@ class AIPlayer extends GamePlayer {
       '[$name|${role.name}|${(driver as AIPlayerDriver).intelligence.modelId}]';
 
   @override
-  Future<SkillResult> cast(GameSkill skill, Game state) async {
+  Future<SkillResult> cast(GameSkill skill, GameContext context) async {
     try {
       // 使用Driver生成技能响应
       final response = await driver.request(
         player: this,
-        state: state,
+        context: context,
         skill: skill,
       );
       return SkillResult(

@@ -230,9 +230,10 @@ class DefaultGameRoundController implements GameRoundController {
         .where((player) => player.role is WerewolfRole)
         .toList();
     for (final werewolf in werewolves) {
+      final context = game.buildContextForPlayer(werewolf);
       var result = await werewolf.cast(
         werewolf.role.skills.whereType<ConspireSkill>().first,
-        game,
+        context,
       );
       var conspireEvent = ConspireEvent(
         result.message ?? '',
@@ -274,9 +275,10 @@ class DefaultGameRoundController implements GameRoundController {
     await observer?.onGameEvent(orderEvent);
 
     for (var player in speakOrder) {
+      final context = game.buildContextForPlayer(player);
       var result = await player.cast(
         player.role.skills.whereType<DiscussSkill>().first,
-        game,
+        context,
       );
       var discussEvent = DiscussEvent(
         result.message ?? '',
@@ -305,9 +307,10 @@ class DefaultGameRoundController implements GameRoundController {
         .firstOrNull;
     if (witch == null) return null;
 
+    final context = game.buildContextForPlayer(witch);
     final result = await witch.cast(
       witch.role.skills.whereType<HealSkill>().first,
-      game,
+      context,
     );
     final target = game.getPlayerByName(result.target ?? '');
 
@@ -345,9 +348,10 @@ class DefaultGameRoundController implements GameRoundController {
         .where((player) => player.role is SeerRole)
         .firstOrNull;
     if (seer == null) return;
+    final context = game.buildContextForPlayer(seer);
     final result = await seer.cast(
       seer.role.skills.whereType<InvestigateSkill>().first,
-      game,
+      context,
     );
     final target = game.getPlayerByName(result.target ?? '');
     if (target != null) {
@@ -371,9 +375,10 @@ class DefaultGameRoundController implements GameRoundController {
         .toList();
     List<Future<SkillResult>> futures = [];
     for (final werewolf in werewolves) {
+      final context = game.buildContextForPlayer(werewolf);
       var future = werewolf.cast(
         werewolf.role.skills.whereType<KillSkill>().first,
-        game,
+        context,
       );
       futures.add(future);
     }
@@ -486,9 +491,10 @@ class DefaultGameRoundController implements GameRoundController {
         .where((player) => player.role is WitchRole)
         .firstOrNull;
     if (witch == null) return null;
+    final context = game.buildContextForPlayer(witch);
     final result = await witch.cast(
       witch.role.skills.whereType<PoisonSkill>().first,
-      game,
+      context,
     );
     final target = game.getPlayerByName(result.target ?? '');
     if (target != null) {
@@ -525,9 +531,10 @@ class DefaultGameRoundController implements GameRoundController {
         .firstOrNull;
     if (guard == null) return null;
 
+    final context = game.buildContextForPlayer(guard);
     final result = await guard.cast(
       guard.role.skills.whereType<ProtectSkill>().first,
-      game,
+      context,
     );
     final target = game.getPlayerByName(result.target ?? '');
 
@@ -569,9 +576,10 @@ class DefaultGameRoundController implements GameRoundController {
   }) async {
     // 检查猎人是否可以开枪（被毒死不能开枪）
     if (!canShoot) return null;
+    final context = game.buildContextForPlayer(hunter);
     final result = await hunter.cast(
       hunter.role.skills.whereType<ShootSkill>().first,
-      game,
+      context,
     );
     final target = game.getPlayerByName(result.target ?? '');
 
@@ -604,7 +612,8 @@ class DefaultGameRoundController implements GameRoundController {
     game.handleEvent(systemEvent);
     await observer?.onGameEvent(systemEvent);
 
-    var testamentResult = await voteTarget.cast(TestamentSkill(), game);
+    final context = game.buildContextForPlayer(voteTarget);
+    var testamentResult = await voteTarget.cast(TestamentSkill(), context);
     var testamentEvent = TestamentEvent(
       testamentResult.message ?? '',
       source: voteTarget,
@@ -621,8 +630,9 @@ class DefaultGameRoundController implements GameRoundController {
     await observer?.onGameEvent(systemEvent);
     List<Future<SkillResult>> futures = [];
     for (var player in game.alivePlayers) {
+      final context = game.buildContextForPlayer(player);
       futures.add(
-        player.cast(player.role.skills.whereType<VoteSkill>().first, game),
+        player.cast(player.role.skills.whereType<VoteSkill>().first, context),
       );
     }
     var results = await Future.wait(futures);

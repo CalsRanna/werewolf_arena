@@ -2,7 +2,7 @@ import 'package:openai_dart/openai_dart.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_engine.dart';
 import 'package:werewolf_arena/engine/reasoning/step/fact_analysis_step.dart';
@@ -80,14 +80,14 @@ class AIPlayerDriver implements PlayerDriver {
   @override
   Future<PlayerDriverResponse> request({
     required GamePlayer player,
-    required Game state,
+    required GameContext context,
     required GameSkill skill,
   }) async {
     try {
       // 使用推理引擎执行推理链
       final result = await _reasoningEngine.execute(
         player: player,
-        state: state,
+        state: context,
         skill: skill,
       );
 

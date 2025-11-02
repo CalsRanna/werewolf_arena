@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:werewolf_arena/engine/event/game_end_event.dart';
 import 'package:werewolf_arena/engine/event/game_event.dart';
 import 'package:werewolf_arena/engine/event/game_start_event.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
@@ -209,6 +210,28 @@ class Game {
     logger.d(event.toString());
     handleEvent(event);
   }
+
+  /// 为指定玩家构建游戏上下文
+  ///
+  /// 根据玩家的角色权限过滤可见信息
+  GameContext buildContextForPlayer(GamePlayer player) {
+    // 过滤该玩家可见的事件
+    final visibleEvents = events.where((event) {
+      return event.isVisibleTo(player);
+    }).toList();
+
+    return GameContext(
+      day: day,
+      scenario: scenario,
+      allPlayers: List.unmodifiable(players),
+      alivePlayers: List.unmodifiable(alivePlayers),
+      visibleEvents: List.unmodifiable(visibleEvents),
+      canWitchHeal: canUserHeal,
+      canWitchPoison: canUserPoison,
+      lastProtectedPlayer: lastProtectedPlayer,
+    );
+  }
+
 
   /// 处理游戏错误
   Future<void> _handleGameError(dynamic error) async {

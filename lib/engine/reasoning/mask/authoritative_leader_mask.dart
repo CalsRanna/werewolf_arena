@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -39,7 +39,7 @@ class AuthoritativeLeaderMask extends RoleMask {
   ];
 
   @override
-  bool isApplicable(Game state, GamePlayer player) {
+  bool isApplicable(GameContext state, GamePlayer player) {
     // 适用于：
     // 1. 预言家/狼人在起跳或对跳场景
     // 2. 游戏第2天以后（有足够信息支撑强势）

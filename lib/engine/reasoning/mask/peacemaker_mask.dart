@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -40,7 +40,7 @@ class PeacemakerMask extends RoleMask {
   ];
 
   @override
-  bool isApplicable(Game state, GamePlayer player) {
+  bool isApplicable(GameContext state, GamePlayer player) {
     // 适用于：
     // 1. 倒钩狼建立好人身份（最常用）
     // 2. 真正的好人调解矛盾

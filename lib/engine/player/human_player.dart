@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 
@@ -27,12 +27,12 @@ class HumanPlayer extends GamePlayer {
   }
 
   @override
-  Future<SkillResult> cast(GameSkill skill, Game state) async {
+  Future<SkillResult> cast(GameSkill skill, GameContext context) async {
     try {
       // 使用Driver处理技能响应（通常是等待人类输入）
       final response = await driver.request(
         player: this,
-        state: state,
+        context: context,
         skill: skill,
       );
       return SkillResult(

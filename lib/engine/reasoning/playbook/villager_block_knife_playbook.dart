@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/playbook.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -23,7 +23,7 @@ class VillagerBlockKnifePlaybook extends Playbook {
   List<String> get applicableRoles => ['villager'];
 
   @override
-  bool canActivate(Game state, GamePlayer player) {
+  bool canActivate(GameContext state, GamePlayer player) {
     // 触发条件：
     // 1. 自己是村民
     // 2. 第2-3天（有一定信息，但不能太晚）

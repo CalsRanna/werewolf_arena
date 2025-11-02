@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/playbook.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -24,7 +24,7 @@ class WerewolfChargePlaybook extends Playbook {
   List<String> get applicableRoles => ['werewolf'];
 
   @override
-  bool canActivate(Game state, GamePlayer player) {
+  bool canActivate(GameContext state, GamePlayer player) {
     // 触发条件：
     // 1. 自己是狼人
     // 2. 游戏第3天以后（前期不适合冲锋）

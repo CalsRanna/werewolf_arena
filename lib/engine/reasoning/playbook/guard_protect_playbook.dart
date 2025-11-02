@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/playbook/playbook.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -23,7 +23,7 @@ class GuardProtectPlaybook extends Playbook {
   List<String> get applicableRoles => ['guard'];
 
   @override
-  bool canActivate(Game state, GamePlayer player) {
+  bool canActivate(GameContext state, GamePlayer player) {
     // 触发条件：
     // 1. 自己是守卫
     // 2. 任何时候都可以使用

@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/engine/event/game_event.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -11,7 +11,7 @@ class InformationFilter {
   /// 识别当前的核心矛盾
   ///
   /// 例如："3号和7号都跳预言家，谁是真预言家？"
-  String identifyCoreConflict(Game state, GamePlayer currentPlayer) {
+  String identifyCoreConflict(GameContext state, GamePlayer currentPlayer) {
     // 优先级1：预言家对跳
     final seerClaims = _findSeerClaims(state);
     if (seerClaims.length >= 2) {
@@ -38,7 +38,7 @@ class InformationFilter {
   ///
   /// 从事件历史中提取最重要的事实，限制数量避免过载
   List<KeyFact> extractKeyFacts(
-    Game state,
+    GameContext state,
     GamePlayer currentPlayer, {
     int limit = 5,
   }) {
@@ -66,7 +66,7 @@ class InformationFilter {
   ///
   /// 最多返回3个玩家，避免注意力分散
   List<String> identifyFocusPlayers(
-    Game state,
+    GameContext state,
     GamePlayer currentPlayer, {
     int limit = 3,
   }) {
@@ -111,7 +111,7 @@ class InformationFilter {
   ///
   /// 将大量事件转换为精简的文本描述
   String buildFilteredContext(
-    Game state,
+    GameContext state,
     GamePlayer currentPlayer,
     WorkingMemory memory,
   ) {
@@ -156,7 +156,7 @@ class InformationFilter {
   ///
   /// 未来优化：实现通过发言事件识别预言家声明
   /// 需要解析发言内容，识别"我是预言家"等关键词
-  List<String> _findSeerClaims(Game state) {
+  List<String> _findSeerClaims(GameContext state) {
     final claims = <String>[];
     // 当前返回空，依赖LLM从发言中推理
     return claims;
@@ -165,7 +165,7 @@ class InformationFilter {
   /// 查找被多人怀疑的玩家
   ///
   /// 未来优化：实现通过发言和投票统计被怀疑的玩家
-  List<String> _findSuspectedPlayers(Game state) {
+  List<String> _findSuspectedPlayers(GameContext state) {
     final suspected = <String>[];
     // 当前返回空，依赖LLM从发言中推理
     return suspected;
@@ -174,7 +174,7 @@ class InformationFilter {
   /// 检查玩家是否声称是预言家
   ///
   /// 未来优化：通过发言历史判断
-  bool _hasClaimedSeer(GamePlayer player, Game state) {
+  bool _hasClaimedSeer(GamePlayer player, GameContext state) {
     // 当前返回false，依赖LLM从发言中推理
     return false;
   }
@@ -182,7 +182,7 @@ class InformationFilter {
   /// 检查玩家是否攻击过我
   ///
   /// 未来优化：分析发言和投票记录
-  bool _hasAttackedMe(GamePlayer player, GamePlayer me, Game state) {
+  bool _hasAttackedMe(GamePlayer player, GamePlayer me, GameContext state) {
     // 当前返回false，依赖LLM从发言中推理
     return false;
   }
@@ -190,13 +190,13 @@ class InformationFilter {
   /// 获取玩家被怀疑的次数
   ///
   /// 未来优化：统计针对该玩家的怀疑发言数量
-  int _getSuspicionCount(GamePlayer player, Game state) {
+  int _getSuspicionCount(GamePlayer player, GameContext state) {
     // 当前返回0，依赖LLM从发言中推理
     return 0;
   }
 
   /// 检查玩家是否最近发言过
-  bool _hasRecentlySpoken(GamePlayer player, Game state) {
+  bool _hasRecentlySpoken(GamePlayer player, GameContext state) {
     final recentEvents = state.events.reversed.take(10);
     // 简化实现：通过事件叙述判断是否提到该玩家发言
     return recentEvents.any((e) {
@@ -206,7 +206,7 @@ class InformationFilter {
   }
 
   /// 将事件转换为关键事实
-  KeyFact? _eventToKeyFact(GameEvent event, Game state) {
+  KeyFact? _eventToKeyFact(GameEvent event, GameContext state) {
     final narrative = event.toNarrative();
 
     // 死亡事件

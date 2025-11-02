@@ -1,6 +1,6 @@
 import 'package:openai_dart/openai_dart.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
@@ -38,7 +38,7 @@ class ReasoningEngine {
   /// 返回推理结果
   Future<ReasoningResult> execute({
     required GamePlayer player,
-    required Game state,
+    required GameContext state,
     required GameSkill skill,
   }) async {
     final startTime = DateTime.now();
@@ -150,7 +150,7 @@ class ReasoningEngine {
   /// 当前未实现，预留接口
   Stream<ReasoningProgress> executeStream({
     required GamePlayer player,
-    required Game state,
+    required GameContext state,
     required GameSkill skill,
   }) async* {
     // 未来功能：实现流式执行

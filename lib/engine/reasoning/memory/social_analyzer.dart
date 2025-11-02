@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/relationship.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/social_network.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
@@ -18,7 +18,7 @@ class SocialAnalyzer {
     required SocialNetwork currentNetwork,
     required Map<String, IdentityEstimate> identityEstimates,
     required GamePlayer player,
-    required Game state,
+    required GameContext state,
   }) {
     final updatedRelationships = <String, Relationship>{};
 
@@ -64,7 +64,7 @@ class SocialAnalyzer {
   static SocialNetwork updateFromStrategy({
     required SocialNetwork currentNetwork,
     required Map<String, dynamic> strategy,
-    required Game state,
+    required GameContext state,
   }) {
     final updatedRelationships = <String, Relationship>{};
 
@@ -101,7 +101,7 @@ class SocialAnalyzer {
   static List<String> analyzeSocialPatterns({
     required SocialNetwork network,
     required GamePlayer player,
-    required Game state,
+    required GameContext state,
   }) {
     final suggestions = <String>[];
 
@@ -148,7 +148,7 @@ class SocialAnalyzer {
     required IdentityEstimate estimate,
     required GamePlayer player,
     required GamePlayer targetPlayer,
-    required Game state,
+    required GameContext state,
   }) {
     // 基于玩家的真实身份和推理结果计算信任度
 
@@ -210,7 +210,7 @@ class SocialAnalyzer {
   }
 
   /// 获取社交网络摘要
-  static String getSummary(SocialNetwork network, Game state) {
+  static String getSummary(SocialNetwork network, GameContext state) {
     final allies = network.allies;
     final enemies = network.enemies;
 

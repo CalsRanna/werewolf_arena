@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/aggressive_attacker_mask.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/authoritative_leader_mask.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/calm_analyst_mask.dart';
@@ -39,7 +39,7 @@ class MaskLibrary {
   /// [player] 当前玩家
   /// 返回适用的面具列表（按优先级排序）
   static List<RoleMask> recommend({
-    required Game state,
+    required GameContext state,
     required GamePlayer player,
   }) {
     return allMasks.where((mask) => mask.isApplicable(state, player)).toList();

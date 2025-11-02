@@ -1,4 +1,4 @@
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/reasoning/mask/role_mask.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -40,7 +40,7 @@ class CalmAnalystMask extends RoleMask {
   ];
 
   @override
-  bool isApplicable(Game state, GamePlayer player) {
+  bool isApplicable(GameContext state, GamePlayer player) {
     // 适用于：
     // 1. 村民（最常用）
     // 2. 倒钩狼（伪装理性好人）

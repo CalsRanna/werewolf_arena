@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/driver/player_driver.dart';
 import 'package:werewolf_arena/engine/driver/human_player_driver_interface.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
 /// 人类玩家驱动器
@@ -16,14 +16,14 @@ class HumanPlayerDriver implements PlayerDriver {
   @override
   Future<PlayerDriverResponse> request({
     required GamePlayer player,
-    required Game state,
+    required GameContext context,
     required GameSkill skill,
   }) async {
     // 暂停 UI 动画，避免与用户输入冲突
     _ui.pauseUI();
 
     try {
-      return await _handleRequest(player: player, state: state, skill: skill);
+      return await _handleRequest(player: player, context: context, skill: skill);
     } finally {
       // 无论成功或失败，都要恢复 UI 动画
       _ui.resumeUI();
@@ -33,21 +33,21 @@ class HumanPlayerDriver implements PlayerDriver {
   /// 处理用户输入请求的内部方法
   Future<PlayerDriverResponse> _handleRequest({
     required GamePlayer player,
-    required Game state,
+    required GameContext context,
     required GameSkill skill,
   }) async {
     // 显示回合开始提示
-    _ui.showTurnStart(player, state, skill);
+    _ui.showTurnStart(player, context, skill);
 
     // 显示玩家基本信息
     _ui.showPlayerInfo(player);
 
     // 显示当前游戏状态
-    _ui.showGameState(state);
+    _ui.showGameState(context);
 
     // 显示本回合发生的事件（对该玩家可见的）
-    final visibleEvents = state.events
-        .where((event) => event.isVisibleTo(player) && event.day == state.day)
+    final visibleEvents = context.events
+        .where((event) => event.isVisibleTo(player) && event.day == context.day)
         .toList();
     _ui.showRoundEvents(visibleEvents, player);
 
@@ -68,7 +68,7 @@ class HumanPlayerDriver implements PlayerDriver {
       while (!validInput) {
         try {
           target = await _ui.requestTargetSelection(
-            alivePlayers: state.alivePlayers,
+            alivePlayers: context.alivePlayers,
             currentPlayer: player,
             isOptional: isOptional,
           );
@@ -86,7 +86,7 @@ class HumanPlayerDriver implements PlayerDriver {
           }
 
           // 验证目标玩家是否存在
-          final targetExists = state.alivePlayers.any((p) => p.name == target);
+          final targetExists = context.alivePlayers.any((p) => p.name == target);
           if (!targetExists) {
             _ui.showError('目标玩家不存在或已死亡，请重新输入');
             target = null;

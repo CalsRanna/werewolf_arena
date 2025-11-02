@@ -1,5 +1,5 @@
 import 'package:werewolf_arena/engine/player/game_player.dart';
-import 'package:werewolf_arena/engine/game.dart';
+import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 
 /// 玩家驱动器抽象接口
@@ -8,20 +8,24 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 /// 不同类型的玩家使用不同的驱动器实现：
 /// - AI玩家使用AIPlayerDriver
 /// - 人类玩家使用HumanPlayerDriver
+///
+/// 设计原则：
+/// - 无状态：Driver不持有游戏状态，只通过参数接收
+/// - 单向依赖：只依赖GameContext，不依赖Game
+/// - 职责单一：只负责生成决策，不负责执行
 abstract class PlayerDriver {
   /// 为玩家生成技能响应
   ///
   /// 这是PlayerDriver的核心方法，所有玩家决策都通过此方法生成。
   ///
-  /// [player] 执行技能的玩家 - 注意：为了避免循环依赖，这里使用dynamic
-  /// [state] 当前游戏状态
-  /// [skillPrompt] 技能相关的提示词
-  /// [expectedFormat] 期望的JSON响应格式
+  /// [player] 执行技能的玩家
+  /// [context] 当前游戏上下文（只读快照）
+  /// [skill] 要执行的技能
   ///
-  /// 返回包含玩家决策的Map，格式由具体技能定义
+  /// 返回包含玩家决策的响应对象
   Future<PlayerDriverResponse> request({
     required GamePlayer player,
-    required Game state,
+    required GameContext context,
     required GameSkill skill,
   });
 }
