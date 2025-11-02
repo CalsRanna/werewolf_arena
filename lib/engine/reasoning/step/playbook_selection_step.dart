@@ -70,7 +70,7 @@ class PlaybookSelectionStep extends ReasoningStep {
       if (selectedPlaybookId != null) {
         selectedPlaybook = recommendedPlaybooks.firstWhere(
           (p) => p.id == selectedPlaybookId,
-          orElse: () => recommendedPlaybooks.first,
+          orElse: () => recommendedPlaybooks.first as dynamic,
         );
       } else {
         selectedPlaybook = null;

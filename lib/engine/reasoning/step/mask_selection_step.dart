@@ -58,7 +58,7 @@ class MaskSelectionStep extends ReasoningStep {
       if (selectedMaskId != null) {
         selectedMask = recommendedMasks.firstWhere(
           (m) => m.id == selectedMaskId,
-          orElse: () => recommendedMasks.first,
+          orElse: () => recommendedMasks.first as dynamic,
         );
       } else {
         selectedMask = recommendedMasks.first;

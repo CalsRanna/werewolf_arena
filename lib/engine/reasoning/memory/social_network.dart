@@ -178,7 +178,7 @@ class SocialNetwork {
         // 查找玩家名称
         final player = state.players.firstWhere(
           (p) => p.id == playerId,
-          orElse: () => state.players.first,
+          orElse: () => state.players.first as dynamic,
         );
 
         buffer.writeln('- ${relationship.toPrompt(player.name)}');
@@ -191,7 +191,7 @@ class SocialNetwork {
           .map((id) {
             final player = state.players.firstWhere(
               (p) => p.id == id,
-              orElse: () => state.players.first,
+              orElse: () => state.players.first as dynamic,
             );
             return player.name;
           })
@@ -204,7 +204,7 @@ class SocialNetwork {
           .map((id) {
             final player = state.players.firstWhere(
               (p) => p.id == id,
-              orElse: () => state.players.first,
+              orElse: () => state.players.first as dynamic,
             );
             return player.name;
           })
@@ -227,7 +227,7 @@ class SocialNetwork {
           .map((id) {
             final player = state.players.firstWhere(
               (p) => p.id == id,
-              orElse: () => state.players.first,
+              orElse: () => state.players.first as dynamic,
             );
             return player.name;
           })
@@ -241,7 +241,7 @@ class SocialNetwork {
           .map((id) {
             final player = state.players.firstWhere(
               (p) => p.id == id,
-              orElse: () => state.players.first,
+              orElse: () => state.players.first as dynamic,
             );
             return player.name;
           })

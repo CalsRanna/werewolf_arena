@@ -253,9 +253,9 @@ $identitySummary$socialSection
       final trustedNames = mostTrusted.map((id) {
         final player = state.players.firstWhere(
           (p) => p.id == id,
-          orElse: () => state.players.first,
+          orElse: () => state.players.first as dynamic,
         );
-        return player.name;
+        return player.name as String;
       }).join(', ');
       buffer.writeln('最信任: $trustedNames');
     }
@@ -264,9 +264,9 @@ $identitySummary$socialSection
       final suspiciousNames = mostSuspicious.map((id) {
         final player = state.players.firstWhere(
           (p) => p.id == id,
-          orElse: () => state.players.first,
+          orElse: () => state.players.first as dynamic,
         );
-        return player.name;
+        return player.name as String;
       }).join(', ');
       buffer.writeln('最怀疑: $suspiciousNames');
     }

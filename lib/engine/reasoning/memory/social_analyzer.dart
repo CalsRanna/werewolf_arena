@@ -29,7 +29,7 @@ class SocialAnalyzer {
       // 通过名称查找玩家
       final targetPlayer = state.players.firstWhere(
         (p) => p.name == targetPlayerName,
-        orElse: () => state.players.first,
+        orElse: () => state.players.first as dynamic,
       );
 
       // 获取当前关系（使用playerId）
@@ -73,7 +73,7 @@ class SocialAnalyzer {
     if (targetPlayerName != null) {
       final targetPlayer = state.players.firstWhere(
         (p) => p.name == targetPlayerName,
-        orElse: () => state.players.first,
+        orElse: () => state.players.first as dynamic,
       );
 
       final currentRelation = currentNetwork.getRelationship(targetPlayer.id);
@@ -226,7 +226,7 @@ class SocialAnalyzer {
           .map((id) {
             final player = state.players.firstWhere(
               (p) => p.id == id,
-              orElse: () => state.players.first,
+              orElse: () => state.players.first as dynamic,
             );
             return player.name;
           })
@@ -241,7 +241,7 @@ class SocialAnalyzer {
           .map((id) {
             final player = state.players.firstWhere(
               (p) => p.id == id,
-              orElse: () => state.players.first,
+              orElse: () => state.players.first as dynamic,
             );
             return player.name;
           })

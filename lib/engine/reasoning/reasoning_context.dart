@@ -82,13 +82,22 @@ class ReasoningContext {
   Map<String, dynamic>? get identityInference =>
       getStepOutput<Map<String, dynamic>>('identity_inference');
 
+  /// 策略规划结果
+  Map<String, dynamic>? get strategy =>
+      getStepOutput<Map<String, dynamic>>('strategy');
+
+  /// 战术指令（新增 v2.0）
+  Map<String, dynamic>? get tacticalDirective =>
+      getStepOutput<Map<String, dynamic>>('tactical_directive');
+
   /// 选择的战术剧本
-  dynamic get selectedPlaybook => getStepOutput('playbook_selection');
+  dynamic get selectedPlaybook => getStepOutput('selected_playbook');
 
   /// 选择的角色面具
-  dynamic get selectedMask => getStepOutput('mask_selection');
+  dynamic get selectedMask => getStepOutput('selected_mask');
 
-  /// 行动计划
+  /// 行动计划（已废弃，使用 strategy 代替）
+  @Deprecated('Use strategy instead')
   dynamic get actionPlan => getStepOutput('strategy_planning');
 
   /// 最终发言
@@ -97,6 +106,14 @@ class ReasoningContext {
   /// 目标玩家
   String? get targetPlayer => getStepOutput<String>('target_player');
 
-  /// 发言质量评估
-  dynamic get qualityAssessment => getStepOutput('self_reflection');
+  /// 行动预演结果（新增 v2.0）
+  Map<String, dynamic>? get actionRehearsalResult =>
+      getStepOutput<Map<String, dynamic>>('action_rehearsal_result');
+
+  /// 发言质量评估（自我反思）
+  dynamic get qualityAssessment => getStepOutput('self_reflection_result');
+
+  /// 是否需要重新生成（新增 v2.0）
+  bool get needsRegeneration =>
+      getStepOutput<bool>('needs_regeneration') ?? false;
 }
