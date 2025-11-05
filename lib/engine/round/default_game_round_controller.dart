@@ -254,6 +254,7 @@ class DefaultGameRoundController implements GameRoundController {
     final werewolves = game.alivePlayers
         .where((player) => player.role is WerewolfRole)
         .toList();
+    // 狼人轮流发言讨论战术，这样可以互相听到对方的意见
     for (final werewolf in werewolves) {
       final context = game.buildContextForPlayer(werewolf);
       var result = await werewolf.cast(
@@ -811,7 +812,7 @@ class DefaultGameRoundController implements GameRoundController {
     await _processSheriffVote(game, observer: observer, candidates: finalCandidates);
   }
 
-  /// 上警阶段 - 玩家决定是否参加警长竞选
+  /// 上警阶段 - 玩家同时决定是否参加警长竞选
   Future<List<GamePlayer>> _processCampaign(
     Game game, {
     GameObserver? observer,
@@ -823,9 +824,18 @@ class DefaultGameRoundController implements GameRoundController {
 
     final candidates = <GamePlayer>[];
 
+    // 所有玩家同时决定是否上警
+    List<Future<SkillResult>> futures = [];
     for (var player in game.alivePlayers) {
       final context = game.buildContextForPlayer(player);
-      final result = await player.cast(CampaignSkill(), context);
+      futures.add(player.cast(CampaignSkill(), context));
+    }
+    var results = await Future.wait(futures);
+
+    // 处理结果并发送事件
+    for (var i = 0; i < game.alivePlayers.length; i++) {
+      final player = game.alivePlayers[i];
+      final result = results[i];
 
       // 解析结果判断是否上警
       final decision = result.message?.trim() ?? '';
@@ -881,7 +891,7 @@ class DefaultGameRoundController implements GameRoundController {
     }
   }
 
-  /// 退水阶段 - 上警玩家可以选择退出竞选
+  /// 退水阶段 - 上警玩家同时选择是否退出竞选
   Future<List<GamePlayer>> _processWithdraw(
     Game game, {
     GameObserver? observer,
@@ -894,9 +904,18 @@ class DefaultGameRoundController implements GameRoundController {
 
     final finalCandidates = <GamePlayer>[];
 
+    // 所有候选人同时决定是否退水
+    List<Future<SkillResult>> futures = [];
     for (var candidate in candidates) {
       final context = game.buildContextForPlayer(candidate);
-      final result = await candidate.cast(WithdrawSkill(), context);
+      futures.add(candidate.cast(WithdrawSkill(), context));
+    }
+    var results = await Future.wait(futures);
+
+    // 处理结果并发送事件
+    for (var i = 0; i < candidates.length; i++) {
+      final candidate = candidates[i];
+      final result = results[i];
 
       // 解析结果判断是否退水
       final decision = result.message?.trim() ?? '';
@@ -926,7 +945,7 @@ class DefaultGameRoundController implements GameRoundController {
     return finalCandidates;
   }
 
-  /// 警长投票阶段 - 所有玩家投票选举警长
+  /// 警长投票阶段 - 所有玩家同时投票选举警长
   Future<void> _processSheriffVote(
     Game game, {
     GameObserver? observer,
@@ -942,10 +961,18 @@ class DefaultGameRoundController implements GameRoundController {
       voteCount[candidate.name] = 0;
     }
 
-    // 所有存活玩家投票
+    // 所有存活玩家同时投票
+    List<Future<SkillResult>> futures = [];
     for (var voter in game.alivePlayers) {
       final context = game.buildContextForPlayer(voter);
-      final result = await voter.cast(SheriffVoteSkill(), context);
+      futures.add(voter.cast(SheriffVoteSkill(), context));
+    }
+    var results = await Future.wait(futures);
+
+    // 处理投票结果并发送事件
+    for (var i = 0; i < game.alivePlayers.length; i++) {
+      final voter = game.alivePlayers[i];
+      final result = results[i];
 
       final targetName = result.target;
       if (targetName != null && voteCount.containsKey(targetName)) {
