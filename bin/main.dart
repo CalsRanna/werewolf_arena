@@ -158,6 +158,7 @@ Future<Map<String, dynamic>> _createGameEngine(
         role: role,
         intelligence: intelligence,
         fastModelId: config.fastModelId,
+        engineType: config.reasoningEngineType,
       );
       players.add(player);
     }

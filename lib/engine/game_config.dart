@@ -1,3 +1,12 @@
+/// 推理引擎类型
+enum ReasoningEngineType {
+  /// 传统的多步骤推理引擎
+  legacy,
+
+  /// 混合架构推理引擎（预处理 + 核心认知 + 后处理）
+  hybrid,
+}
+
 /// 游戏配置类
 ///
 /// 提供游戏引擎运行所必需的技术参数
@@ -10,18 +19,23 @@ class GameConfig {
 
   /// 快速模型ID（用于简单推理任务的性能优化）
   ///
-  /// 这个模型会用于不需要复杂推理的步骤：
-  /// - PlaybookSelectionStep (剧本选择)
-  /// - MaskSelectionStep (面具选择)
-  /// - SelfReflectionStep (自我反思)
+  /// Legacy模式：用于不需要复杂推理的步骤（PlaybookSelection, MaskSelection等）
+  /// Hybrid模式：用于预处理和后处理阶段
   ///
   /// 如果为null，所有步骤都使用玩家的主模型
   final String? fastModelId;
+
+  /// 推理引擎类型
+  ///
+  /// - legacy: 传统的10步推理链
+  /// - hybrid: 新的混合架构（3阶段）
+  final ReasoningEngineType reasoningEngineType;
 
   const GameConfig({
     required this.playerIntelligences,
     required this.maxRetries,
     this.fastModelId,
+    this.reasoningEngineType = ReasoningEngineType.hybrid,
   });
 
   /// 获取指定玩家的智能配置
@@ -44,11 +58,13 @@ class GameConfig {
     List<PlayerIntelligence>? playerIntelligences,
     int? maxRetries,
     String? fastModelId,
+    ReasoningEngineType? reasoningEngineType,
   }) {
     return GameConfig(
       playerIntelligences: playerIntelligences ?? this.playerIntelligences,
       maxRetries: maxRetries ?? this.maxRetries,
       fastModelId: fastModelId ?? this.fastModelId,
+      reasoningEngineType: reasoningEngineType ?? this.reasoningEngineType,
     );
   }
 
@@ -59,15 +75,19 @@ class GameConfig {
           runtimeType == other.runtimeType &&
           playerIntelligences == other.playerIntelligences &&
           maxRetries == other.maxRetries &&
-          fastModelId == other.fastModelId;
+          fastModelId == other.fastModelId &&
+          reasoningEngineType == other.reasoningEngineType;
 
   @override
   int get hashCode =>
-      playerIntelligences.hashCode ^ maxRetries.hashCode ^ fastModelId.hashCode;
+      playerIntelligences.hashCode ^
+      maxRetries.hashCode ^
+      fastModelId.hashCode ^
+      reasoningEngineType.hashCode;
 
   @override
   String toString() {
-    return 'GameConfig{playerIntelligences: $playerIntelligences, maxRetries: $maxRetries, fastModelId: $fastModelId}';
+    return 'GameConfig{playerIntelligences: $playerIntelligences, maxRetries: $maxRetries, fastModelId: $fastModelId, reasoningEngineType: $reasoningEngineType}';
   }
 }
 

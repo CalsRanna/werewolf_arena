@@ -3,6 +3,7 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
+import 'package:werewolf_arena/engine/reasoning/hybrid/hybrid_reasoning_engine.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_engine.dart';
 import 'package:werewolf_arena/engine/reasoning/step/action_rehearsal_step.dart';
@@ -21,8 +22,8 @@ import 'package:werewolf_arena/engine/skill/skill_result.dart';
 ///
 /// 使用ReasoningEngine进行AI决策的玩家实现
 class AIPlayer extends GamePlayer {
-  /// 推理引擎
-  final ReasoningEngine _reasoningEngine;
+  /// 推理引擎（Legacy或Hybrid）
+  final dynamic _reasoningEngine;
 
   /// 玩家智能配置
   final PlayerIntelligence intelligence;
@@ -41,13 +42,19 @@ class AIPlayer extends GamePlayer {
     required super.role,
     required super.name,
     String? fastModelId,
-  })  : _reasoningEngine = _createReasoningEngine(intelligence, fastModelId),
+    ReasoningEngineType engineType = ReasoningEngineType.hybrid,
+  })  : _reasoningEngine = _createReasoningEngine(
+          intelligence,
+          fastModelId,
+          engineType,
+        ),
         super();
 
   /// 创建推理引擎
-  static ReasoningEngine _createReasoningEngine(
+  static dynamic _createReasoningEngine(
     PlayerIntelligence intelligence,
     String? fastModelId,
+    ReasoningEngineType engineType,
   ) {
     final client = OpenAIClient(
       apiKey: intelligence.apiKey,
@@ -61,42 +68,52 @@ class AIPlayer extends GamePlayer {
     final mainModel = intelligence.modelId;
     final fastModel = fastModelId ?? mainModel;
 
-    // 新的推理链：增强版 COT
-    return ReasoningEngine(
-      client: client,
-      steps: [
-        // 1. 事实分析 (使用快速模型)
-        FactAnalysisStep(modelId: fastModel),
+    if (engineType == ReasoningEngineType.hybrid) {
+      // 混合架构：3阶段推理
+      return HybridReasoningEngine(
+        client: client,
+        powerfulModelId: mainModel,
+        fastModelId: fastModel,
+        enableVerboseLogging: true,
+      );
+    } else {
+      // 传统架构：10步推理链
+      return ReasoningEngine(
+        client: client,
+        steps: [
+          // 1. 事实分析 (使用快速模型)
+          FactAnalysisStep(modelId: fastModel),
 
-        // 2. 身份推理 (使用主模型，需要深度推理)
-        IdentityInferenceStep(modelId: mainModel),
+          // 2. 身份推理 (使用主模型，需要深度推理)
+          IdentityInferenceStep(modelId: mainModel),
 
-        // 3. 策略规划 (使用主模型，已优化社交网络整合)
-        StrategyPlanningStep(modelId: mainModel),
+          // 3. 策略规划 (使用主模型，已优化社交网络整合)
+          StrategyPlanningStep(modelId: mainModel),
 
-        // 4. 战术指令生成 (使用快速模型)
-        TacticalDirectiveStep(modelId: fastModel),
+          // 4. 战术指令生成 (使用快速模型)
+          TacticalDirectiveStep(modelId: fastModel),
 
-        // 5. 剧本选择 (使用快速模型)
-        PlaybookSelectionStep(modelId: fastModel),
+          // 5. 剧本选择 (使用快速模型)
+          PlaybookSelectionStep(modelId: fastModel),
 
-        // 6. 面具选择 (使用快速模型)
-        MaskSelectionStep(modelId: fastModel),
+          // 6. 面具选择 (使用快速模型)
+          MaskSelectionStep(modelId: fastModel),
 
-        // 7. 发言生成 (使用主模型，已整合战术指令)
-        SpeechGenerationStep(modelId: mainModel),
+          // 7. 发言生成 (使用主模型，已整合战术指令)
+          SpeechGenerationStep(modelId: mainModel),
 
-        // 8. 行动预演 (使用快速模型，预审查+重新生成机制)
-        ActionRehearsalStep(modelId: fastModel),
+          // 8. 行动预演 (使用快速模型，预审查+重新生成机制)
+          ActionRehearsalStep(modelId: fastModel),
 
-        // 9. 自我反思 (保留用于长期记忆更新，但不再控制重新生成)
-        SelfReflectionStep(
-          modelId: fastModel,
-          enableRegeneration: false, // 重新生成已由 ActionRehearsalStep 控制
-        ),
-      ],
-      enableVerboseLogging: true,
-    );
+          // 9. 自我反思 (保留用于长期记忆更新，但不再控制重新生成)
+          SelfReflectionStep(
+            modelId: fastModel,
+            enableRegeneration: false, // 重新生成已由 ActionRehearsalStep 控制
+          ),
+        ],
+        enableVerboseLogging: true,
+      );
+    }
   }
 
   @override
