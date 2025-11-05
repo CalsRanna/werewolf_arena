@@ -3,26 +3,28 @@ import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
-import 'package:werewolf_arena/engine/reasoning/hybrid/hybrid_reasoning_engine.dart';
+import 'package:werewolf_arena/engine/reasoning/staged/staged_reasoning_engine.dart';
 import 'package:werewolf_arena/engine/reasoning/memory/working_memory.dart';
-import 'package:werewolf_arena/engine/reasoning/reasoning_engine.dart';
-import 'package:werewolf_arena/engine/reasoning/step/action_rehearsal_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/fact_analysis_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/identity_inference_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/mask_selection_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/playbook_selection_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/self_reflection_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/speech_generation_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/strategy_planning_step.dart';
-import 'package:werewolf_arena/engine/reasoning/step/tactical_directive_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/chain_reasoning_engine.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/action_rehearsal_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/fact_analysis_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/identity_inference_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/mask_selection_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/playbook_selection_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/self_reflection_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/speech_generation_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/strategy_planning_step.dart';
+import 'package:werewolf_arena/engine/reasoning/chain/step/tactical_directive_step.dart';
+import 'package:werewolf_arena/engine/reasoning/direct/direct_reasoning_engine.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 
 /// AI玩家实现
 ///
-/// 使用ReasoningEngine进行AI决策的玩家实现
+/// 使用推理引擎进行AI决策的玩家实现
+/// 支持三种推理引擎：Chain（链式）、Staged（分阶段）、Direct（直接）
 class AIPlayer extends GamePlayer {
-  /// 推理引擎（Legacy或Hybrid）
+  /// 推理引擎（Chain、Staged或Direct）
   final dynamic _reasoningEngine;
 
   /// 玩家智能配置
@@ -42,7 +44,7 @@ class AIPlayer extends GamePlayer {
     required super.role,
     required super.name,
     String? fastModelId,
-    ReasoningEngineType engineType = ReasoningEngineType.hybrid,
+    ReasoningEngineType engineType = ReasoningEngineType.staged,
   })  : _reasoningEngine = _createReasoningEngine(
           intelligence,
           fastModelId,
@@ -68,51 +70,61 @@ class AIPlayer extends GamePlayer {
     final mainModel = intelligence.modelId;
     final fastModel = fastModelId ?? mainModel;
 
-    if (engineType == ReasoningEngineType.hybrid) {
-      // 混合架构：3阶段推理
-      return HybridReasoningEngine(
-        client: client,
-        powerfulModelId: mainModel,
-        fastModelId: fastModel,
-        enableVerboseLogging: true,
-      );
-    } else {
-      // 传统架构：10步推理链
-      return ReasoningEngine(
-        client: client,
-        steps: [
-          // 1. 事实分析 (使用快速模型)
-          FactAnalysisStep(modelId: fastModel),
+    switch (engineType) {
+      case ReasoningEngineType.staged:
+        // 分阶段推理引擎：3阶段（预处理 + 核心认知 + 后处理）
+        return StagedReasoningEngine(
+          client: client,
+          powerfulModelId: mainModel,
+          fastModelId: fastModel,
+          enableVerboseLogging: true,
+        );
 
-          // 2. 身份推理 (使用主模型，需要深度推理)
-          IdentityInferenceStep(modelId: mainModel),
+      case ReasoningEngineType.direct:
+        // 直接推理引擎：单次LLM调用
+        return DirectReasoningEngine(
+          client: client,
+          modelId: mainModel,
+          enableVerboseLogging: true,
+        );
 
-          // 3. 策略规划 (使用主模型，已优化社交网络整合)
-          StrategyPlanningStep(modelId: mainModel),
+      case ReasoningEngineType.chain:
+        // 链式推理引擎：10步推理链
+        return ChainReasoningEngine(
+          client: client,
+          steps: [
+            // 1. 事实分析 (使用快速模型)
+            FactAnalysisStep(modelId: fastModel),
 
-          // 4. 战术指令生成 (使用快速模型)
-          TacticalDirectiveStep(modelId: fastModel),
+            // 2. 身份推理 (使用主模型，需要深度推理)
+            IdentityInferenceStep(modelId: mainModel),
 
-          // 5. 剧本选择 (使用快速模型)
-          PlaybookSelectionStep(modelId: fastModel),
+            // 3. 策略规划 (使用主模型，已优化社交网络整合)
+            StrategyPlanningStep(modelId: mainModel),
 
-          // 6. 面具选择 (使用快速模型)
-          MaskSelectionStep(modelId: fastModel),
+            // 4. 战术指令生成 (使用快速模型)
+            TacticalDirectiveStep(modelId: fastModel),
 
-          // 7. 发言生成 (使用主模型，已整合战术指令)
-          SpeechGenerationStep(modelId: mainModel),
+            // 5. 剧本选择 (使用快速模型)
+            PlaybookSelectionStep(modelId: fastModel),
 
-          // 8. 行动预演 (使用快速模型，预审查+重新生成机制)
-          ActionRehearsalStep(modelId: fastModel),
+            // 6. 面具选择 (使用快速模型)
+            MaskSelectionStep(modelId: fastModel),
 
-          // 9. 自我反思 (保留用于长期记忆更新，但不再控制重新生成)
-          SelfReflectionStep(
-            modelId: fastModel,
-            enableRegeneration: false, // 重新生成已由 ActionRehearsalStep 控制
-          ),
-        ],
-        enableVerboseLogging: true,
-      );
+            // 7. 发言生成 (使用主模型，已整合战术指令)
+            SpeechGenerationStep(modelId: mainModel),
+
+            // 8. 行动预演 (使用快速模型，预审查+重新生成机制)
+            ActionRehearsalStep(modelId: fastModel),
+
+            // 9. 自我反思 (保留用于长期记忆更新，但不再控制重新生成)
+            SelfReflectionStep(
+              modelId: fastModel,
+              enableRegeneration: false, // 重新生成已由 ActionRehearsalStep 控制
+            ),
+          ],
+          enableVerboseLogging: true,
+        );
     }
   }
 

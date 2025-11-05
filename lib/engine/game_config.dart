@@ -1,10 +1,13 @@
 /// 推理引擎类型
 enum ReasoningEngineType {
-  /// 传统的多步骤推理引擎
-  legacy,
+  /// 链式推理引擎 - 10步推理链，串行执行（最详细，最慢）
+  chain,
 
-  /// 混合架构推理引擎（预处理 + 核心认知 + 后处理）
-  hybrid,
+  /// 分阶段推理引擎 - 三阶段：预处理 + 核心认知 + 后处理（平衡性能与质量）
+  staged,
+
+  /// 直接推理引擎 - 单次LLM调用完成所有推理（最快，最简单）
+  direct,
 }
 
 /// 游戏配置类
@@ -19,23 +22,25 @@ class GameConfig {
 
   /// 快速模型ID（用于简单推理任务的性能优化）
   ///
-  /// Legacy模式：用于不需要复杂推理的步骤（PlaybookSelection, MaskSelection等）
-  /// Hybrid模式：用于预处理和后处理阶段
+  /// Chain模式：用于不需要复杂推理的步骤（PlaybookSelection, MaskSelection等）
+  /// Staged模式：用于预处理和后处理阶段
+  /// Direct模式：不使用（所有推理都用主模型）
   ///
   /// 如果为null，所有步骤都使用玩家的主模型
   final String? fastModelId;
 
   /// 推理引擎类型
   ///
-  /// - legacy: 传统的10步推理链
-  /// - hybrid: 新的混合架构（3阶段）
+  /// - chain: 10步链式推理（最详细，最慢）
+  /// - staged: 3阶段推理（平衡性能和质量）
+  /// - direct: 单次LLM调用（最快）
   final ReasoningEngineType reasoningEngineType;
 
   const GameConfig({
     required this.playerIntelligences,
     required this.maxRetries,
     this.fastModelId,
-    this.reasoningEngineType = ReasoningEngineType.hybrid,
+    this.reasoningEngineType = ReasoningEngineType.staged,
   });
 
   /// 获取指定玩家的智能配置

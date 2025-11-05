@@ -5,7 +5,8 @@
       "Bash(dart compile exe:*)",
       "Bash(timeout:*)",
       "Bash(gtimeout:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
