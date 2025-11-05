@@ -16,6 +16,8 @@ import 'package:werewolf_arena/engine/event/shoot_event.dart';
 import 'package:werewolf_arena/engine/event/testament_event.dart';
 import 'package:werewolf_arena/engine/event/vote_event.dart';
 import 'package:werewolf_arena/engine/event/conspire_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_campaign_event.dart';
+import 'package:werewolf_arena/engine/event/sheriff_speech_event.dart';
 import 'package:werewolf_arena/engine/game_observer.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 
@@ -69,6 +71,11 @@ class ConsoleGameObserver extends GameObserver {
       var name = event.source.formattedName;
       if (!showRole) name = '[${event.source.name}]';
       ui.printEvent('$name：${event.message}');
+    } else if (event is SheriffCampaignEvent) {
+      ui.printEvent('[法官]：${event.toNarrative()}');
+    } else if (event is SheriffSpeechEvent) {
+      // 竞选发言 - 显示玩家的竞选演讲
+      ui.printEvent('[${event.playerName}]：${event.speech}');
     } else if (event is DiscussEvent) {
       var name = event.source.formattedName;
       if (!showRole) name = '[${event.source.name}]';
