@@ -7,13 +7,20 @@ import 'package:werewolf_arena/engine/reasoning/jev/system_one_client.dart';
 import 'package:yaml/yaml.dart';
 
 class ConsoleGameConfigLoader {
-  Future<GameConfig> loadGameConfig() async {
-    var currentDirectory = Directory.current;
+  /// 加载对局配置。
+  ///
+  /// [configPath] 为空时读 `Directory.current/werewolf_config.yaml`（原行为）；
+  /// 显式指定时按该路径读，且文件不存在就直接退回默认配置——调用方既然给了路径，
+  /// 再悄悄在别处造一个默认文件只会掩盖路径写错。
+  Future<GameConfig> loadGameConfig({String? configPath}) async {
     try {
-      final filePath = path.join(currentDirectory.path, 'werewolf_config.yaml');
+      final filePath =
+          configPath ??
+          path.join(Directory.current.path, 'werewolf_config.yaml');
       final file = File(filePath);
       if (!file.existsSync()) {
         ConsoleGameUI.instance.printLine('配置文件不存在: $filePath');
+        if (configPath != null) return _createDefaultGameConfig();
         await _createDefaultConfigFile(filePath);
         ConsoleGameUI.instance.printLine('已自动创建默认配置文件: $filePath');
       }

@@ -73,6 +73,7 @@ Future<void> main(List<String> arguments) async {
       humanPlayerIndex,
       argResults['debug'] as bool,
       argResults['god'] as bool,
+      configPath: argResults['config'] as String?,
     );
     final gameEngine = gameEngineData['engine'] as GameEngine;
     final humanPlayer = gameEngineData['humanPlayer'] as GamePlayer?;
@@ -125,9 +126,12 @@ Future<Map<String, dynamic>> _createGameEngine(
   ConsoleGameUI ui,
   int? humanPlayerIndex,
   bool showLog,
-  bool showGod,
-) async {
-  final config = await ConsoleGameConfigLoader().loadGameConfig();
+  bool showGod, {
+  String? configPath,
+}) async {
+  final config = await ConsoleGameConfigLoader().loadGameConfig(
+    configPath: configPath,
+  );
   final scenario = Scenario12Players();
   final players = <GamePlayer>[];
   final roles = scenario.roles;

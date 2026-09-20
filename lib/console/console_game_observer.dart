@@ -47,7 +47,9 @@ class ConsoleGameObserver extends GameObserver {
     }
 
     if (event is LogEvent) {
-      if (!showLog) return;
+      // 默认只放行 warning/error。引擎内部的失败（典型是 AIPlayer.cast 捕获异常后
+      // 静默返回空发言）只有这一条出口，若整体按 showLog 挡掉，故障就完全不可见。
+      if (!showLog && !event.isProblem) return;
       ui.printLog(event.toNarrative());
     } else if (event is PeacefulNightEvent) {
       ui.printEvent('[法官]：${event.toNarrative()}');

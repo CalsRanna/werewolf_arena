@@ -3,6 +3,7 @@ import 'package:werewolf_arena/engine/game_context.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
 import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
+import 'package:werewolf_arena/engine/reasoning/jev/jev_postprocessing_checker.dart';
 import 'package:werewolf_arena/engine/reasoning/staged/core_cognition_stage.dart';
 import 'package:werewolf_arena/engine/reasoning/staged/postprocessing_stage.dart';
 import 'package:werewolf_arena/engine/reasoning/staged/preprocessing_facts.dart';
@@ -27,6 +28,9 @@ class StagedReasoningEngine {
   /// 判定层（Jev）。为 null 时预处理里的"判定"仍由生成模型完成。
   final JudgmentProvider? judgments;
 
+  /// 安全检查判定层（Jev）。为 null 时发言安全检查全部走生成式。
+  final PostprocessingChecker? postprocessingChecker;
+
   late final PreprocessingStage _preprocessingStage;
   late final CoreCognitionStage _coreCognitionStage;
   late final PostprocessingStage _postprocessingStage;
@@ -37,6 +41,7 @@ class StagedReasoningEngine {
     required this.fastModelId,
     this.enableVerboseLogging = true,
     this.judgments,
+    this.postprocessingChecker,
   }) {
     _preprocessingStage = PreprocessingStage(
       client: client,
@@ -50,6 +55,7 @@ class StagedReasoningEngine {
     _postprocessingStage = PostprocessingStage(
       client: client,
       fastModelId: fastModelId,
+      checker: postprocessingChecker,
     );
   }
 

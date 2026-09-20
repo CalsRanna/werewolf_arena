@@ -17,6 +17,7 @@ import 'package:werewolf_arena/engine/reasoning/chain/step/strategy_planning_ste
 import 'package:werewolf_arena/engine/reasoning/chain/step/tactical_directive_step.dart';
 import 'package:werewolf_arena/engine/reasoning/direct/direct_reasoning_engine.dart';
 import 'package:werewolf_arena/engine/reasoning/jev/jev_judgment_provider.dart';
+import 'package:werewolf_arena/engine/reasoning/jev/jev_postprocessing_checker.dart';
 import 'package:werewolf_arena/engine/reasoning/jev/system_one_client.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
@@ -56,6 +57,17 @@ class AIPlayer extends GamePlayer {
         ),
         super();
 
+  static bool _jevEnabled(JevSettings? settings) =>
+      settings != null && settings.enabled;
+
+  static SystemOneClient _jevClient(
+    PlayerIntelligence intelligence,
+    JevSettings? settings,
+  ) => SystemOneClient(
+    apiKey: intelligence.apiKey,
+    settings: settings!,
+  );
+
   /// 创建推理引擎
   static dynamic _createReasoningEngine(
     PlayerIntelligence intelligence,
@@ -83,13 +95,14 @@ class AIPlayer extends GamePlayer {
           powerfulModelId: mainModel,
           fastModelId: fastModel,
           enableVerboseLogging: true,
-          // Jev 与 chat 共用同一个 OpenRouter key，因此直接复用 intelligence.apiKey
-          judgments: (jevSettings != null && jevSettings.enabled)
-              ? JevJudgmentProvider(
-                  client: SystemOneClient(
-                    apiKey: intelligence.apiKey,
-                    settings: jevSettings,
-                  ),
+          // Jev 与 chat 共用同一个 OpenRouter key，因此直接复用 intelligence.apiKey；
+          // 判定层与安全检查层共用同一个客户端。
+          judgments: _jevEnabled(jevSettings)
+              ? JevJudgmentProvider(client: _jevClient(intelligence, jevSettings))
+              : null,
+          postprocessingChecker: _jevEnabled(jevSettings)
+              ? JevPostprocessingChecker(
+                  client: _jevClient(intelligence, jevSettings),
                 )
               : null,
         );

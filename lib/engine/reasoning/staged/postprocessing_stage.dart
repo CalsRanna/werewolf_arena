@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:openai_dart/openai_dart.dart';
 import 'package:werewolf_arena/engine/game_logger.dart';
+import 'package:werewolf_arena/engine/reasoning/jev/jev_postprocessing_checker.dart';
 import 'package:werewolf_arena/engine/reasoning/staged/core_cognition_stage.dart';
 import 'package:werewolf_arena/engine/skill/conspire_skill.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
@@ -44,11 +45,16 @@ class PostprocessingResult {
 class PostprocessingStage {
   final OpenAIClient client;
   final String fastModelId;
+
+  /// 判定器（Jev）。为 null 时全部走生成式，行为与改造前一致。
+  /// 非 null 时：判过直接放行；只有命中问题才回落生成式改写。
+  final PostprocessingChecker? checker;
   static const int maxRetries = 3;
 
   PostprocessingStage({
     required this.client,
     required this.fastModelId,
+    this.checker,
   });
 
   /// 执行后处理
@@ -79,6 +85,36 @@ class PostprocessingStage {
         finalSpeech: cognitionResult.speech,
         report: '狼人密谈，允许讨论队友',
       );
+    }
+
+    final checker = this.checker;
+    if (checker != null) {
+      try {
+        final verdict = await checker.check(
+          playerName: playerName,
+          role: role,
+          faction: faction,
+          teammates: teammates,
+          speech: cognitionResult.speech!,
+          strategy: cognitionResult.strategy,
+        );
+        if (verdict.passed) {
+          // 绝大多数发言都会走这条路：一次判定即放行，不产生生成调用。
+          GameLogger.instance.i('[后处理阶段] 安全检查通过（判定层），未使用生成模型');
+          return PostprocessingResult(
+            passed: true,
+            finalSpeech: cognitionResult.speech,
+            report: verdict.report,
+          );
+        }
+        // 命中问题才需要改写，落到生成式路径去产出 final_speech。
+        GameLogger.instance.w(
+          '[后处理阶段] 安全检查命中，转生成式改写: ${verdict.report}',
+        );
+      } catch (error) {
+        // 判定失败不能拖垮对局：回落到生成式。
+        GameLogger.instance.w('[后处理阶段] 判定失败，回退生成式: $error');
+      }
     }
 
     final systemPrompt = _buildSystemPrompt();
