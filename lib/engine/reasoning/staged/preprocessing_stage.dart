@@ -8,6 +8,7 @@ import 'package:werewolf_arena/engine/player/ai_player.dart';
 import 'package:werewolf_arena/engine/player/game_player.dart';
 import 'package:werewolf_arena/engine/reasoning/reasoning_context.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
+import 'package:werewolf_arena/engine/reasoning/staged/preprocessing_facts.dart';
 
 /// 阶段一：信息预处理
 ///
@@ -16,16 +17,66 @@ import 'package:werewolf_arena/engine/skill/game_skill.dart';
 class PreprocessingStage {
   final OpenAIClient client;
   final String fastModelId;
+
+  /// 事实层开关。为 true 时：
+  /// 1) 能用代码算出来的字段（身份、队友、存活名单、事件历史）不再让模型抄写；
+  /// 2) 公开信息尚未产生的阶段（如第 1 夜）直接短路，不发起任何模型调用。
+  final bool factsFirst;
+
+  /// 判定提供方（Jev / System One 等）。为 null 时判定仍走生成式路径，
+  /// 此时行为等价于改造前，只是事实层仍然生效。
+  final JudgmentProvider? judgments;
   static const int maxRetries = 3;
 
   PreprocessingStage({
     required this.client,
     required this.fastModelId,
+    this.factsFirst = true,
+    this.judgments,
   });
 
   /// 执行预处理
   Future<void> execute(ReasoningContext context) async {
     GameLogger.instance.d('[预处理阶段] 开始...');
+
+    if (factsFirst) {
+      // 无信息短路：公开信息尚未产生时（第 1 夜各行动阶段），做完整整理
+      // 只能得到"未知(0)""暂无冲突"这类占位输出——既花钱又拖延迟。
+      if (!PreprocessingFacts.hasInformativeHistory(
+        context.state.visibleEvents,
+      )) {
+        context.worldState = PreprocessingFacts.build(
+          player: context.player,
+          allPlayers: context.state.players,
+          alivePlayers: context.state.alivePlayers,
+        );
+        GameLogger.instance.i('[预处理阶段] 无实质历史，跳过模型调用');
+        return;
+      }
+
+      final provider = judgments;
+      if (provider != null) {
+        try {
+          final result = await provider.judge(
+            state: PreprocessingFacts.stripTaskSection(
+              _buildUserPrompt(context.player, context.state, context.skill),
+            ),
+            players: context.state.alivePlayers.map((p) => p.name).toList(),
+          );
+          context.worldState = PreprocessingFacts.build(
+            player: context.player,
+            allPlayers: context.state.players,
+            alivePlayers: context.state.alivePlayers,
+            judgments: result,
+          );
+          GameLogger.instance.i('[预处理阶段] 判定层完成（Jev），未使用生成模型');
+          return;
+        } catch (error) {
+          // 判定层失败不能拖垮对局：回退到生成式路径。
+          GameLogger.instance.w('[预处理阶段] 判定失败，回退生成式: $error');
+        }
+      }
+    }
 
     final systemPrompt = _buildSystemPrompt();
     final userPrompt = _buildUserPrompt(context.player, context.state, context.skill);
@@ -273,7 +324,9 @@ ${workingMemory.toPromptText()}
   /// 格式化事件描述
   String _formatEvent(GameEvent event) {
     // 根据事件类型格式化输出
-    return '[第${event.day}天] ${event.toString()}';
+    // 必须用 toNarrative()：事件子类都实现了它，toString() 只会渲染成
+    // `GameEvent(<id>)`，等于把整条游戏历史通道变成一串不透明 ID。
+    return '[第${event.day}天] ${event.toNarrative()}';
   }
 
   /// 构建历史发言摘要

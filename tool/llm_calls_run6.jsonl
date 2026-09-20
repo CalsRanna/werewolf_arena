@@ -1,0 +1,7 @@
+{"ts":"2026-09-20T16:15:27.538385","step":"skill:protect","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":2846,"completion_tokens":674,"latency_ms":9040,"cost":0.0020574675}
+{"ts":"2026-09-20T16:15:45.841549","step":"core_cognition_or_speech","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1525,"completion_tokens":1382,"latency_ms":17249,"cost":0.00196905654}
+{"ts":"2026-09-20T16:16:32.482961","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":935,"completion_tokens":3110,"latency_ms":46595,"cost":0.00203247}
+{"ts":"2026-09-20T16:17:53.377399","step":"core_cognition_or_speech","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1919,"completion_tokens":1002,"latency_ms":80873,"cost":0.00097515}
+{"ts":"2026-09-20T16:18:08.265424","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1147,"completion_tokens":3315,"latency_ms":14870,"cost":0.004278879}
+{"ts":"2026-09-20T16:18:32.777629","step":"core_cognition_or_speech","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":2250,"completion_tokens":3690,"latency_ms":24496,"cost":0.002525985}
+{"ts":"2026-09-20T16:18:56.788963","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1430,"completion_tokens":4785,"latency_ms":23995,"cost":0.0070256835}

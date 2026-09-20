@@ -1,0 +1,14 @@
+{"ts":"2026-09-20T16:03:39.690686","step":"skill:protect","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":2846,"completion_tokens":765,"latency_ms":9220,"cost":0.0016663779}
+{"ts":"2026-09-20T16:03:50.863189","step":"core_cognition_or_speech","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1525,"completion_tokens":1419,"latency_ms":10122,"cost":0.002138697}
+{"ts":"2026-09-20T16:04:04.208824","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":977,"completion_tokens":3166,"latency_ms":13332,"cost":0.00384880815}
+{"ts":"2026-09-20T16:05:19.290785","step":"core_cognition_or_speech","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":2044,"completion_tokens":1041,"latency_ms":75066,"cost":0.0008296992}
+{"ts":"2026-09-20T16:05:34.721679","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1173,"completion_tokens":3622,"latency_ms":15408,"cost":0.00230703066}
+{"ts":"2026-09-20T16:06:53.947526","step":"core_cognition_or_speech","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":2054,"completion_tokens":1304,"latency_ms":79213,"cost":0.0009716355}
+{"ts":"2026-09-20T16:07:23.827311","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1396,"completion_tokens":3111,"latency_ms":29862,"cost":0.00207517464}
+{"ts":"2026-09-20T16:07:36.240394","step":"core_cognition_or_speech","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":2164,"completion_tokens":1598,"latency_ms":12395,"cost":0.002541132}
+{"ts":"2026-09-20T16:07:51.258881","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1608,"completion_tokens":4067,"latency_ms":13986,"cost":0.005309172}
+{"ts":"2026-09-20T16:07:53.531293","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1608,"completion_tokens":4011,"latency_ms":16260,"cost":0.00260269416}
+{"ts":"2026-09-20T16:07:57.865177","step":"stage:preprocessing","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":1608,"completion_tokens":5063,"latency_ms":20598,"cost":0.00322758216}
+{"ts":"2026-09-20T16:08:03.968381","step":"skill:kill","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":3531,"completion_tokens":1023,"latency_ms":12697,"cost":0.002264031}
+{"ts":"2026-09-20T16:08:07.062547","step":"skill:kill","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":3539,"completion_tokens":729,"latency_ms":9185,"cost":0.001917135}
+{"ts":"2026-09-20T16:09:26.493077","step":"skill:kill","model":"deepseek/deepseek-v4.1-flash","status":200,"prompt_tokens":3705,"completion_tokens":1335,"latency_ms":92946,"cost":0.00152658}

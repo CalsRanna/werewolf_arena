@@ -15,8 +15,9 @@ dependencies:
   auto_route: ^10.1.2
   cli_spin: ^1.0.1
   get_it: ^8.0.3
-  laconic:
-    git: git@github.com:CalsRanna/laconic.git
+  laconic: ^5.0.1
+  # sqlite 驱动自 laconic 5.x 起拆为独立包
+  laconic_sqlite: ^3.0.1
   logger: ^2.6.2
   openai_dart: ^0.5.5
   path: ^1.9.0

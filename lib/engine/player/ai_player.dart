@@ -16,6 +16,8 @@ import 'package:werewolf_arena/engine/reasoning/chain/step/speech_generation_ste
 import 'package:werewolf_arena/engine/reasoning/chain/step/strategy_planning_step.dart';
 import 'package:werewolf_arena/engine/reasoning/chain/step/tactical_directive_step.dart';
 import 'package:werewolf_arena/engine/reasoning/direct/direct_reasoning_engine.dart';
+import 'package:werewolf_arena/engine/reasoning/jev/jev_judgment_provider.dart';
+import 'package:werewolf_arena/engine/reasoning/jev/system_one_client.dart';
 import 'package:werewolf_arena/engine/skill/game_skill.dart';
 import 'package:werewolf_arena/engine/skill/skill_result.dart';
 
@@ -45,10 +47,12 @@ class AIPlayer extends GamePlayer {
     required super.name,
     String? fastModelId,
     ReasoningEngineType engineType = ReasoningEngineType.staged,
+    JevSettings? jevSettings,
   })  : _reasoningEngine = _createReasoningEngine(
           intelligence,
           fastModelId,
           engineType,
+          jevSettings,
         ),
         super();
 
@@ -57,6 +61,7 @@ class AIPlayer extends GamePlayer {
     PlayerIntelligence intelligence,
     String? fastModelId,
     ReasoningEngineType engineType,
+    JevSettings? jevSettings,
   ) {
     final client = OpenAIClient(
       apiKey: intelligence.apiKey,
@@ -78,6 +83,15 @@ class AIPlayer extends GamePlayer {
           powerfulModelId: mainModel,
           fastModelId: fastModel,
           enableVerboseLogging: true,
+          // Jev 与 chat 共用同一个 OpenRouter key，因此直接复用 intelligence.apiKey
+          judgments: (jevSettings != null && jevSettings.enabled)
+              ? JevJudgmentProvider(
+                  client: SystemOneClient(
+                    apiKey: intelligence.apiKey,
+                    settings: jevSettings,
+                  ),
+                )
+              : null,
         );
 
       case ReasoningEngineType.direct:

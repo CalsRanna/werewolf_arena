@@ -1,3 +1,4 @@
+import 'package:werewolf_arena/engine/reasoning/jev/system_one_client.dart';
 /// 推理引擎类型
 enum ReasoningEngineType {
   /// 链式推理引擎 - 10步推理链，串行执行（最详细，最慢）
@@ -36,11 +37,15 @@ class GameConfig {
   /// - direct: 单次LLM调用（最快）
   final ReasoningEngineType reasoningEngineType;
 
+  /// Jev / System One 判定层设置。为 null 时判定仍走生成式路径。
+  final JevSettings? jevSettings;
+
   const GameConfig({
     required this.playerIntelligences,
     required this.maxRetries,
     this.fastModelId,
     this.reasoningEngineType = ReasoningEngineType.staged,
+    this.jevSettings,
   });
 
   /// 获取指定玩家的智能配置
@@ -64,12 +69,14 @@ class GameConfig {
     int? maxRetries,
     String? fastModelId,
     ReasoningEngineType? reasoningEngineType,
+    JevSettings? jevSettings,
   }) {
     return GameConfig(
       playerIntelligences: playerIntelligences ?? this.playerIntelligences,
       maxRetries: maxRetries ?? this.maxRetries,
       fastModelId: fastModelId ?? this.fastModelId,
       reasoningEngineType: reasoningEngineType ?? this.reasoningEngineType,
+      jevSettings: jevSettings ?? this.jevSettings,
     );
   }
 
@@ -81,7 +88,8 @@ class GameConfig {
           playerIntelligences == other.playerIntelligences &&
           maxRetries == other.maxRetries &&
           fastModelId == other.fastModelId &&
-          reasoningEngineType == other.reasoningEngineType;
+          reasoningEngineType == other.reasoningEngineType &&
+          jevSettings == other.jevSettings;
 
   @override
   int get hashCode =>

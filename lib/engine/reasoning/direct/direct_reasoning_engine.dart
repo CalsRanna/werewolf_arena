@@ -276,7 +276,9 @@ $formatPrompt
   }
 
   String _formatEvent(GameEvent event) {
-    return '[第${event.day}天] ${event.toString()}';
+    // 必须用 toNarrative()：事件子类都实现了它，toString() 只会渲染成
+    // `GameEvent(<id>)`，等于把整条游戏历史通道变成一串不透明 ID。
+    return '[第${event.day}天] ${event.toNarrative()}';
   }
 
   String _getStandardFormatPrompt() {

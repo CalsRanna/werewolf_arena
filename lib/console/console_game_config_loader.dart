@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:werewolf_arena/console/console_game_ui.dart';
 import 'package:werewolf_arena/engine/game_config.dart';
+import 'package:werewolf_arena/engine/reasoning/jev/system_one_client.dart';
 import 'package:yaml/yaml.dart';
 
 class ConsoleGameConfigLoader {
@@ -114,10 +115,24 @@ logging:
 
     final fastModelId = yaml['fast_model_id'] as String?;
 
+    // systemone: 段可选；缺省时不启用 Jev 判定层（行为与改造前一致）。
+    final systemOne = yaml['systemone'] as YamlMap?;
+    final jevSettings = systemOne == null
+        ? null
+        : JevSettings(
+            enabled: (systemOne['enabled'] as bool?) ?? true,
+            baseUrl:
+                systemOne['base_url'] as String? ??
+                'https://openrouter.ai/api',
+            model:
+                systemOne['model'] as String? ?? 'typesafe/jev-1.13',
+          );
+
     return GameConfig(
       playerIntelligences: playerIntelligences,
       maxRetries: maxRetries,
       fastModelId: fastModelId,
+      jevSettings: jevSettings,
     );
   }
 
