@@ -83,6 +83,8 @@ class _Options {
     required this.captureDir,
     required this.captureStep,
     required this.captureLimit,
+    required this.echo,
+    required this.echoLimit,
   });
 
   final int port;
@@ -94,6 +96,12 @@ class _Options {
   final String captureDir;
   final String captureStep;
   final int captureLimit;
+
+  /// 把每次调用的模型真实输出回显到终端。
+  final bool echo;
+
+  /// 回显时的字符上限；0 表示不截断。完整内容仍以 --capture 落盘为准。
+  final int echoLimit;
 }
 
 _Options _parseArgs(List<String> args) {
@@ -104,6 +112,8 @@ _Options _parseArgs(List<String> args) {
   var captureDir = '';
   var captureStep = 'stage:preprocessing';
   var captureLimit = 30;
+  var echo = false;
+  var echoLimit = 1200;
 
   for (var i = 0; i < args.length; i++) {
     String? next() => i + 1 < args.length ? args[++i] : null;
@@ -122,13 +132,22 @@ _Options _parseArgs(List<String> args) {
         captureStep = next() ?? captureStep;
       case '--capture-limit':
         captureLimit = int.tryParse(next() ?? '') ?? captureLimit;
+      case '--echo':
+        echo = true;
+      case '--echo-limit':
+        echoLimit = int.tryParse(next() ?? '') ?? echoLimit;
       case '--help':
       case '-h':
         stdout.writeln(
           'dart tool/llm_proxy_recorder.dart '
           '[--port 8787] [--upstream https://openrouter.ai/api/v1] '
           '[--log tool/llm_calls.jsonl] [--timeout 300] '
-          '[--capture DIR] [--capture-step 前缀] [--capture-limit N]',
+          '[--capture DIR] [--capture-step 前缀] [--capture-limit N] '
+          '[--echo] [--echo-limit N]\n'
+          '\n'
+          '  --echo        把每次调用的模型真实输出打到终端'
+          '（chat 取 message.content，\n'
+          '                System One 取 answers）。--echo-limit 0 表示不截断。',
         );
         exit(0);
     }
@@ -145,6 +164,8 @@ _Options _parseArgs(List<String> args) {
     captureDir: captureDir,
     captureStep: captureStep,
     captureLimit: captureLimit,
+    echo: echo,
+    echoLimit: echoLimit,
   );
 }
 
@@ -218,6 +239,13 @@ Future<void> main(List<String> args) async {
     'openai_dart 会自己拼 /chat/completions）',
   );
   stdout.writeln('等待请求（Ctrl+C 结束）...\n');
+  if (opts.echo) {
+    stdout.writeln(
+      '回显已开启：每次调用的模型输出会直接打在这里'
+      '${opts.echoLimit > 0 ? '（每次截断到 ${opts.echoLimit} 字符，'
+          '--echo-limit 0 可关闭截断）' : '（不截断）'}。\n',
+    );
+  }
 
   await for (final request in server) {
     // 不 await：多个玩家的请求需要并发转发，否则会串行化拖慢对局
@@ -230,6 +258,7 @@ Future<void> main(List<String> args) async {
 
       var status = 0;
       var responseBytes = <int>[];
+      Object? parsedJson;
       var usageIn = 0;
       var usageOut = 0;
       var responseModel = requestModel;
@@ -272,6 +301,7 @@ Future<void> main(List<String> args) async {
         final text = utf8.decode(responseBytes, allowMalformed: true);
         try {
           final json = jsonDecode(text);
+          parsedJson = json;
           if (json is Map) {
             if (json['model'] is String) {
               responseModel = json['model'] as String;
@@ -355,6 +385,10 @@ Future<void> main(List<String> args) async {
         '${errorNote != null ? '  $errorNote' : ''}',
       );
 
+      if (opts.echo) {
+        _echoModelOutput(step, parsedJson, responseBytes, opts.echoLimit);
+      }
+
       try {
         request.response.statusCode = status == 599 ? 502 : status;
         responseHeaders.forEach((name, values) {
@@ -375,6 +409,44 @@ Future<void> main(List<String> args) async {
       }
     }());
   }
+}
+
+/// 把模型的真实输出打到终端。
+///
+/// chat completions 取 `choices[0].message.content`；System One / decisions
+/// 没有 content 字段，回显整个 `answers` 对象。
+void _echoModelOutput(String step, Object? json, List<int> rawBytes, int limit) {
+  String content;
+  if (json is Map) {
+    final choices = json['choices'];
+    if (choices is List && choices.isNotEmpty && choices.first is Map) {
+      final message = (choices.first as Map)['message'];
+      if (message is Map && message['content'] is String) {
+        content = message['content'] as String;
+      } else {
+        content = const JsonEncoder.withIndent('  ').convert(choices.first);
+      }
+    } else if (json['answers'] != null) {
+      content = const JsonEncoder.withIndent('  ').convert(json['answers']);
+    } else if (json['error'] != null) {
+      content = '错误: ${json['error']}';
+    } else {
+      content = const JsonEncoder.withIndent('  ').convert(json);
+    }
+  } else {
+    content = utf8.decode(rawBytes, allowMalformed: true);
+  }
+
+  final shown = limit > 0 && content.length > limit
+      ? '${content.substring(0, limit)}'
+          '…(已截断，完整 ${content.length} 字符；--capture 目录里有原文)'
+      : content;
+
+  stdout.writeln('----- $step 模型输出 -----');
+  for (final line in shown.split('\n')) {
+    stdout.writeln('  | $line');
+  }
+  stdout.writeln('-------------------------');
 }
 
 void _printSummary(

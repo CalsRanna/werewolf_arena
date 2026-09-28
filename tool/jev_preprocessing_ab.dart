@@ -31,6 +31,13 @@ class _Sample {
     required this.generativeConfidences,
     required this.generativeRawLength,
     required this.generativeJsonOk,
+    required this.historyChars,
+    required this.hasPublicSpeech,
+    required this.day,
+    required this.phase,
+    required this.selfRole,
+    required this.selfNumber,
+    required this.teammates,
   });
 
   final String file;
@@ -39,6 +46,24 @@ class _Sample {
   final Map<String, int> generativeConfidences;
   final int generativeRawLength;
   final bool generativeJsonOk;
+
+  /// `**游戏历史**` 段落的字符数，仅用于展示。
+  final int historyChars;
+
+  /// 历史里是否出现过**公开发言**。这才是"这批样本有没有判定基础"的判据。
+  ///
+  /// 刻意不用字符数：狼人视角的第 1 夜历史可能很长（含狼队会议原文），
+  /// 但对"谁是狼"没有任何公开信息——狼只看得见自己人。
+  final bool hasPublicSpeech;
+
+  /// 从提示词抄下来的自述信息，用于干跑时核对，以及推断真值狼队。
+  final String day;
+  final String phase;
+  final String selfRole;
+
+  /// 该样本视角玩家自己的号码（"2号玩家" -> "2"）。
+  final String selfNumber;
+  final List<String> teammates;
 }
 
 class _Options {
@@ -49,14 +74,20 @@ class _Options {
     required this.model,
     required this.configPath,
     required this.limit,
+    required this.dryRun,
   });
 
   final String dir;
+
+  /// 真值狼队。留空时从样本里推断（狼人样本自述了角色与全部队友）。
   final Set<String> wolves;
   final String base;
   final String model;
   final String configPath;
   final int limit;
+
+  /// 只体检样本、不调用任何模型（因此也不产生费用）。
+  final bool dryRun;
 }
 
 _Options _parseArgs(List<String> args) {
@@ -66,6 +97,7 @@ _Options _parseArgs(List<String> args) {
   var model = _defaultModel;
   var configPath = 'werewolf_config.yaml';
   var limit = 12;
+  var dryRun = false;
 
   for (var i = 0; i < args.length; i++) {
     String? next() => i + 1 < args.length ? args[++i] : null;
@@ -86,11 +118,17 @@ _Options _parseArgs(List<String> args) {
         configPath = next() ?? configPath;
       case '--limit':
         limit = int.tryParse(next() ?? '') ?? limit;
+      case '--dry-run':
+        dryRun = true;
       case '--help':
       case '-h':
         stdout.writeln(
-          'dart tool/jev_preprocessing_ab.dart --wolves 1,2,7,12 '
-          '[--dir DIR] [--limit N] [--base URL] [--model ID] [--config f]',
+          'dart tool/jev_preprocessing_ab.dart [--wolves 1,6,10,12] [--dir DIR]\n'
+          '    [--limit N] [--base URL] [--model ID] [--config f] [--dry-run]\n'
+          '\n'
+          '  --wolves   真值狼队。省略时从样本推断（狼人样本自述了角色与全部队友）。\n'
+          '  --dry-run  只打印样本体检（天数/阶段/有无公开发言）与推断出的真值，\n'
+          '             不调用任何模型，因此不产生费用。',
         );
         exit(0);
     }
@@ -102,6 +140,7 @@ _Options _parseArgs(List<String> args) {
     model: model,
     configPath: configPath,
     limit: limit,
+    dryRun: dryRun,
   );
 }
 
@@ -140,6 +179,91 @@ String _stateFromUserPrompt(String userPrompt) {
   final cut = userPrompt.indexOf('# 任务');
   final body = cut > 0 ? userPrompt.substring(0, cut) : userPrompt;
   return body.trim();
+}
+
+/// 取 `**游戏历史**` 段的字符数（仅用于展示）。
+int _historyChars(String state) {
+  final start = state.indexOf('**游戏历史**');
+  if (start < 0) return 0;
+  var end = state.indexOf('\n**', start + 12);
+  if (end < 0) end = state.indexOf('\n---', start);
+  if (end < 0) end = state.length;
+  return state.substring(start, end).trim().length;
+}
+
+/// 历史里是否出现过**公开发言**——这是"这批样本有没有判定基础"的判据。
+///
+/// 不能用字符数代替：狼人视角的第 1 夜历史可以很长（含狼队会议原文），
+/// 但对"谁是狼"没有公开信息。夜间只有狼队内部发言，必须排除。
+bool _hasPublicSpeech(String state) {
+  for (final raw in state.split('\n')) {
+    final line = raw.trim();
+    if (line.contains('狼人讨论环节')) continue;
+    if (line.contains('的竞选发言')) return true;
+    if (line.contains('发表遗言')) return true;
+    if (RegExp(r'天，\d+号玩家：').hasMatch(line)) return true;
+  }
+  return false;
+}
+
+/// 取提示词里 `- 标签: 值` 形式的一行。
+String _lineValue(String state, String label) {
+  final m = RegExp('- ${RegExp.escape(label)}: (.+)').firstMatch(state);
+  return m == null ? '' : m.group(1)!.trim();
+}
+
+String _dayOf(String state) {
+  final m = RegExp(r'- 第(\d+)天').firstMatch(state);
+  return m == null ? '?' : m.group(1)!;
+}
+
+/// "3号玩家" -> "3"。
+String _numberOnly(String name) =>
+    name.trim().replaceAll('号玩家', '').replaceAll('号', '');
+
+/// 真值狼队直接从样本推：狼人样本自述了角色，并列出了全部队友，
+/// 再加上自己——只统计队友会漏掉该样本视角的玩家本人。
+///
+/// 手工填这一步最容易出错，而填错会让整轮对比作废——所以能推就推。
+Set<String> _inferWolves(List<_Sample> samples) {
+  final wolves = <String>{};
+  for (final s in samples) {
+    if (s.selfRole != '狼人') continue;
+    if (s.selfNumber.isNotEmpty) wolves.add(s.selfNumber);
+    wolves.addAll(s.teammates.map(_numberOnly));
+  }
+  return wolves..removeWhere((w) => w.isEmpty);
+}
+
+/// 按号码数值排序（字典序会把 10、12 排到 2 前面）。
+List<String> _sortedByNumber(Iterable<String> ids) {
+  final list = ids.toList();
+  list.sort((a, b) {
+    final na = int.tryParse(a);
+    final nb = int.tryParse(b);
+    if (na != null && nb != null) return na.compareTo(nb);
+    return a.compareTo(b);
+  });
+  return list;
+}
+
+/// 把"这批样本有没有判定基础"讲清楚。
+///
+/// 原版是写死一句"样本全来自第 1 夜"；实际上取决于样本本身，
+/// 所以要按批评估，而不是无条件声明。
+void _printBasisWarning(int informative, int total) {
+  if (informative == 0) {
+    stdout.writeln(
+      '\n!! 本次对比没有判定基础：$total 个样本的历史里都没有公开发言。\n'
+      '   命中率差异只反映"信息不足时如何兜底"，不构成质量结论；\n'
+      '   这组数字只能用于比较成本 / 延迟 / 输出体量。',
+    );
+  } else if (informative < total) {
+    stdout.writeln(
+      '\n注意：仅 $informative/$total 个样本有公开发言，'
+      '其余样本无判定基础，会把两边的差异往"都靠基础概率"拉平。',
+    );
+  }
 }
 
 List<_Sample> _loadSamples(_Options opts) {
@@ -188,14 +312,26 @@ List<_Sample> _loadSamples(_Options opts) {
       jsonOk = false;
     }
 
+    final state = _stateFromUserPrompt(userPrompt);
+    final teammates = _lineValue(state, '队友');
+
     samples.add(
       _Sample(
         file: req.uri.pathSegments.last,
-        state: _stateFromUserPrompt(userPrompt),
+        state: state,
         generativeRoles: roles,
         generativeConfidences: confidences,
         generativeRawLength: content.length,
         generativeJsonOk: jsonOk,
+        historyChars: _historyChars(state),
+        hasPublicSpeech: _hasPublicSpeech(state),
+        day: _dayOf(state),
+        phase: _lineValue(state, '当前阶段'),
+        selfRole: _lineValue(state, '角色'),
+        selfNumber: _numberOnly(_lineValue(state, '号码')),
+        teammates: teammates.isEmpty
+            ? const []
+            : teammates.split(',').map((s) => s.trim()).toList(),
       ),
     );
   }
@@ -262,10 +398,44 @@ Future<({Map<String, double> wolves, int inputTokens, int outputTokens, double c
 
 Future<void> main(List<String> args) async {
   final opts = _parseArgs(args);
-  if (opts.wolves.isEmpty) {
-    stderr.writeln('必须给真值：--wolves 1,2,7,12（取上帝视角日志里狼人战术会议的发言者）');
+
+  // 先读样本再定真值：真值可以从狼人样本的自述里推出来。
+  final samples = _loadSamples(opts);
+  if (samples.isEmpty) {
+    stderr.writeln('没有可用样本');
     exit(2);
   }
+
+  final wolves = opts.wolves.isNotEmpty ? opts.wolves : _inferWolves(samples);
+  if (wolves.isEmpty) {
+    stderr.writeln(
+      '推不出真值狼队：样本里没有狼人视角的提示词（队友字段是唯一线索）。\n'
+      '请用 --wolves 1,6,10,12 手工给，或换一个样本目录。',
+    );
+    exit(2);
+  }
+  final wolvesSorted = _sortedByNumber(wolves);
+  final informative = samples.where((s) => s.hasPublicSpeech).length;
+
+  if (opts.dryRun) {
+    stdout.writeln('=== 干跑：不调用任何模型，不产生费用 ===');
+    stdout.writeln('样本目录 ${opts.dir}   共 ${samples.length} 个');
+    stdout.writeln(
+      '真值狼队 ${wolvesSorted.join(',')}'
+      '（${opts.wolves.isEmpty ? '由样本推断' : '由 --wolves 指定'}）',
+    );
+    stdout.writeln('有公开发言的样本 $informative / ${samples.length}\n');
+    for (final s in samples) {
+      stdout.writeln(
+        '${s.file.substring(0, 3)}  第${s.day}天 ${s.phase}  '
+        '自述=${s.selfRole}  历史${s.historyChars}字符'
+        '${s.hasPublicSpeech ? '' : '  <- 无公开发言，无判定基础'}',
+      );
+    }
+    _printBasisWarning(informative, samples.length);
+    return;
+  }
+
   final key = _configValue(opts.configPath, 'default_llm', 'api_key') ??
       Platform.environment['OPENAI_API_KEY'] ??
       '';
@@ -274,15 +444,13 @@ Future<void> main(List<String> args) async {
     exit(2);
   }
 
-  final samples = _loadSamples(opts);
-  if (samples.isEmpty) {
-    stderr.writeln('没有可用样本');
-    exit(2);
-  }
-
   final allPlayers = List.generate(12, (i) => '${i + 1}');
-  stdout.writeln('样本 ${samples.length} 个   真值狼队: ${opts.wolves.join(',')}');
+  stdout.writeln(
+    '样本 ${samples.length} 个（有公开发言 $informative 个）   '
+    '真值狼队: ${wolvesSorted.join(',')}',
+  );
   stdout.writeln('模型 ${opts.model}   端点 ${opts.base}/v1/systemone\n');
+  _printBasisWarning(informative, samples.length);
 
   // 聚合指标
   var genHits = 0; // 生成版指出来的真狼数
@@ -320,16 +488,16 @@ Future<void> main(List<String> args) async {
           entry.key.replaceAll('p', '').replaceAll('_wolf', ''),
     };
 
-    genHits += genFlagged.intersection(opts.wolves).length;
-    genFalsePos += genFlagged.difference(opts.wolves).length;
-    jevHits += jevFlagged.intersection(opts.wolves).length;
-    jevFalsePos += jevFlagged.difference(opts.wolves).length;
+    genHits += genFlagged.intersection(wolves).length;
+    genFalsePos += genFlagged.difference(wolves).length;
+    jevHits += jevFlagged.intersection(wolves).length;
+    jevFalsePos += jevFlagged.difference(wolves).length;
 
     final sorted = result.wolves.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final top3 = sorted.take(3).map((e) {
       final id = e.key.replaceAll('p', '').replaceAll('_wolf', '');
-      final mark = opts.wolves.contains(id) ? '*' : ' ';
+      final mark = wolves.contains(id) ? '*' : ' ';
       return '$id$mark=${e.value.toStringAsFixed(2)}';
     }).join(' ');
 
@@ -341,7 +509,7 @@ Future<void> main(List<String> args) async {
     );
   }
 
-  final wolfCount = opts.wolves.length;
+  final wolfCount = wolves.length;
   final goodCount = 12 - wolfCount;
   stdout.writeln('\n=== 汇总（${samples.length} 个样本，真狼 $wolfCount 人 / 好人 $goodCount 人）===');
   stdout.writeln('生成版预处理：');
@@ -365,9 +533,6 @@ Future<void> main(List<String> args) async {
     '  折合单次 输入 ${(jevInputTokens / samples.length).round()} tokens，'
     '\$${(jevCost / samples.length).toStringAsFixed(6)}',
   );
-  stdout.writeln(
-    '\n说明：这些捕获样本全部来自第 1 夜（游戏历史为空），'
-    '两种方法都没有可用信息，因此命中率都在基础概率附近——'
-    '本对比能说明的是成本/延迟/输出体量，不能说明"有信息时谁更准"。',
-  );
+  // 是否具备判定基础由 _printBasisWarning 按样本实际情况给出，
+  // 不再无条件声明"这些样本全部来自第 1 夜"。
 }
